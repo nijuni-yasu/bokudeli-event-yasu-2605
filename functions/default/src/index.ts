@@ -29,6 +29,7 @@ export const {
   deleteUserAccount,
   addToCart, removeFromCart, confirmOrder,
   createEventMembers,
+  onMemberOrderWritten, getUserFriends, backfillUserFriends,
   eventReceipt,
   eventCopy,
   eventBillInvoice,
@@ -57,4 +58,5 @@ export const {
   import('./userImage.js'),
   import('./memberOrders.js'),
   import('./eventMembers.js'),
+  import('./userFriends.js'),
 ])))

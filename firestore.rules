@@ -101,6 +101,9 @@ service cloud.firestore {
             allow read: if true
             // ユーザー情報はログインユーザーでないと create/update/deleteできない
             allow create, update: if request.auth != null && request.auth.uid == user_id
+            match /friends/{friend_user_id} {
+                allow read, write: if false
+            }
         }
         match /users_personal_information/{user_id} {
             // 個人情報はログインユーザーでないと read できない

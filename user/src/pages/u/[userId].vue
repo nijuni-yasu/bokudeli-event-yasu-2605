@@ -16,6 +16,9 @@ import { cancelOrders as callCancelOrders } from '@shokujii/base/apis/stripe.js'
 import UserSuccessJoinEventDialog from '@shokujii/base/components/UserSuccessJoinEventDialog.vue'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
+import { useUserFriendsStore, type UserFriendsStore } from '@shokujii/base/stores/userFriends.js'
+import type { UserFriendsSortBy } from '@shokujii/common/apis/userFriends.js'
+import { enableFriendList } from '@/environment.constant'
 
 const route = useRoute()
 const userId = route.params.userId as string
@@ -56,9 +59,33 @@ const cancelLoadingEventId = ref<string | null>(null)
 const cancelDialogEventId = ref<string | null>(null)
 
 const isOwner = computed(() => loginUser.value?.user_id === profileUserId)
+const showFriendsTab = computed(() => enableFriendList && isOwner.value)
 
 const userEventListStore = useUserEventListByUserId(profileUserId)
 const { events: userEvents, totalCount: userEventsTotalCount, orderStateByEventId } = storeToRefs(userEventListStore)
+
+const friendSortBy = ref<UserFriendsSortBy>('meet_count')
+const userFriendsByMeetCountStore = ref<UserFriendsStore | null>(null)
+const userFriendsByLastMetStore = ref<UserFriendsStore | null>(null)
+watch(
+  showFriendsTab,
+  (canShow) => {
+    if (!canShow) return
+    if (userFriendsByMeetCountStore.value == null) {
+      userFriendsByMeetCountStore.value = useUserFriendsStore('meet_count', 10)
+    }
+    if (userFriendsByLastMetStore.value == null) {
+      userFriendsByLastMetStore.value = useUserFriendsStore('last_met_at', 10)
+    }
+  },
+  { immediate: true },
+)
+const activeUserFriendsStore = computed(() =>
+  friendSortBy.value === 'meet_count' ? userFriendsByMeetCountStore.value : userFriendsByLastMetStore.value,
+)
+const activeFriends = computed(() => activeUserFriendsStore.value?.friends ?? [])
+
+const formatDate = (epochMillis: number) => new Date(epochMillis).toLocaleDateString('ja-JP')
 
 const visibleUserEvents = computed(() =>
   userEvents.value.filter((event: BokudeliEvent) => isOwner.value || event.is_public),
@@ -181,6 +208,10 @@ const downloadReceipt = (eventId: string, stripeId: string) => {
           <v-icon start :icon="mdiHeartOutline" />
           {{ $t('user.manager_community_list') }}
         </v-tab>
+        <v-tab v-if="showFriendsTab" value="3">
+          <v-icon start :icon="mdiAccountGroup" />
+          {{ $t('user.friend_list') }}
+        </v-tab>
       </v-tabs>
       <v-window v-model="tabs" class="pa-6">
         <v-window-item value="0">
@@ -261,6 +292,57 @@ const downloadReceipt = (eventId: string, stripeId: string) => {
                 :loaded-count="managerCommunityListStore.communityStores?.length ?? 0"
                 :total-count="managerCommunityListStore.totalCount ?? Number.MAX_SAFE_INTEGER"
                 @load="managerCommunityListStore.next()"
+              />
+            </v-col>
+          </v-row>
+        </v-window-item>
+        <v-window-item v-if="showFriendsTab" value="3">
+          <v-row class="align-center mb-2">
+            <v-col cols="12" sm="6">
+              <v-btn-toggle v-model="friendSortBy" mandatory color="primary" density="comfortable" divided>
+                <v-btn value="meet_count">{{ $t('user.friend_sort_meet_count') }}</v-btn>
+                <v-btn value="last_met_at">{{ $t('user.friend_sort_last_met_at') }}</v-btn>
+              </v-btn-toggle>
+            </v-col>
+          </v-row>
+          <v-row v-if="activeFriends.length > 0">
+            <v-col v-for="friend in activeFriends" :key="friend.user_id" cols="12" sm="6" md="4">
+              <v-card class="h-100">
+                <v-card-item>
+                  <template #prepend>
+                    <v-avatar size="48">
+                      <v-img v-if="friend.user_image_url !== ''" :src="friend.user_image_url" />
+                      <span v-else class="text-caption">{{ friend.user_name.slice(0, 1) }}</span>
+                    </v-avatar>
+                  </template>
+                  <v-card-title>{{ friend.user_name }}</v-card-title>
+                  <v-card-subtitle>
+                    {{ $t('user.friend_meet_count', { count: friend.meet_count }) }}
+                  </v-card-subtitle>
+                </v-card-item>
+                <v-card-text>
+                  <div class="text-body-2">
+                    {{ $t('user.friend_last_met_at') }}: {{ formatDate(friend.last_met_at) }}
+                  </div>
+                  <div class="text-body-2">
+                    {{ $t('user.friend_first_met_at') }}: {{ formatDate(friend.first_met_at) }}
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else-if="!activeUserFriendsStore?.loading" class="justify-center">
+            <v-col cols="12" class="text-center">
+              <div class="text-body-1 text-medium-emphasis mb-4">{{ $t('user.friend_empty') }}</div>
+              <v-btn color="primary" @click="$router.push('/')">{{ $t('user.friend_empty_cta') }}</v-btn>
+            </v-col>
+          </v-row>
+          <v-row class="justify-center">
+            <v-col cols="auto">
+              <IncrementalLoader
+                :loaded-count="activeFriends.length"
+                :total-count="activeUserFriendsStore?.hasMore ? Number.MAX_SAFE_INTEGER : activeFriends.length"
+                @load="activeUserFriendsStore?.next()"
               />
             </v-col>
           </v-row>
