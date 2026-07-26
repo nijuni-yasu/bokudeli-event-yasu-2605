@@ -117,8 +117,6 @@ export const EventDbSchema = z.object({
   enterprise_id: EnterpriseIdDbSchema,
   canceled_at: TimestampSchema.optional(),
   canceled_by: z.string().nonempty().optional(),
-  /** 参加者タグの集計（Functions のみ更新） */
-  event_members_tags: z.record(z.string(), z.number()).optional(),
 })
 
 /** applying_reservation 遷移時に主催者連絡先を必須とするための追加バリデーション */
@@ -174,7 +172,6 @@ const EventAppSchema = z.object({
   shop_name: z.string().default(''),
   event_name: z.string().default(''),
   subdomain_tags: z.array(z.string()).default([]),
-  event_members_tags: z.record(z.string(), z.number()).optional(),
   bill_fullname: z.string().default(''),
   bill_email: z.string().default(''),
   event_place: z.string().default(''),
@@ -250,7 +247,6 @@ export class Event {
   event_place_url!: string
   members!: string[]
   subdomain_tags!: string[]
-  event_members_tags?: Record<string, number>
 
   community_bill_settings?: CommunityBillSettingsType
   enterprise_id?: string | null
