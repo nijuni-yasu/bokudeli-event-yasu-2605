@@ -7,7 +7,6 @@ import { convertToDatetimeWeekdayShort, convertToTimeString } from '@shokujii/co
 import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import EventMemberList from '@shokujii/base/components/EventMemberList.vue'
-import EventParticipantTags from '@shokujii/base/components/EventParticipantTags.vue'
 import CommunityContactDialog from '@shokujii/base/components/CommunityContactDialog.vue'
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
@@ -80,8 +79,6 @@ const eventUrl = computed(() => {
 // コンポーネント内で pinia を直接たたくのはなるべく避けた方が良いが、このコンポーネントはかなり大きいので今の所は許容する
 // TODO コンポーネントを分割する
 const eventStore = useAppEventStore(props.event)
-
-const ev = computed(() => eventStore.event ?? props.event)
 
 const members = computed(() =>
   [...(eventStore.members ?? [])].sort(
@@ -377,7 +374,6 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
             :event-max-people="event.event_max_people"
             :is-show-member="isShowMember"
           />
-          <EventParticipantTags :event="ev" :show-empty-hint="true" />
         </div>
         <v-card-text class="px-5">
           <v-row align="center" no-gutters class="flex-nowrap">
