@@ -5,6 +5,8 @@ import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import EventMemberCard from '@shokujii/base/components/EventMemberCard.vue'
+import TagImportHintDialog from '@shokujii/base/components/TagImportHintDialog.vue'
+import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
 import { getEventPath } from '@/router/utils'
 import { mdiArrowLeftBold } from '@mdi/js'
 
@@ -14,6 +16,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const { showDialog: showTagImportHint, confirmHint } = useProfileTagToggle()
 
 const communityStore = useAppCommunityStore(props.communityAccount)
 const isShowMember: boolean = await new Promise((resolve) => {
@@ -73,6 +76,7 @@ const members = computed(() =>
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
       </v-col>
     </div>
+    <TagImportHintDialog v-model="showTagImportHint" @confirm="confirmHint" />
   </section>
 </template>
 <style scoped lang="scss"></style>
