@@ -10,6 +10,18 @@ service cloud.firestore {
         function docEnterpriseId(data) {
             return data.get('enterprise_id', null);
         }
+        // PF イベントの members_visible_min_count（#2289）。enterprise では変更不可
+        function eventMembersVisibleMinCountValid() {
+            let newVal = request.resource.data.get('members_visible_min_count', null);
+            let oldVal = resource == null ? null : resource.data.get('members_visible_min_count', null);
+            if (newVal == oldVal) {
+                return true;
+            }
+            if (docEnterpriseId(request.resource.data) != null) {
+                return false;
+            }
+            return newVal == null || (newVal is int && newVal >= 1);
+        }
         // エンタープライズ: 認証ユーザーの claims とドキュメントの enterprise_id が一致
         function tokenTenantId() {
             let firebaseClaims = request.auth.token.get('firebase', null);
@@ -212,8 +224,9 @@ service cloud.firestore {
                 allow read: if docEnterpriseId(resource.data) == null
                             || isSameEnterprise(resource.data);
                 // コミュマネ or サポートアカウントはイベントの作成・更新ができる
-                allow create, update: if isSupport()
+                allow create, update: if isSupport() && eventMembersVisibleMinCountValid()
                 allow create, update: if isManager() && get(/databases/$(database)/documents/communities/$(community)).data.is_approved
+                                    && eventMembersVisibleMinCountValid()
                 // コミュマネは下書きイベントの削除ができる
                 allow delete: if isManager() && get(/databases/$(database)/documents/communities/$(community)/events/$(event)).data.event_status.value == 'in_draft'
                 // 予約承認・予約却下などイベントステータスを店舗が変更できる

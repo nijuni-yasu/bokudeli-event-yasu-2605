@@ -39,6 +39,7 @@ import TinyMCEViewer from '@shokujii/base/components/TinyMCEViewer.vue'
 import PublicAlbumGallery from '@shokujii/base/components/PublicAlbumGallery.vue'
 import { extractImageSlidesFromHtml } from '@shokujii/base/utils/extractImagesFromHtml'
 import { useDisplay } from 'vuetify'
+import { shouldShowPfEventParticipantsSection } from '@shokujii/common/utils/eventParticipantsVisibility.js'
 
 const router = useRouter()
 const display = useDisplay()
@@ -139,6 +140,10 @@ const onShareSnsButtonClicked = async (type: 'twitter' | 'facebook' | 'line' | '
 // コミュニティの設定によっては参加者一覧を非表示にする
 const isShowMember = computed(() =>
   props.community.is_show_member !== undefined ? props.community.is_show_member : true,
+)
+
+const shouldShowParticipantsSection = computed(() =>
+  shouldShowPfEventParticipantsSection(props.event, members.value.length),
 )
 
 const shareButtonSize = computed(() => (display.xs.value ? 'small' : 'large'))
@@ -324,7 +329,7 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
           <tiny-m-c-e-viewer :content="event.event_desc" class="event-content" />
         </v-card-text>
 
-        <div class="mb-6">
+        <div v-if="shouldShowParticipantsSection" class="mb-6">
           <v-card-text class="mt-6 pb-3">
             <div class="d-flex align-center flex-wrap ga-2">
               <span class="event-details-card__section-title font-weight-black">
