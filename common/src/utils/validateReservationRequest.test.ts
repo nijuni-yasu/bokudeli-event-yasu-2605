@@ -248,6 +248,23 @@ describe('validateReservationRequest - メニュー', () => {
     expect(result.reasonCodes).toContain('NO_ORDERABLE_MENU_SELECTED')
   })
 
+  it('organizer_menu のみ選択されていても NO_ORDERABLE_MENU_SELECTED', () => {
+    const result = validateReservationRequest(
+      buildInput({
+        eventMenus: [
+          makeMenu('no_order_participation', {
+            item_type: 'organizer_menu',
+            menu_price: 0,
+            is_selected: true,
+          }),
+        ],
+      }),
+    )
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.reasonCodes).toContain('NO_ORDERABLE_MENU_SELECTED')
+  })
+
   it('1 件でも is_selected かつ非売切なら合格', () => {
     const result = validateReservationRequest(
       buildInput({

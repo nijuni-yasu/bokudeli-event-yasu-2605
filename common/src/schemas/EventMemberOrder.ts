@@ -2,6 +2,7 @@ import { DateTime } from 'luxon'
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema, optionalDeleteField } from './firebase/index.js'
 import { SelectedOptionSchema } from './menuOption.js'
+import { EventItemTypeSchema, type EventItemTypeType } from './EventItemType.js'
 
 const nowMillis = () => DateTime.now().toMillis()
 
@@ -82,6 +83,7 @@ const EventMemberOrderDbSchema = z.object({
   menu_name: z.string().nonempty(),
   // 0 は「注文なしで参加」。負数は拒否する。
   menu_price: z.number().int().nonnegative(),
+  item_type: EventItemTypeSchema,
   created_at: TimestampSchema,
   updated_at: TimestampSchema,
   carted_at: TimestampSchema,
@@ -112,6 +114,7 @@ const EventMemberOrderAppSchema = z.object({
   menu_id: z.string().nonempty(),
   menu_name: z.string().nonempty(),
   menu_price: z.number().int().nonnegative(),
+  item_type: EventItemTypeSchema,
   stripe_id: z.string().optional(),
   carted_at: EpochMillisSchema.optional(),
   ordered_at: EpochMillisSchema.optional(),
@@ -146,6 +149,7 @@ export class EventMemberOrder {
   menu_id!: string
   menu_name!: string
   menu_price!: number
+  item_type!: EventItemTypeType
   created_at: number
   updated_at: number
   carted_at: number
