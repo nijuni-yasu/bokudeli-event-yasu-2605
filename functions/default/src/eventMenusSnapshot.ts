@@ -5,6 +5,7 @@ import { createModuleLogger } from './utils/logger.js'
 import { getPartner } from './stores/partner.js'
 import { getEventInCommunity } from './stores/event.js'
 import { convertPartnerMenusToEventMenus } from '@shokujii/common/utils/eventMenuConverter.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import {
   getMenuImageStoragePath,
   getEventMenuImageStoragePath,
@@ -107,9 +108,11 @@ export const savePartnerMenusToEventMenus = async (
     const existingEventMenus = await event.getMenus(transaction)
 
     await Promise.all(
-      existingEventMenus.map(async (menu) => {
-        await event.deleteMenu(menu, transaction)
-      }),
+      existingEventMenus
+        .filter((menu) => isPartnerSuppliedItem(menu.item_type))
+        .map(async (menu) => {
+          await event.deleteMenu(menu, transaction)
+        }),
     )
 
     const eventMenusToSaveInTx = convertPartnerMenusToEventMenus(

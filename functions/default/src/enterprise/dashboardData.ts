@@ -6,6 +6,7 @@ import {
   type DashboardOrderLine,
   type DashboardStripeSession,
 } from '@shokujii/common/utils/dashboardAggregation.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { getEnterpriseById, listEnterpriseMembers } from '../stores/enterprise.js'
 import { getEventsInCommunities } from '../stores/event.js'
 import {
@@ -36,13 +37,15 @@ export async function fetchDashboardData(enterpriseId: string): Promise<Dashboar
     throw new Error(`enterprise not found: ${enterpriseId}`)
   }
 
-  const orderById = new Map(rawOrders.map((order) => [order.order_id, order]))
+  const partnerSuppliedOrders = filterPartnerSuppliedOrders(rawOrders)
+
+  const orderById = new Map(partnerSuppliedOrders.map((order) => [order.order_id, order]))
   const eventRefs = new Map<string, { community_id: string; event_id: string }>()
   const addEventRef = (communityId: string, eventId: string) => {
     eventRefs.set(dashboardEventKey(communityId, eventId), { community_id: communityId, event_id: eventId })
   }
 
-  for (const order of rawOrders) {
+  for (const order of partnerSuppliedOrders) {
     addEventRef(order.community_id, order.event_id)
   }
   for (const stripe of rawStripes) {
@@ -81,7 +84,7 @@ export async function fetchDashboardData(enterpriseId: string): Promise<Dashboar
   }))
 
   return {
-    orders: rawOrders.map((order) => ({
+    orders: partnerSuppliedOrders.map((order) => ({
       user_id: order.user_id,
       community_id: order.community_id,
       event_id: order.event_id,

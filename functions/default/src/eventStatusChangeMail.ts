@@ -21,6 +21,7 @@ import { getPartner } from './stores/partner.js'
 import { getUser } from './stores/user.js'
 import { convertReferenceToEvent, ShokujiiEvent } from './stores/event.js'
 import { createModuleLogger } from './utils/logger.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 
 const logger = createModuleLogger('eventStatusChangeMail')
 
@@ -36,7 +37,7 @@ const DELIVERY_DURATION = 30 // minutes
  * イベント用のテンプレートデータを作成
  */
 export async function createTemplateDataForOrderDeadline(event: ShokujiiEvent) {
-  const orders = await event.getOrders()
+  const orders = filterPartnerSuppliedOrders(await event.getOrders())
   const validOrders = orders.filter((order) => order.status === 'ordered')
 
   const orderList = []

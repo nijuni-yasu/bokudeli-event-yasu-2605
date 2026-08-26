@@ -24,6 +24,7 @@ import {
   countDiscountInvoiceDetailRows,
   DISCOUNT_SUBSIDY_INVOICE_FEE_LABEL,
 } from '@shokujii/common/utils/invoice.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { getEvent, getAcceptingOrderEventsByEndTime, type ShokujiiEvent } from './stores/event.js'
 import { getConfigGlobal } from './stores/config.js'
 import { getCommunity, type ShokujiiCommunity } from './stores/community.js'
@@ -172,7 +173,7 @@ const createEventBillInvoice = async (
     return existingInvoiceId
   }
 
-  const orders = await event.getOrders('ordered')
+  const orders = filterPartnerSuppliedOrders(await event.getOrders('ordered'))
   const isAfterCutoff = isEventAfterInvoiceFeeCutoff(event.event_start_datetime)
   const invoiceMode = getCommunityBillInvoiceMode(event.community_bill_settings)
   const templatePath = isAfterCutoff ? TEMPLATE2_PATH : TEMPLATE_PATH

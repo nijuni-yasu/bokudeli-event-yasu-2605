@@ -7,6 +7,7 @@ import { getUsersByUserIds } from './stores/user.js'
 import { PdfGenerator } from './utils/PdfGenerator.js'
 import { createModuleLogger } from './utils/logger.js'
 import { buildSortedMenuRows, buildValidNameRows, createTemplateMergeData } from './utils/namesPrintPdf.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 
 const logger = createModuleLogger('namesprint')
 
@@ -52,7 +53,7 @@ export const namesprint = onRequest(
       return
     }
 
-    const orders = await event.getOrders('ordered')
+    const orders = filterPartnerSuppliedOrders(await event.getOrders('ordered'))
     const rows = buildSortedMenuRows(orders)
     const userIds = [...new Set(rows.map((r) => r.userId))]
     const userById = await getUsersByUserIds(userIds)

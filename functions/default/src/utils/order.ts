@@ -1,5 +1,6 @@
 import { ShokujiiEvent } from '../stores/event.js'
 import { getUser } from '../stores/user.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 
 export interface OrderData {
   name: string
@@ -12,7 +13,7 @@ export interface OrderData {
  * 注文締切用の注文データを作成
  */
 export async function createOrdersForOrderDeadline(event: ShokujiiEvent): Promise<[number, number, OrderData[]]> {
-  const orders = await event.getOrders('ordered')
+  const orders = filterPartnerSuppliedOrders(await event.getOrders('ordered'))
   const orderDataList: OrderData[] = []
   let count = 0
   let price = 0

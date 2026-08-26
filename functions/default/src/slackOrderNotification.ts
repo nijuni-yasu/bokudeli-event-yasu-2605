@@ -7,6 +7,7 @@ import { getUser } from './stores/user.js'
 import { getEventUrlForEvent, getUserUrlForCommunity } from './utils/urls.js'
 import { sendCommunityBotsMessageOrThrow } from './utils/slackMessage.js'
 import { createModuleLogger } from './utils/logger.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 
 const logger = createModuleLogger('slackOrderNotification')
 
@@ -42,6 +43,8 @@ const sendOrderedMessage = async (params: {
     }
     menuCounts[name] += 1
   }
+
+  const allNoOrderParticipation = sorted.every((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
 
   const menuPhrase = menuNameOrder
     .map((name) => {
@@ -81,7 +84,9 @@ const sendOrderedMessage = async (params: {
     })
     return
   }
-  const message = `<${userUrl}|${user.user_name}> さんが、<${eventUrl}|${event.event_name}> で、${menuPhrase} を注文したよ！`
+  const message = allNoOrderParticipation
+    ? `<${userUrl}|${user.user_name}> さんが、<${eventUrl}|${event.event_name}> に注文なしで参加したよ！`
+    : `<${userUrl}|${user.user_name}> さんが、<${eventUrl}|${event.event_name}> で、${menuPhrase} を注文したよ！`
 
   await sendCommunityBotsMessageOrThrow(communityId, bots, message)
 }
