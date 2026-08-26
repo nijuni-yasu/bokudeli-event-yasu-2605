@@ -31,6 +31,7 @@ import {
   sortOrderIdsForEnterpriseSubsidyReplay,
 } from '@shokujii/common/utils/eventMemberOrderSort.js'
 import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import MinimumParticipantsDialog from '@shokujii/base/components/MinimumParticipantsDialog.vue'
@@ -447,8 +448,12 @@ const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
 const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined =>
   enrichedCart.value?.find((item) => item.event.event_id === cartItem.event.event_id)
 
+const isNoOrderParticipationOnly = (orders: EventMemberOrder[]): boolean =>
+  orders.length > 0 && orders.every((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+
 const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   const { event, orders } = item
+  if (isNoOrderParticipationOnly(orders)) return false
   if (event.event_payment === 'user_advance') return item.totalPrice > 0
   if (needsCommunityBillStripe(event, orders)) return true
   if (event.event_payment === 'enterprise_subsidy') return item.totalPrice > 0
@@ -613,6 +618,7 @@ const startOrderProcess = async () => {
 
 const paymentMessageForItem = (item: EnrichedCartItem) => {
   const { event, orders, totalPrice } = item
+  if (isNoOrderParticipationOnly(orders)) return $t('cart.confirm_no_order_participation')
   if (event.event_payment === 'user_advance') {
     return totalPrice > 0 ? $t('cart.confirm_order_credit_card') : $t('cart.confirm_order_zero_payment')
   }
@@ -993,7 +999,8 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                       </span>
                     </td>
                     <td style="padding: 1px">
-                      <div class="d-flex align-center justify-center">
+                      <div v-if="menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID" class="text-center">1</div>
+                      <div v-else class="d-flex align-center justify-center">
                         <v-btn
                           v-if="menu.count > 1"
                           :icon="mdiMinusCircleOutline"
@@ -1162,7 +1169,11 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
               @click="showConfirm(cartItem)"
             >
               {{
-                needsStripeCheckoutForItem(cartItem) ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event')
+                isNoOrderParticipationOnly(cartItem.orders)
+                  ? $t('cart.confirm_no_order_participation_button')
+                  : needsStripeCheckoutForItem(cartItem)
+                    ? $t('cart.proceed_to_payment')
+                    : $t('cart.order_and_attend_event')
               }}
             </v-btn>
           </v-col>
