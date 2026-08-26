@@ -4,6 +4,7 @@
 
 import type { CommunityBillSettingsType } from '../schemas/Event.js'
 import type { EventMemberOrder } from '../schemas/EventMemberOrder.js'
+import { filterPartnerSuppliedOrders } from './eventItemType.js'
 
 /** 請求書 PDF の明細モード（documents/01_マネタイズと決済/03_無料参加・割引参加_請求書.md §1） */
 export type CommunityBillInvoiceMode = 'menu' | 'discount'
@@ -48,7 +49,9 @@ export const INVOICE_FEE_RATE = 0.1
  * @returns 注文済みの商品合計金額
  */
 export function calculateOrdersTotal(orders: EventMemberOrder[]): number {
-  return orders.filter((order) => order.status === 'ordered').reduce((sum, order) => sum + order.menu_price, 0)
+  return filterPartnerSuppliedOrders(orders)
+    .filter((order) => order.status === 'ordered')
+    .reduce((sum, order) => sum + order.menu_price, 0)
 }
 
 /**
@@ -137,7 +140,7 @@ export interface InvoiceMenuItem {
  */
 export function aggregateOrderMenus(orders: EventMemberOrder[]): InvoiceMenuItem[] {
   const menuMap = new Map<string, InvoiceMenuItem>()
-  for (const order of orders) {
+  for (const order of filterPartnerSuppliedOrders(orders)) {
     const existing = menuMap.get(order.menu_id)
     if (existing != null) {
       existing.count++
@@ -172,7 +175,7 @@ export function calculateInvoiceTotal(orders: EventMemberOrder[], eventStartDate
  * @param orders 注文リスト
  */
 export function sumOrderedCommunityBillOffAmount(orders: EventMemberOrder[]): number {
-  return orders
+  return filterPartnerSuppliedOrders(orders)
     .filter((o) => o.status === 'ordered')
     .reduce((sum, o) => {
       const amount = o.pay_community_bill_off_amount
@@ -197,7 +200,7 @@ export interface CommunityBillOffGroupLine {
  */
 export function groupOrderedCommunityBillOffByAmount(orders: EventMemberOrder[]): CommunityBillOffGroupLine[] {
   const groupMap = new Map<string, { menuName: string; amountPerOrder: number; orderCount: number }>()
-  for (const o of orders) {
+  for (const o of filterPartnerSuppliedOrders(orders)) {
     if (o.status !== 'ordered') continue
     const amount = o.pay_community_bill_off_amount
     if (typeof amount !== 'number' || amount <= 0) continue

@@ -3,6 +3,7 @@ import { EventMenu } from '../schemas/EventMenu.js'
 import { PartnerShop } from '../schemas/PartnerShop.js'
 import { User } from '../schemas/User.js'
 import { UserPersonalInformation } from '../schemas/UserPersonalInformation.js'
+import { isPartnerSuppliedItem } from './eventItemType.js'
 import { isValidEmail, isValidPhone } from './contactFormat.js'
 import { isInShopTime } from './datetime.js'
 import { EventLocationLatLng, isPartnerShopIdInDeliveryRange } from './partnerShopDeliverable.js'
@@ -132,7 +133,7 @@ function validateShop(
 }
 
 function validateMenus(eventMenus: EventMenu[], reasons: Set<ReservationRequestReasonCode>) {
-  const orderable = eventMenus.filter((m) => m.is_selected && !m.is_sold_out)
+  const orderable = eventMenus.filter((m) => isPartnerSuppliedItem(m.item_type) && m.is_selected && !m.is_sold_out)
   if (orderable.length === 0) {
     reasons.add('NO_ORDERABLE_MENU_SELECTED')
   }

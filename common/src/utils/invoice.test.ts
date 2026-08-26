@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { calculateInvoiceTaxBreakdown, computeInclusive8ExTaxAndTax } from './invoice.js'
+import { EventMemberOrder } from '../schemas/EventMemberOrder.js'
+import { calculateInvoiceTaxBreakdown, computeInclusive8ExTaxAndTax, calculateOrdersTotal } from './invoice.js'
 
 describe('computeInclusive8ExTaxAndTax', () => {
   it('1100 円税込: 税抜は floor と税額の和が税込', () => {
@@ -38,5 +39,35 @@ describe('computeInclusive8ExTaxAndTax', () => {
     const receipt = computeInclusive8ExTaxAndTax(tax08Inclusive)
     expect(receipt.exTaxPrice).toBe(breakdown.tax8SubTotal)
     expect(receipt.taxPrice).toBe(breakdown.tax8)
+  })
+})
+
+describe('calculateOrdersTotal', () => {
+  it('organizer_menu は合計から除外する', () => {
+    const orders = [
+      new EventMemberOrder('o1', {
+        order_id: 'o1',
+        user_id: 'u1',
+        event_id: 'e1',
+        community_id: 'c1',
+        menu_id: 'm1',
+        menu_name: 'A',
+        menu_price: 1000,
+        item_type: 'partner_menu',
+        status: 'ordered',
+      }),
+      new EventMemberOrder('o2', {
+        order_id: 'o2',
+        user_id: 'u1',
+        event_id: 'e1',
+        community_id: 'c1',
+        menu_id: 'no_order_participation',
+        menu_name: '注文なし',
+        menu_price: 0,
+        item_type: 'organizer_menu',
+        status: 'ordered',
+      }),
+    ]
+    expect(calculateOrdersTotal(orders)).toBe(1000)
   })
 })

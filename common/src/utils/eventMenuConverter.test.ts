@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { PartnerMenu } from '../schemas/PartnerMenu.js'
-import { convertFromPartnerMenuToEventMenu, convertPartnerMenusToEventMenus } from './eventMenuConverter.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '../schemas/EventItemType.js'
+import {
+  buildNoOrderParticipationEventMenu,
+  convertFromPartnerMenuToEventMenu,
+  convertPartnerMenusToEventMenus,
+} from './eventMenuConverter.js'
 
 const EVENT_ID = 'event1'
 const EVENT_START = 1_700_000_000_000
@@ -24,6 +29,7 @@ describe('convertFromPartnerMenuToEventMenu', () => {
     expect(result).not.toBeNull()
     expect(result?.is_sold_out).toBe(true)
     expect(result?.is_selected).toBe(true)
+    expect(result?.item_type).toBe('partner_menu')
   })
 
   it('論理削除済みメニューは null を返す', () => {
@@ -61,5 +67,24 @@ describe('convertPartnerMenusToEventMenus', () => {
 
     expect(result).toHaveLength(2)
     expect(result.find((m) => m.menu_id === 'menu2')?.is_sold_out).toBe(true)
+  })
+
+  it('予約ドキュメントを含めない', () => {
+    const partnerMenus = [makePartnerMenu('menu-1', { menu_name: 'A', menu_description: 'desc', menu_price: 100 })]
+    const result = convertPartnerMenusToEventMenus(partnerMenus, EVENT_ID, null, ['menu-1'])
+
+    expect(result).toHaveLength(1)
+    expect(result.every((m) => m.item_type === 'partner_menu')).toBe(true)
+    expect(result.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)).toBe(false)
+  })
+})
+
+describe('eventMenuConverter no_order_participation', () => {
+  it('buildNoOrderParticipationEventMenu が予約ドキュメントを生成する', () => {
+    const menu = buildNoOrderParticipationEventMenu('event-1', true)
+    expect(menu.menu_id).toBe(NO_ORDER_PARTICIPATION_MENU_ID)
+    expect(menu.item_type).toBe('organizer_menu')
+    expect(menu.menu_price).toBe(0)
+    expect(menu.is_selected).toBe(true)
   })
 })
