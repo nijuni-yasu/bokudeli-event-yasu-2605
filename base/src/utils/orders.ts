@@ -1,14 +1,18 @@
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 
 export {
   compareEventMemberOrdersForPartnerDetail,
   sortEventMemberOrdersForPartnerDetail,
 } from '@shokujii/common/utils/eventMemberOrderSort.js'
 
-export const ordersCount = (orders: EventMemberOrder[]) => orders.filter((o) => o.status === 'ordered').length
+export const ordersCount = (orders: EventMemberOrder[]) =>
+  filterPartnerSuppliedOrders(orders).filter((o) => o.status === 'ordered').length
 
 export const ordersTotalPrice = (orders: EventMemberOrder[]) =>
-  orders.filter((o) => o.status === 'ordered').reduce((sum, o) => sum + o.menu_price, 0)
+  filterPartnerSuppliedOrders(orders)
+    .filter((o) => o.status === 'ordered')
+    .reduce((sum, o) => sum + o.menu_price, 0)
 
 export interface SubtotalMenu {
   menu_id: string
@@ -19,7 +23,7 @@ export interface SubtotalMenu {
 
 export const getSubtotalsOfOrders = (orders: EventMemberOrder[]): SubtotalMenu[] => {
   const map = new Map<string, SubtotalMenu>()
-  for (const o of orders) {
+  for (const o of filterPartnerSuppliedOrders(orders)) {
     const existing = map.get(o.menu_id)
     if (existing) {
       existing.count++

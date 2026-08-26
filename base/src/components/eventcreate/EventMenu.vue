@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { type BokudeliPartnerShop } from '@shokujii/base/stores/partner.js'
 import { BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
-import { mdiStorefrontOutline, mdiGestureTap } from '@mdi/js'
+import { mdiStorefrontOutline, mdiGestureTap, mdiAccountCheck } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
@@ -17,10 +17,12 @@ const props = defineProps<{
   event: BokudeliEvent
   loading: boolean
   disabled?: boolean
+  noOrderParticipationSelected: boolean
 }>()
 
 const emit = defineEmits<{
   'update:selectedMenuIds': [selectedMenuIds: string[]]
+  'update:noOrderParticipationSelected': [selected: boolean]
 }>()
 
 // メニューの選択状態をトグル
@@ -46,6 +48,11 @@ const toggleMenuSelection = (menuId: string) => {
     : [...selectedIds, menuId] // 選択に: 追加
 
   emit('update:selectedMenuIds', newSelectedMenuIds)
+}
+
+const toggleNoOrderParticipation = () => {
+  if (props.disabled) return
+  emit('update:noOrderParticipationSelected', !props.noOrderParticipationSelected)
 }
 
 // メニューが選択されているかチェック
@@ -136,6 +143,43 @@ const selectedCount = computed(() => {
                   </v-card-text>
                 </v-card>
               </v-col>
+
+              <!-- 注文なしで参加（店舗メニュー一覧の外・末尾） -->
+              <v-col md="4" sm="4" cols="12">
+                <v-card
+                  class="mb-3 mx-0 menu-card"
+                  :class="{
+                    'menu-selected': noOrderParticipationSelected,
+                    'menu-unselected': !noOrderParticipationSelected,
+                    'menu-clickable': !props.disabled,
+                    'menu-disabled': props.disabled,
+                  }"
+                  @click="toggleNoOrderParticipation"
+                >
+                  <div class="d-flex align-center justify-center no-order-icon-area">
+                    <v-icon :icon="mdiAccountCheck" size="80" color="primary" />
+                  </div>
+
+                  <v-chip
+                    :color="noOrderParticipationSelected ? 'primary' : 'grey'"
+                    variant="elevated"
+                    class="selection-indicator"
+                    size="default"
+                  >
+                    {{ noOrderParticipationSelected ? t('event_menu.orderable') : t('event_menu.not_orderable') }}
+                  </v-chip>
+
+                  <v-card-title class="justify-center pb-3 text-wrap">
+                    {{ t('event_menu.no_order_participation_title') }}
+                  </v-card-title>
+                  <v-card-text class="text-left text-subtitle-2 pb-8">
+                    {{ t('event_menu.no_order_participation_description') }}
+                  </v-card-text>
+                  <v-card-text class="text-right text-h5 pb-5">
+                    {{ t('event_menu.no_order_participation_price_label') }}
+                  </v-card-text>
+                </v-card>
+              </v-col>
             </v-row>
           </v-form>
         </v-card>
@@ -153,6 +197,11 @@ const selectedCount = computed(() => {
   position: relative;
   text-align: center;
   transition: all 0.3s ease;
+}
+
+.no-order-icon-area {
+  aspect-ratio: 1;
+  background-color: rgb(var(--v-theme-grey-100));
 }
 
 .menu-clickable {

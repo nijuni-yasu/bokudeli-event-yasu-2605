@@ -34,6 +34,8 @@ import {
   shouldRegenerateFromPartnerMenus,
   shouldUpdateExistingMenusOnly,
 } from '@shokujii/common/utils/eventMenuConverter.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { useRouter } from 'vue-router'
 import { getCommunityPath, getManageCommunityAlbumPath } from '@/router/utils'
 import { fetchLocationByPostalcode, LatLogLocation } from '@shokujii/base/utils/fetchLocation'
@@ -384,6 +386,20 @@ const userSelectedMenuIds = computed<string[]>({
   },
 })
 
+const _noOrderParticipationSelected = ref<boolean | null>(null)
+const noOrderParticipationSelected = computed<boolean>({
+  get: () => {
+    if (_noOrderParticipationSelected.value !== null) {
+      return _noOrderParticipationSelected.value
+    }
+    const reservation = existingMenus.value?.find((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    return reservation?.is_selected ?? false
+  },
+  set: (value: boolean) => {
+    _noOrderParticipationSelected.value = value
+  },
+})
+
 const normalizePostalDigits = (p: string | undefined): string => (p ?? '').replace(/\D/g, '')
 
 /** 下書き時に店舗・メニュー選択を外し、締切を開始日時に揃える（店舗再選択後に updateEventDeadlineFromShop で上書き） */
@@ -399,6 +415,8 @@ const clearShopSelectionForDraft = (reason: 'postal' | 'incompatible_datetime'):
   e.partner_id = ''
   e.shop_name = ''
   _userSelectedMenuIds.value = null
+  _noOrderParticipationSelected.value = null
+  _noOrderParticipationSelected.value = null
   const start = e.event_start_datetime
   if (start != null && start > 0) {
     e.event_deadline_datetime = start
@@ -484,15 +502,20 @@ const eventMenus = computed(() => {
   return []
 })
 
-// 保存時はこのselectedMenuIds.valueをバックエンドに送信する
-// userSelectedMenuIdsとの違い:
-// - userSelectedMenuIds: ユーザーの選択意図を保持
-// - selectedMenuIds: 実際の表示状態を反映
-const selectedMenuIds = computed(() => {
-  return eventMenus.value.filter((m: BokudeliEventMenu) => m.is_selected).map((m: BokudeliEventMenu) => m.menu_id)
+const partnerEventMenus = computed(() => eventMenus.value.filter((m) => isPartnerSuppliedItem(m.item_type)))
+
+// 保存時はこのselectedMenuIdsForSave.valueをバックエンドに送信する
+const selectedMenuIdsForSave = computed(() => {
+  const partnerIds = partnerEventMenus.value.filter((m) => m.is_selected).map((m) => m.menu_id)
+  if (noOrderParticipationSelected.value) {
+    return [...partnerIds, NO_ORDER_PARTICIPATION_MENU_ID]
+  }
+  return partnerIds
 })
 
-const selectedMenuCount = computed(() => selectedMenuIds.value.length)
+// 保存時はこの selectedMenuIdsForSave.value をバックエンドに送信する
+
+const selectedMenuCount = computed(() => partnerEventMenus.value.filter((m) => m.is_selected).length)
 
 /** 予約申請ボタンの事前無効化（データ未取得・処理中・下書き以外） */
 const isReserveButtonDisabled = computed(() => {
@@ -555,6 +578,10 @@ watch(
 // メニュー選択IDの更新ハンドラ
 const handleMenuIdsUpdate = (ids: string[]) => {
   userSelectedMenuIds.value = ids
+}
+
+const handleNoOrderParticipationUpdate = (selected: boolean) => {
+  noOrderParticipationSelected.value = selected
 }
 
 onMounted(async () => {
@@ -629,7 +656,7 @@ const createEventDraft = async (): Promise<BokudeliEvent | null> => {
   })
   if (newEvent.event_id !== '') {
     try {
-      await updateEventMenus(newEvent.event_id, communityId, selectedMenuIds.value)
+      await updateEventMenus(newEvent.event_id, communityId, selectedMenuIdsForSave.value)
     } catch (error) {
       console.error('Failed to update event menus:', error)
       throw error
@@ -691,7 +718,7 @@ const updateEventDraft = async (): Promise<BokudeliEvent | null> => {
   }
   if (event.value.calculatedEventStatus !== 'finished') {
     try {
-      await updateEventMenus(event.value.event_id, communityId, selectedMenuIds.value)
+      await updateEventMenus(event.value.event_id, communityId, selectedMenuIdsForSave.value)
     } catch (error) {
       console.error('Failed to update event menus:', error)
       throw error
@@ -1076,12 +1103,14 @@ const stepperItems = computed(() => [
       </template>
       <template #[`item.3`]>
         <event-menu
-          :menus="eventMenus"
+          :menus="partnerEventMenus"
           :event="event"
           :shop="selectedShop"
           :loading="isLoadingMenu"
           :disabled="isFinished"
+          :no-order-participation-selected="noOrderParticipationSelected"
           @update:selectedMenuIds="handleMenuIdsUpdate"
+          @update:noOrderParticipationSelected="handleNoOrderParticipationUpdate"
         />
         <event-edit-step-nav :visible="stepper === 3">
           <v-btn

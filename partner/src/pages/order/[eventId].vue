@@ -7,6 +7,7 @@ import {
   ordersCount,
   sortEventMemberOrdersForPartnerDetail,
 } from '@shokujii/base/utils/orders.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { useValidators } from '@shokujii/base/composable/validators.js'
 import { getAuth } from 'firebase/auth'
 import { usePartnerStore } from '@shokujii/base/stores/partner.js'
@@ -114,7 +115,7 @@ const isOwner = computed<boolean | null>(() => {
 /** オーダー詳細明細テーブル・名前印刷 PDF と同一の並び（@shokujii/base/utils/orders.js 経由で common と同一のソート） */
 const sortedConfirmedOrders = computed(() => {
   const o = eventStore.confirmedOrders
-  return o == null ? [] : sortEventMemberOrdersForPartnerDetail(o)
+  return o == null ? [] : sortEventMemberOrdersForPartnerDetail(filterPartnerSuppliedOrders(o))
 })
 
 const minimumParticipants = computed(() => eventStore.event?.minimum_participants ?? null)

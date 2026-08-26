@@ -7,9 +7,10 @@ import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 import { priceString } from '@shokujii/base/schemes/converter'
-import { mdiCart } from '@mdi/js'
+import { mdiCart, mdiAccountCheck } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -87,6 +88,8 @@ watch(countOptions, (options) => {
 
 const isAddingOrder = ref(false)
 
+const isNoOrderParticipation = computed(() => props.menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+
 const closeDialog = () => {
   isAddingOrder.value = false
   selectedCount.value = 1
@@ -127,7 +130,7 @@ const addCart = async () => {
       menus: [
         {
           menu_id,
-          count: selectedCount.value,
+          count: isNoOrderParticipation.value ? 1 : selectedCount.value,
         },
       ],
     })
@@ -150,7 +153,13 @@ const addCart = async () => {
 <template>
   <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeDialog()">
     <v-card class="pa-sm-10 pa-5">
-      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
+      <div
+        v-if="isNoOrderParticipation && eventStore.event != null"
+        class="d-flex align-center justify-center no-order-icon-area ma-3"
+      >
+        <v-icon :icon="mdiAccountCheck" size="80" color="primary" />
+      </div>
+      <EventMenuImage v-else-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
       <v-card-title class="text-left text-h4 py-1 text-wrap">
         {{ currentMenu.menu_name }}
       </v-card-title>
@@ -166,10 +175,15 @@ const addCart = async () => {
           align="start"
         />
         <v-spacer />
-        <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
+        <span v-if="isNoOrderParticipation" class="text-h4">{{
+          $t('cart_dialog.no_order_participation_price_label')
+        }}</span>
+        <template v-else>
+          <span class="text-h5">¥ </span>
+          <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
+        </template>
       </v-card-text>
-      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
+      <v-row v-if="!isNoOrderParticipation && countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
       </v-row>
       <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mx-3 mb-2">
@@ -185,7 +199,7 @@ const addCart = async () => {
           :disabled="isAddDisabled"
           @click="addCart()"
         >
-          {{ $t('cart_dialog.add') }}
+          {{ isNoOrderParticipation ? $t('cart_dialog.add_no_order_participation') : $t('cart_dialog.add') }}
         </v-btn>
         <v-btn
           class="justify-center mx-1 my-2 align-self-center"
@@ -201,3 +215,12 @@ const addCart = async () => {
     </v-card>
   </v-dialog>
 </template>
+
+<style lang="scss" scoped>
+.no-order-icon-area {
+  aspect-ratio: 1;
+  max-height: 200px;
+  background-color: rgb(var(--v-theme-grey-100));
+  border-radius: 4px;
+}
+</style>
