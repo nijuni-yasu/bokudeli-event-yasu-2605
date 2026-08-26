@@ -9,6 +9,7 @@ import {
 } from 'firebase-admin/firestore'
 import { EventMember, EventMemberOrder, EventMemberOrderStatusType } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { EventStripe } from '@shokujii/common/schemas/EventStripe.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import type { ShokujiiEvent } from './event.js'
 import { MAX_PROFILE_PREVIEW_SKIP_PAGES } from '../utils/profileItemVisibility.js'
 
@@ -183,6 +184,17 @@ export const getOrdersInCart = async (
     .where('status', '==', 'in_cart')
     .withConverter(new EventMemberOrderConverter())
 
+  const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
+  return snapshot.docs.map((doc) => doc.data())
+}
+
+export const getMemberOrders = async (
+  communityId: string,
+  eventId: string,
+  userId: string,
+  transaction?: Transaction,
+): Promise<EventMemberOrder[]> => {
+  const query = ordersCollection(communityId, eventId, userId).withConverter(new EventMemberOrderConverter())
   const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
   return snapshot.docs.map((doc) => doc.data())
 }
@@ -544,12 +556,17 @@ export const countOrderedFoodsForUser = async (userId: string, enterpriseId?: st
     return 0
   }
   const db = getFirestore()
-  let q = db.collectionGroup('member_orders').where('user_id', '==', userId).where('status', '==', 'ordered')
+  let q = db
+    .collectionGroup('member_orders')
+    .where('user_id', '==', userId)
+    .where('status', '==', 'ordered')
+    .withConverter(new EventMemberOrderConverter())
   if (enterpriseId != null && enterpriseId !== '') {
     q = q.where('enterprise_id', '==', enterpriseId)
   }
-  const snapshot = await q.count().get()
-  return snapshot.data().count
+  const snapshot = await q.get()
+  const orders = snapshot.docs.map((doc) => doc.data())
+  return filterPartnerSuppliedOrders(orders).length
 }
 
 export const getInCartMemberOrdersByUpdatedTime = async (

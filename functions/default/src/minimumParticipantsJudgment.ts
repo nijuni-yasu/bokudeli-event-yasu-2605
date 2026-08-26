@@ -1,6 +1,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { MINIMUM_PARTICIPANTS_CANCEL_REASON } from '@shokujii/common/utils/minimumParticipants.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { getEventInCommunity } from './stores/event.js'
 import { getOrders } from './stores/memberOrder.js'
 import {
@@ -52,7 +53,7 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
       return { kind: 'skipped' }
     }
 
-    const ordered = await getOrders(community_id, event_id, 'ordered', transaction)
+    const ordered = filterPartnerSuppliedOrders(await getOrders(community_id, event_id, 'ordered', transaction))
     const uniqueCount = countUniqueOrderedUserIds(ordered)
 
     const evaluatedMp = {

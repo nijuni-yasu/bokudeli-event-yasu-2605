@@ -15,6 +15,8 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
@@ -24,6 +26,7 @@ import {
   getOrder,
   getOrdersByIds,
   getOrdersInCart,
+  getMemberOrders,
   getMember,
   saveMember,
   saveOrder,
@@ -110,10 +113,41 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
 
     const existingMember = await getMember(community_id, event_id, uid, transaction)
 
-    const existingCartOrders =
-      eventData.event_payment === 'enterprise_subsidy'
-        ? await getOrdersInCart(community_id, event_id, uid, transaction)
-        : undefined
+    const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    const addingPartnerMenu = menus.some((m) => {
+      const eventMenu = eventMenus.find((em) => em.id === m.menu_id)
+      return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
+    })
+
+    const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
+    const memberOrders = addingNoOrder
+      ? await getMemberOrders(community_id, event_id, uid, transaction)
+      : existingCartOrders
+
+    for (const menu of menus) {
+      if (menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && menu.count !== 1) {
+        throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
+      }
+    }
+
+    const hasExistingNoOrderInCart = existingCartOrders.some((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
+
+    if (addingNoOrder && (hasExistingPartnerInCart || addingPartnerMenu)) {
+      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+    }
+    if (addingPartnerMenu && hasExistingNoOrderInCart) {
+      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+    }
+
+    if (addingNoOrder) {
+      const existingNoOrder = memberOrders.find(
+        (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),
+      )
+      if (existingNoOrder != null) {
+        throw new HttpsError('failed-precondition', '注文なし参加は既に追加されています')
+      }
+    }
 
     if (existingMember == null) {
       const member = new EventMember(uid, {
@@ -128,7 +162,9 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       await saveMember(community_id, event_id, existingMember, transaction)
     }
 
-    if (eventData.event_payment === 'enterprise_subsidy') {
+    const isEnterpriseSubsidyOnlyPartnerMenus = eventData.event_payment === 'enterprise_subsidy' && !addingNoOrder
+
+    if (isEnterpriseSubsidyOnlyPartnerMenus) {
       if (resolvedSubsidySettings == null || enterpriseId == null || enterpriseMember == null) {
         throw new HttpsError(
           'failed-precondition',
@@ -165,11 +201,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         throw new HttpsError(resolved.httpsCode, resolved.reason)
       }
 
-      const discount = computePaymentCommunityBillOffAmount(
-        eventData.event_payment,
-        eventData.community_bill_settings,
-        resolved.menu_price,
-      )
+      const discount = isPartnerSuppliedItem(masterMenu.item_type)
+        ? computePaymentCommunityBillOffAmount(
+            eventData.event_payment,
+            eventData.community_bill_settings,
+            resolved.menu_price,
+          )
+        : undefined
       for (let i = 0; i < menu.count; i++) {
         await createOrder(
           community_id,
@@ -183,6 +221,7 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
             menu_id: masterMenu.id,
             menu_name: masterMenu.menu_name,
             menu_price: resolved.menu_price,
+            item_type: masterMenu.item_type,
             enterprise_id: enterpriseId ?? null,
             ...(resolved.selected_options.length > 0 ? { selected_options: resolved.selected_options } : {}),
             ...(discount !== undefined ? { pay_community_bill_off_amount: discount } : {}),
@@ -323,30 +362,34 @@ export async function confirmOrderHandler(
     })
 
     if (eventData.event_payment === 'enterprise_subsidy') {
-      if (enterpriseId == null) {
-        throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+      const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))
+      if (!allOrganizerOnly) {
+        if (enterpriseId == null) {
+          throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+        }
+        const entMember = await loadEnterpriseMemberForSubsidy(enterpriseId, uid, transaction)
+        if (entMember == null) {
+          throw new HttpsError('failed-precondition', '企業メンバー情報が見つかりません')
+        }
+        const orderedAt = Timestamp.now().toMillis()
+        return finalizeEnterpriseSubsidyZeroPaymentOrder({
+          enterpriseId,
+          userId: uid,
+          communityId: community_id,
+          eventId: event_id,
+          event: eventData,
+          orders,
+          orderIds: order_ids,
+          member: entMember,
+          transaction,
+          orderedAt,
+        })
       }
-      const entMember = await loadEnterpriseMemberForSubsidy(enterpriseId, uid, transaction)
-      if (entMember == null) {
-        throw new HttpsError('failed-precondition', '企業メンバー情報が見つかりません')
-      }
-      const orderedAt = Timestamp.now().toMillis()
-      return finalizeEnterpriseSubsidyZeroPaymentOrder({
-        enterpriseId,
-        userId: uid,
-        communityId: community_id,
-        eventId: event_id,
-        event: eventData,
-        orders,
-        orderIds: order_ids,
-        member: entMember,
-        transaction,
-        orderedAt,
-      })
     }
 
     for (const order of orders) {
       if (
+        isPartnerSuppliedItem(order.item_type) &&
         !isPaymentCommunityBillOffAmountConsistent(eventData.event_payment, eventData.community_bill_settings, order)
       ) {
         throw new HttpsError('failed-precondition', '割引金額が一致しません')

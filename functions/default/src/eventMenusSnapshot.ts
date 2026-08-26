@@ -8,6 +8,7 @@ import {
   convertPartnerMenusToEventMenus,
   isPartnerMenuSkippedForMinTotal,
 } from '@shokujii/common/utils/eventMenuConverter.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { findMissingOptionIds, MENU_MIN_TOTAL_INVALID_MESSAGE } from '@shokujii/common/utils/menuOption.js'
 import {
   getMenuImageStoragePath,
@@ -135,9 +136,11 @@ export const savePartnerMenusToEventMenus = async (
     const existingEventMenus = await event.getMenus(transaction)
 
     await Promise.all(
-      existingEventMenus.map(async (menu) => {
-        await event.deleteMenu(menu, transaction)
-      }),
+      existingEventMenus
+        .filter((menu) => isPartnerSuppliedItem(menu.item_type))
+        .map(async (menu) => {
+          await event.deleteMenu(menu, transaction)
+        }),
     )
 
     const eventMenusToSaveInTx = convertPartnerMenusToEventMenus(
