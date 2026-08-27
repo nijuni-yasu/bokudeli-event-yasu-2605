@@ -416,7 +416,6 @@ const clearShopSelectionForDraft = (reason: 'postal' | 'incompatible_datetime'):
   e.shop_name = ''
   _userSelectedMenuIds.value = null
   _noOrderParticipationSelected.value = null
-  _noOrderParticipationSelected.value = null
   const start = e.event_start_datetime
   if (start != null && start > 0) {
     e.event_deadline_datetime = start
