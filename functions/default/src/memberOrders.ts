@@ -311,14 +311,6 @@ export const confirmOrder = onCall(
         throw new HttpsError('failed-precondition', 'イベントがキャンセルされたため、注文を確定できません')
       }
 
-      if (eventData.event_payment === 'user_advance') {
-        const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))
-        const totalPayment = computeTotalPayment(orders, eventData.event_payment, eventData.community_bill_settings)
-        if (!(allOrganizerOnly && totalPayment === 0)) {
-          throw new HttpsError('failed-precondition', '事前クレカ決済のイベントでは confirmOrder を使用できません')
-        }
-      }
-
       const now = Timestamp.now().toMillis()
       if (eventData.event_deadline_datetime < now) {
         throw new HttpsError('failed-precondition', '注文期限を過ぎています')
@@ -358,6 +350,14 @@ export const confirmOrder = onCall(
         orders,
         transaction,
       })
+
+      if (eventData.event_payment === 'user_advance') {
+        const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))
+        const totalPayment = computeTotalPayment(orders, eventData.event_payment, eventData.community_bill_settings)
+        if (!(allOrganizerOnly && totalPayment === 0)) {
+          throw new HttpsError('failed-precondition', '事前クレカ決済のイベントでは confirmOrder を使用できません')
+        }
+      }
 
       if (eventData.event_payment === 'enterprise_subsidy') {
         const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))

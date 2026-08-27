@@ -5,6 +5,7 @@ import { filterPartnerSuppliedOrders, isMenuItem, isPartnerSuppliedItem, isTicke
 describe('eventItemType', () => {
   it('isPartnerSuppliedItem は partner_menu のみ true', () => {
     expect(isPartnerSuppliedItem('partner_menu')).toBe(true)
+    expect(isPartnerSuppliedItem(undefined)).toBe(true)
     expect(isPartnerSuppliedItem('organizer_menu')).toBe(false)
     expect(isPartnerSuppliedItem('ticket')).toBe(false)
   })

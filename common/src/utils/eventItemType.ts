@@ -2,8 +2,8 @@ import type { EventItemTypeType } from '../schemas/EventItemType.js'
 import type { EventMemberOrder } from '../schemas/EventMemberOrder.js'
 
 /** 店舗に発注し、店舗へ支払う品目か（発注情報・主催者請求書の対象判定） */
-export function isPartnerSuppliedItem(itemType: EventItemTypeType): boolean {
-  return itemType === 'partner_menu'
+export function isPartnerSuppliedItem(itemType: EventItemTypeType | undefined): boolean {
+  return itemType === undefined || itemType === 'partner_menu'
 }
 
 /** イベントページのメニュー一覧に表示する品目か */
