@@ -5,10 +5,7 @@ import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './m
 import { EventMenuOptionSchema } from './menuOption.js'
 import { EventItemTypeSchema, type EventItemTypeType } from './EventItemType.js'
 
-const partnerMenuPriceRefine = (
-  data: { item_type: EventItemTypeType; menu_price: number },
-  ctx: z.RefinementCtx,
-) => {
+const partnerMenuPriceRefine = (data: { item_type: EventItemTypeType; menu_price: number }, ctx: z.RefinementCtx) => {
   if (data.item_type === 'partner_menu' && data.menu_price <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
