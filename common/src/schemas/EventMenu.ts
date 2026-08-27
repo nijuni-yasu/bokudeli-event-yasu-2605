@@ -3,10 +3,10 @@ import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
 import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
 import { EventMenuOptionSchema } from './menuOption.js'
-import { EVENT_ITEM_TYPE_VALUES, EventItemTypeSchema } from './EventItemType.js'
+import { EventItemTypeSchema, type EventItemTypeType } from './EventItemType.js'
 
 const partnerMenuPriceRefine = (
-  data: { item_type: (typeof EVENT_ITEM_TYPE_VALUES)[number]; menu_price: number },
+  data: { item_type: EventItemTypeType; menu_price: number },
   ctx: z.RefinementCtx,
 ) => {
   if (data.item_type === 'partner_menu' && data.menu_price <= 0) {
@@ -71,7 +71,7 @@ export class EventMenu {
   is_selected!: boolean
   limit_per_event!: number | null
   options!: z.infer<typeof EventMenuOptionSchema>[]
-  item_type!: (typeof EVENT_ITEM_TYPE_VALUES)[number]
+  item_type!: EventItemTypeType
 
   constructor(event_id: string, menu_id: string, src: Partial<EventMenu>) {
     Object.assign(this, EventMenuAppSchema.parse(src))
