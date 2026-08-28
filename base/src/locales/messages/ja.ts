@@ -162,8 +162,7 @@ export default {
     confirm_order_community_bill: '支払い方法は「主催者請求書払い」です。注文を確定しますか？',
     confirm_order_community_bill_checkout: 'おごり設定適用後の差額をオンライン決済でお支払いします。続きますか？',
     confirm_order: '注文を確定しますか？',
-    confirm_no_order_participation:
-      '食事はご自身でご用意いただきます。この内容で参加を確定します。よろしいですか？',
+    confirm_no_order_participation: '食事はご自身でご用意いただきます。この内容で参加を確定します。よろしいですか？',
     confirm_no_order_participation_button: '参加を確定する',
     remove_from_cart: 'カートから削除しますか？',
     removed_from_cart: 'カートから削除しました。',
