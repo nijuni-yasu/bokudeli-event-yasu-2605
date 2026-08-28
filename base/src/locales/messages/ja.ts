@@ -107,7 +107,8 @@ export default {
     order_count: '（{0}個）',
     menu_join_button: '注文して参加する',
     menu_empty: 'メニューがありません',
-    no_order_participation_price_label: '注文なし',
+    no_order_participation_price_label: '食事は持参',
+    no_order_participation_join_button: 'この方法で参加する',
     community_name: '【主催者】',
     contact_community: '主催者に連絡',
     contact_community_after_login: 'ログインした後に主催者に連絡してください。',
@@ -161,7 +162,8 @@ export default {
     confirm_order_community_bill: '支払い方法は「主催者請求書払い」です。注文を確定しますか？',
     confirm_order_community_bill_checkout: 'おごり設定適用後の差額をオンライン決済でお支払いします。続きますか？',
     confirm_order: '注文を確定しますか？',
-    confirm_no_order_participation: '食事の注文なしで参加を確定します。よろしいですか？',
+    confirm_no_order_participation:
+      '食事はご自身でご用意いただきます。この内容で参加を確定します。よろしいですか？',
     confirm_no_order_participation_button: '参加を確定する',
     remove_from_cart: 'カートから削除しますか？',
     removed_from_cart: 'カートから削除しました。',
@@ -187,7 +189,7 @@ export default {
     add: 'カートに追加',
     add_no_order_participation: '参加を確定する',
     close: '閉じる',
-    no_order_participation_price_label: '注文なし',
+    no_order_participation_price_label: '食事は持参',
     login: 'ご注文にはログインが必要です。\nログイン完了後、再度この画面からメニューを選んでカートに追加してください。',
   },
   event_create_modal: {
@@ -416,9 +418,10 @@ export default {
     sold_out: '売り切れ',
     remaining_count: '残り {0} 食',
     limit_sold_out: '完売',
-    no_order_participation_title: '注文なしで参加',
-    no_order_participation_description: '食事の注文なしでイベントに参加できます。',
-    no_order_participation_price_label: '注文なし',
+    no_order_participation_title: '注文なしで参加（食事は持参）',
+    no_order_participation_description:
+      'メニューを注文できない方向けです。アレルギー、好みが合わない、お弁当持参など、どうしても注文できない場合のみこちらをお選びください。当日の食事はご自身でご用意いただきます。',
+    no_order_participation_price_label: '食事は持参',
   },
   event_detail: {
     event_detail: '開催内容',

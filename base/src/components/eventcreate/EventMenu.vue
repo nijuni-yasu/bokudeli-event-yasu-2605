@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { type BokudeliPartnerShop } from '@shokujii/base/stores/partner.js'
 import { BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
-import { mdiStorefrontOutline, mdiGestureTap, mdiAccountCheck } from '@mdi/js'
+import { mdiStorefrontOutline, mdiGestureTap, mdiFoodOffOutline } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
@@ -157,7 +157,7 @@ const selectedCount = computed(() => {
                   @click="toggleNoOrderParticipation"
                 >
                   <div class="d-flex align-center justify-center no-order-icon-area">
-                    <v-icon :icon="mdiAccountCheck" size="80" color="primary" />
+                    <v-icon :icon="mdiFoodOffOutline" size="80" color="grey-darken-1" />
                   </div>
 
                   <v-chip

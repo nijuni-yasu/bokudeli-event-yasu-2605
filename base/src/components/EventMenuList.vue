@@ -6,7 +6,7 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
-import { mdiFoodForkDrink, mdiAccountCheck } from '@mdi/js'
+import { mdiFoodForkDrink, mdiFoodOffOutline } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
@@ -40,6 +40,9 @@ const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
   }
   if (isMenuLimitSoldOut(menu)) {
     return $t('event_menu.limit_sold_out')
+  }
+  if (isNoOrderParticipationMenu(menu.menu_id)) {
+    return $t('event_details.no_order_participation_join_button')
   }
   return $t('event_details.menu_join_button')
 }
@@ -88,7 +91,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     v-if="isNoOrderParticipationMenu(menu.menu_id)"
                     class="d-flex align-center justify-center no-order-icon-area"
                   >
-                    <v-icon :icon="mdiAccountCheck" size="64" color="primary" />
+                    <v-icon :icon="mdiFoodOffOutline" size="64" color="grey-darken-1" />
                   </div>
                   <EventMenuImage v-else :event="eventStore.event" :menu="menu" :alt="menu.menu_name" cover />
                 </div>
@@ -124,7 +127,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     color="primary"
                     rounded="pill"
                     elevation="5"
-                    :prepend-icon="mdiFoodForkDrink"
+                    :prepend-icon="isNoOrderParticipationMenu(menu.menu_id) ? mdiFoodOffOutline : mdiFoodForkDrink"
                     @click="emit('selectMenu', menu)"
                   >
                     {{ getMenuJoinButtonLabel(menu) }}
@@ -154,7 +157,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     v-if="isNoOrderParticipationMenu(menu.menu_id)"
                     class="d-flex align-center justify-center no-order-icon-area"
                   >
-                    <v-icon :icon="mdiAccountCheck" size="64" color="primary" />
+                    <v-icon :icon="mdiFoodOffOutline" size="64" color="grey-darken-1" />
                   </div>
                   <EventMenuImage
                     v-else
@@ -201,7 +204,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         color="primary"
                         rounded="pill"
                         elevation="5"
-                        :prepend-icon="mdiFoodForkDrink"
+                        :prepend-icon="isNoOrderParticipationMenu(menu.menu_id) ? mdiFoodOffOutline : mdiFoodForkDrink"
                         @click="emit('selectMenu', menu)"
                       >
                         {{ getMenuJoinButtonLabel(menu) }}

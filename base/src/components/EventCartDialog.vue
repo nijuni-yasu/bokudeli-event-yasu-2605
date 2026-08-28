@@ -7,7 +7,7 @@ import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 import { priceString } from '@shokujii/base/schemes/converter'
-import { mdiCart, mdiAccountCheck } from '@mdi/js'
+import { mdiCart, mdiFoodOffOutline } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
@@ -157,7 +157,7 @@ const addCart = async () => {
         v-if="isNoOrderParticipation && eventStore.event != null"
         class="d-flex align-center justify-center no-order-icon-area ma-3"
       >
-        <v-icon :icon="mdiAccountCheck" size="80" color="primary" />
+        <v-icon :icon="mdiFoodOffOutline" size="80" color="grey-darken-1" />
       </div>
       <EventMenuImage v-else-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
       <v-card-title class="text-left text-h4 py-1 text-wrap">
