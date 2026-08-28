@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { PartnerMenu } from '../schemas/PartnerMenu.js'
-import { NO_ORDER_PARTICIPATION_MENU_ID } from '../schemas/EventItemType.js'
+import {
+  NO_ORDER_PARTICIPATION_MENU_DESCRIPTION,
+  NO_ORDER_PARTICIPATION_MENU_ID,
+  NO_ORDER_PARTICIPATION_MENU_NAME,
+} from '../schemas/EventItemType.js'
 import {
   buildNoOrderParticipationEventMenu,
   convertFromPartnerMenuToEventMenu,
@@ -83,6 +87,8 @@ describe('eventMenuConverter no_order_participation', () => {
   it('buildNoOrderParticipationEventMenu が予約ドキュメントを生成する', () => {
     const menu = buildNoOrderParticipationEventMenu('event-1', true)
     expect(menu.menu_id).toBe(NO_ORDER_PARTICIPATION_MENU_ID)
+    expect(menu.menu_name).toBe(NO_ORDER_PARTICIPATION_MENU_NAME)
+    expect(menu.menu_description).toBe(NO_ORDER_PARTICIPATION_MENU_DESCRIPTION)
     expect(menu.item_type).toBe('organizer_menu')
     expect(menu.menu_price).toBe(0)
     expect(menu.is_selected).toBe(true)

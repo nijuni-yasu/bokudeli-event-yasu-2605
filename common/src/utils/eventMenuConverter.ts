@@ -1,7 +1,12 @@
 import { PartnerMenu } from '../schemas/PartnerMenu.js'
 import { EventMenu } from '../schemas/EventMenu.js'
 import { RawEventStatusType } from '../schemas/Event.js'
-import { NO_ORDER_PARTICIPATION_MENU_ID, NO_ORDER_PARTICIPATION_SORT_NUMBER } from '../schemas/EventItemType.js'
+import {
+  NO_ORDER_PARTICIPATION_MENU_DESCRIPTION,
+  NO_ORDER_PARTICIPATION_MENU_ID,
+  NO_ORDER_PARTICIPATION_MENU_NAME,
+  NO_ORDER_PARTICIPATION_SORT_NUMBER,
+} from '../schemas/EventItemType.js'
 
 /**
  * PartnerMenu（店舗メニューマスタ）からEventMenuを再生成すべきステータスか判定
@@ -84,8 +89,8 @@ export function convertFromPartnerMenuToEventMenu(
  */
 export function buildNoOrderParticipationEventMenu(eventId: string, isSelected: boolean): EventMenu {
   return new EventMenu(eventId, NO_ORDER_PARTICIPATION_MENU_ID, {
-    menu_name: '注文なしで参加',
-    menu_description: '食事の注文なしでイベントに参加します。',
+    menu_name: NO_ORDER_PARTICIPATION_MENU_NAME,
+    menu_description: NO_ORDER_PARTICIPATION_MENU_DESCRIPTION,
     menu_price: 0,
     is_sold_out: false,
     menu_sort_number: NO_ORDER_PARTICIPATION_SORT_NUMBER,
