@@ -8,7 +8,7 @@
 | [ ] | RC-2 | 5435157935 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>読み取りコスト増。設計再検討または許容範囲の明記が必要 |
 | [ ] | RC-3 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | メニュー再生成パスで店舗メニュー保存と no-order upsert が別 Transaction<br>片方失敗時の不整合リスク。単一 Transaction 化を検討 |
 | [x] | RC-4 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventMenu.item_type` の型を `EventItemTypeType` に統一<br>`EventMemberOrder` と揃える |
-| [ ] | RC-5 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description がハードコード<br>定数化を検討（緊急度低） |
+| [x] | RC-5 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description を EventItemType 定数化<br>文言・アイコン・ボタン分岐も更新 |
 
 ---
 
@@ -32,7 +32,7 @@
 | [ ] | RC-2 | 5435157935 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>読み取りコスト増。設計再検討または許容範囲の明記が必要 |
 | [ ] | RC-3 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | メニュー再生成パスで店舗メニュー保存と no-order upsert が別 Transaction<br>片方失敗時の不整合リスク。単一 Transaction 化を検討 |
 | [x] | RC-4 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventMenu.item_type` の型を `EventItemTypeType` に統一<br>`EventMemberOrder` と揃える |
-| [ ] | RC-5 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description がハードコード<br>定数化を検討（緊急度低） |
+| [x] | RC-5 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description を EventItemType 定数化<br>文言・アイコン・ボタン分岐も更新 |
 
 ---
 
@@ -210,7 +210,7 @@ item_type!: (typeof EVENT_ITEM_TYPE_VALUES)[number]
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -220,6 +220,24 @@ item_type!: (typeof EVENT_ITEM_TYPE_VALUES)[number]
 
 **想定工数**: S
 
-**判断理由**: 妥当な改善提案だが「検討をお勧め」とあり必須ではない。UI 文言は `ja.ts` との関係もあり、定数化の置き場所は要確認。自動修正対象外。
+**判断理由**: `NO_ORDER_PARTICIPATION_MENU_NAME` / `_DESCRIPTION` を `EventItemType.ts` に定義し converter から参照。参加者向け文言・アイコン（`mdiFoodOffOutline`）・ボタン分岐も同一タスクで更新済み。
+
+---
+
+## 評価セッション（2026-08-27 15:40・review-comments-evaluate）
+
+- **評価日時**: 2026-08-27 15:40 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼定型文 1、Codex 接続案内 1）
+- **partial**: true（Codex substantive レビューなし）
+- **REVIEW_REQUEST_SINCE**: 2026-08-27T06:33:12Z
+- **新規 RC なし**: Copilot 5435270180 は前回セッション（RC-1〜RC-5）と同一指摘の再要約。RC-1・RC-4 は push 済み（bc08e60f8, 6182e35bd）で ✅ 対応済みのまま
+
+### RC 一覧（サマリ）
+
+（本セッションで新規 RC なし）
 
 ---
