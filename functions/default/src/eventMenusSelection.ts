@@ -25,7 +25,12 @@ async function upsertNoOrderParticipationMenu(
   const existingMenus = await event.getMenus(transaction)
   const existing = existingMenus.find((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
   const menu = buildNoOrderParticipationEventMenu(event.id, isSelected)
-  if (existing == null || existing.is_selected !== isSelected) {
+  if (
+    existing == null ||
+    existing.is_selected !== isSelected ||
+    existing.menu_name !== menu.menu_name ||
+    existing.menu_description !== menu.menu_description
+  ) {
     await event.saveMenu(menu, transaction)
   }
 }
