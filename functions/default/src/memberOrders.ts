@@ -120,9 +120,6 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
     })
 
     const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
-    const memberOrders = addingNoOrder
-      ? await getMemberOrders(community_id, event_id, uid, transaction)
-      : existingCartOrders
 
     for (const menu of menus) {
       if (menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && menu.count !== 1) {
@@ -141,6 +138,7 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
     }
 
     if (addingNoOrder) {
+      const memberOrders = await getMemberOrders(community_id, event_id, uid, transaction)
       const existingNoOrder = memberOrders.find(
         (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),
       )
