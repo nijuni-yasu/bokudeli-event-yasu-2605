@@ -512,8 +512,6 @@ const selectedMenuIdsForSave = computed(() => {
   return partnerIds
 })
 
-// 保存時はこの selectedMenuIdsForSave.value をバックエンドに送信する
-
 const selectedMenuCount = computed(() => partnerEventMenus.value.filter((m) => m.is_selected).length)
 
 /** 予約申請ボタンの事前無効化（データ未取得・処理中・下書き以外） */

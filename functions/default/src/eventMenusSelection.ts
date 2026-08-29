@@ -6,6 +6,7 @@ import { getCommunity } from './stores/community.js'
 import { getConfigGlobal } from './stores/config.js'
 import { UpdateEventMenusRequest } from '@shokujii/common/apis/eventMenu.js'
 import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
+import type { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import {
   buildNoOrderParticipationEventMenu,
   updateEventMenusIsSelected,
@@ -17,13 +18,18 @@ import type { Transaction } from 'firebase-admin/firestore'
 
 const logger = createModuleLogger('eventMenusSelection')
 
+/** Transaction 内の read は全 write より前に済ませる必要があるため、既読の menus を受け取る */
 async function upsertNoOrderParticipationMenu(
   event: ShokujiiEvent,
+  existingMenus: EventMenu[],
   isSelected: boolean,
   transaction: Transaction,
 ): Promise<void> {
-  const existingMenus = await event.getMenus(transaction)
   const existing = existingMenus.find((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+  // トグル OFF かつ未作成の場合は予約ドキュメントを作らない（UI は doc 無しでも false 扱い）
+  if (existing == null && !isSelected) {
+    return
+  }
   const menu = buildNoOrderParticipationEventMenu(event.id, isSelected)
   if (
     existing == null ||
@@ -117,7 +123,7 @@ export const updateEventMenus = onCall<UpdateEventMenusRequest>({ region: 'asia-
           }),
         )
 
-        await upsertNoOrderParticipationMenu(event, noOrderSelected, transaction)
+        await upsertNoOrderParticipationMenu(event, existingEventMenus, noOrderSelected, transaction)
 
         logger.info('Updated is_selected flags in accepting_order status', {
           eventId,
@@ -158,7 +164,8 @@ export const updateEventMenus = onCall<UpdateEventMenusRequest>({ region: 'asia-
         if (event == null) {
           throw new HttpsError('not-found', `Event ${eventId} not found`)
         }
-        await upsertNoOrderParticipationMenu(event, regenerateParams.noOrderSelected, transaction)
+        const existingMenus = await event.getMenus(transaction)
+        await upsertNoOrderParticipationMenu(event, existingMenus, regenerateParams.noOrderSelected, transaction)
       })
 
       logger.info('Updated all menus from latest PartnerMenus with is_selected flag', {
