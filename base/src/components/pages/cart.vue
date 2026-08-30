@@ -920,7 +920,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                             ? $t('event_menu.remaining_count', [
                                 getMenuLimitRemainingInCart(cartItem.event.event_id, menu.menu_id)!.remaining,
                               ])
-                            : $t('event_menu.sold_out')
+                            : $t('event_menu.limit_sold_out')
                         }}
                       </span>
                     </td>

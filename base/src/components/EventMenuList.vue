@@ -32,8 +32,11 @@ const isMenuAddDisabled = (menu: BokudeliEventMenu): boolean => {
 }
 
 const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
-  if (menu.is_sold_out || isMenuLimitSoldOut(menu)) {
+  if (menu.is_sold_out) {
     return $t('event_menu.sold_out')
+  }
+  if (isMenuLimitSoldOut(menu)) {
+    return $t('event_menu.limit_sold_out')
   }
   return $t('event_details.menu_join_button')
 }

@@ -23,6 +23,10 @@
 | [x] | RC-17 | 3889026059 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📄 ドキュメントのみ | S | 受付中イベントへ上限変更が反映されない旨を UI に未明示<br>§5.2 に沿い将来イベントのみ対象であることを hint で示す |
 | [x] | RC-18 | 3889026071 | 👌 修正不要 | — | — | 🐛 実害, 📑 仕様書 | 📋 仕様追加 | M | 締切過ぎ `accepting_order` イベントが売切同期対象外<br>締切延長後も EventMenu が古い販売中のまま注文可能 |
 | [ ] | RC-19 | 3889026074 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | 上限未設定イベントでも `confirmedOrders` 購読が開始される<br>限定メニュー確認後に購読し、集計も `ordered` に絞る |
+| [x] | RC-20 | 3889252198, 3889259721 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 限定食数完売時も `event_menu.sold_out` を表示している<br>`limit_sold_out`（完売）に分岐する |
+| [x] | RC-21 | 3889252207 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カート残数 0 時に `sold_out` を表示している<br>限定食数由来は `limit_sold_out` を使う |
+| [x] | RC-22 | 3889259717 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | ダイアログ表示中に売切変更されても古い `props.menu` を参照<br>`eventStore.menus` から最新メニューを解決する |
+| [x] | RC-23 | 3889259722 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📏 規約 | 🔧 微修正 | S | `formatLimitedPeriodRange` が端末 TZ 依存<br>`common` の JST 固定変換へ移行 |
 
 ---
 
@@ -863,3 +867,180 @@ Useful? React with 👍 / 👎.
 **想定工数**: M
 
 **判断理由**: パフォーマンス改善として妥当。store 購読タイミングの設計変更を伴い 📐 + M のため自動修正対象外。
+
+---
+
+## 評価セッション（2026-08-30 20:43・review-comments-evaluate auto）
+
+- **評価日時**: 2026-08-30 20:43 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **REVIEW_REQUEST_SINCE**: 2026-08-30T11:33:34Z
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（Copilot 承知返信・Codex connect 案内・レビュー依頼定型文）
+- **新規 RC**: 4 件（RC-20〜RC-23）
+- **自動修正**: RC-20〜23 すべて対応済み
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-20 | 3889252198, 3889259721 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 限定食数完売時も `event_menu.sold_out` を表示している<br>`limit_sold_out`（完売）に分岐する |
+| [x] | RC-21 | 3889252207 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カート残数 0 時に `sold_out` を表示している<br>限定食数由来は `limit_sold_out` を使う |
+| [x] | RC-22 | 3889259717 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | ダイアログ表示中に売切変更されても古い `props.menu` を参照<br>`eventStore.menus` から最新メニューを解決する |
+| [x] | RC-23 | 3889259722 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📏 規約 | 🔧 微修正 | S | `formatLimitedPeriodRange` が端末 TZ 依存<br>`common` の JST 固定変換へ移行 |
+
+---
+
+**識別子**: RC-20（GitHub id: 3889252198, 3889259721）
+
+**レビュワー**: Copilot / Codex
+
+**指摘箇所**: `base/src/components/EventMenuList.vue:36`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
++  if (menu.is_sold_out || isMenuLimitSoldOut(menu)) {
++    return $t('event_menu.sold_out')
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 限定食数で完売（`isMenuLimitSoldOut`）のケースでもボタン文言が `event_menu.sold_out`（売り切れ）になっています。`event_menu.limit_sold_out`（完売）が用意されているので、売り切れと限定食数完売でラベルを分けたほうが利用者の理解が一致します。
+
+（Codex 3889259721 も同一指摘）
+
+**コメント要約**: 限定食数完売時も手動売切と同じ `sold_out` 文言になる
+`is_sold_out` と `isMenuLimitSoldOut` を分岐し `limit_sold_out` を使う
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: i18n に `limit_sold_out`（完売）が定義済み。手順 4a で `getMenuJoinButtonLabel` を分岐修正。
+
+---
+
+**識別子**: RC-21（GitHub id: 3889252207）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/pages/cart.vue:921`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++                            : $t('event_menu.sold_out')
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 限定食数の残数が 0 の場合に `event_menu.sold_out`（売り切れ）を表示していますが、i18n に `event_menu.limit_sold_out: 完売` を追加しているので文言が混同します。限定食数由来の 0 のときは `limit_sold_out` を使うほうが仕様・表示意図に合います。
+
+**コメント要約**: カートの限定食数残数 0 表示が `sold_out` になっている
+限定食数由来は `limit_sold_out` に変更
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 手順 4a で残数 0 分岐の文言を `limit_sold_out` に変更。
+
+---
+
+**識別子**: RC-22（GitHub id: 3889259717）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:51`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const isAddDisabled = computed(
++  () => props.menu.is_sold_out || isMenuLimitSoldOut(props.menu) || countOptions.value.length === 0,
++)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  ダイアログでも最新の売り切れ状態を参照する**
+
+カート追加ダイアログを開いたまま店舗がメニューを売り切れにすると、親画面の `selectedMenuState.menu` は選択時のオブジェクトを保持する一方、メニュー購読は配列を新しいオブジェクトで置換するため、ここでは古い `is_sold_out` が参照され続けます。その結果、ダイアログの追加ボタンが有効なままとなり、利用者は追加後のサーバーエラーで初めて売り切れを知るため、`eventStore.menus` から `menu_id` で最新メニューを解決して判定してください。
+
+**コメント要約**: ダイアログが古い `props.menu` を参照し売切後も追加可能
+`eventStore.menus` から `menu_id` で最新状態を解決する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: リアルタイム売切同期後に UI が古い状態のまま注文可能になる実害あり。手順 4a で `currentMenu` computed を追加し判定・表示を最新メニューに統一。
+
+---
+
+**識別子**: RC-23（GitHub id: 3889259722）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/utils/datetime.ts:9`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++export const formatLimitedPeriodRange = (startMillis: number, endMillis: number): string => {
++  const startFormatted = format(startMillis, 'yyyy/M/d')
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  販売期間をJSTで整形する**
+
+ブラウザのタイムゾーンが Asia/Tokyo 以外の場合、`date-fns` の `format` は端末のローカルタイムゾーンで epoch millis を整形するため、JST の日付境界で保存された販売期間が前日などにずれて表示されます。プロジェクト共通の日時ユーティリティは Asia/Tokyo を既定値としているため、この整形処理も `common/src/utils/datetime.ts` 側へ移し、共通変換を利用してください。
+
+**コメント要約**: `date-fns format` が端末 TZ 依存で販売期間表示がずれる
+`common` の JST 固定変換へ移行する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: AGENTS.md の日時表示規約に沿い `formatLimitedPeriodRange` を `common/src/utils/datetime.ts` に移し、`base/src/utils/datetime.ts` を削除。`MenuStatusChips` の import を更新。
+
+---

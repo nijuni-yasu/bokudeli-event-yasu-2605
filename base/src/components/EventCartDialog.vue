@@ -29,7 +29,15 @@ const emit = defineEmits<{
 const selectedCount = ref(1)
 const addErrorMessage = ref('')
 
-const remainingInfo = computed(() => getRemainingForMenu(props.menu))
+const currentMenu = computed(() => {
+  const menus = eventStore.menus
+  if (menus == null) {
+    return props.menu
+  }
+  return menus.find((m) => m.menu_id === props.menu.menu_id) ?? props.menu
+})
+
+const remainingInfo = computed(() => getRemainingForMenu(currentMenu.value))
 
 const maxSelectableCount = computed(() => {
   const remaining = remainingInfo.value?.remaining
@@ -48,7 +56,10 @@ const countOptions = computed(() => {
 })
 
 const isAddDisabled = computed(
-  () => props.menu.is_sold_out || isMenuLimitSoldOut(props.menu) || countOptions.value.length === 0,
+  () =>
+    currentMenu.value.is_sold_out ||
+    isMenuLimitSoldOut(currentMenu.value) ||
+    countOptions.value.length === 0,
 )
 
 watch(isOpen, (open) => {
@@ -132,22 +143,27 @@ const addCart = async () => {
 <template>
   <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeDialog()">
     <v-card class="pa-sm-10 pa-5">
-      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="menu" class="ma-3" />
+      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
       <v-card-title class="text-left text-h4 py-1 text-wrap">
-        {{ menu.menu_name }}
+        {{ currentMenu.menu_name }}
       </v-card-title>
       <v-card-text class="text-left py-2">
-        {{ menu.menu_description }}
+        {{ currentMenu.menu_description }}
       </v-card-text>
       <v-card-text
-        v-if="!menu.is_sold_out && !isMenuLimitSoldOut(menu) && remainingInfo != null && remainingInfo.remaining > 0"
+        v-if="
+          !currentMenu.is_sold_out &&
+          !isMenuLimitSoldOut(currentMenu) &&
+          remainingInfo != null &&
+          remainingInfo.remaining > 0
+        "
         class="text-left py-0"
       >
         <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
       </v-card-text>
       <v-card-text class="text-right pb-8">
         <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(menu.menu_price) }}</span>
+        <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
       </v-card-text>
       <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatLimitedPeriodRange } from '@shokujii/base/utils/datetime'
+import { formatLimitedPeriodRange } from '@shokujii/common/utils/datetime.js'
 
 const props = withDefaults(
   defineProps<{
