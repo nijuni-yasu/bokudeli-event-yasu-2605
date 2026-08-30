@@ -82,7 +82,7 @@ export async function waitForConfirmedOrders(eventStore: EventStore) {
   if (loaded != null) {
     return loaded
   }
-  return new Promise<NonNullable<EventStore['confirmedOrders']>>((resolve) => {
+  return new Promise<NonNullable<EventStore['confirmedOrders']>>((resolve, reject) => {
     let timeoutId: ReturnType<typeof setTimeout> | undefined
     const stop = watch(
       () => eventStore.confirmedOrders,
@@ -99,7 +99,7 @@ export async function waitForConfirmedOrders(eventStore: EventStore) {
     )
     timeoutId = setTimeout(() => {
       stop()
-      resolve([])
+      reject(new Error('confirmedOrders の取得がタイムアウトしました'))
     }, 10_000)
   })
 }
@@ -107,11 +107,16 @@ export async function waitForConfirmedOrders(eventStore: EventStore) {
 export async function loadMenuLimitRemainingMap(
   eventId: string,
   options: EventStoreOptions,
-): Promise<Map<string, MenuLimitRemainingInfo>> {
+): Promise<Map<string, MenuLimitRemainingInfo> | null> {
   const eventStore = useEventStore(eventId, toMenuLimitEventStoreOptions(options))
   await eventStore.getLoadedMenus()
   const menus = eventStore.menus
-  const confirmedOrders = await waitForConfirmedOrders(eventStore)
+  let confirmedOrders: NonNullable<EventStore['confirmedOrders']>
+  try {
+    confirmedOrders = await waitForConfirmedOrders(eventStore)
+  } catch {
+    return null
+  }
   const map = new Map<string, MenuLimitRemainingInfo>()
   if (menus == null) {
     return map

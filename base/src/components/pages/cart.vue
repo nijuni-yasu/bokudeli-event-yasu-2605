@@ -309,11 +309,14 @@ watch(
           const eventMenus = await eventStore.getLoadedMenus()
           nextSoldOut[eventId] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
           const limitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
-          nextLimit[eventId] = Object.fromEntries(limitMap)
+          nextLimit[eventId] = Object.fromEntries(limitMap ?? [])
 
           const refreshLimits = async (): Promise<void> => {
             try {
               const refreshedLimitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
+              if (refreshedLimitMap == null) {
+                return
+              }
               menuLimitRemainingByEvent.value = {
                 ...menuLimitRemainingByEvent.value,
                 [eventId]: Object.fromEntries(refreshedLimitMap),
@@ -434,7 +437,7 @@ const checkCart = async (
   }
 
   const limitMap = await loadMenuLimitRemainingMap(event.event_id, eventStoreOptions)
-  if (limitMap.size > 0) {
+  if (limitMap != null && limitMap.size > 0) {
     const menuCounts = new Map<string, number>()
     for (const order of orders) {
       menuCounts.set(order.menu_id, (menuCounts.get(order.menu_id) ?? 0) + 1)
