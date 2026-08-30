@@ -7,7 +7,7 @@
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
 | [x] | RC-2 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | `:disabled` 追加でカート追加ボタンの `@click` が発火せず、無効理由アラートが到達不能になる<br>本 PR で追加した `menu_disabled_reason.sold_out` / `menu_limit` も含め仕様 §4.3.2 を満たさない |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `watch(cart)` の非同期コールバックに try/catch がなく unhandled rejection になる<br>`getLoadedMenus()` は 5 秒 timeout で reject するため売切・残数表示が無言で止まる |
-| [ ] | RC-4 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
+| [ ] | RC-4 | なし, 3888809799, 3889327188 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
 | [x] | RC-5 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `checkCart` に存在しない `eventId` を参照しており型エラー（CI Typecheck が失敗する）<br>`event.event_id` が正しい |
 | [x] | RC-6 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 🐛 実害 | 🔧 微修正 | S | `loadMenuLimitRemainingMap` が setup 外（watch・非同期ハンドラ）から `inject` を呼んでいる<br>enterprise スコープが解決できず、誤ったスコープの store を生成する |
 | [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
@@ -15,7 +15,7 @@
 | [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
 | [x] | RC-10 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `findUnorderableMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [x] | RC-11 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `countOrderedByMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
-| [ ] | RC-12 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
+| [ ] | RC-12 | なし, 3889337016 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
 | [x] | RC-13 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
 | [ ] | RC-14 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 非 enterprise 経路に追加した read-only トランザクションが直前の検証と重複している<br>書き込みがないため競合防止にならず、仕様 §8.3 でも Stripe 経路の超過は範囲外としている |
 | [x] | RC-15 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
@@ -27,6 +27,13 @@
 | [x] | RC-21 | 3889252207 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カート残数 0 時に `sold_out` を表示している<br>限定食数由来は `limit_sold_out` を使う |
 | [x] | RC-22 | 3889259717 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | ダイアログ表示中に売切変更されても古い `props.menu` を参照<br>`eventStore.menus` から最新メニューを解決する |
 | [x] | RC-23 | 3889259722 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📏 規約 | 🔧 微修正 | S | `formatLimitedPeriodRange` が端末 TZ 依存<br>`common` の JST 固定変換へ移行 |
+| [x] | RC-24 | 3889327167 | 👌 修正不要 | — | — | 👤 UX, 📑 仕様書 | 👀 確認のみ | — | `EventMenuList` の v-btn に `:disabled` を付ける提案<br>親の `selectMenu` がクリックで無効理由アラートを出す設計のため RC-2 と矛盾 |
+| [x] | RC-25 | 3889337013 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | ダイアログ内で残数0時にステータス chip が消え無言無効化<br>§4.4.2 に沿い売切/完売 chip を表示する |
+| [ ] | RC-26 | 3888809794 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カートの売切表示が初回スナップショットのまま<br>`eventStore.menus` 更新時にも `menuSoldOutByEvent` を再構築する |
+| [x] | RC-27 | 3889076389 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | `skipOrdersEnterpriseFilter` で CG クエリが Rules と不整合<br>1 イベント単位の限定食数スコープでは enterprise フィルタ外しは問題なし |
+| [x] | RC-28 | 3888809796 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | M | 売切同期が `saveMenu` で EventMenu 全体を書き戻し<br>Transaction 内再取得の `updateMenuSoldOut` で最新フィールドを反映 |
+| [ ] | RC-29 | 3888809792 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | トリガー実行順で古い売切状態が後勝ちしうる<br>同期時に PartnerMenu を再取得するか世代比較が必要 |
+| [ ] | RC-30 | 3888809790 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 📋 仕様追加 | L | 同時 `confirmOrder` で読取のみの上限チェックが競合<br>メニュー単位の共有カウンタ更新で直列化が必要 |
 
 ---
 
@@ -46,7 +53,7 @@
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
 | [x] | RC-2 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | `:disabled` 追加でカート追加ボタンの `@click` が発火せず、無効理由アラートが到達不能になる<br>本 PR で追加した `menu_disabled_reason.sold_out` / `menu_limit` も含め仕様 §4.3.2 を満たさない |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `watch(cart)` の非同期コールバックに try/catch がなく unhandled rejection になる<br>`getLoadedMenus()` は 5 秒 timeout で reject するため売切・残数表示が無言で止まる |
-| [ ] | RC-4 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
+| [ ] | RC-4 | なし, 3888809799, 3889327188 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
 | [x] | RC-5 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `checkCart` に存在しない `eventId` を参照しており型エラー（CI Typecheck が失敗する）<br>`event.event_id` が正しい |
 | [x] | RC-6 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 🐛 実害 | 🔧 微修正 | S | `loadMenuLimitRemainingMap` が setup 外（watch・非同期ハンドラ）から `inject` を呼んでいる<br>enterprise スコープが解決できず、誤ったスコープの store を生成する |
 | [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
@@ -54,7 +61,7 @@
 | [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
 | [x] | RC-10 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `findUnorderableMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [x] | RC-11 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `countOrderedByMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
-| [ ] | RC-12 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
+| [ ] | RC-12 | なし, 3889337016 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
 | [x] | RC-13 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
 | [ ] | RC-14 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 非 enterprise 経路に追加した read-only トランザクションが直前の検証と重複している<br>書き込みがないため競合防止にならず、仕様 §8.3 でも Stripe 経路の超過は範囲外としている |
 | [x] | RC-15 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
@@ -1042,5 +1049,339 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: AGENTS.md の日時表示規約に沿い `formatLimitedPeriodRange` を `common/src/utils/datetime.ts` に移し、`base/src/utils/datetime.ts` を削除。`MenuStatusChips` の import を更新。
+
+---
+
+## 評価セッション（2026-08-30 21:14・auto / wait-ai-pr-review）
+
+- **評価日時**: 2026-08-30 21:14 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **REVIEW_REQUEST_SINCE**: 2026-08-30T12:06:22Z
+- **partial**: true（Codex 接続案内のみ。Copilot インライン 2 件）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（Codex 接続案内 1、Copilot トップレベル確認コメント 1）
+- **新規 RC**: 1 件（RC-24）。RC-4 は Copilot id 3889327188 が同一指摘のため重複 RC 化せず GitHub id を追記
+- **自動修正**: 該当なし（RC-24 は 👌。RC-4 は 📐 M で auto-fix 対象外）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-24 | 3889327167 | 👌 修正不要 | — | — | 👤 UX, 📑 仕様書 | 👀 確認のみ | — | `EventMenuList` の v-btn に `:disabled` を付ける提案<br>親の `selectMenu` がクリックで無効理由アラートを出す設計のため RC-2 と矛盾 |
+
+---
+
+**識別子**: RC-24（GitHub id: 3889327167）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventMenuList.vue:113`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+                 <div class="d-flex align-center justify-end flex-shrink-0">
+                   <v-btn
+                     class="menu-button menu-button-single"
+-                    :class="{ 'disable-menu-button': disabled }"
++                    :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                     color="primary"
+                     rounded="pill"
+                     elevation="5"
+                     :prepend-icon="mdiFoodForkDrink"
+                     @click="emit('selectMenu', menu)"
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] isMenuAddDisabled(menu) を見た目（opacity）にしか反映しておらず、ボタン自体はクリック可能なままです。disabled=true のときは EventMenuList 側で v-btn を実際に disabled にしないと、親側の実装次第でモーダルが開く・二重アクション等が起きえます。
+
+**コメント要約**: `EventMenuList` の参加ボタンに `:disabled` を付け、見た目だけでなくクリック自体を無効化すべき
+親実装次第でモーダルが開くリスクがある
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 👤 UX, 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: `user` / `enterprise` の `e/[eventId]/index.vue` は `selectMenu` 内で `menu.is_sold_out` / `isMenuLimitSoldOut` を検知し `menu_disabled_reason.sold_out` / `menu_limit` をアラート表示する（仕様 §4.3.2）。RC-2 で `:disabled` を外し opacity + ラベル変更のみにしたのは、このクリック経路を維持するため。`:disabled` を付けると RC-2 の回帰になり無効理由が表示不能になる。Copilot トップレベルコメントも resolved 済み RC-20/21 を確認しており、本指摘は設計理解不足。
+
+---
+
+## 評価セッション（2026-08-30 21:32・review-comments-evaluate）
+
+- **評価日時**: 2026-08-30 21:32 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` manual）
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 11（レビュー依頼定型文 3、Codex 接続案内 3、Copilot 承知/確認コメント 3、PR 説明 1、Copilot エラー返信 1）
+- **新規 RC**: 6 件（RC-25〜RC-30）。RC-4 ← #3888809799、RC-12 ← #3889337016 は重複 RC 化せず GitHub id 追記
+- **自動修正**: RC-25 を手順 4a で対応（`MenuStatusChips` に `isLimitSoldOut`、`EventCartDialog` で完売 chip 表示）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-25 | 3889337013 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | ダイアログ内で残数0時にステータス chip が消え無言無効化<br>§4.4.2 に沿い売切/完売 chip を表示する |
+| [ ] | RC-26 | 3888809794 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カートの売切表示が初回スナップショットのまま<br>`eventStore.menus` 更新時にも `menuSoldOutByEvent` を再構築する |
+| [x] | RC-27 | 3889076389 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | `skipOrdersEnterpriseFilter` で CG クエリが Rules と不整合<br>1 イベント単位の限定食数スコープでは enterprise フィルタ外しは問題なし |
+| [x] | RC-28 | 3888809796 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | M | 売切同期が `saveMenu` で EventMenu 全体を書き戻し<br>Transaction 内再取得の `updateMenuSoldOut` で最新フィールドを反映 |
+| [ ] | RC-29 | 3888809792 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | トリガー実行順で古い売切状態が後勝ちしうる<br>同期時に PartnerMenu を再取得するか世代比較が必要 |
+| [ ] | RC-30 | 3888809790 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 📋 仕様追加 | L | 同時 `confirmOrder` で読取のみの上限チェックが競合<br>メニュー単位の共有カウンタ更新で直列化が必要 |
+
+---
+
+**識別子**: RC-25（GitHub id: 3889337013）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:39`
+
+**該当コード（レビュー時点の diff）**: （diff 先頭省略・末尾優先）
+
+```diff
++const currentMenu = computed(() => {
++  const menus = eventStore.menus
++  if (menus == null) {
++    return props.menu
++  }
++  return menus.find((m) => m.menu_id === props.menu.menu_id) ?? props.menu
++})
++
++const remainingInfo = computed(() => getRemainingForMenu(currentMenu.value))
++
++const showRemainingChip = computed(
++  () =>
++    !currentMenu.value.is_sold_out &&
++    !isMenuLimitSoldOut(currentMenu.value) &&
++    remainingInfo.value != null &&
++    remainingInfo.value.remaining > 0,
++)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  完売理由をダイアログ内に表示する**
+
+ダイアログを開いた後に別ユーザーが最後の1食を確定するか、店舗がメニューを売り切れにすると、この条件でステータスチップが消える一方、追加ボタンは無言で無効化されます。個数欄も残数0では消えるため、利用者には操作できない理由が分かりません。`documents/04_飲食店向け/14_限定食数機能.md` §4.4.2 が残数0時の「完売」表示を要求しているため、手動売り切れまたは限定食数完売のチップを表示してください。
+
+**コメント要約**: ダイアログ内で残数0・売切時にステータス chip が消え、追加ボタンだけ無効化される
+§4.4.2 に沿い手動売切または限定食数完売の chip を表示すべき
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 仕様 §4.4.2 の「完売」表示要件に該当。`MenuStatusChips` に `isLimitSoldOut` を追加し、`EventCartDialog` で残数 chip 非表示時に売切/完売 chip を出すよう手順 4a で修正した。
+
+---
+
+**識別子**: RC-26（GitHub id: 3888809794）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/pages/cart.vue`（インライン行 outdated）
+
+**該当コード（レビュー時点の diff）**: `(diff_hunk 未取得・position null)`
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  カート内の売り切れ表示をメニュー更新に追従させる**
+
+カートを開いた後に店舗がメニューを売り切れへ変更しても、ここで作成した `menuSoldOutByEvent` は初回ロード時のスナップショットのままです。後続では `confirmedOrders` だけを監視しており `eventStore.menus` の変更では再計算されないため、カート画面は販売中表示を維持し、確定操作を始めて初めてエラーになります。メニュー購読の更新時にも売り切れマップを再構築してください。
+
+**コメント要約**: カートの売切表示が初回ロードのスナップショット固定で、`menus` 更新に追従しない
+確定時まで UI が販売中のまま残る。`eventStore.menus` 監視で再構築が必要
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: RC-22 でダイアログ側は `currentMenu` 解決済みだが、カート一覧は `menuSoldOutByEvent` の再計算が `confirmedOrders` のみに依存。店舗売切変更の UX ギャップとして妥当。工数 M のため auto-fix 対象外。
+
+---
+
+**識別子**: RC-27（GitHub id: 3889076389）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/composable/useMenuLimitRemaining.ts:21`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++/** limit_per_event はイベント全体の注文数で計算するため、enterprise 注文フィルタを外す */
++export function toMenuLimitEventStoreOptions(options: EventStoreOptions): EventStoreOptions {
++  if (options.ordersEnterpriseId != null) {
++    return { ...options, skipOrdersEnterpriseFilter: true }
++  }
++  return options
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  エンタープライズ注文のテナント条件を外さない**
+
+エンタープライズ版ではこの指定により `subscribeOrders` が `enterprise_id` 条件なしの collection-group クエリ（`event_id` のみ）になりますが、`firestore.rules` 462–470 行の read 条件は各注文がログイン中の enterprise と一致することを要求しており、クエリ自体が他テナントの注文を返さないと保証できないため permission-denied になります。その結果、enterprise のイベント一覧・モーダル・カートでは限定食数の購読が成立せず、残数や完売状態を表示できません。イベントは単一 enterprise に属するため、ここでは既存の `enterprise_id` 条件を維持してください。
+
+**コメント要約**: `skipOrdersEnterpriseFilter` により enterprise CG クエリが Rules と不整合
+permission-denied で残数購読不能。enterprise_id 条件維持または別経路が必要
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 限定食数は 1 イベント内の全注文で数える仕様（§5.2）。本 PR スコープでは enterprise テナント横断の CG クエリ問題は発生しない前提とし、Codex 指摘は本 PR では対応不要と確定（ユーザー判断 2026-08-30）。
+
+---
+
+**識別子**: RC-28（GitHub id: 3888809796）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/eventMenusSoldOutSync.ts:68`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++  const updatedMenu = new EventMenu(event.id, menuId, {
++    ...targetMenu,
++    is_sold_out: isSoldOut,
++  })
++  await event.saveMenu(updatedMenu)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  売り切れ同期で他のメニューフィールドを上書きしない**
+
+注文受付中に主催者が `is_selected` を変更する処理とこの同期が重なると、同期側は変更前に取得した `targetMenu` 全体を `saveMenu` で書き戻すため、主催者が無効化したメニューを再び選択済みに戻す可能性があります。特に `confirmOrder` は `is_selected` を再検証しないため、その後も注文が通ります。EventMenu をトランザクション内で再取得して最新フィールドを引き継ぐなど、`is_sold_out` の変更が同時更新を巻き戻さない形にしてください。
+
+**コメント要約**: 売切同期が取得時点の EventMenu 全体を `saveMenu` で書き戻し、同時の `is_selected` 変更を巻き戻しうる
+トランザクション再取得または部分更新が必要
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: `ShokujiiEvent.updateMenuSoldOut` を追加し、Transaction 内で最新 EventMenu を再取得してから `is_sold_out` のみ変更して save するよう `eventMenusSoldOutSync` を修正。金額・`is_selected` 等は再取得時点の最新値を引き継ぐため、古いスナップショットによる巻き戻しを防止。
+
+---
+
+**識別子**: RC-29（GitHub id: 3888809792）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/eventMenusSoldOutSync.ts:109`
+
+**該当コード（レビュー時点の diff）**: （`syncPartnerMenuSoldOutToEvents` 末尾・retry: true 付きトリガ）
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  最新の売り切れ状態だけをイベントへ反映する**
+
+店舗が短時間に「販売中→売り切れ→販売中」と切り替えた場合、Firestore トリガーの実行順序やリトライ順序は更新順と一致する保証がなく、古いイベントの `afterSoldOut` が最後に書き込まれて EventMenu が売り切れのまま残る可能性があります。サーバー側の注文可否もこの EventMenu を参照するため、同期時に PartnerMenu の現在値を再取得するか更新世代を比較して、古いトリガーが最新状態を上書きしないようにしてください。
+
+**コメント要約**: トリガー実行順・リトライ順で古い売切状態が後勝ちしうる
+同期時に PartnerMenu 再取得または世代比較で最新のみ反映すべき
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: レアだが再現可能。RC-28 と合わせて sold-out sync の書き込み戦略を見直すのが自然。工数 M のため auto-fix 対象外。
+
+---
+
+**識別子**: RC-30（GitHub id: 3888809790）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/stores/memberOrder.ts:235`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++/** イベント内の menu_id ごとの確定済み（ordered）食数を返す */
++export const countOrderedMenus = async (
++  eventId: string,
++  menuIds: readonly string[],
++  transaction?: Transaction,
++```
+（続く `assertMenuLimitsForConfirm` からの読取のみ検証）
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  共有在庫を更新して同時確定を直列化する**
+
+残り1食の状態で複数ユーザーが同時に `confirmOrder` を実行すると、各トランザクションは同じ `ordered` 件数を読み取った後、互いに異なる注文ドキュメントだけを更新するため、双方が上限内と判定されてコミットできます。読み取った既存注文は更新されず競合点にならないので、上限超過を確実に防ぐにはメニュー単位の共有カウンタ／ロック用ドキュメントを同じトランザクションで更新する必要があります。
+
+**コメント要約**: 同時 `confirmOrder` で読取のみの上限チェックは競合を防げない
+メニュー単位カウンタの tx 更新で直列化が必要（RC-16 の Stripe 経路とは別）
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 🐛 実害
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: L
+
+**判断理由**: 指摘は技術的に妥当。RC-16（Checkout〜Webhook 枠未確保）とは経路が異なるが、同種の同時確定問題。§5.5 カウンタ採用または tx 内ロック設計が必要で L。auto-fix 対象外。
 
 ---

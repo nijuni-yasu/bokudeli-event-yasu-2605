@@ -1,5 +1,4 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import type { ShokujiiEvent } from './stores/event.js'
 import { syncPartnerMenuSoldOutToEvents } from './eventMenusSoldOutSync.js'
 
@@ -16,17 +15,13 @@ vi.mock('./utils/logger.js', () => ({
 function makeEvent(params: {
   eventId: string
   communityId: string
-  menus: EventMenu[]
-  saveMenu?: ReturnType<typeof vi.fn>
-  getMenus?: ReturnType<typeof vi.fn>
+  updateMenuSoldOut?: ReturnType<typeof vi.fn>
 }): ShokujiiEvent {
-  const saveMenu = params.saveMenu ?? vi.fn().mockResolvedValue(undefined)
-  const getMenus = params.getMenus ?? vi.fn().mockResolvedValue(params.menus)
+  const updateMenuSoldOut = params.updateMenuSoldOut ?? vi.fn().mockResolvedValue('updated' as const)
   return {
     id: params.eventId,
     community_id: params.communityId,
-    getMenus,
-    saveMenu,
+    updateMenuSoldOut,
   } as unknown as ShokujiiEvent
 }
 
@@ -50,20 +45,11 @@ describe('syncPartnerMenuSoldOutToEvents', () => {
   })
 
   it('EventMenu があるイベントの is_sold_out を更新する', async () => {
-    const saveMenu = vi.fn().mockResolvedValue(undefined)
+    const updateMenuSoldOut = vi.fn().mockResolvedValue('updated')
     const event = makeEvent({
       eventId: 'event1',
       communityId: 'community1',
-      menus: [
-        new EventMenu('event1', 'menu1', {
-          menu_name: 'Menu 1',
-          menu_price: 1000,
-          is_sold_out: false,
-          is_selected: true,
-          menu_sort_number: 0,
-        }),
-      ],
-      saveMenu,
+      updateMenuSoldOut,
     })
     getAcceptingOrderEventsByPartnerMock.mockResolvedValue([event])
 
@@ -75,17 +61,16 @@ describe('syncPartnerMenuSoldOutToEvents', () => {
       getEvents: getAcceptingOrderEventsByPartnerMock,
     })
 
-    expect(saveMenu).toHaveBeenCalledOnce()
-    expect(saveMenu.mock.calls[0]?.[0]?.is_sold_out).toBe(true)
+    expect(updateMenuSoldOut).toHaveBeenCalledOnce()
+    expect(updateMenuSoldOut).toHaveBeenCalledWith('menu1', true)
   })
 
   it('EventMenu がないイベントは skip する', async () => {
-    const saveMenu = vi.fn().mockResolvedValue(undefined)
+    const updateMenuSoldOut = vi.fn().mockResolvedValue('not_found')
     const event = makeEvent({
       eventId: 'event1',
       communityId: 'community1',
-      menus: [],
-      saveMenu,
+      updateMenuSoldOut,
     })
     getAcceptingOrderEventsByPartnerMock.mockResolvedValue([event])
 
@@ -97,23 +82,14 @@ describe('syncPartnerMenuSoldOutToEvents', () => {
       getEvents: getAcceptingOrderEventsByPartnerMock,
     })
 
-    expect(saveMenu).not.toHaveBeenCalled()
+    expect(updateMenuSoldOut).toHaveBeenCalledOnce()
   })
 
   it('1 件でも失敗したら throw する', async () => {
     const failingEvent = makeEvent({
       eventId: 'event1',
       communityId: 'community1',
-      menus: [
-        new EventMenu('event1', 'menu1', {
-          menu_name: 'Menu 1',
-          menu_price: 1000,
-          is_sold_out: false,
-          is_selected: true,
-          menu_sort_number: 0,
-        }),
-      ],
-      saveMenu: vi.fn().mockRejectedValue(new Error('save failed')),
+      updateMenuSoldOut: vi.fn().mockRejectedValue(new Error('save failed')),
     })
     getAcceptingOrderEventsByPartnerMock.mockResolvedValue([failingEvent])
 

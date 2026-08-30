@@ -47,6 +47,8 @@ const showRemainingChip = computed(
     remainingInfo.value.remaining > 0,
 )
 
+const showSoldOutStatusChip = computed(() => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value))
+
 const maxSelectableCount = computed(() => {
   const remaining = remainingInfo.value?.remaining
   if (remaining == null) {
@@ -157,6 +159,12 @@ const addCart = async () => {
       </v-card-text>
       <v-card-text class="d-flex align-center pb-8">
         <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
+        <MenuStatusChips
+          v-else-if="showSoldOutStatusChip"
+          :is-sold-out="currentMenu.is_sold_out"
+          :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
+          align="start"
+        />
         <v-spacer />
         <span class="text-h5">¥ </span>
         <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>

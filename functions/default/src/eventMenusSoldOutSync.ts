@@ -1,5 +1,4 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore'
-import { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import { createModuleLogger } from './utils/logger.js'
 import { getAcceptingOrderEventsByPartner, type ShokujiiEvent } from './stores/event.js'
 
@@ -46,26 +45,14 @@ export async function syncPartnerMenuSoldOutToEvents(params: {
 }
 
 async function syncSoldOutToEventMenu(event: ShokujiiEvent, menuId: string, isSoldOut: boolean): Promise<void> {
-  const eventMenus = await event.getMenus()
-  const targetMenu = eventMenus.find((menu) => menu.menu_id === menuId)
-  if (targetMenu == null) {
+  const result = await event.updateMenuSoldOut(menuId, isSoldOut)
+  if (result === 'not_found') {
     logger.info('EventMenu not found for sold-out sync; skip', {
       communityId: event.community_id,
       eventId: event.id,
       menuId,
     })
-    return
   }
-
-  if (targetMenu.is_sold_out === isSoldOut) {
-    return
-  }
-
-  const updatedMenu = new EventMenu(event.id, menuId, {
-    ...targetMenu,
-    is_sold_out: isSoldOut,
-  })
-  await event.saveMenu(updatedMenu)
 }
 
 export const onPartnerMenuSoldOutChanged = onDocumentUpdated(

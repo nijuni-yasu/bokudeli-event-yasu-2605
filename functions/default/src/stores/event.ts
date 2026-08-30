@@ -118,6 +118,32 @@ export class ShokujiiEvent extends Event {
     }
   }
 
+  /** 売切フラグのみ更新（Transaction 内で最新 EventMenu を再取得してから is_sold_out を反映） */
+  async updateMenuSoldOut(menuId: string, isSoldOut: boolean): Promise<'updated' | 'unchanged' | 'not_found'> {
+    const db = getFirestore()
+    return db.runTransaction(async (transaction) => {
+      const menus = await this.getMenus(transaction)
+      const targetMenu = menus.find((menu) => menu.menu_id === menuId)
+      if (targetMenu == null) {
+        return 'not_found'
+      }
+      if (targetMenu.is_sold_out === isSoldOut) {
+        return 'unchanged'
+      }
+      const updatedMenu = new EventMenu(this.id, menuId, {
+        menu_name: targetMenu.menu_name,
+        menu_price: targetMenu.menu_price,
+        menu_description: targetMenu.menu_description,
+        menu_sort_number: targetMenu.menu_sort_number,
+        is_selected: targetMenu.is_selected,
+        limit_per_event: targetMenu.limit_per_event,
+        is_sold_out: isSoldOut,
+      })
+      await this.saveMenu(updatedMenu, transaction)
+      return 'updated'
+    })
+  }
+
   async deleteMenu(menu: EventMenu, transaction?: Transaction): Promise<void> {
     const db = getFirestore()
     const menuRef = db

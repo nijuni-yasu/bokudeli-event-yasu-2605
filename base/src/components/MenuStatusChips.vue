@@ -6,6 +6,8 @@ const props = withDefaults(
   defineProps<{
     /** 売り切れ（店舗・イベント編集画面向け） */
     isSoldOut?: boolean
+    /** 限定食数完売（イベントページ・カートダイアログ向け） */
+    isLimitSoldOut?: boolean
     /** 限定食数の残数（イベントページ向け。1 以上のときのみ chip 表示） */
     remaining?: number | null
     /** 店舗・イベント編集画面向け: 1 イベントあたりの限定食数設定値 */
@@ -19,6 +21,7 @@ const props = withDefaults(
   }>(),
   {
     isSoldOut: false,
+    isLimitSoldOut: false,
     align: 'start',
     mode: 'all',
   },
@@ -32,13 +35,19 @@ const limitedPeriodLabel = computed(() => {
   return formatLimitedPeriodRange(props.limitedPeriodStart!, props.limitedPeriodEnd!)
 })
 const showSoldOut = computed(() => props.isSoldOut)
-const showRemainingCount = computed(() => !props.isSoldOut && props.remaining != null && props.remaining > 0)
-const showLimitSetting = computed(() => !props.isSoldOut && props.limitPerEvent != null && props.limitPerEvent > 0)
+const showLimitSoldOut = computed(() => !props.isSoldOut && props.isLimitSoldOut)
+const showRemainingCount = computed(
+  () => !props.isSoldOut && !props.isLimitSoldOut && props.remaining != null && props.remaining > 0,
+)
+const showLimitSetting = computed(
+  () => !props.isSoldOut && !props.isLimitSoldOut && props.limitPerEvent != null && props.limitPerEvent > 0,
+)
 
 const showLimitedPeriodChip = computed(
   () => (props.mode === 'all' || props.mode === 'limited-period') && showLimitedPeriod.value,
 )
 const showSoldOutChip = computed(() => (props.mode === 'all' || props.mode === 'status') && showSoldOut.value)
+const showLimitSoldOutChip = computed(() => (props.mode === 'all' || props.mode === 'status') && showLimitSoldOut.value)
 const showRemainingCountChip = computed(
   () => (props.mode === 'all' || props.mode === 'status') && showRemainingCount.value,
 )
@@ -46,7 +55,11 @@ const showLimitSettingChip = computed(() => (props.mode === 'all' || props.mode 
 
 const hasVisibleChip = computed(
   () =>
-    showLimitedPeriodChip.value || showSoldOutChip.value || showRemainingCountChip.value || showLimitSettingChip.value,
+    showLimitedPeriodChip.value ||
+    showSoldOutChip.value ||
+    showLimitSoldOutChip.value ||
+    showRemainingCountChip.value ||
+    showLimitSettingChip.value,
 )
 
 const rootClass = computed(() => ({
@@ -62,6 +75,9 @@ const rootClass = computed(() => ({
     </v-chip>
     <v-chip v-if="showSoldOutChip" color="error" variant="tonal" size="small" label>
       {{ $t('event_menu.sold_out') }}
+    </v-chip>
+    <v-chip v-if="showLimitSoldOutChip" color="error" variant="tonal" size="small" label>
+      {{ $t('event_menu.limit_sold_out') }}
     </v-chip>
     <v-chip v-if="showRemainingCountChip" color="primary" variant="tonal" size="small" label>
       {{ $t('event_menu.remaining_count', [remaining]) }}
