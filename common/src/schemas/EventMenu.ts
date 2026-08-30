@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TimestampSchema } from './firebase/index.js'
+import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
 
 const EventMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
@@ -9,7 +10,7 @@ const EventMenuDbSchema = z.object({
   is_sold_out: z.boolean(),
   menu_sort_number: z.number().int().nonnegative(),
   is_selected: z.boolean(),
-  limit_per_event: z.number().int().positive().max(1000).nullable(),
+  limit_per_event: LimitPerEventDbFieldSchema,
 })
 
 const EventMenuAppSchema = z.object({
@@ -22,7 +23,7 @@ const EventMenuAppSchema = z.object({
   is_selected: z.boolean().default(true),
   // Mandatory
   menu_sort_number: z.number().int().nonnegative(),
-  limit_per_event: z.number().int().positive().max(1000).nullable().default(null),
+  limit_per_event: LimitPerEventAppFieldSchema,
 })
 
 const convertToDb = (menu: EventMenu) => {

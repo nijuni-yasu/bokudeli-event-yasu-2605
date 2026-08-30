@@ -4,8 +4,7 @@ import { findEventMenu } from './findEventMenu.js'
 
 export const MENU_LIMIT_EXCEEDED_MESSAGE = '限定食数の上限に達しました'
 
-/** PartnerMenu / EventMenu の limit_per_event 上限 */
-export const MENU_LIMIT_PER_EVENT_MAX = 1000
+export { MENU_LIMIT_PER_EVENT_MAX } from '../schemas/limitPerEventField.js'
 
 export function countOrderedByMenuId(orders: readonly EventMemberOrder[], menuId: string): number {
   return orders.filter((order) => order.status === 'ordered' && order.menu_id === menuId).length
