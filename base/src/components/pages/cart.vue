@@ -291,7 +291,11 @@ const clearMenuLimitWatches = (): void => {
 
 watch(
   cart,
-  async (cartItems) => {
+  async (cartItems, _prevCartItems, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
     clearMenuLimitWatches()
     if (cartItems == null || cartItems.length === 0) {
       menuSoldOutByEvent.value = {}
@@ -300,6 +304,9 @@ watch(
     }
     try {
       const eventStoreOptions = await resolveEventStoreOptions()
+      if (cancelled) {
+        return
+      }
       const nextSoldOut: Record<string, Record<string, boolean>> = {}
       const nextLimit: Record<string, Record<string, MenuLimitRemainingInfo>> = {}
       await Promise.all(
@@ -307,13 +314,25 @@ watch(
           const eventId = cartItem.event.event_id
           const eventStore = useEventStore(eventId, eventStoreOptions)
           const eventMenus = await eventStore.getLoadedMenus()
+          if (cancelled) {
+            return
+          }
           nextSoldOut[eventId] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
           const limitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
+          if (cancelled) {
+            return
+          }
           nextLimit[eventId] = Object.fromEntries(limitMap ?? [])
 
           const refreshLimits = async (): Promise<void> => {
+            if (cancelled) {
+              return
+            }
             try {
               const refreshedLimitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
+              if (cancelled) {
+                return
+              }
               if (refreshedLimitMap == null) {
                 return
               }
@@ -335,9 +354,15 @@ watch(
           )
         }),
       )
+      if (cancelled) {
+        return
+      }
       menuSoldOutByEvent.value = nextSoldOut
       menuLimitRemainingByEvent.value = nextLimit
     } catch (error) {
+      if (cancelled) {
+        return
+      }
       reportClientError(error, { componentInfo: 'cart.loadMenuSoldOutAndLimit', severity: 'warn' })
     }
   },

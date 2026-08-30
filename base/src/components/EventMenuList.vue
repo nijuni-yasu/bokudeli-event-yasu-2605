@@ -106,6 +106,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                   <v-btn
                     class="menu-button menu-button-single"
                     :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                    :disabled="isMenuAddDisabled(menu)"
                     color="primary"
                     rounded="pill"
                     elevation="5"
@@ -170,6 +171,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         class="menu-button"
                         block
                         :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                        :disabled="isMenuAddDisabled(menu)"
                         color="primary"
                         rounded="pill"
                         elevation="5"
