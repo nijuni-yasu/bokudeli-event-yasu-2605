@@ -168,6 +168,12 @@ const selectMenu = (menu: BokudeliEventMenu) => {
     return
   }
 
+  if (menu.is_sold_out) {
+    alertState.message = $t('menu_disabled_reason.sold_out')
+    alertState.isOpen = true
+    return
+  }
+
   // ログインチェック
   if (currentUserStore.firebaseUser == null) {
     isLoginRequired.value = true
