@@ -15,6 +15,7 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { assertNoSoldOutMenus, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
   createOrder,
@@ -88,6 +89,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
       }
     }
+
+    await assertMenuLimitsForCartAdd({
+      eventId: event_id,
+      eventMenus,
+      menus,
+      transaction,
+    })
 
     let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
     if (eventData.event_payment === 'enterprise_subsidy') {
@@ -301,6 +309,13 @@ export const confirmOrder = onCall(
       } catch {
         throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
       }
+
+      await assertMenuLimitsForConfirm({
+        eventId: event_id,
+        eventMenus,
+        orders,
+        transaction,
+      })
 
       if (eventData.event_payment === 'enterprise_subsidy') {
         if (enterpriseId == null) {

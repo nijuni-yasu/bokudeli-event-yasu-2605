@@ -29,6 +29,7 @@ import {
   writeEnterpriseSubsidyRecalculatedAudit,
 } from './utils/enterpriseSubsidyOrders.js'
 import { assertNoSoldOutMenus, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 
 const logger = createModuleLogger('stripe')
 const db = getFirestore()
@@ -135,6 +136,13 @@ export const createStripeCheckoutSession = onCall<
             throw new HttpsError('failed-precondition', 'カート内の注文のみ決済できます')
           }
         }
+        const eventMenusInTx = await event.getMenus(transaction)
+        await assertMenuLimitsForConfirm({
+          eventId: event_id,
+          eventMenus: eventMenusInTx,
+          orders: ordersInTx,
+          transaction,
+        })
         const syncResult = await syncEnterpriseSubsidyOrdersBeforeConfirm({
           enterpriseId,
           userId: uid,
@@ -161,6 +169,28 @@ export const createStripeCheckoutSession = onCall<
           throw new HttpsError('failed-precondition', '割引金額が一致しません')
         }
       }
+
+      await db.runTransaction(async (transaction) => {
+        const ordersInTx = await getOrdersByIds(community_id, event_id, uid, order_ids, transaction)
+        if (ordersInTx.length !== order_ids.length) {
+          throw new HttpsError('not-found', '一部の注文が見つかりません')
+        }
+        for (const order of ordersInTx) {
+          if (order.user_id !== uid) {
+            throw new HttpsError('permission-denied', 'この注文にアクセスできません')
+          }
+          if (order.status !== 'in_cart') {
+            throw new HttpsError('failed-precondition', 'カート内の注文のみ決済できます')
+          }
+        }
+        const eventMenusInTx = await event.getMenus(transaction)
+        await assertMenuLimitsForConfirm({
+          eventId: event_id,
+          eventMenus: eventMenusInTx,
+          orders: ordersInTx,
+          transaction,
+        })
+      })
     }
 
     const totalPayment =
