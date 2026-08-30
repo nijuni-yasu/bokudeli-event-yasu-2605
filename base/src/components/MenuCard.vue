@@ -1,19 +1,25 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { type BokudeliPartnerMenu } from '@shokujii/base/stores/partner.js'
-import { convertToDate } from '@shokujii/base/utils/datetime'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
-defineProps<{
+const props = defineProps<{
   menu: BokudeliPartnerMenu
   imageUrl: string
 }>()
+
+const hasStatusChips = computed(
+  () =>
+    props.menu.is_sold_out ||
+    props.menu.limit_per_event != null ||
+    (props.menu.menu_date_start != null && props.menu.menu_date_end != null),
+)
 </script>
 
 <template>
   <v-card class="card">
     <div class="image-wrapper">
       <v-img :src="imageUrl" cover aspect-ratio="1" />
-      <MenuStatusChips v-if="menu.is_sold_out" :is-sold-out="true" placement="overlay" />
     </div>
 
     <v-card-title class="text-h5 py-3 text-wrap">
@@ -22,13 +28,14 @@ defineProps<{
     <v-card-text class="py-2">
       {{ menu.menu_description }}
     </v-card-text>
-    <v-card-text v-if="menu.menu_date_start != null && menu.menu_date_end != null" class="py-2">
-      <span class="limited">{{
-        $t('menu_card.limited_edition', [convertToDate(menu.menu_date_start), convertToDate(menu.menu_date_end)])
-      }}</span>
-    </v-card-text>
-    <v-card-text v-if="!menu.is_sold_out && menu.limit_per_event != null" class="py-1">
-      <MenuStatusChips :limit-per-event="menu.limit_per_event" align="start" />
+    <v-card-text v-if="hasStatusChips" class="py-1">
+      <MenuStatusChips
+        :limited-period-start="menu.menu_date_start"
+        :limited-period-end="menu.menu_date_end"
+        :is-sold-out="menu.is_sold_out"
+        :limit-per-event="menu.limit_per_event"
+        align="start"
+      />
     </v-card-text>
     <div class="spacer" />
     <v-card-text class="d-flex">
@@ -54,8 +61,5 @@ defineProps<{
 }
 .image-wrapper {
   position: relative;
-}
-.limited {
-  color: red;
 }
 </style>

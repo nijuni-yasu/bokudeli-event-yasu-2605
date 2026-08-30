@@ -139,11 +139,11 @@ const addCart = async () => {
       <v-card-text class="text-left py-2">
         {{ menu.menu_description }}
       </v-card-text>
-      <v-card-text v-if="menu.is_sold_out" class="text-left py-0">
-        <MenuStatusChips :is-sold-out="true" align="start" />
-      </v-card-text>
-      <v-card-text v-else-if="remainingInfo != null" class="text-left py-0">
-        <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
+      <v-card-text
+        v-if="!menu.is_sold_out && !isMenuLimitSoldOut(menu) && remainingInfo != null && remainingInfo.remaining > 0"
+        class="text-left py-0"
+      >
+        <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
       </v-card-text>
       <v-card-text class="text-right pb-8">
         <span class="text-h5">¥ </span>

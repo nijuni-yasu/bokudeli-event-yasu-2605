@@ -105,7 +105,6 @@ const selectedCount = computed(() => {
                 >
                   <div class="menu-image-wrapper">
                     <EventMenuImage :event="event" :menu="item" cover :aspect-ratio="1" />
-                    <MenuStatusChips v-if="item.is_sold_out" :is-sold-out="true" placement="overlay" />
                   </div>
 
                   <!-- 選択状態インジケーター -->
@@ -122,8 +121,15 @@ const selectedCount = computed(() => {
                   <v-card-title class="justify-center pb-3 text-wrap">
                     {{ item.menu_name }}
                   </v-card-title>
-                  <v-card-text class="text-left text-subtitle-2 pb-8">
+                  <v-card-text class="text-left text-subtitle-2 pb-2">
                     {{ item.menu_description }}
+                  </v-card-text>
+                  <v-card-text v-if="item.is_sold_out || item.limit_per_event != null" class="text-left px-4 py-0 pb-2">
+                    <MenuStatusChips
+                      :is-sold-out="item.is_sold_out"
+                      :limit-per-event="item.limit_per_event"
+                      align="start"
+                    />
                   </v-card-text>
                   <v-card-text class="text-right text-h5 pb-5"> ¥ {{ priceString(item.menu_price) }} </v-card-text>
                 </v-card>

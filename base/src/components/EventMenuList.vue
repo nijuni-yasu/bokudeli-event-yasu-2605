@@ -31,6 +31,13 @@ const isMenuAddDisabled = (menu: BokudeliEventMenu): boolean => {
   return props.disabled || menu.is_sold_out || isMenuLimitSoldOut(menu)
 }
 
+const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
+  if (menu.is_sold_out || isMenuLimitSoldOut(menu)) {
+    return $t('event_menu.sold_out')
+  }
+  return $t('event_details.menu_join_button')
+}
+
 // is_selected が true のメニューのみを表示
 const filteredMenus = computed(() => {
   return eventStore.menus?.filter((menu) => menu.is_selected === true)
@@ -68,7 +75,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
               <v-col cols="4" class="d-flex flex-shrink-0 align-stretch">
                 <div class="menu-image-wrapper menu-image-wrapper-horizontal">
                   <EventMenuImage :event="eventStore.event" :menu="menu" :alt="menu.menu_name" cover />
-                  <MenuStatusChips v-if="menu.is_sold_out" :is-sold-out="true" placement="overlay" />
                 </div>
               </v-col>
               <v-col cols="8" class="pa-4 pa-md-5 d-flex flex-column menu-content-col">
@@ -79,10 +85,15 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                   {{ menu.menu_description }}
                 </v-card-text>
                 <v-card-text
-                  v-if="!menu.is_sold_out && remainingInfo != null"
+                  v-if="
+                    !menu.is_sold_out &&
+                    !isMenuLimitSoldOut(menu) &&
+                    remainingInfo != null &&
+                    remainingInfo.remaining > 0
+                  "
                   class="text-left px-0 py-0 mb-2 flex-shrink-0"
                 >
-                  <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
+                  <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
                 </v-card-text>
                 <div class="menu-spacer" />
                 <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
@@ -99,7 +110,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     :prepend-icon="mdiFoodForkDrink"
                     @click="emit('selectMenu', menu)"
                   >
-                    {{ $t('event_details.menu_join_button') }}
+                    {{ getMenuJoinButtonLabel(menu) }}
                   </v-btn>
                 </div>
               </v-col>
@@ -129,7 +140,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     :aspect-ratio="1"
                     cover
                   />
-                  <MenuStatusChips v-if="menu.is_sold_out" :is-sold-out="true" placement="overlay" />
                 </div>
               </v-col>
 
@@ -141,10 +151,15 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                   {{ menu.menu_description }}
                 </v-card-text>
                 <v-card-text
-                  v-if="!menu.is_sold_out && remainingInfo != null"
+                  v-if="
+                    !menu.is_sold_out &&
+                    !isMenuLimitSoldOut(menu) &&
+                    remainingInfo != null &&
+                    remainingInfo.remaining > 0
+                  "
                   class="text-left px-1 py-0 flex-shrink-0"
                 >
-                  <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
+                  <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
                 </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
@@ -164,7 +179,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         :prepend-icon="mdiFoodForkDrink"
                         @click="emit('selectMenu', menu)"
                       >
-                        {{ $t('event_details.menu_join_button') }}
+                        {{ getMenuJoinButtonLabel(menu) }}
                       </v-btn>
                     </v-col>
                   </v-row>

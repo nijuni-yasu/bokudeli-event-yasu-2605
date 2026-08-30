@@ -399,7 +399,8 @@ export default {
     shop_not_found: 'お店が見つかりませんでした',
   },
   menu_status: {
-    limit_per_event: '上限 {0} 食',
+    limit_per_event: '限定 {0} 食',
+    limited_period: '期間限定 {0}',
   },
   event_menu: {
     select_menu_instruction: '参加者が注文できるメニューを選択いただけます',
