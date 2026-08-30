@@ -55,6 +55,9 @@ const useHorizontalLayout = computed(() => {
                 <v-card-text class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
+                <v-card-text v-if="menu.is_sold_out" class="text-left px-0 py-0 mb-2 flex-shrink-0">
+                  <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
+                </v-card-text>
                 <div class="menu-spacer" />
                 <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
                   <v-card-text class="text-left pa-0">
@@ -63,14 +66,15 @@ const useHorizontalLayout = computed(() => {
                   </v-card-text>
                   <v-btn
                     class="menu-button menu-button-single"
-                    :class="{ 'disable-menu-button': disabled }"
+                    :class="{ 'disable-menu-button': disabled || menu.is_sold_out }"
                     color="primary"
                     rounded="pill"
                     elevation="5"
                     :prepend-icon="mdiFoodForkDrink"
+                    :disabled="disabled || menu.is_sold_out"
                     @click="emit('selectMenu', menu)"
                   >
-                    {{ $t('event_details.menu_join_button') }}
+                    {{ menu.is_sold_out ? $t('event_menu.sold_out') : $t('event_details.menu_join_button') }}
                   </v-btn>
                 </div>
               </v-col>
@@ -103,6 +107,9 @@ const useHorizontalLayout = computed(() => {
                 <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
+                <v-card-text v-if="menu.is_sold_out" class="text-left px-1 py-0 flex-shrink-0">
+                  <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
+                </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
                   <v-card-text class="text-right pa-0 ma-3">
@@ -114,14 +121,15 @@ const useHorizontalLayout = computed(() => {
                       <v-btn
                         class="menu-button"
                         block
-                        :class="{ 'disable-menu-button': disabled }"
+                        :class="{ 'disable-menu-button': disabled || menu.is_sold_out }"
                         color="primary"
                         rounded="pill"
                         elevation="5"
                         :prepend-icon="mdiFoodForkDrink"
+                        :disabled="disabled || menu.is_sold_out"
                         @click="emit('selectMenu', menu)"
                       >
-                        {{ $t('event_details.menu_join_button') }}
+                        {{ menu.is_sold_out ? $t('event_menu.sold_out') : $t('event_details.menu_join_button') }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -147,6 +155,9 @@ const useHorizontalLayout = computed(() => {
 <style lang="scss" scoped>
 .disable-menu-button {
   opacity: 0.6;
+}
+.sold-out {
+  color: red;
 }
 /* 説明文: 2行で切り捨て（横長・グリッド共通） */
 .description-text,

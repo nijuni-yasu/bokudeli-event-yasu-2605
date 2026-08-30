@@ -118,6 +118,9 @@ const selectedCount = computed(() => {
                   <v-card-title class="justify-center pb-3 text-wrap">
                     {{ item.menu_name }}
                   </v-card-title>
+                  <v-card-text v-if="item.is_sold_out" class="text-center py-0">
+                    <span class="sold-out">{{ t('event_menu.sold_out') }}</span>
+                  </v-card-text>
                   <v-card-text class="text-left text-subtitle-2 pb-8">
                     {{ item.menu_description }}
                   </v-card-text>
@@ -174,5 +177,8 @@ const selectedCount = computed(() => {
   top: 10px;
   right: 10px;
   z-index: 1;
+}
+.sold-out {
+  color: red;
 }
 </style>

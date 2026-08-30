@@ -144,6 +144,8 @@ export default {
     cannot_order_limit_people: '定員に達しました。注文確定できません。',
     cannot_order_unselected_menu:
       '現在注文できないメニューが含まれているため、注文を確定できません。お手数ですが、カートの内容を削除し、改めてメニューを選び直してください。',
+    cannot_order_sold_out:
+      '売り切れのメニューが含まれているため、注文を確定できません。お手数ですが、カートの内容を削除し、改めてメニューを選び直してください。',
     order_completed: '注文を完了しました。',
     payment_failed: '決済処理に失敗しました。サポートにお問い合わせください。',
     order_failed: '注文処理に失敗しました。サポートにお問い合わせください。',
@@ -399,6 +401,7 @@ export default {
     orderable: '選択中',
     not_orderable: '非表示',
     no_menus_found: '注文できるメニューがありません',
+    sold_out: '売り切れ',
   },
   event_detail: {
     event_detail: '開催内容',

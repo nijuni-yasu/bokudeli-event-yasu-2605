@@ -267,6 +267,33 @@ const getEventMonthLabel = (event: BokudeliEvent): string => {
   return `${Number(m)}月`
 }
 
+/** カート内メニューの売切状態（event_id → menu_id → is_sold_out） */
+const menuSoldOutByEvent = ref<Record<string, Record<string, boolean>>>({})
+
+watch(
+  cart,
+  async (cartItems) => {
+    if (cartItems == null || cartItems.length === 0) {
+      menuSoldOutByEvent.value = {}
+      return
+    }
+    const eventStoreOptions = await resolveEventStoreOptions()
+    const next: Record<string, Record<string, boolean>> = {}
+    await Promise.all(
+      cartItems.map(async (cartItem) => {
+        const eventStore = useEventStore(cartItem.event.event_id, eventStoreOptions)
+        const eventMenus = await eventStore.getLoadedMenus()
+        next[cartItem.event.event_id] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
+      }),
+    )
+    menuSoldOutByEvent.value = next
+  },
+  { immediate: true, deep: true },
+)
+
+const isMenuSoldOutInCart = (eventId: string, menuId: string): boolean =>
+  menuSoldOutByEvent.value[eventId]?.[menuId] === true
+
 const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
   if (cart.value == null) return null
   const budget = enterpriseSubsidyBudget.value
@@ -303,7 +330,9 @@ const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   return false
 }
 
-const checkCart = async (cartItem: CartItem): Promise<true | 'deadline' | 'limitPeople' | 'unselectedMenu'> => {
+const checkCart = async (
+  cartItem: CartItem,
+): Promise<true | 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu'> => {
   const { event, orders } = cartItem
 
   if (!isWithinOrderDeadline(event.event_deadline_datetime)) {
@@ -324,6 +353,9 @@ const checkCart = async (cartItem: CartItem): Promise<true | 'deadline' | 'limit
     if (eventMenu == null || !eventMenu.is_selected) {
       return 'unselectedMenu'
     }
+    if (eventMenu.is_sold_out) {
+      return 'soldOutMenu'
+    }
   }
 
   return true
@@ -342,7 +374,7 @@ const alertBody = computed({
   },
 })
 
-const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu') => {
+const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu') => {
   switch (reason) {
     case 'deadline':
       alertBody.value = $t('cart.cannot_order_deadline')
@@ -352,6 +384,9 @@ const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu')
       break
     case 'unselectedMenu':
       alertBody.value = $t('cart.cannot_order_unselected_menu')
+      break
+    case 'soldOutMenu':
+      alertBody.value = $t('cart.cannot_order_sold_out')
       break
   }
 }
@@ -768,7 +803,15 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                 </thead>
                 <tbody>
                   <tr v-for="menu in cartItem.groupedMenus" :key="menu.menu_id">
-                    <td style="padding: 1px">{{ menu.menu_name }}</td>
+                    <td style="padding: 1px">
+                      {{ menu.menu_name }}
+                      <span
+                        v-if="isMenuSoldOutInCart(cartItem.event.event_id, menu.menu_id)"
+                        class="sold-out-label d-block text-caption"
+                      >
+                        {{ $t('event_menu.sold_out') }}
+                      </span>
+                    </td>
                     <td style="padding: 1px">
                       <div class="d-flex align-center justify-center">
                         <v-btn
@@ -1064,5 +1107,9 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
     font-size: 0.75rem;
     line-height: 1.25rem;
   }
+}
+
+.sold-out-label {
+  color: red;
 }
 </style>
