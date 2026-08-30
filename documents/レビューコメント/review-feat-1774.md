@@ -10,7 +10,7 @@
 | [ ] | RC-4 | なし, 3888809799, 3889327188 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
 | [x] | RC-5 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `checkCart` に存在しない `eventId` を参照しており型エラー（CI Typecheck が失敗する）<br>`event.event_id` が正しい |
 | [x] | RC-6 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 🐛 実害 | 🔧 微修正 | S | `loadMenuLimitRemainingMap` が setup 外（watch・非同期ハンドラ）から `inject` を呼んでいる<br>enterprise スコープが解決できず、誤ったスコープの store を生成する |
-| [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
+| [x] | RC-7 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
 | [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `skipOrdersEnterpriseFilter` のとき pinia ID が options を無視した固定値になる<br>events 側の enterprise フィルタ差が store ID に反映されない |
 | [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
 | [x] | RC-10 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `findUnorderableMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
@@ -34,6 +34,11 @@
 | [x] | RC-28 | 3888809796 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | M | 売切同期が `saveMenu` で EventMenu 全体を書き戻し<br>Transaction 内再取得の `updateMenuSoldOut` で最新フィールドを反映 |
 | [ ] | RC-29 | 3888809792 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | トリガー実行順で古い売切状態が後勝ちしうる<br>同期時に PartnerMenu を再取得するか世代比較が必要 |
 | [ ] | RC-30 | 3888809790 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 📋 仕様追加 | L | 同時 `confirmOrder` で読取のみの上限チェックが競合<br>メニュー単位の共有カウンタ更新で直列化が必要 |
+| [ ] | RC-31 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventCartDialog` の v-select label が `"個数"` ハードコード<br>`cart.count` の i18n キーを使う |
+| [x] | RC-32 | 3889436159 | 👌 修正不要 | — | — | 👤 UX, 📑 仕様書 | 👀 確認のみ | — | グリッド側 `v-btn` に `:disabled` を付ける提案<br>RC-24 と同様、クリックで無効理由アラートを出す設計のため |
+| [ ] | RC-33 | 3889436170 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | `remainingByMenuId` で menu ごとに orders を filter<br>1 回走査の Map 化で計算量削減 |
+| [x] | RC-34 | 3889436186 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | 売切同期の「即時反映」文言が仕様と矛盾<br>「数秒で反映」に修正（auto-fix） |
+| [ ] | RC-35 | 3889437560 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 📋 仕様追加 | M | Rules で `limit_per_event` を 1〜1000 または null に制約<br>改変クライアント直書きの無制限化を防止 |
 
 ---
 
@@ -337,7 +342,7 @@ enterprise スコープが解決できず、誤ったスコープの store を�
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -347,7 +352,7 @@ enterprise スコープが解決できず、誤ったスコープの store を�
 
 **想定工数**: M
 
-**判断理由**: reject / `null` 返却のどちらを採るかで呼び出し側の分岐が変わり、修正方針が一意でないため自動修正の対象外とした。
+**判断理由**: `waitForConfirmedOrders` は timeout 時に reject し、`loadMenuLimitRemainingMap` は catch で `null` を返すよう修正済み（#1774 コミット 59f3aec9a）。残数表示の満数誤表示は解消。`checkCart` は `limitMap == null` 時に上限チェックをスキップするが、サーバー側検証が正本のため本 RC の主眼は達成。
 
 ---
 
@@ -1383,5 +1388,231 @@ permission-denied で残数購読不能。enterprise_id 条件維持または別
 **想定工数**: L
 
 **判断理由**: 指摘は技術的に妥当。RC-16（Checkout〜Webhook 枠未確保）とは経路が異なるが、同種の同時確定問題。§5.5 カウンタ採用または tx 内ロック設計が必要で L。auto-fix 対象外。
+
+---
+
+## 評価セッション（2026-08-30 21:52・shokujii-code-review）
+
+- **評価日時**: 2026-08-30 21:52 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-7 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | timeout 時 reject + `loadMenuLimitRemainingMap` null 返却で満数誤表示を解消（再確認） |
+| [ ] | RC-31 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventCartDialog` v-select の label `"個数"` が i18n 未使用 |
+
+---
+
+**識別子**: RC-31（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:173`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
++        <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
++      </v-row>
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: カート追加ダイアログの個数選択 `v-select` の `label="個数"` がハードコードされている。同一 PR 内の `cart.vue` は `$t('cart.count')` を使っており、base コンポーネントは `base/src/locales/messages/ja.ts` にキーを置く規約 → `label` を `$t('cart.count')` に変更する（既存キー `cart.count` を流用可）。
+
+**コメント要約**: EventCartDialog の v-select label が i18n 未使用
+`cart.count` キーへ置き換える
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: UI 文言は ja.ts 集約がプロジェクト規約。既存キーで 1 行修正可能。
+
+---
+
+## 評価セッション（2026-08-30 22:04・wait-ai-pr-review auto）
+
+- **評価日時**: 2026-08-30 22:04 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **REVIEW_REQUEST_SINCE**: 2026-08-30T12:55:12Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（依頼コメント 5468810785、Codex 接続案内 5468819735、Copilot 承知返信 5468819187）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-32 | 3889436159 | 👌 修正不要 | — | — | 👤 UX, 📑 仕様書 | 👀 確認のみ | — | グリッド側 `v-btn` に `:disabled` を付ける提案<br>RC-24 と同様、クリックで無効理由アラートを出す設計のため |
+| [ ] | RC-33 | 3889436170 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | `remainingByMenuId` で menu ごとに orders を filter<br>1 回走査の Map 化で計算量削減 |
+| [x] | RC-34 | 3889436186 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | 売切同期の「即時反映」文言が仕様と矛盾<br>「数秒で反映」に修正（auto-fix） |
+| [ ] | RC-35 | 3889437560 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 📋 仕様追加 | M | Rules で `limit_per_event` を 1〜1000 または null に制約<br>改変クライアント直書きの無制限化を防止 |
+
+### 自動修正サマリ
+
+- **RC-34**: `partner/src/locales/messages/ja.ts` の `sold_out_sync_notice` を「数秒で反映」に変更
+
+---
+
+**識別子**: RC-32（GitHub id: 3889436159）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventMenuList.vue:173`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+                       <v-btn
+                         class="menu-button"
+                         block
+                         :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                         color="primary"
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] グリッドレイアウト側も `isMenuAddDisabled(menu)` 時にクラスだけ当たっており、ボタンがクリック可能なままです。`v-btn` に `:disabled` を付けて操作をブロックしてください。
+
+**コメント要約**: グリッドレイアウトの v-btn に :disabled が無くクリック可能
+disabled 属性追加を提案
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 👤 UX, 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: RC-24 と同設計。横長・グリッドとも `disable-menu-button` クラスで見た目のみ無効化し、クリックで親 `selectMenu` が無効理由アラートを出す（§4.3.2）。`:disabled` 付与は RC-2 と同様にアラート到達不能になる。
+
+---
+
+**識別子**: RC-33（GitHub id: 3889436170）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/composable/useMenuLimitRemaining.ts:46`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+      const ordered = countOrderedByMenuId(confirmedOrders, menu.menu_id)
+      const remaining = computeRemaining(menu.limit_per_event, ordered)
+```
+
+**レビュワーのコメント（原文）**:
+
+`remainingByMenuId` の算出で、各 menu ごとに `countOrderedByMenuId()` が `confirmedOrders` を毎回 filter しており、メニュー数×注文数ぶん走査が発生します。`confirmedOrders` を 1 回だけ走査して menu_id→件数の Map を作ってから参照する形にすると、計算量を抑えられます。
+
+**コメント要約**: 残数計算が menu 数×注文数の走査
+1 回走査の Map 化で最適化可能
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当。イベント規模では許容範囲だが、menuLimit 共通 util への集約が望ましい。工数 M のため auto-fix 対象外。
+
+---
+
+**識別子**: RC-34（GitHub id: 3889436186）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `partner/src/locales/messages/ja.ts:257`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    sold_out_sync_notice: '売り切れを設定できます。注文受付中の全イベントに即時反映されます',
+```
+
+**レビュワーのコメント（原文）**:
+
+売り切れ同期は Firestore Trigger 経由で数秒程度の遅延があり得るため、「即時反映されます」は誤解を招きやすいです。仕様書の表現に合わせて「数秒で（/数秒以内に）反映」などに修正してください。
+
+**コメント要約**: 売切同期の「即時反映」が仕様と矛盾
+数秒遅延の表現へ修正
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `documents/04_飲食店向け/13_売り切れ機能のリアルタイム化.md` §反映遅延と一致。auto-fix で文言更新済み。
+
+---
+
+**識別子**: RC-35（GitHub id: 3889437560）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/schemas/limitPerEventField.ts:25`
+
+**該当コード（レビュー時点の diff）**:
+
+（diff_hunk 未取得・P2 Security Rules 指摘）
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Security Rulesでも限定食数を検証する**
+
+認証済み partner が Firestore SDK や改変クライアントからメニューを直接保存する場合、この Zod スキーマはクライアント側 converter にしか適用されず、`firestore.rules` の `partners/{partner_id}/menus` は UID だけを確認しているため、文字列・0・1000超などの値も保存できます。その値は `normalizeLimitPerEventForApp` で `null` に変換され、イベント承認時には意図せず「無制限」としてスナップショットされるため、Rules の create/update でも `null` または 1〜1000 の整数に制約し、Rules テストを追加してください。
+
+**コメント要約**: Rules 未検証で改変クライアントから不正 limit_per_event 保存可能
+Rules + テスト追加を提案
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当。Zod はクライアント converter のみで Rules バイパス可能。firebase パッケージ変更 + Rules テストが必要で M。auto-fix 対象外。
 
 ---
