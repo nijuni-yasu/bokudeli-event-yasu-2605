@@ -6,6 +6,8 @@ export type EventStoreOptions = {
   ordersEnterpriseId?: string | null
   /** PF / enterprise 向け: events の collectionGroup クエリに enterprise_id フィルタを追加。未指定キー = フィルタなし（partner） */
   eventsEnterpriseId?: string | null
+  /** true のとき member_orders に enterprise_id フィルタを付けない（limit_per_event 集計等） */
+  skipOrdersEnterpriseFilter?: boolean
   /** 下書き保存前の event 補正（enterprise subsidy スナップショット等） */
   draftPreparer?: EventDraftPreparer
 }

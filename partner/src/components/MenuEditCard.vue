@@ -50,18 +50,25 @@ const dateEnd = computed({
   },
 })
 
-const limitPerEvent = computed({
-  get: () => menu.value.limit_per_event ?? '',
-  set: (value: number | string) => {
-    if (value === '' || value == null) {
-      menu.value.limit_per_event = null
-      return
-    }
-    const parsed = Number(value)
-    if (Number.isInteger(parsed) && parsed >= 1) {
-      menu.value.limit_per_event = parsed
-    }
+const limitPerEventInput = ref<string | number>('')
+
+watch(
+  () => menu.value.limit_per_event,
+  (value) => {
+    limitPerEventInput.value = value ?? ''
   },
+  { immediate: true },
+)
+
+watch(limitPerEventInput, (value) => {
+  if (value === '' || value == null) {
+    menu.value.limit_per_event = null
+    return
+  }
+  const parsed = Number(value)
+  if (Number.isInteger(parsed) && parsed >= 1) {
+    menu.value.limit_per_event = parsed
+  }
 })
 
 const limitPerEventRule = (value: string | number): true | string => {
@@ -187,7 +194,7 @@ const handleSubmit = () => {
       </v-card-text>
       <v-card-text>
         <v-text-field
-          v-model="limitPerEvent"
+          v-model="limitPerEventInput"
           type="number"
           min="1"
           clearable

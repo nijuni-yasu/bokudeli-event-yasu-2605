@@ -40,13 +40,28 @@ const useHorizontalLayout = computed(() => {
   if (filteredMenus.value === undefined || filteredMenus.value.length === 0) return false
   return filteredMenus.value.length <= HORIZONTAL_LAYOUT_MAX_COUNT && !display.xs.value
 })
+
+type MenuWithRemaining = {
+  menu: BokudeliEventMenu
+  remainingInfo: ReturnType<typeof getRemainingForMenu>
+}
+
+const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
+  if (filteredMenus.value === undefined) {
+    return undefined
+  }
+  return filteredMenus.value.map((menu) => ({
+    menu,
+    remainingInfo: getRemainingForMenu(menu),
+  }))
+})
 </script>
 <template>
   <section>
     <v-row v-if="filteredMenus !== undefined && eventStore.event != null" class="align-stretch">
       <!-- 横長レイアウト: 2件以下 かつ PC・タブレットのみ -->
       <template v-if="useHorizontalLayout">
-        <v-col v-for="menu of filteredMenus" :key="menu.menu_id" cols="12" class="pa-3">
+        <v-col v-for="{ menu, remainingInfo } of menusWithRemaining" :key="menu.menu_id" cols="12" class="pa-3">
           <v-card class="d-flex flex-column menu-card-horizontal">
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="4" class="d-flex flex-shrink-0 align-stretch">
@@ -65,11 +80,11 @@ const useHorizontalLayout = computed(() => {
                   <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
                 </v-card-text>
                 <v-card-text
-                  v-else-if="getRemainingForMenu(menu) != null"
+                  v-else-if="remainingInfo != null"
                   class="text-left px-0 py-0 mb-2 flex-shrink-0"
                 >
-                  <span v-if="getRemainingForMenu(menu)!.remaining > 0" class="menu-limit-remaining">
-                    {{ $t('event_menu.remaining_count', [getRemainingForMenu(menu)!.remaining]) }}
+                  <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
+                    {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
                   </span>
                   <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
                 </v-card-text>
@@ -106,7 +121,7 @@ const useHorizontalLayout = computed(() => {
 
       <!-- グリッドレイアウト: 4件以上 または スマホ（3件以下でも） -->
       <template v-else>
-        <v-col v-for="menu of filteredMenus" :key="menu.menu_id" md="4" sm="6" cols="12" class="pa-3">
+        <v-col v-for="{ menu, remainingInfo } of menusWithRemaining" :key="menu.menu_id" md="4" sm="6" cols="12" class="pa-3">
           <v-card height="100%" color="text-center" class="d-flex flex-column">
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="6" sm="12" class="d-flex flex-shrink-0">
@@ -131,9 +146,9 @@ const useHorizontalLayout = computed(() => {
                 <v-card-text v-if="menu.is_sold_out" class="text-left px-1 py-0 flex-shrink-0">
                   <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
                 </v-card-text>
-                <v-card-text v-else-if="getRemainingForMenu(menu) != null" class="text-left px-1 py-0 flex-shrink-0">
-                  <span v-if="getRemainingForMenu(menu)!.remaining > 0" class="menu-limit-remaining">
-                    {{ $t('event_menu.remaining_count', [getRemainingForMenu(menu)!.remaining]) }}
+                <v-card-text v-else-if="remainingInfo != null" class="text-left px-1 py-0 flex-shrink-0">
+                  <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
+                    {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
                   </span>
                   <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
                 </v-card-text>

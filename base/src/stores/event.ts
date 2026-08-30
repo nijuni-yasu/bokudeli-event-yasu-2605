@@ -207,6 +207,9 @@ const mergeEventStoreOptions = (options: EventStoreOptions): EventStoreOptions =
 })
 
 const resolveEventStorePiniaId = (eventId: string, options: EventStoreOptions): string => {
+  if (options.skipOrdersEnterpriseFilter === true) {
+    return `/events/${eventId}/menu-limit-orders`
+  }
   const hasOrdersFilter = 'ordersEnterpriseId' in options
   const hasEventsFilter = 'eventsEnterpriseId' in options
   const ordersId = hasOrdersFilter ? options.ordersEnterpriseId : undefined
@@ -442,7 +445,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     const subscribeOrders = () => {
       if (unsubscribeOrders == null) {
         const orderConstraints = [where('event_id', '==', eventId)]
-        if ('ordersEnterpriseId' in mergedOptions) {
+        if ('ordersEnterpriseId' in mergedOptions && mergedOptions.skipOrdersEnterpriseFilter !== true) {
           // undefined を渡すと where() が実行時エラーになるため null に正規化する
           orderConstraints.push(where('enterprise_id', '==', mergedOptions.ordersEnterpriseId ?? null))
         }

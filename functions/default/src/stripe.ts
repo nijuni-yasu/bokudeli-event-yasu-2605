@@ -103,6 +103,7 @@ export const createStripeCheckoutSession = onCall<
       }
     }
 
+    // 早期失敗用。確定チェックは各トランザクション内でも sold_out / limit を再検証する。
     const eventMenusForSoldOutCheck = await event.getMenus()
     try {
       assertNoSoldOutMenus(
@@ -137,6 +138,14 @@ export const createStripeCheckoutSession = onCall<
           }
         }
         const eventMenusInTx = await event.getMenus(transaction)
+        try {
+          assertNoSoldOutMenus(
+            eventMenusInTx,
+            ordersInTx.map((order) => order.menu_id),
+          )
+        } catch {
+          throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
+        }
         await assertMenuLimitsForConfirm({
           eventId: event_id,
           eventMenus: eventMenusInTx,
@@ -184,6 +193,14 @@ export const createStripeCheckoutSession = onCall<
           }
         }
         const eventMenusInTx = await event.getMenus(transaction)
+        try {
+          assertNoSoldOutMenus(
+            eventMenusInTx,
+            ordersInTx.map((order) => order.menu_id),
+          )
+        } catch {
+          throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
+        }
         await assertMenuLimitsForConfirm({
           eventId: event_id,
           eventMenus: eventMenusInTx,
