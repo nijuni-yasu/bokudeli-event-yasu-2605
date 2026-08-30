@@ -7,20 +7,6 @@ function findEventMenu(eventMenus: EventMenu[], menuId: string): EventMenu | und
 }
 
 /**
- * 注文対象 menu_id のうち、is_selected かつ !is_sold_out を満たさない ID を返す（addToCart 用）。
- */
-export function findUnorderableMenuIds(eventMenus: EventMenu[], menuIds: readonly string[]): string[] {
-  const uniqueMenuIds = [...new Set(menuIds)]
-  return uniqueMenuIds.filter((menuId) => {
-    const eventMenu = findEventMenu(eventMenus, menuId)
-    if (eventMenu == null || !eventMenu.is_selected || eventMenu.is_sold_out) {
-      return true
-    }
-    return false
-  })
-}
-
-/**
  * 売り切れになっている menu_id を返す（confirmOrder / Stripe 用）。
  */
 export function findSoldOutMenuIds(eventMenus: EventMenu[], menuIds: readonly string[]): string[] {

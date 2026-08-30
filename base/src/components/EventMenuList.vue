@@ -79,10 +79,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text v-if="menu.is_sold_out" class="text-left px-0 py-0 mb-2 flex-shrink-0">
                   <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
                 </v-card-text>
-                <v-card-text
-                  v-else-if="remainingInfo != null"
-                  class="text-left px-0 py-0 mb-2 flex-shrink-0"
-                >
+                <v-card-text v-else-if="remainingInfo != null" class="text-left px-0 py-0 mb-2 flex-shrink-0">
                   <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
                     {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
                   </span>
@@ -101,7 +98,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     rounded="pill"
                     elevation="5"
                     :prepend-icon="mdiFoodForkDrink"
-                    :disabled="isMenuAddDisabled(menu)"
                     @click="emit('selectMenu', menu)"
                   >
                     {{
@@ -121,7 +117,14 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
 
       <!-- グリッドレイアウト: 4件以上 または スマホ（3件以下でも） -->
       <template v-else>
-        <v-col v-for="{ menu, remainingInfo } of menusWithRemaining" :key="menu.menu_id" md="4" sm="6" cols="12" class="pa-3">
+        <v-col
+          v-for="{ menu, remainingInfo } of menusWithRemaining"
+          :key="menu.menu_id"
+          md="4"
+          sm="6"
+          cols="12"
+          class="pa-3"
+        >
           <v-card height="100%" color="text-center" class="d-flex flex-column">
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="6" sm="12" class="d-flex flex-shrink-0">
@@ -168,7 +171,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         rounded="pill"
                         elevation="5"
                         :prepend-icon="mdiFoodForkDrink"
-                        :disabled="isMenuAddDisabled(menu)"
                         @click="emit('selectMenu', menu)"
                       >
                         {{

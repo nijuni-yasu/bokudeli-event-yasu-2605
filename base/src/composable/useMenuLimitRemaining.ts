@@ -1,12 +1,12 @@
 import { computed, watch } from 'vue'
 import { computeRemaining, countOrderedByMenuId } from '@shokujii/common/utils/menuLimit.js'
-import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { resolveInjectedCommunityScope } from '@shokujii/base/composable/useAppCommunityStore.js'
 import {
-  buildEventStoreOptions,
+  resolveEventStoreOptionsFromInjectedEnterpriseId,
   useEventStore,
   type BokudeliEventMenu,
   type EventStore,
+  type EventStoreOptions,
 } from '@shokujii/base/stores/event.js'
 
 export type MenuLimitRemainingInfo = {
@@ -15,20 +15,20 @@ export type MenuLimitRemainingInfo = {
   remaining: number
 }
 
-/** limit_per_event はイベント全体の注文数で計算するため、enterprise 注文フィルタを外した store を使う */
-export function getMenuLimitOrderEventStore(eventId: string): EventStore {
-  const enterpriseId = resolveInjectedCommunityScope()?.enterpriseId
-  if (enterpriseId != null && enterpriseId !== '') {
-    return useEventStore(eventId, {
-      ...buildEventStoreOptions(enterpriseId),
-      skipOrdersEnterpriseFilter: true,
-    })
+/** limit_per_event はイベント全体の注文数で計算するため、enterprise 注文フィルタを外す */
+export function toMenuLimitEventStoreOptions(options: EventStoreOptions): EventStoreOptions {
+  if (options.ordersEnterpriseId != null) {
+    return { ...options, skipOrdersEnterpriseFilter: true }
   }
-  return useAppEventStore(eventId)
+  return options
 }
 
+/** setup 内で呼ぶ。非同期処理からは loadMenuLimitRemainingMap に options を渡す */
 export function useMenuLimitRemaining(eventId: string) {
-  const eventStore = getMenuLimitOrderEventStore(eventId)
+  const injectedOptions = resolveEventStoreOptionsFromInjectedEnterpriseId(
+    resolveInjectedCommunityScope()?.enterpriseId,
+  )
+  const eventStore = useEventStore(eventId, toMenuLimitEventStoreOptions(injectedOptions))
 
   const remainingByMenuId = computed(() => {
     const menus = eventStore.menus
@@ -104,8 +104,11 @@ export async function waitForConfirmedOrders(eventStore: EventStore) {
   })
 }
 
-export async function loadMenuLimitRemainingMap(eventId: string): Promise<Map<string, MenuLimitRemainingInfo>> {
-  const eventStore = getMenuLimitOrderEventStore(eventId)
+export async function loadMenuLimitRemainingMap(
+  eventId: string,
+  options: EventStoreOptions,
+): Promise<Map<string, MenuLimitRemainingInfo>> {
+  const eventStore = useEventStore(eventId, toMenuLimitEventStoreOptions(options))
   await eventStore.getLoadedMenus()
   const menus = eventStore.menus
   const confirmedOrders = await waitForConfirmedOrders(eventStore)

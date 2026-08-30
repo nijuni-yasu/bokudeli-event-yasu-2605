@@ -11,26 +11,6 @@ export function countOrderedByMenuId(orders: readonly EventMemberOrder[], menuId
   return orders.filter((order) => order.status === 'ordered' && order.menu_id === menuId).length
 }
 
-export function countOrderedByMenuIds(
-  orders: readonly EventMemberOrder[],
-  menuIds: readonly string[],
-): Map<string, number> {
-  const counts = new Map<string, number>()
-  for (const menuId of menuIds) {
-    counts.set(menuId, 0)
-  }
-  for (const order of orders) {
-    if (order.status !== 'ordered') {
-      continue
-    }
-    if (!counts.has(order.menu_id)) {
-      continue
-    }
-    counts.set(order.menu_id, (counts.get(order.menu_id) ?? 0) + 1)
-  }
-  return counts
-}
-
 export function computeRemaining(limit: number | null | undefined, orderedCount: number): number | null {
   if (limit == null) {
     return null

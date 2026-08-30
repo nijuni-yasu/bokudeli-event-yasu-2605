@@ -51,6 +51,7 @@ import {
   type CartEnterpriseSubsidyBudgetLoader,
 } from '@shokujii/base/composable/cartMonthlyUsage.js'
 import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import {
   loadMenuLimitRemainingMap,
   type MenuLimitRemainingInfo,
@@ -297,37 +298,45 @@ watch(
       menuLimitRemainingByEvent.value = {}
       return
     }
-    const eventStoreOptions = await resolveEventStoreOptions()
-    const nextSoldOut: Record<string, Record<string, boolean>> = {}
-    const nextLimit: Record<string, Record<string, MenuLimitRemainingInfo>> = {}
-    await Promise.all(
-      cartItems.map(async (cartItem) => {
-        const eventId = cartItem.event.event_id
-        const eventStore = useEventStore(eventId, eventStoreOptions)
-        const eventMenus = await eventStore.getLoadedMenus()
-        nextSoldOut[eventId] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
-        const limitMap = await loadMenuLimitRemainingMap(eventId)
-        nextLimit[eventId] = Object.fromEntries(limitMap)
+    try {
+      const eventStoreOptions = await resolveEventStoreOptions()
+      const nextSoldOut: Record<string, Record<string, boolean>> = {}
+      const nextLimit: Record<string, Record<string, MenuLimitRemainingInfo>> = {}
+      await Promise.all(
+        cartItems.map(async (cartItem) => {
+          const eventId = cartItem.event.event_id
+          const eventStore = useEventStore(eventId, eventStoreOptions)
+          const eventMenus = await eventStore.getLoadedMenus()
+          nextSoldOut[eventId] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
+          const limitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
+          nextLimit[eventId] = Object.fromEntries(limitMap)
 
-        const refreshLimits = async (): Promise<void> => {
-          const refreshedLimitMap = await loadMenuLimitRemainingMap(eventId)
-          menuLimitRemainingByEvent.value = {
-            ...menuLimitRemainingByEvent.value,
-            [eventId]: Object.fromEntries(refreshedLimitMap),
+          const refreshLimits = async (): Promise<void> => {
+            try {
+              const refreshedLimitMap = await loadMenuLimitRemainingMap(eventId, eventStoreOptions)
+              menuLimitRemainingByEvent.value = {
+                ...menuLimitRemainingByEvent.value,
+                [eventId]: Object.fromEntries(refreshedLimitMap),
+              }
+            } catch (error) {
+              reportClientError(error, { componentInfo: 'cart.refreshMenuLimitRemaining', severity: 'warn' })
+            }
           }
-        }
-        menuLimitWatchStops.push(
-          watch(
-            () => eventStore.confirmedOrders,
-            () => {
-              void refreshLimits()
-            },
-          ),
-        )
-      }),
-    )
-    menuSoldOutByEvent.value = nextSoldOut
-    menuLimitRemainingByEvent.value = nextLimit
+          menuLimitWatchStops.push(
+            watch(
+              () => eventStore.confirmedOrders,
+              () => {
+                void refreshLimits()
+              },
+            ),
+          )
+        }),
+      )
+      menuSoldOutByEvent.value = nextSoldOut
+      menuLimitRemainingByEvent.value = nextLimit
+    } catch (error) {
+      reportClientError(error, { componentInfo: 'cart.loadMenuSoldOutAndLimit', severity: 'warn' })
+    }
   },
   { immediate: true, deep: true },
 )
@@ -424,7 +433,7 @@ const checkCart = async (
     }
   }
 
-  const limitMap = await loadMenuLimitRemainingMap(eventId)
+  const limitMap = await loadMenuLimitRemainingMap(event.event_id, eventStoreOptions)
   if (limitMap.size > 0) {
     const menuCounts = new Map<string, number>()
     for (const order of orders) {
