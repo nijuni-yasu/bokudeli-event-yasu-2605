@@ -254,6 +254,7 @@ export default {
     image_hint: '※画像サイズは600x600推奨です',
     sold_out: '売り切れ',
     in_stock: '販売中',
+    sold_out_sync_notice: '注文受付中の全イベントに反映されます（数秒程度の遅延あり）',
     limited_edition: '販売期間',
     date_start: '開始日',
     date_end: '終了日',

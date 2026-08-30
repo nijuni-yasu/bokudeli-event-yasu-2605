@@ -166,6 +166,9 @@ const handleSubmit = () => {
           color="#FF0000"
           :label="`${menu.is_sold_out ? $t('menu_edit_card.sold_out') : $t('menu_edit_card.in_stock')}`"
         />
+        <p class="text-caption text-medium-emphasis mt-2 mb-0">
+          {{ $t('menu_edit_card.sold_out_sync_notice') }}
+        </p>
       </v-card-text>
       <template #actions>
         <v-spacer></v-spacer>
