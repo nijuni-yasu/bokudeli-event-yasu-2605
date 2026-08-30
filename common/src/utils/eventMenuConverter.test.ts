@@ -42,6 +42,13 @@ describe('convertFromPartnerMenuToEventMenu', () => {
 
     expect(result).toBeNull()
   })
+
+  it('limit_per_event を EventMenu にコピーする', () => {
+    const partnerMenu = makePartnerMenu('menu1', { limit_per_event: 20 })
+    const result = convertFromPartnerMenuToEventMenu(partnerMenu, EVENT_ID, EVENT_START, ['menu1'])
+
+    expect(result?.limit_per_event).toBe(20)
+  })
 })
 
 describe('convertPartnerMenusToEventMenus', () => {

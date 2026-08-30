@@ -72,6 +72,7 @@ export function convertFromPartnerMenuToEventMenu(
     menu_price: partnerMenu.menu_price,
     is_sold_out: partnerMenu.is_sold_out,
     menu_sort_number: partnerMenu.menu_sort_number,
+    limit_per_event: partnerMenu.limit_per_event,
     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
   })
 }
