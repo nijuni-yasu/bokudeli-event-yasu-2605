@@ -869,6 +869,24 @@
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
+          "fieldPath": "event_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "menu_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "member_orders",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
           "fieldPath": "community_id",
           "order": "ASCENDING"
         },
