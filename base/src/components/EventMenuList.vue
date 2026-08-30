@@ -41,6 +41,15 @@ const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
   return $t('event_details.menu_join_button')
 }
 
+const showRemainingChip = (menu: BokudeliEventMenu, remainingInfo: ReturnType<typeof getRemainingForMenu>): boolean => {
+  return (
+    !menu.is_sold_out &&
+    !isMenuLimitSoldOut(menu) &&
+    remainingInfo != null &&
+    remainingInfo.remaining > 0
+  )
+}
+
 // is_selected が true のメニューのみを表示
 const filteredMenus = computed(() => {
   return eventStore.menus?.filter((menu) => menu.is_selected === true)
@@ -87,23 +96,18 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <v-card-text
-                  v-if="
-                    !menu.is_sold_out &&
-                    !isMenuLimitSoldOut(menu) &&
-                    remainingInfo != null &&
-                    remainingInfo.remaining > 0
-                  "
-                  class="text-left px-0 py-0 mb-2 flex-shrink-0"
-                >
-                  <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
-                </v-card-text>
                 <div class="menu-spacer" />
-                <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
-                  <v-card-text class="text-left pa-0">
-                    <span class="yen-text">¥ </span>
-                    <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                  </v-card-text>
+                <div class="d-flex align-center flex-shrink-0 mb-2">
+                  <MenuStatusChips
+                    v-if="showRemainingChip(menu, remainingInfo)"
+                    :remaining="remainingInfo!.remaining"
+                    align="start"
+                  />
+                  <v-spacer />
+                  <span class="yen-text">¥ </span>
+                  <span class="price-text">{{ priceString(menu.menu_price) }}</span>
+                </div>
+                <div class="d-flex align-center justify-end flex-shrink-0">
                   <v-btn
                     class="menu-button menu-button-single"
                     :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
@@ -153,23 +157,18 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <v-card-text
-                  v-if="
-                    !menu.is_sold_out &&
-                    !isMenuLimitSoldOut(menu) &&
-                    remainingInfo != null &&
-                    remainingInfo.remaining > 0
-                  "
-                  class="text-left px-1 py-0 flex-shrink-0"
-                >
-                  <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
-                </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
-                  <v-card-text class="text-right pa-0 ma-3">
+                  <div class="d-flex align-center px-1 ma-3">
+                    <MenuStatusChips
+                      v-if="showRemainingChip(menu, remainingInfo)"
+                      :remaining="remainingInfo!.remaining"
+                      align="start"
+                    />
+                    <v-spacer />
                     <span class="yen-text">¥ </span>
                     <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                  </v-card-text>
+                  </div>
                   <v-row class="pb-1 px-2">
                     <v-col cols="12">
                       <v-btn

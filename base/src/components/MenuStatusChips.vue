@@ -14,10 +14,13 @@ const props = withDefaults(
     limitedPeriodStart?: number | null
     limitedPeriodEnd?: number | null
     align?: 'start' | 'center'
+    /** 表示する chip の種別（all: すべて、limited-period: 期間限定のみ、status: 期間限定以外） */
+    mode?: 'all' | 'limited-period' | 'status'
   }>(),
   {
     isSoldOut: false,
     align: 'start',
+    mode: 'all',
   },
 )
 
@@ -32,8 +35,23 @@ const showSoldOut = computed(() => props.isSoldOut)
 const showRemainingCount = computed(() => !props.isSoldOut && props.remaining != null && props.remaining > 0)
 const showLimitSetting = computed(() => !props.isSoldOut && props.limitPerEvent != null && props.limitPerEvent > 0)
 
+const showLimitedPeriodChip = computed(
+  () => (props.mode === 'all' || props.mode === 'limited-period') && showLimitedPeriod.value,
+)
+const showSoldOutChip = computed(() => (props.mode === 'all' || props.mode === 'status') && showSoldOut.value)
+const showRemainingCountChip = computed(
+  () => (props.mode === 'all' || props.mode === 'status') && showRemainingCount.value,
+)
+const showLimitSettingChip = computed(
+  () => (props.mode === 'all' || props.mode === 'status') && showLimitSetting.value,
+)
+
 const hasVisibleChip = computed(
-  () => showLimitedPeriod.value || showSoldOut.value || showRemainingCount.value || showLimitSetting.value,
+  () =>
+    showLimitedPeriodChip.value ||
+    showSoldOutChip.value ||
+    showRemainingCountChip.value ||
+    showLimitSettingChip.value,
 )
 
 const rootClass = computed(() => ({
@@ -44,16 +62,16 @@ const rootClass = computed(() => ({
 
 <template>
   <div v-if="hasVisibleChip" class="menu-status-chips" :class="rootClass">
-    <v-chip v-if="showLimitedPeriod" color="warning" variant="tonal" size="small" label>
+    <v-chip v-if="showLimitedPeriodChip" color="warning" variant="tonal" size="small" label>
       {{ $t('menu_status.limited_period', [limitedPeriodLabel]) }}
     </v-chip>
-    <v-chip v-if="showSoldOut" color="error" variant="tonal" size="small" label>
+    <v-chip v-if="showSoldOutChip" color="error" variant="tonal" size="small" label>
       {{ $t('event_menu.sold_out') }}
     </v-chip>
-    <v-chip v-if="showRemainingCount" color="primary" variant="tonal" size="small" label>
+    <v-chip v-if="showRemainingCountChip" color="primary" variant="tonal" size="small" label>
       {{ $t('event_menu.remaining_count', [remaining]) }}
     </v-chip>
-    <v-chip v-if="showLimitSetting" color="success" variant="tonal" size="small" label>
+    <v-chip v-if="showLimitSettingChip" color="success" variant="tonal" size="small" label>
       {{ $t('menu_status.limit_per_event', [limitPerEvent]) }}
     </v-chip>
   </div>

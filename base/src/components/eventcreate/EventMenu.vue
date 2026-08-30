@@ -124,14 +124,16 @@ const selectedCount = computed(() => {
                   <v-card-text class="text-left text-subtitle-2 pb-2">
                     {{ item.menu_description }}
                   </v-card-text>
-                  <v-card-text v-if="item.is_sold_out || item.limit_per_event != null" class="text-left px-4 py-0 pb-2">
+                  <v-card-text class="d-flex align-center px-4 pb-5">
                     <MenuStatusChips
+                      v-if="item.is_sold_out || item.limit_per_event != null"
                       :is-sold-out="item.is_sold_out"
                       :limit-per-event="item.limit_per_event"
                       align="start"
                     />
+                    <v-spacer />
+                    <span class="text-h5">¥ {{ priceString(item.menu_price) }}</span>
                   </v-card-text>
-                  <v-card-text class="text-right text-h5 pb-5"> ¥ {{ priceString(item.menu_price) }} </v-card-text>
                 </v-card>
               </v-col>
             </v-row>

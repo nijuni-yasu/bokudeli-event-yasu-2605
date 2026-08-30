@@ -8,12 +8,11 @@ const props = defineProps<{
   imageUrl: string
 }>()
 
-const hasStatusChips = computed(
-  () =>
-    props.menu.is_sold_out ||
-    props.menu.limit_per_event != null ||
-    (props.menu.menu_date_start != null && props.menu.menu_date_end != null),
+const hasLimitedPeriod = computed(
+  () => props.menu.menu_date_start != null && props.menu.menu_date_end != null,
 )
+
+const hasPriceRowChips = computed(() => props.menu.is_sold_out || props.menu.limit_per_event != null)
 </script>
 
 <template>
@@ -28,17 +27,23 @@ const hasStatusChips = computed(
     <v-card-text class="py-2">
       {{ menu.menu_description }}
     </v-card-text>
-    <v-card-text v-if="hasStatusChips" class="py-1">
+    <v-card-text v-if="hasLimitedPeriod" class="py-1">
       <MenuStatusChips
+        mode="limited-period"
         :limited-period-start="menu.menu_date_start"
         :limited-period-end="menu.menu_date_end"
-        :is-sold-out="menu.is_sold_out"
-        :limit-per-event="menu.limit_per_event"
         align="start"
       />
     </v-card-text>
     <div class="spacer" />
-    <v-card-text class="d-flex">
+    <v-card-text class="d-flex align-center py-2">
+      <MenuStatusChips
+        v-if="hasPriceRowChips"
+        mode="status"
+        :is-sold-out="menu.is_sold_out"
+        :limit-per-event="menu.limit_per_event"
+        align="start"
+      />
       <v-spacer />
       <span class="text-h4">{{ $n(menu.menu_price, 'currency') }}</span>
     </v-card-text>

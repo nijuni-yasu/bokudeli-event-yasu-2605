@@ -39,6 +39,14 @@ const currentMenu = computed(() => {
 
 const remainingInfo = computed(() => getRemainingForMenu(currentMenu.value))
 
+const showRemainingChip = computed(
+  () =>
+    !currentMenu.value.is_sold_out &&
+    !isMenuLimitSoldOut(currentMenu.value) &&
+    remainingInfo.value != null &&
+    remainingInfo.value.remaining > 0,
+)
+
 const maxSelectableCount = computed(() => {
   const remaining = remainingInfo.value?.remaining
   if (remaining == null) {
@@ -150,18 +158,13 @@ const addCart = async () => {
       <v-card-text class="text-left py-2">
         {{ currentMenu.menu_description }}
       </v-card-text>
-      <v-card-text
-        v-if="
-          !currentMenu.is_sold_out &&
-          !isMenuLimitSoldOut(currentMenu) &&
-          remainingInfo != null &&
-          remainingInfo.remaining > 0
-        "
-        class="text-left py-0"
-      >
-        <MenuStatusChips :remaining="remainingInfo.remaining" align="start" />
-      </v-card-text>
-      <v-card-text class="text-right pb-8">
+      <v-card-text class="d-flex align-center pb-8">
+        <MenuStatusChips
+          v-if="showRemainingChip"
+          :remaining="remainingInfo!.remaining"
+          align="start"
+        />
+        <v-spacer />
         <span class="text-h5">¥ </span>
         <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
       </v-card-text>
