@@ -28,6 +28,7 @@ import {
   syncEnterpriseSubsidyOrdersBeforeConfirm,
   writeEnterpriseSubsidyRecalculatedAudit,
 } from './utils/enterpriseSubsidyOrders.js'
+import { assertNoSoldOutMenus, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
 
 const logger = createModuleLogger('stripe')
 const db = getFirestore()
@@ -99,6 +100,16 @@ export const createStripeCheckoutSession = onCall<
       if (order.status !== 'in_cart') {
         throw new HttpsError('failed-precondition', 'カート内の注文のみ決済できます')
       }
+    }
+
+    const eventMenusForSoldOutCheck = await event.getMenus()
+    try {
+      assertNoSoldOutMenus(
+        eventMenusForSoldOutCheck,
+        orders.map((order) => order.menu_id),
+      )
+    } catch {
+      throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
     }
 
     let checkoutOrders = orders

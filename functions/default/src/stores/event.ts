@@ -378,6 +378,23 @@ export const getAcceptingOrderEventsBeforeDeadline = async (
   return eventsSnapshot.docs.map((doc) => doc.data())
 }
 
+/** 注文受付中かつ注文期限内の、指定 partner のイベントを取得する */
+export const getAcceptingOrderEventsByPartner = async (
+  partnerId: string,
+  nowDateTimeMillis: number,
+): Promise<ShokujiiEvent[]> => {
+  const db = getFirestore()
+  const eventsRef = db
+    .collectionGroup('events')
+    .where('partner_id', '==', partnerId)
+    .where('event_status.value', '==', 'accepting_order')
+    .where('is_deleted', '==', false)
+    .where('event_deadline_datetime', '>', Timestamp.fromMillis(nowDateTimeMillis))
+    .withConverter(new ShokujiiEventConverter())
+  const eventsSnapshot = await eventsRef.get()
+  return eventsSnapshot.docs.map((doc) => doc.data())
+}
+
 export const getAcceptingOrderEventsByTime = async (
   startTimeMillis: number,
   endTimeMillis: number,
