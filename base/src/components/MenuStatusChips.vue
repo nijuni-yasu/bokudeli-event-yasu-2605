@@ -42,16 +42,11 @@ const showSoldOutChip = computed(() => (props.mode === 'all' || props.mode === '
 const showRemainingCountChip = computed(
   () => (props.mode === 'all' || props.mode === 'status') && showRemainingCount.value,
 )
-const showLimitSettingChip = computed(
-  () => (props.mode === 'all' || props.mode === 'status') && showLimitSetting.value,
-)
+const showLimitSettingChip = computed(() => (props.mode === 'all' || props.mode === 'status') && showLimitSetting.value)
 
 const hasVisibleChip = computed(
   () =>
-    showLimitedPeriodChip.value ||
-    showSoldOutChip.value ||
-    showRemainingCountChip.value ||
-    showLimitSettingChip.value,
+    showLimitedPeriodChip.value || showSoldOutChip.value || showRemainingCountChip.value || showLimitSettingChip.value,
 )
 
 const rootClass = computed(() => ({

@@ -64,10 +64,7 @@ const countOptions = computed(() => {
 })
 
 const isAddDisabled = computed(
-  () =>
-    currentMenu.value.is_sold_out ||
-    isMenuLimitSoldOut(currentMenu.value) ||
-    countOptions.value.length === 0,
+  () => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value) || countOptions.value.length === 0,
 )
 
 watch(isOpen, (open) => {
@@ -159,11 +156,7 @@ const addCart = async () => {
         {{ currentMenu.menu_description }}
       </v-card-text>
       <v-card-text class="d-flex align-center pb-8">
-        <MenuStatusChips
-          v-if="showRemainingChip"
-          :remaining="remainingInfo!.remaining"
-          align="start"
-        />
+        <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
         <v-spacer />
         <span class="text-h5">¥ </span>
         <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>

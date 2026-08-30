@@ -8,9 +8,7 @@ const props = defineProps<{
   imageUrl: string
 }>()
 
-const hasLimitedPeriod = computed(
-  () => props.menu.menu_date_start != null && props.menu.menu_date_end != null,
-)
+const hasLimitedPeriod = computed(() => props.menu.menu_date_start != null && props.menu.menu_date_end != null)
 
 const hasPriceRowChips = computed(() => props.menu.is_sold_out || props.menu.limit_per_event != null)
 </script>

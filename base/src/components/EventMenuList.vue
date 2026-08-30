@@ -42,12 +42,7 @@ const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
 }
 
 const showRemainingChip = (menu: BokudeliEventMenu, remainingInfo: ReturnType<typeof getRemainingForMenu>): boolean => {
-  return (
-    !menu.is_sold_out &&
-    !isMenuLimitSoldOut(menu) &&
-    remainingInfo != null &&
-    remainingInfo.remaining > 0
-  )
+  return !menu.is_sold_out && !isMenuLimitSoldOut(menu) && remainingInfo != null && remainingInfo.remaining > 0
 }
 
 // is_selected が true のメニューのみを表示
