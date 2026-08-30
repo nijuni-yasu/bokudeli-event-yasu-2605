@@ -224,6 +224,8 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 
 実装作業・PR・sandbox デプロイ・レビュー記録（`review-<slug>.md`）の正本は、次の **作業ブランチ** とする。命名は `<prefix>/<issue番号>` を基本とし、サブスコープがある場合は `<prefix>/<issue番号>-<suffix>`（例: `feat/1594-event-tags`）も可。
 
+**1 つの作業ブランチに複数 Issue のコミットが混在してもよい**（例: `feat/1774` に #1774 の実装と #2342 の `AGENTS.md` 更新）。ブランチ名は主たる Issue を表す番号でよい。各コミットメッセージの `#イシュー番号` は、そのコミットの変更内容に対応する Issue を付ける（`/git-commit-message` 参照）。
+
 | プレフィックス | 用途 | 例 |
 | :-- | :-- | :-- |
 | `feat/` | 機能追加・仕様実装 | `feat/1774` |
