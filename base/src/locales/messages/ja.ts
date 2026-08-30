@@ -398,6 +398,9 @@ export default {
     button_check_menu: 'メニューをみる',
     shop_not_found: 'お店が見つかりませんでした',
   },
+  menu_status: {
+    limit_per_event: '上限 {0} 食',
+  },
   event_menu: {
     select_menu_instruction: '参加者が注文できるメニューを選択いただけます',
     selected_count: '選択中: {count} / {total} メニュー',

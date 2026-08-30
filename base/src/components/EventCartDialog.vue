@@ -9,6 +9,7 @@ import { MENU_LIMIT_EXCEEDED_MESSAGE } from '@shokujii/common/utils/menuLimit.js
 import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -139,13 +140,10 @@ const addCart = async () => {
         {{ menu.menu_description }}
       </v-card-text>
       <v-card-text v-if="menu.is_sold_out" class="text-left py-0">
-        <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
+        <MenuStatusChips :is-sold-out="true" align="start" />
       </v-card-text>
       <v-card-text v-else-if="remainingInfo != null" class="text-left py-0">
-        <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
-          {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
-        </span>
-        <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+        <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
       </v-card-text>
       <v-card-text class="text-right pb-8">
         <span class="text-h5">¥ </span>
@@ -183,9 +181,3 @@ const addCart = async () => {
     </v-card>
   </v-dialog>
 </template>
-
-<style lang="scss" scoped>
-.sold-out {
-  color: red;
-}
-</style>

@@ -7,6 +7,7 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiStorefrontOutline, mdiGestureTap } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 const { t } = useI18n()
 
@@ -102,7 +103,10 @@ const selectedCount = computed(() => {
                   }"
                   @click="toggleMenuSelection(item.menu_id)"
                 >
-                  <EventMenuImage :event="event" :menu="item" cover :aspect-ratio="1" />
+                  <div class="menu-image-wrapper">
+                    <EventMenuImage :event="event" :menu="item" cover :aspect-ratio="1" />
+                    <MenuStatusChips v-if="item.is_sold_out" :is-sold-out="true" placement="overlay" />
+                  </div>
 
                   <!-- 選択状態インジケーター -->
                   <v-chip
@@ -118,9 +122,6 @@ const selectedCount = computed(() => {
                   <v-card-title class="justify-center pb-3 text-wrap">
                     {{ item.menu_name }}
                   </v-card-title>
-                  <v-card-text v-if="item.is_sold_out" class="text-center py-0">
-                    <span class="sold-out">{{ t('event_menu.sold_out') }}</span>
-                  </v-card-text>
                   <v-card-text class="text-left text-subtitle-2 pb-8">
                     {{ item.menu_description }}
                   </v-card-text>
@@ -178,7 +179,7 @@ const selectedCount = computed(() => {
   right: 10px;
   z-index: 1;
 }
-.sold-out {
-  color: red;
+.menu-image-wrapper {
+  position: relative;
 }
 </style>

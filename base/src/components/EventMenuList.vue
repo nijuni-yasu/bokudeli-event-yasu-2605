@@ -8,6 +8,7 @@ import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRem
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { mdiFoodForkDrink } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 /** 横長レイアウトを適用するメニュー数の上限（この数以下は横長、超えるとグリッド） */
 const HORIZONTAL_LAYOUT_MAX_COUNT = 2
@@ -67,6 +68,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
               <v-col cols="4" class="d-flex flex-shrink-0 align-stretch">
                 <div class="menu-image-wrapper menu-image-wrapper-horizontal">
                   <EventMenuImage :event="eventStore.event" :menu="menu" :alt="menu.menu_name" cover />
+                  <MenuStatusChips v-if="menu.is_sold_out" :is-sold-out="true" placement="overlay" />
                 </div>
               </v-col>
               <v-col cols="8" class="pa-4 pa-md-5 d-flex flex-column menu-content-col">
@@ -76,14 +78,11 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <v-card-text v-if="menu.is_sold_out" class="text-left px-0 py-0 mb-2 flex-shrink-0">
-                  <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
-                </v-card-text>
-                <v-card-text v-else-if="remainingInfo != null" class="text-left px-0 py-0 mb-2 flex-shrink-0">
-                  <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
-                    {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
-                  </span>
-                  <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+                <v-card-text
+                  v-if="!menu.is_sold_out && remainingInfo != null"
+                  class="text-left px-0 py-0 mb-2 flex-shrink-0"
+                >
+                  <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
                 </v-card-text>
                 <div class="menu-spacer" />
                 <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
@@ -100,13 +99,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     :prepend-icon="mdiFoodForkDrink"
                     @click="emit('selectMenu', menu)"
                   >
-                    {{
-                      menu.is_sold_out
-                        ? $t('event_menu.sold_out')
-                        : isMenuLimitSoldOut(menu)
-                          ? $t('event_menu.limit_sold_out')
-                          : $t('event_details.menu_join_button')
-                    }}
+                    {{ $t('event_details.menu_join_button') }}
                   </v-btn>
                 </div>
               </v-col>
@@ -136,6 +129,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     :aspect-ratio="1"
                     cover
                   />
+                  <MenuStatusChips v-if="menu.is_sold_out" :is-sold-out="true" placement="overlay" />
                 </div>
               </v-col>
 
@@ -146,14 +140,11 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <v-card-text v-if="menu.is_sold_out" class="text-left px-1 py-0 flex-shrink-0">
-                  <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
-                </v-card-text>
-                <v-card-text v-else-if="remainingInfo != null" class="text-left px-1 py-0 flex-shrink-0">
-                  <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
-                    {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
-                  </span>
-                  <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+                <v-card-text
+                  v-if="!menu.is_sold_out && remainingInfo != null"
+                  class="text-left px-1 py-0 flex-shrink-0"
+                >
+                  <MenuStatusChips :remaining="remainingInfo.remaining" :show-remaining-status="true" align="start" />
                 </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
@@ -173,13 +164,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         :prepend-icon="mdiFoodForkDrink"
                         @click="emit('selectMenu', menu)"
                       >
-                        {{
-                          menu.is_sold_out
-                            ? $t('event_menu.sold_out')
-                            : isMenuLimitSoldOut(menu)
-                              ? $t('event_menu.limit_sold_out')
-                              : $t('event_details.menu_join_button')
-                        }}
+                        {{ $t('event_details.menu_join_button') }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -206,12 +191,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
 .disable-menu-button {
   opacity: 0.6;
 }
-.sold-out {
-  color: red;
-}
-.menu-limit-remaining {
-  color: rgb(var(--v-theme-primary));
-}
 /* 説明文: 2行で切り捨て（横長・グリッド共通） */
 .description-text,
 .description-text-single {
@@ -230,6 +209,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
   overflow: hidden;
   flex-shrink: 0;
   width: 100%;
+  position: relative;
 }
 
 /* グリッドレイアウト: 画像を正方形で揃える */
