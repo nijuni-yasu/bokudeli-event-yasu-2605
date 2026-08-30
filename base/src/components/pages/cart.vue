@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { getAuth } from 'firebase/auth'
+import { FirebaseError } from 'firebase/app'
 import { getCommunityPath, getEventPath, getProfile } from '@/router/utils'
 import { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
@@ -50,6 +51,11 @@ import {
   type CartEnterpriseSubsidyBudgetLoader,
 } from '@shokujii/base/composable/cartMonthlyUsage.js'
 import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import {
+  loadMenuLimitRemainingMap,
+  type MenuLimitRemainingInfo,
+} from '@shokujii/base/composable/useMenuLimitRemaining.js'
+import { MENU_LIMIT_EXCEEDED_MESSAGE } from '@shokujii/common/utils/menuLimit.js'
 
 const props = withDefaults(
   defineProps<{
@@ -270,29 +276,89 @@ const getEventMonthLabel = (event: BokudeliEvent): string => {
 /** カート内メニューの売切状態（event_id → menu_id → is_sold_out） */
 const menuSoldOutByEvent = ref<Record<string, Record<string, boolean>>>({})
 
+/** カート内メニューの限定食数残数（event_id → menu_id → info） */
+const menuLimitRemainingByEvent = ref<Record<string, Record<string, MenuLimitRemainingInfo>>>({})
+
+const menuLimitWatchStops: Array<() => void> = []
+
+const clearMenuLimitWatches = (): void => {
+  for (const stop of menuLimitWatchStops) {
+    stop()
+  }
+  menuLimitWatchStops.length = 0
+}
+
 watch(
   cart,
   async (cartItems) => {
+    clearMenuLimitWatches()
     if (cartItems == null || cartItems.length === 0) {
       menuSoldOutByEvent.value = {}
+      menuLimitRemainingByEvent.value = {}
       return
     }
     const eventStoreOptions = await resolveEventStoreOptions()
-    const next: Record<string, Record<string, boolean>> = {}
+    const nextSoldOut: Record<string, Record<string, boolean>> = {}
+    const nextLimit: Record<string, Record<string, MenuLimitRemainingInfo>> = {}
     await Promise.all(
       cartItems.map(async (cartItem) => {
-        const eventStore = useEventStore(cartItem.event.event_id, eventStoreOptions)
+        const eventId = cartItem.event.event_id
+        const eventStore = useEventStore(eventId, eventStoreOptions)
         const eventMenus = await eventStore.getLoadedMenus()
-        next[cartItem.event.event_id] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
+        nextSoldOut[eventId] = Object.fromEntries(eventMenus.map((menu) => [menu.menu_id, menu.is_sold_out]))
+        const limitMap = await loadMenuLimitRemainingMap(eventStore)
+        nextLimit[eventId] = Object.fromEntries(limitMap)
+
+        const refreshLimits = async (): Promise<void> => {
+          const refreshedLimitMap = await loadMenuLimitRemainingMap(eventStore)
+          menuLimitRemainingByEvent.value = {
+            ...menuLimitRemainingByEvent.value,
+            [eventId]: Object.fromEntries(refreshedLimitMap),
+          }
+        }
+        menuLimitWatchStops.push(
+          watch(
+            () => eventStore.confirmedOrders,
+            () => {
+              void refreshLimits()
+            },
+          ),
+        )
       }),
     )
-    menuSoldOutByEvent.value = next
+    menuSoldOutByEvent.value = nextSoldOut
+    menuLimitRemainingByEvent.value = nextLimit
   },
   { immediate: true, deep: true },
 )
 
+onUnmounted(() => {
+  clearMenuLimitWatches()
+})
+
 const isMenuSoldOutInCart = (eventId: string, menuId: string): boolean =>
   menuSoldOutByEvent.value[eventId]?.[menuId] === true
+
+const getMenuLimitRemainingInCart = (eventId: string, menuId: string): MenuLimitRemainingInfo | undefined =>
+  menuLimitRemainingByEvent.value[eventId]?.[menuId]
+
+const canIncrementMenuCount = (eventId: string, menu: GroupedMenu): boolean => {
+  const info = getMenuLimitRemainingInCart(eventId, menu.menu_id)
+  if (info == null) {
+    return true
+  }
+  return info.ordered + menu.count < info.limit
+}
+
+const getOrderErrorMessage = (error: unknown): string | null => {
+  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
+    return error.message
+  }
+  if (error instanceof Error && error.message.includes(MENU_LIMIT_EXCEEDED_MESSAGE)) {
+    return error.message
+  }
+  return null
+}
 
 const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
   if (cart.value == null) return null
@@ -332,7 +398,7 @@ const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
 
 const checkCart = async (
   cartItem: CartItem,
-): Promise<true | 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu'> => {
+): Promise<true | 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu' | 'menuLimitMenu'> => {
   const { event, orders } = cartItem
 
   if (!isWithinOrderDeadline(event.event_deadline_datetime)) {
@@ -358,6 +424,23 @@ const checkCart = async (
     }
   }
 
+  const limitMap = await loadMenuLimitRemainingMap(eventStore)
+  if (limitMap.size > 0) {
+    const menuCounts = new Map<string, number>()
+    for (const order of orders) {
+      menuCounts.set(order.menu_id, (menuCounts.get(order.menu_id) ?? 0) + 1)
+    }
+    for (const [menuId, cartCount] of menuCounts) {
+      const limitInfo = limitMap.get(menuId)
+      if (limitInfo == null) {
+        continue
+      }
+      if (cartCount > limitInfo.remaining) {
+        return 'menuLimitMenu'
+      }
+    }
+  }
+
   return true
 }
 
@@ -374,7 +457,7 @@ const alertBody = computed({
   },
 })
 
-const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu') => {
+const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu' | 'menuLimitMenu') => {
   switch (reason) {
     case 'deadline':
       alertBody.value = $t('cart.cannot_order_deadline')
@@ -387,6 +470,9 @@ const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu' 
       break
     case 'soldOutMenu':
       alertBody.value = $t('cart.cannot_order_sold_out')
+      break
+    case 'menuLimitMenu':
+      alertBody.value = $t('cart.cannot_order_menu_limit')
       break
   }
 }
@@ -427,8 +513,9 @@ const startOrderProcess = async () => {
           return
         }
         window.location.href = response.data.url ?? getEventPath(event.community_account, eventId)
-      } catch {
-        alertBody.value = $t('cart.payment_failed')
+      } catch (error) {
+        const message = getOrderErrorMessage(error)
+        alertBody.value = message ?? $t('cart.payment_failed')
       }
     } else {
       try {
@@ -444,8 +531,9 @@ const startOrderProcess = async () => {
           alertBody.value = $t('cart.subsidy_recalculated')
           return
         }
-      } catch {
-        alertBody.value = $t('cart.order_failed')
+      } catch (error) {
+        const message = getOrderErrorMessage(error)
+        alertBody.value = message ?? $t('cart.order_failed')
         return
       }
       try {
@@ -566,8 +654,8 @@ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
       ],
     })
   } catch (error) {
-    console.error('Failed to add to cart:', error)
-    alertBody.value = $t('cart.update_failed')
+    const message = getOrderErrorMessage(error)
+    alertBody.value = message ?? $t('cart.update_failed')
   } finally {
     menuUpdatingStates.value[menuKey] = false
   }
@@ -811,6 +899,18 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                       >
                         {{ $t('event_menu.sold_out') }}
                       </span>
+                      <span
+                        v-else-if="getMenuLimitRemainingInCart(cartItem.event.event_id, menu.menu_id) != null"
+                        class="menu-limit-label d-block text-caption"
+                      >
+                        {{
+                          getMenuLimitRemainingInCart(cartItem.event.event_id, menu.menu_id)!.remaining > 0
+                            ? $t('event_menu.remaining_count', [
+                                getMenuLimitRemainingInCart(cartItem.event.event_id, menu.menu_id)!.remaining,
+                              ])
+                            : $t('event_menu.limit_sold_out')
+                        }}
+                      </span>
                     </td>
                     <td style="padding: 1px">
                       <div class="d-flex align-center justify-center">
@@ -835,6 +935,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                           :icon="mdiPlusCircleOutline"
                           variant="text"
                           :loading="isMenuUpdating(menu.menu_id)"
+                          :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu)"
                           @click="incrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>
@@ -1111,5 +1212,9 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
 
 .sold-out-label {
   color: red;
+}
+
+.menu-limit-label {
+  color: rgb(var(--v-theme-primary));
 }
 </style>

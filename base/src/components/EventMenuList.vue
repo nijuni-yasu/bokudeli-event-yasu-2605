@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { mdiFoodForkDrink } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
@@ -23,6 +24,11 @@ const emit = defineEmits<{
 const display = useDisplay()
 const { t: $t } = useI18n()
 const eventStore = useAppEventStore(props.eventId)
+const { getRemainingForMenu, isMenuLimitSoldOut } = useMenuLimitRemaining(props.eventId)
+
+const isMenuAddDisabled = (menu: BokudeliEventMenu): boolean => {
+  return props.disabled || menu.is_sold_out || isMenuLimitSoldOut(menu)
+}
 
 // is_selected が true のメニューのみを表示
 const filteredMenus = computed(() => {
@@ -58,6 +64,15 @@ const useHorizontalLayout = computed(() => {
                 <v-card-text v-if="menu.is_sold_out" class="text-left px-0 py-0 mb-2 flex-shrink-0">
                   <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
                 </v-card-text>
+                <v-card-text
+                  v-else-if="getRemainingForMenu(menu) != null"
+                  class="text-left px-0 py-0 mb-2 flex-shrink-0"
+                >
+                  <span v-if="getRemainingForMenu(menu)!.remaining > 0" class="menu-limit-remaining">
+                    {{ $t('event_menu.remaining_count', [getRemainingForMenu(menu)!.remaining]) }}
+                  </span>
+                  <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+                </v-card-text>
                 <div class="menu-spacer" />
                 <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
                   <v-card-text class="text-left pa-0">
@@ -66,15 +81,21 @@ const useHorizontalLayout = computed(() => {
                   </v-card-text>
                   <v-btn
                     class="menu-button menu-button-single"
-                    :class="{ 'disable-menu-button': disabled || menu.is_sold_out }"
+                    :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
                     color="primary"
                     rounded="pill"
                     elevation="5"
                     :prepend-icon="mdiFoodForkDrink"
-                    :disabled="disabled || menu.is_sold_out"
+                    :disabled="isMenuAddDisabled(menu)"
                     @click="emit('selectMenu', menu)"
                   >
-                    {{ menu.is_sold_out ? $t('event_menu.sold_out') : $t('event_details.menu_join_button') }}
+                    {{
+                      menu.is_sold_out
+                        ? $t('event_menu.sold_out')
+                        : isMenuLimitSoldOut(menu)
+                          ? $t('event_menu.limit_sold_out')
+                          : $t('event_details.menu_join_button')
+                    }}
                   </v-btn>
                 </div>
               </v-col>
@@ -110,6 +131,12 @@ const useHorizontalLayout = computed(() => {
                 <v-card-text v-if="menu.is_sold_out" class="text-left px-1 py-0 flex-shrink-0">
                   <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
                 </v-card-text>
+                <v-card-text v-else-if="getRemainingForMenu(menu) != null" class="text-left px-1 py-0 flex-shrink-0">
+                  <span v-if="getRemainingForMenu(menu)!.remaining > 0" class="menu-limit-remaining">
+                    {{ $t('event_menu.remaining_count', [getRemainingForMenu(menu)!.remaining]) }}
+                  </span>
+                  <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+                </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
                   <v-card-text class="text-right pa-0 ma-3">
@@ -121,15 +148,21 @@ const useHorizontalLayout = computed(() => {
                       <v-btn
                         class="menu-button"
                         block
-                        :class="{ 'disable-menu-button': disabled || menu.is_sold_out }"
+                        :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
                         color="primary"
                         rounded="pill"
                         elevation="5"
                         :prepend-icon="mdiFoodForkDrink"
-                        :disabled="disabled || menu.is_sold_out"
+                        :disabled="isMenuAddDisabled(menu)"
                         @click="emit('selectMenu', menu)"
                       >
-                        {{ menu.is_sold_out ? $t('event_menu.sold_out') : $t('event_details.menu_join_button') }}
+                        {{
+                          menu.is_sold_out
+                            ? $t('event_menu.sold_out')
+                            : isMenuLimitSoldOut(menu)
+                              ? $t('event_menu.limit_sold_out')
+                              : $t('event_details.menu_join_button')
+                        }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -158,6 +191,9 @@ const useHorizontalLayout = computed(() => {
 }
 .sold-out {
   color: red;
+}
+.menu-limit-remaining {
+  color: rgb(var(--v-theme-primary));
 }
 /* 説明文: 2行で切り捨て（横長・グリッド共通） */
 .description-text,

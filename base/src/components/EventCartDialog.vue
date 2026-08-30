@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { FirebaseError } from 'firebase/app'
+import { useI18n } from 'vue-i18n'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
+import { MENU_LIMIT_EXCEEDED_MESSAGE } from '@shokujii/common/utils/menuLimit.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
@@ -11,7 +15,9 @@ const props = defineProps<{
   eventId: string
 }>()
 
+const { t: $t } = useI18n()
 const eventStore = useAppEventStore(props.eventId)
+const { getRemainingForMenu, isMenuLimitSoldOut } = useMenuLimitRemaining(props.eventId)
 
 const isOpen = defineModel<boolean>()
 
@@ -19,15 +25,64 @@ const emit = defineEmits<{
   added: []
 }>()
 
-const countOptions = Array.from({ length: 5 }, (_, i) => i + 1)
 const selectedCount = ref(1)
+const addErrorMessage = ref('')
+
+const remainingInfo = computed(() => getRemainingForMenu(props.menu))
+
+const maxSelectableCount = computed(() => {
+  const remaining = remainingInfo.value?.remaining
+  if (remaining == null) {
+    return 5
+  }
+  return Math.min(remaining, 5)
+})
+
+const countOptions = computed(() => {
+  const max = maxSelectableCount.value
+  if (max <= 0) {
+    return []
+  }
+  return Array.from({ length: max }, (_, i) => i + 1)
+})
+
+const isAddDisabled = computed(
+  () => props.menu.is_sold_out || isMenuLimitSoldOut(props.menu) || countOptions.value.length === 0,
+)
+
+watch(isOpen, (open) => {
+  if (open) {
+    addErrorMessage.value = ''
+    selectedCount.value = countOptions.value[0] ?? 1
+  }
+})
+
+watch(countOptions, (options) => {
+  if (options.length === 0) {
+    return
+  }
+  if (!options.includes(selectedCount.value)) {
+    selectedCount.value = options[options.length - 1] ?? 1
+  }
+})
 
 const isAddingOrder = ref(false)
 
 const closeDialog = () => {
   isAddingOrder.value = false
   selectedCount.value = 1
+  addErrorMessage.value = ''
   isOpen.value = false
+}
+
+const getAddToCartErrorMessage = (error: unknown): string | null => {
+  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
+    return error.message
+  }
+  if (error instanceof Error && error.message.includes(MENU_LIMIT_EXCEEDED_MESSAGE)) {
+    return error.message
+  }
+  return null
 }
 
 const addCart = async () => {
@@ -40,8 +95,12 @@ const addCart = async () => {
     console.warn('menu_id is null')
     return
   }
+  if (isAddDisabled.value) {
+    return
+  }
 
   isAddingOrder.value = true
+  addErrorMessage.value = ''
   try {
     await eventStore.addToCart({
       community_id: eventStore.event.community_id,
@@ -56,7 +115,13 @@ const addCart = async () => {
     emit('added')
     closeDialog()
   } catch (e) {
-    console.error(e)
+    const message = getAddToCartErrorMessage(e)
+    if (message != null) {
+      addErrorMessage.value = message
+    } else {
+      console.error(e)
+      addErrorMessage.value = $t('cart.update_failed')
+    }
   } finally {
     isAddingOrder.value = false
   }
@@ -73,13 +138,25 @@ const addCart = async () => {
       <v-card-text class="text-left py-2">
         {{ menu.menu_description }}
       </v-card-text>
+      <v-card-text v-if="menu.is_sold_out" class="text-left py-0">
+        <span class="sold-out">{{ $t('event_menu.sold_out') }}</span>
+      </v-card-text>
+      <v-card-text v-else-if="remainingInfo != null" class="text-left py-0">
+        <span v-if="remainingInfo.remaining > 0" class="menu-limit-remaining">
+          {{ $t('event_menu.remaining_count', [remainingInfo.remaining]) }}
+        </span>
+        <span v-else class="sold-out">{{ $t('event_menu.limit_sold_out') }}</span>
+      </v-card-text>
       <v-card-text class="text-right pb-8">
         <span class="text-h5">¥ </span>
         <span class="text-h4">{{ priceString(menu.menu_price) }}</span>
       </v-card-text>
-      <v-row class="mx-3 mb-2">
+      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
       </v-row>
+      <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mx-3 mb-2">
+        {{ addErrorMessage }}
+      </v-alert>
       <v-row class="justify-center mx-1 my-2">
         <v-btn
           class="justify-center mx-1 align-self-center"
@@ -87,6 +164,7 @@ const addCart = async () => {
           color="primary"
           :prepend-icon="mdiCart"
           :loading="isAddingOrder"
+          :disabled="isAddDisabled"
           @click="addCart()"
         >
           {{ $t('cart_dialog.add') }}
@@ -106,4 +184,8 @@ const addCart = async () => {
   </v-dialog>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.sold-out {
+  color: red;
+}
+</style>
