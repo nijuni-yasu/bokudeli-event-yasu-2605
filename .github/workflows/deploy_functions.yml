@@ -63,4 +63,4 @@ jobs:
         uses: ./.github/actions/deploy
         with:
           project_id: ${{ vars.PROJECT_ID }}
-          args: '--force --only functions'
+          args: '--only functions'

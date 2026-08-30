@@ -266,7 +266,8 @@ export default {
     limit_per_event_section: '限定食数',
     limit_per_event: '1イベントあたりの限定食数',
     limit_per_event_placeholder: '無制限',
-    limit_per_event_hint: '1つのイベントで受け付ける上限の食数です',
+    limit_per_event_hint:
+      '1つのイベントで受け付ける上限の食数です。すでに注文受付中のイベントには反映されません。変更を反映するには、イベントを差し戻してから再度予約承認してください。',
     error_limit_per_event: '1〜1000の整数を入力してください',
   },
   community: {

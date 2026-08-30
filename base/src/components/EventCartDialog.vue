@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
-import { MENU_LIMIT_EXCEEDED_MESSAGE } from '@shokujii/common/utils/menuLimit.js'
+import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
@@ -78,10 +78,10 @@ const closeDialog = () => {
 
 const getAddToCartErrorMessage = (error: unknown): string | null => {
   if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
-    return error.message
+    return getUserFacingFailedPreconditionMessage(error.message)
   }
-  if (error instanceof Error && error.message.includes(MENU_LIMIT_EXCEEDED_MESSAGE)) {
-    return error.message
+  if (error instanceof Error) {
+    return getUserFacingFailedPreconditionMessage(error.message)
   }
   return null
 }

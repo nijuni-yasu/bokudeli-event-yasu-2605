@@ -28,7 +28,7 @@ import {
   syncEnterpriseSubsidyOrdersBeforeConfirm,
   writeEnterpriseSubsidyRecalculatedAudit,
 } from './utils/enterpriseSubsidyOrders.js'
-import { assertNoSoldOutMenus, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
 import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 
 const logger = createModuleLogger('stripe')
@@ -105,12 +105,11 @@ export const createStripeCheckoutSession = onCall<
 
     // 早期失敗用。確定チェックは各トランザクション内でも sold_out / limit を再検証する。
     const eventMenusForSoldOutCheck = await event.getMenus()
-    try {
-      assertNoSoldOutMenus(
-        eventMenusForSoldOutCheck,
-        orders.map((order) => order.menu_id),
-      )
-    } catch {
+    const soldOutMenuIds = findSoldOutMenuIds(
+      eventMenusForSoldOutCheck,
+      orders.map((order) => order.menu_id),
+    )
+    if (soldOutMenuIds.length > 0) {
       throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
     }
 
@@ -138,12 +137,11 @@ export const createStripeCheckoutSession = onCall<
           }
         }
         const eventMenusInTx = await event.getMenus(transaction)
-        try {
-          assertNoSoldOutMenus(
-            eventMenusInTx,
-            ordersInTx.map((order) => order.menu_id),
-          )
-        } catch {
+        const soldOutMenuIdsInTx = findSoldOutMenuIds(
+          eventMenusInTx,
+          ordersInTx.map((order) => order.menu_id),
+        )
+        if (soldOutMenuIdsInTx.length > 0) {
           throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
         }
         await assertMenuLimitsForConfirm({
@@ -193,12 +191,11 @@ export const createStripeCheckoutSession = onCall<
           }
         }
         const eventMenusInTx = await event.getMenus(transaction)
-        try {
-          assertNoSoldOutMenus(
-            eventMenusInTx,
-            ordersInTx.map((order) => order.menu_id),
-          )
-        } catch {
+        const soldOutMenuIdsInTx = findSoldOutMenuIds(
+          eventMenusInTx,
+          ordersInTx.map((order) => order.menu_id),
+        )
+        if (soldOutMenuIdsInTx.length > 0) {
           throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
         }
         await assertMenuLimitsForConfirm({

@@ -2,16 +2,13 @@ import { HttpsError } from 'firebase-functions/https'
 import type { Transaction } from 'firebase-admin/firestore'
 import { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { findEventMenu } from '@shokujii/common/utils/findEventMenu.js'
 import {
   assertMenuLimitsNotExceeded,
   countIncrementsByMenuId,
   countIncrementsFromCartMenus,
 } from '@shokujii/common/utils/menuLimit.js'
 import { countOrderedMenus } from '../stores/memberOrder.js'
-
-function findEventMenu(eventMenus: EventMenu[], menuId: string): EventMenu | undefined {
-  return eventMenus.find((menu) => menu.menu_id === menuId || menu.id === menuId)
-}
 
 function getLimitedMenuIds(eventMenus: EventMenu[], menuIds: readonly string[]): string[] {
   return [...new Set(menuIds)].filter((menuId) => findEventMenu(eventMenus, menuId)?.limit_per_event != null)

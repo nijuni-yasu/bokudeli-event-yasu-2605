@@ -1,10 +1,7 @@
 import { EventMenu } from '../schemas/EventMenu.js'
+import { findEventMenu } from './findEventMenu.js'
 
 const SOLD_OUT_MENU_ERROR_MESSAGE = '売り切れのメニューが含まれています'
-
-function findEventMenu(eventMenus: EventMenu[], menuId: string): EventMenu | undefined {
-  return eventMenus.find((m) => m.menu_id === menuId || m.id === menuId)
-}
 
 /**
  * 売り切れになっている menu_id を返す（confirmOrder / Stripe 用）。

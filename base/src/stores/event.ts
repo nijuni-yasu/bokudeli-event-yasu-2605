@@ -207,9 +207,6 @@ const mergeEventStoreOptions = (options: EventStoreOptions): EventStoreOptions =
 })
 
 const resolveEventStorePiniaId = (eventId: string, options: EventStoreOptions): string => {
-  if (options.skipOrdersEnterpriseFilter === true) {
-    return `/events/${eventId}/menu-limit-orders`
-  }
   const hasOrdersFilter = 'ordersEnterpriseId' in options
   const hasEventsFilter = 'eventsEnterpriseId' in options
   const ordersId = hasOrdersFilter ? options.ordersEnterpriseId : undefined
@@ -220,13 +217,18 @@ const resolveEventStorePiniaId = (eventId: string, options: EventStoreOptions): 
       : typeof eventsId === 'string' && eventsId !== ''
         ? eventsId
         : null
+  let baseId: string
   if (enterpriseId != null && enterpriseId !== '') {
-    return `/events/${eventId}/e/${enterpriseId}`
+    baseId = `/events/${eventId}/e/${enterpriseId}`
+  } else if (hasOrdersFilter || hasEventsFilter) {
+    baseId = `/events/${eventId}/pf`
+  } else {
+    baseId = `/events/${eventId}`
   }
-  if (hasOrdersFilter || hasEventsFilter) {
-    return `/events/${eventId}/pf`
+  if (options.skipOrdersEnterpriseFilter === true) {
+    return `${baseId}/menu-limit-orders`
   }
-  return `/events/${eventId}`
+  return baseId
 }
 
 export const useEventStore = (target: string | BokudeliEvent, options: EventStoreOptions = {}) => {

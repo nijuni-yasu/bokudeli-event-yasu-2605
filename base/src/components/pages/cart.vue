@@ -56,7 +56,7 @@ import {
   loadMenuLimitRemainingMap,
   type MenuLimitRemainingInfo,
 } from '@shokujii/base/composable/useMenuLimitRemaining.js'
-import { MENU_LIMIT_EXCEEDED_MESSAGE } from '@shokujii/common/utils/menuLimit.js'
+import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 
 const props = withDefaults(
   defineProps<{
@@ -361,10 +361,10 @@ const canIncrementMenuCount = (eventId: string, menu: GroupedMenu): boolean => {
 
 const getOrderErrorMessage = (error: unknown): string | null => {
   if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
-    return error.message
+    return getUserFacingFailedPreconditionMessage(error.message)
   }
-  if (error instanceof Error && error.message.includes(MENU_LIMIT_EXCEEDED_MESSAGE)) {
-    return error.message
+  if (error instanceof Error) {
+    return getUserFacingFailedPreconditionMessage(error.message)
   }
   return null
 }

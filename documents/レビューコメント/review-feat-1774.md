@@ -4,21 +4,25 @@
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-1 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
+| [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
 | [x] | RC-2 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | `:disabled` 追加でカート追加ボタンの `@click` が発火せず、無効理由アラートが到達不能になる<br>本 PR で追加した `menu_disabled_reason.sold_out` / `menu_limit` も含め仕様 §4.3.2 を満たさない |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `watch(cart)` の非同期コールバックに try/catch がなく unhandled rejection になる<br>`getLoadedMenus()` は 5 秒 timeout で reject するため売切・残数表示が無言で止まる |
 | [ ] | RC-4 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
 | [x] | RC-5 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `checkCart` に存在しない `eventId` を参照しており型エラー（CI Typecheck が失敗する）<br>`event.event_id` が正しい |
 | [x] | RC-6 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 🐛 実害 | 🔧 微修正 | S | `loadMenuLimitRemainingMap` が setup 外（watch・非同期ハンドラ）から `inject` を呼んでいる<br>enterprise スコープが解決できず、誤ったスコープの store を生成する |
 | [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
-| [ ] | RC-8 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `skipOrdersEnterpriseFilter` のとき pinia ID が options を無視した固定値になる<br>events 側の enterprise フィルタ差が store ID に反映されない |
-| [ ] | RC-9 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
+| [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `skipOrdersEnterpriseFilter` のとき pinia ID が options を無視した固定値になる<br>events 側の enterprise フィルタ差が store ID に反映されない |
+| [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
 | [x] | RC-10 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `findUnorderableMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [x] | RC-11 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `countOrderedByMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [ ] | RC-12 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
-| [ ] | RC-13 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
+| [x] | RC-13 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
 | [ ] | RC-14 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 非 enterprise 経路に追加した read-only トランザクションが直前の検証と重複している<br>書き込みがないため競合防止にならず、仕様 §8.3 でも Stripe 経路の超過は範囲外としている |
-| [ ] | RC-15 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
+| [x] | RC-15 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
+| [ ] | RC-16 | 3889026056 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 💰 金銭, 💾 データ | 📋 仕様追加 | M | Checkout 〜 Webhook 間に限定食数枠が確保されない<br>§8.3 で Stripe 超過は別 Issue。予約 or Webhook 再検証は別対応 |
+| [x] | RC-17 | 3889026059 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📄 ドキュメントのみ | S | 受付中イベントへ上限変更が反映されない旨を UI に未明示<br>§5.2 に沿い将来イベントのみ対象であることを hint で示す |
+| [x] | RC-18 | 3889026071 | 👌 修正不要 | — | — | 🐛 実害, 📑 仕様書 | 📋 仕様追加 | M | 締切過ぎ `accepting_order` イベントが売切同期対象外<br>締切延長後も EventMenu が古い販売中のまま注文可能 |
+| [ ] | RC-19 | 3889026074 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | 上限未設定イベントでも `confirmedOrders` 購読が開始される<br>限定メニュー確認後に購読し、集計も `ordered` に絞る |
 
 ---
 
@@ -35,21 +39,21 @@
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-1 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
+| [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | `failed-precondition` のサーバーメッセージをそのまま UI に表示している<br>`メニューが選択されていません: {menu_id}` 等の内部 ID を含む文言も露出する |
 | [x] | RC-2 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | `:disabled` 追加でカート追加ボタンの `@click` が発火せず、無効理由アラートが到達不能になる<br>本 PR で追加した `menu_disabled_reason.sold_out` / `menu_limit` も含め仕様 §4.3.2 を満たさない |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `watch(cart)` の非同期コールバックに try/catch がなく unhandled rejection になる<br>`getLoadedMenus()` は 5 秒 timeout で reject するため売切・残数表示が無言で止まる |
 | [ ] | RC-4 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | カート連続更新時に古い非同期結果が後勝ちする（stale write）<br>開始時のカート内容と一致するかを確認してから代入する |
 | [x] | RC-5 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `checkCart` に存在しない `eventId` を参照しており型エラー（CI Typecheck が失敗する）<br>`event.event_id` が正しい |
 | [x] | RC-6 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 🐛 実害 | 🔧 微修正 | S | `loadMenuLimitRemainingMap` が setup 外（watch・非同期ハンドラ）から `inject` を呼んでいる<br>enterprise スコープが解決できず、誤ったスコープの store を生成する |
 | [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | `waitForConfirmedOrders` が 10 秒 timeout で `resolve([])` し、取得失敗を「注文 0 件」として扱う<br>残数が満数表示になり、カート側の事前チェックもすり抜ける |
-| [ ] | RC-8 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `skipOrdersEnterpriseFilter` のとき pinia ID が options を無視した固定値になる<br>events 側の enterprise フィルタ差が store ID に反映されない |
-| [ ] | RC-9 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
+| [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `skipOrdersEnterpriseFilter` のとき pinia ID が options を無視した固定値になる<br>events 側の enterprise フィルタ差が store ID に反映されない |
+| [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `findEventMenu` が 3 ファイルに重複定義されている<br>common に 1 つ置いて共有する |
 | [x] | RC-10 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `findUnorderableMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [x] | RC-11 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `countOrderedByMenuIds` がどこからも呼ばれていない<br>デッドコードのため削除する |
 | [ ] | RC-12 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 対象イベント全件へ並列度無制限で read + write している<br>イベント数が増えると Firestore 書き込みが一斉に走る |
-| [ ] | RC-13 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
+| [x] | RC-13 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | `assertNoSoldOutMenus` を try/catch で包んでメッセージを捨てる同形コードが 4 箇所ある<br>`findSoldOutMenuIds` で判定すれば try/catch 自体が不要 |
 | [ ] | RC-14 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 非 enterprise 経路に追加した read-only トランザクションが直前の検証と重複している<br>書き込みがないため競合防止にならず、仕様 §8.3 でも Stripe 経路の超過は範囲外としている |
-| [ ] | RC-15 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
+| [x] | RC-15 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 限定食数入力を watch 2 本で双方向同期している<br>同ファイルの `dateStart` / `dateEnd` と同じ `computed` の get/set に揃える |
 
 ---
 
@@ -77,7 +81,7 @@
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -87,7 +91,7 @@
 
 **想定工数**: S
 
-**判断理由**: 表示文言の設計（どこまで生メッセージを通すか）に選択肢があり修正方針が一意でないため、自動修正の対象外とした。`cart.vue` の `getOrderErrorMessage` も同じ構造。
+**判断理由**: `common/src/utils/failedPreconditionMessage.ts` の `getUserFacingFailedPreconditionMessage` で売切・限定食数メッセージのみ生表示し、`EventCartDialog.vue` / `cart.vue` はそれ以外を `ja.ts` 汎用文言へフォールバックするよう修正した。
 
 ---
 
@@ -361,7 +365,7 @@ events 側の enterprise フィルタ差が store ID に反映されない
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -371,7 +375,7 @@ events 側の enterprise フィルタ差が store ID に反映されない
 
 **想定工数**: S
 
-**判断理由**: 種別が 📐 リファクタのため条件付き自動修正（🔧 微修正 / 📄 ドキュメントのみ）の対象外。
+**判断理由**: `resolveEventStorePiniaId` で通常 ID を組み立てたうえで `skipOrdersEnterpriseFilter` 時のみ `/menu-limit-orders` サフィックスを付与する形に変更し、events 側フィルタ差を ID に反映した。
 
 ---
 
@@ -398,7 +402,7 @@ common に 1 つ置いて共有する
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -408,11 +412,7 @@ common に 1 つ置いて共有する
 
 **想定工数**: S
 
-**判断理由**: 種別が 📐 リファクタのため条件付き自動修正の対象外。
-
----
-
-**識別子**: RC-10（GitHub id: なし・エージェントレビュー）
+**判断理由**: `common/src/utils/findEventMenu.ts` に共通化し、`assertEventMenusOrderable.ts` / `menuLimit.ts` / `menuLimitValidation.ts` から import するよう修正した。
 
 **レビュワー**: Cursor Agent（shokujii-code-review）
 
@@ -554,7 +554,7 @@ common に 1 つ置いて共有する
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -564,7 +564,7 @@ common に 1 つ置いて共有する
 
 **想定工数**: S
 
-**判断理由**: 種別が 📐 リファクタのため条件付き自動修正の対象外。`menuLimitValidation.ts` の `try/catch` + `error instanceof Error` によるメッセージ復元も同じ構造。
+**判断理由**: `memberOrders.ts` / `stripe.ts` の 4 箇所を `findSoldOutMenuIds` による判定に置き換え、try/catch でメッセージを捨てる同形コードを削除した。
 
 ---
 
@@ -647,7 +647,7 @@ common に 1 つ置いて共有する
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -657,4 +657,209 @@ common に 1 つ置いて共有する
 
 **想定工数**: S
 
-**判断理由**: 種別が 📐 リファクタのため条件付き自動修正の対象外。不正値時のフォールバック挙動（前値維持 / null 化）の選択も残る。
+**判断理由**: `limitPerEventInput` の watch 2 本を `dateStart` / `dateEnd` と同様の `computed` get/set（`limitPerEvent`）に置き換えた。
+
+---
+
+## 評価セッション（2026-08-30 18:50・review-comments-evaluate）
+
+- **評価日時**: 2026-08-30 18:50 JST
+- **ブランチ名**: `feat/1774`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2341
+- **REVIEW_REQUEST_SINCE**: 2026-08-30T09:40:30Z
+- **partial**: false（Copilot 実質レビュー + Codex substantive あり）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（レビュー依頼定型文 #5467939399、Copilot 承知返信 #5467946376、Codex 接続案内 #5467947005）
+- **既存 RC への外部レビュー補強**（新規採番なし）: RC-1 ← #3889021813, #3889021823, #3889026067 / RC-7 ← #3889021791, #3889026063 / RC-8 ← #3889021800 / RC-12 ← #3889021847 / RC-14 ← #3889021840
+- **手順 4a 自動修正**: なし（新規 🚨 / 条件付き 🟡 なし。既存未着手 RC も M・📐・👤 UX 等で対象外）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-16 | 3889026056 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 💰 金銭, 💾 データ | 📋 仕様追加 | M | Checkout 〜 Webhook 間に限定食数枠が確保されない<br>§8.3 で Stripe 超過は別 Issue。予約 or Webhook 再検証は別対応 |
+| [x] | RC-17 | 3889026059 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📄 ドキュメントのみ | S | 受付中イベントへ上限変更が反映されない旨を UI に未明示<br>§5.2 に沿い将来イベントのみ対象であることを hint で示す |
+| [x] | RC-18 | 3889026071 | 👌 修正不要 | — | — | 🐛 実害, 📑 仕様書 | 📋 仕様追加 | M | 締切過ぎ `accepting_order` イベントが売切同期対象外<br>締切延長後も EventMenu が古い販売中のまま注文可能 |
+| [ ] | RC-19 | 3889026074 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | 上限未設定イベントでも `confirmedOrders` 購読が開始される<br>限定メニュー確認後に購読し、集計も `ordered` に絞る |
+
+---
+
+**識別子**: RC-16（GitHub id: 3889026056）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/stripe.ts:208`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      await db.runTransaction(async (transaction) => {
++        const ordersInTx = await getOrdersByIds(community_id, event_id, uid, order_ids, transaction)
++        ...
++        await assertMenuLimitsForConfirm({
++          eventId: event_id,
++          eventMenus: eventMenusInTx,
++          orders: ordersInTx,
++          transaction,
++        })
++      })
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  決済完了まで限定食数を予約する**
+
+事前カード決済や PayPay で Checkout Session を作成してから支払いが完了するまでに、別ユーザーが残枠を確定すると、この読み取り専用トランザクションは既に終了しているため限定食数を確保できません。確認した `functions/default/src/stripeWebhook.ts` の確定処理（321–429 行）は限定食数を再検証せず注文を `ordered` にするため、支払い済み注文が上限を超えます。Session 作成時に共有在庫を予約するか、Webhook で原子的に再検証して超過時の返金・補償処理を行ってください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: Checkout Session 作成時の read-only 検証は決済完了まで枠を確保しない
+Webhook 側も限定食数を再検証しないため、支払い済み注文が上限超過しうる
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📤 スコープ外
+
+**ラベル**: 💰 金銭, 💾 データ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当だが、`documents/04_飲食店向け/14_限定食数機能.md` §8.3 で事前クレカ決済の超過・返金は本仕様範囲外と明記されている（定員と同構造で別 Issue）。RC-14 と同系統。予約機構 or Webhook 再検証は設計判断を伴うため本 PR では 📤 とした。
+
+---
+
+**識別子**: RC-17（GitHub id: 3889026059）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `partner/src/components/MenuEditCard.vue:204`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      <v-card-text>
++        <v-text-field
++          v-model="limitPerEventInput"
++          type="number"
++          min="1"
++          clearable
++          :label="$t('menu_edit_card.limit_per_event')"
++          :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
++          :hint="$t('menu_edit_card.limit_per_event_hint')"
++          persistent-hint
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  受付中イベントへ上限変更が反映されないことを明示する**
+
+既に `accepting_order` のイベントがある状態で店舗がこの値を変更しても、EventMenu はスナップショットのままで、追加された同期 Trigger も `is_sold_out` しか更新しません。そのため、このヒントだけでは店舗が現在受付中のイベントにも新しい上限が適用されたと誤認し、古い上限で受注が継続します。仕様書 `documents/04_飲食店向け/14_限定食数機能.md` §5.2 にも差し戻しが必要な旨を明示するとあるため、入力欄付近に対象が将来のイベントのみであることと変更手順を表示してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 受付中イベントには `limit_per_event` 変更が反映されない
+入力欄 hint に将来イベントのみ対象である旨と手順を明示すべき
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 👤 UX
+
+**変更種別**: 📄 ドキュメントのみ
+
+**想定工数**: S
+
+**判断理由**: `partner/src/locales/messages/ja.ts` の `limit_per_event_hint` に、受付中イベントへは反映されない旨と差し戻し手順（仕様 §5.2）を追記した。
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/stores/event.ts:392`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++export const getAcceptingOrderEventsByPartner = async (
++  partnerId: string,
++  nowDateTimeMillis: number,
++): Promise<ShokujiiEvent[]> => {
++  ...
++    .where('event_status.value', '==', 'accepting_order')
++    .where('is_deleted', '==', false)
++    .where('event_deadline_datetime', '>', Timestamp.fromMillis(nowDateTimeMillis))
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  締切延長で再開するイベントも売り切れ同期する**
+
+保存上のステータスが `accepting_order` のまま締切を過ぎたイベントで店舗が売り切れを切り替えると、この条件により同期対象から除外されます。その後、主催者が締切を延長して注文受付を再開しても、`updateEventMenus` は `accepting_order` では `is_selected` しか更新しないため、EventMenu は古い販売中状態のままです。Callable 側も EventMenu を正本にしているので売り切れメニューの注文が通ります。締切延長時に現在の PartnerMenu 状態を再同期するか、後で再開可能なイベントをこの同期から除外しないでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 締切過ぎの `accepting_order` イベントは売切同期クエリから除外される
+締切延長で再開しても EventMenu の `is_sold_out` が更新されず注文可能なまま
+
+**評価**: 🚨 必須修正
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 🐛 実害, 📑 仕様書
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 指摘の再現経路は「主催者が締切を延長して注文受付を再開する」ケースだが、本プロダクトでは主催者による締切延長はできない。よって実運用上の実害はなく、本 PR では対応不要とする（評価は Codex 指摘のまま維持）。
+
+---
+
+**識別子**: RC-19（GitHub id: 3889026074）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/composable/useMenuLimitRemaining.ts:36`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++  const remainingByMenuId = computed(() => {
++    const menus = eventStore.menus
++    const confirmedOrders = eventStore.confirmedOrders
++    if (menus == null || confirmedOrders == null) {
++      return null
++    }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  上限未設定イベントで注文全件の購読を開始しない**
+
+`remainingByMenuId` はメニューに `limit_per_event` があるか確認する前に `eventStore.confirmedOrders` を参照するため、限定食数を一件も設定していない通常イベントでも `member_orders` のリアルタイム購読が開始されます。実際の `subscribeOrders` は `status` を絞らずイベント内のカート・処理中・キャンセル済みを含む全注文ドキュメントを取得するので、イベントページを開くだけで不要な読み取りと更新課金が発生し、大規模イベントほど表示負荷が増えます。限定メニューの存在を確認してから購読を開始し、集計クエリも `status == 'ordered'` と対象メニューに絞ってください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 上限未設定イベントでも `confirmedOrders` 参照で全注文購読が走る
+限定メニュー有無を先に確認し、購読・集計を絞るべき
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: パフォーマンス改善として妥当。store 購読タイミングの設計変更を伴い 📐 + M のため自動修正対象外。

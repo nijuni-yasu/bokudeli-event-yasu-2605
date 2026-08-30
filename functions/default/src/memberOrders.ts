@@ -14,7 +14,7 @@ import {
   computeTotalPayment,
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
-import { assertNoSoldOutMenus, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
@@ -301,12 +301,11 @@ export const confirmOrder = onCall(
       }
 
       const eventMenus = await eventData.getMenus(transaction)
-      try {
-        assertNoSoldOutMenus(
-          eventMenus,
-          orders.map((order) => order.menu_id),
-        )
-      } catch {
+      const soldOutMenuIds = findSoldOutMenuIds(
+        eventMenus,
+        orders.map((order) => order.menu_id),
+      )
+      if (soldOutMenuIds.length > 0) {
         throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
       }
 
