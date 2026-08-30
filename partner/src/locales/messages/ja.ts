@@ -265,7 +265,7 @@ export default {
     limit_per_event: '1イベントあたりの限定食数',
     limit_per_event_placeholder: '無制限',
     limit_per_event_hint: '1つのイベントで受け付ける上限の食数です',
-    error_limit_per_event: '1以上の整数を入力してください',
+    error_limit_per_event: '1〜1000の整数を入力してください',
   },
   community: {
     submit: '設定',

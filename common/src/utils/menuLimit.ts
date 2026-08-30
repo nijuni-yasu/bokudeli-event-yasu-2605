@@ -3,6 +3,9 @@ import type { EventMemberOrder } from '../schemas/EventMemberOrder.js'
 
 export const MENU_LIMIT_EXCEEDED_MESSAGE = '限定食数の上限に達しました'
 
+/** PartnerMenu / EventMenu の limit_per_event 上限 */
+export const MENU_LIMIT_PER_EVENT_MAX = 1000
+
 function findEventMenu(eventMenus: EventMenu[], menuId: string): EventMenu | undefined {
   return eventMenus.find((m) => m.menu_id === menuId || m.id === menuId)
 }

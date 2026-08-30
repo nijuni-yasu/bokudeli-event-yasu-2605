@@ -6,6 +6,7 @@ import { useValidators } from '@shokujii/base/composable/validators.js'
 import { useI18n } from 'vue-i18n'
 import ImageInput from '@shokujii/base/components/ImageInput.vue'
 import DateInput from '@shokujii/base/components/DateInput.vue'
+import { MENU_LIMIT_PER_EVENT_MAX } from '@shokujii/common/utils/menuLimit.js'
 
 const { requiredValidator, maxLengthValidator, betweenValidator } = useValidators()
 const { t: $t } = useI18n()
@@ -66,7 +67,7 @@ watch(limitPerEventInput, (value) => {
     return
   }
   const parsed = Number(value)
-  if (Number.isInteger(parsed) && parsed >= 1) {
+  if (Number.isInteger(parsed) && parsed >= 1 && parsed <= MENU_LIMIT_PER_EVENT_MAX) {
     menu.value.limit_per_event = parsed
   }
 })
@@ -76,7 +77,7 @@ const limitPerEventRule = (value: string | number): true | string => {
     return true
   }
   const parsed = Number(value)
-  if (!Number.isInteger(parsed) || parsed < 1) {
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MENU_LIMIT_PER_EVENT_MAX) {
     return $t('menu_edit_card.error_limit_per_event')
   }
   return true
@@ -197,6 +198,7 @@ const handleSubmit = () => {
           v-model="limitPerEventInput"
           type="number"
           min="1"
+          :max="MENU_LIMIT_PER_EVENT_MAX"
           clearable
           :label="$t('menu_edit_card.limit_per_event')"
           :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
