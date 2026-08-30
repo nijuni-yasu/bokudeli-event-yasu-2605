@@ -262,6 +262,10 @@ export default {
     submit: '保存する',
     error_date_range_incomplete: '開始日と終了日は両方設定するか、両方未設定にしてください。',
     error_date_range_invalid: '開始日は終了日より前の日付を設定してください。',
+    limit_per_event: '1イベントあたりの限定食数',
+    limit_per_event_placeholder: '無制限',
+    limit_per_event_hint: '1つのイベントで受け付ける上限の食数です',
+    error_limit_per_event: '1以上の整数を入力してください',
   },
   community: {
     submit: '設定',

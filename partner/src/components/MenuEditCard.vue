@@ -50,6 +50,31 @@ const dateEnd = computed({
   },
 })
 
+const limitPerEvent = computed({
+  get: () => menu.value.limit_per_event ?? '',
+  set: (value: number | string) => {
+    if (value === '' || value == null) {
+      menu.value.limit_per_event = null
+      return
+    }
+    const parsed = Number(value)
+    if (Number.isInteger(parsed) && parsed >= 1) {
+      menu.value.limit_per_event = parsed
+    }
+  },
+})
+
+const limitPerEventRule = (value: string | number): true | string => {
+  if (value === '' || value == null) {
+    return true
+  }
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return $t('menu_edit_card.error_limit_per_event')
+  }
+  return true
+}
+
 // 販売期間のバリデーションを入力欄に紐付ける
 const dateRangeRule = (): true | string => {
   const hasStart = menu.value.menu_date_start != null
@@ -159,6 +184,19 @@ const handleSubmit = () => {
             />
           </v-col>
         </v-row>
+      </v-card-text>
+      <v-card-text>
+        <v-text-field
+          v-model="limitPerEvent"
+          type="number"
+          min="1"
+          clearable
+          :label="$t('menu_edit_card.limit_per_event')"
+          :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
+          :hint="$t('menu_edit_card.limit_per_event_hint')"
+          persistent-hint
+          :rules="[limitPerEventRule]"
+        />
       </v-card-text>
       <v-card-text>
         <v-switch
