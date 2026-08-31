@@ -27,6 +27,7 @@ import { getCommunityAlbumItemStoragePath } from '@shokujii/common/utils/storage
 import { useDisplay } from 'vuetify'
 import { getChatPath } from '@/router/utils'
 import { useNavigateToEventChat } from '@shokujii/base/composable/useNavigateToEventChat.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { usePublicEventNotFoundRedirect } from '@shokujii/base/composable/usePublicEventNotFoundRedirect.js'
 
 const route = useRoute()
@@ -39,6 +40,7 @@ usePublicEventNotFoundRedirect(eventId, communityAccount)
 const { t: $t } = useI18n()
 
 const eventStore = useEventStore(eventId) as EventStore
+const { isMenuLimitSoldOut } = useMenuLimitRemaining(eventId)
 const communityStore = useCommunityStore(communityAccount) as CommunityStore
 const bannersStore = useBannersStore('event_banners')
 const currentUserStore = useCurrentUserStore()
@@ -164,6 +166,18 @@ const selectMenu = (menu: BokudeliEventMenu) => {
       alertState.message = $t(`menu_disabled_reason.${disabledReason}`)
       alertState.isOpen = true
     }
+    return
+  }
+
+  if (menu.is_sold_out) {
+    alertState.message = $t('menu_disabled_reason.sold_out')
+    alertState.isOpen = true
+    return
+  }
+
+  if (isMenuLimitSoldOut(menu)) {
+    alertState.message = $t('menu_disabled_reason.menu_limit')
+    alertState.isOpen = true
     return
   }
 

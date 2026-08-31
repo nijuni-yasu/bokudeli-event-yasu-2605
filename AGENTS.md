@@ -220,6 +220,48 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
   - [doc]: documents/ 内の更新のみ。[ci]: `.github/workflows/`。[terraform]: `terraform/`。[firebase]: `firebase.json` / `.firebaserc` / `firestore.rules` / `storage.rules` / `firestore.indexes.json`。[ai]: `.cursor` / `.agents` / `.claude` / `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md` 等の AI エージェント向け指示・設定
   - ルートの `package.json` / `package-lock.json` 等、上記タグに該当しないモノレポ横断設定は**接頭辞なし**（`#イシュー番号` と要約タイトルのみ）。PR タイトルも同様。手順・判定ルール・例は `/git-commit-message` と `/git-create-pull-request` スキルを参照。
 
+### 作業ブランチの命名（プレフィックス）
+
+実装作業・PR・sandbox デプロイ・レビュー記録（`review-<slug>.md`）の正本は、次の **作業ブランチ** とする。命名は `<prefix>/<issue番号>` を基本とし、サブスコープがある場合は `<prefix>/<issue番号>-<suffix>`（例: `feat/1594-event-tags`）も可。
+
+**1 つの作業ブランチに複数 Issue のコミットが混在してもよい**（例: `feat/1774` に #1774 の実装と #2342 の `AGENTS.md` 更新）。ブランチ名は主たる Issue を表す番号でよい。各コミットメッセージの `#イシュー番号` は、そのコミットの変更内容に対応する Issue を付ける（`/git-commit-message` 参照）。
+
+| プレフィックス | 用途 | 例 |
+| :-- | :-- | :-- |
+| `feat/` | 機能追加・仕様実装 | `feat/1774` |
+| `fix/` | バグ修正・不具合対応 | `fix/2306` |
+| `dev/` | 開発中・実験的作業 | `dev/favorites` |
+| `ai/` | エージェント向け設定・スキル・hook（`AGENTS.md` 等） | `ai/2176` |
+| `doc/` | 仕様書・ドキュメントのみ | `doc/2500` |
+| `ui/` | UI 改善・見た目調整 | `ui/2093` |
+| `refactor/` | 挙動不変のリファクタ（Issue スコープが明確な場合） | `refactor/2200` |
+
+**リリース・同期**（[`03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) 参照。エージェントは通常の feature 系と同様 PR 更新用に push 可）:
+
+| プレフィックス | 用途 |
+| :-- | :-- |
+| `release/` | リリースブランチ（`npm version` 等は人間作業） |
+| `sync/` | ブランチ間同期（例: `sync/main-to-development`） |
+| `hotfix/` | 本番 hotfix |
+
+**コミット・push 禁止**（作業ブランチとして使わない）:
+
+| プレフィックス | 用途 |
+| :-- | :-- |
+| `tree/` | git worktree 専用（下記参照） |
+| `backup/` | バックアップ |
+| `dependabot/` | Dependabot 自動生成 |
+
+レガシーで `feature/` も残存するが、新規は **`feat/`** を使う。
+
+### tree/ ブランチ（worktree 用）
+
+`tree/` プレフィックスのブランチ（例: `tree/4`）は **git worktree 用**であり、上表の作業ブランチではない。
+
+- **tree/ ブランチへのコミット・push は禁止**（エージェントは実行しない）
+- **tree/ ブランチ上で作業している場合**、コミット前に **対象 Issue 番号と変更内容に応じた作業ブランチ**（上表の `feat/` `fix/` `ai/` 等）を作成し、そちらでコミット・push する
+  - 手順例: `git checkout -b feat/<issue番号>` → 変更をコミット → `git push -u origin feat/<issue番号>`
+
 ### エージェント向け Git 操作の禁止（本番・リリース系）
 
 背景: [`documents/AIエージェント/03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) §5。
@@ -230,7 +272,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 - `npm version`（引数問わず全バリアント）
 - `git branch -f main` / `git branch -f production`
 
-**許可される push**: 現在の feature / `release/*` / `sync/*` / `hotfix/*` 等の作業ブランチへの `git push origin HEAD:<ref>`（PR 作成・更新用）。`development` の更新はこれらのブランチ + PR 経由のみ。
+**許可される push**: 現在チェックアウト中の **作業ブランチ**（上表の `feat/` `fix/` `dev/` `ai/` `doc/` `ui/` `refactor/` および `release/` `sync/` `hotfix/`）への `git push origin HEAD:<ref>`（PR 作成・更新用）。`development` の更新はこれらのブランチ + PR 経由のみ。**`tree/` `backup/` `dependabot/` への push は不可**。
 
 **例外**: ユーザーが「本番リリースを実行して」と明示した場合でも、エージェントは **自動実行せず** [`documents/デプロイ手順/デプロイ手順.md`](documents/デプロイ手順/デプロイ手順.md) の手順を提示に留める。
 

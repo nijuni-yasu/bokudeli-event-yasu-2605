@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema } from './firebase/index.js'
+import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
 
 const PartnerMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
@@ -8,6 +9,7 @@ const PartnerMenuDbSchema = z.object({
   menu_price: z.number().int().positive(),
   is_sold_out: z.boolean(),
   menu_sort_number: z.number().int().nonnegative(),
+  limit_per_event: LimitPerEventDbFieldSchema,
   // Optional
   menu_date_start: TimestampSchema.nullable(),
   menu_date_end: TimestampSchema.nullable(),
@@ -22,6 +24,7 @@ const PartnerMenuAppSchema = z.object({
   menu_price: z.number().int().positive().default(1000),
   is_sold_out: z.boolean().default(false),
   menu_sort_number: z.number().int().nonnegative().default(0),
+  limit_per_event: LimitPerEventAppFieldSchema,
   // Optional
   menu_date_start: EpochMillisSchema.nullable().default(null),
   menu_date_end: EpochMillisSchema.nullable().default(null),
@@ -47,6 +50,7 @@ export class PartnerMenu {
   menu_price!: number
   is_sold_out!: boolean
   menu_sort_number!: number
+  limit_per_event!: number | null
   // Optional
   menu_date_start!: number | null
   menu_date_end!: number | null

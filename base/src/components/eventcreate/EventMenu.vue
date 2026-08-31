@@ -7,6 +7,7 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiStorefrontOutline, mdiGestureTap } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 const { t } = useI18n()
 
@@ -102,7 +103,9 @@ const selectedCount = computed(() => {
                   }"
                   @click="toggleMenuSelection(item.menu_id)"
                 >
-                  <EventMenuImage :event="event" :menu="item" cover :aspect-ratio="1" />
+                  <div class="menu-image-wrapper">
+                    <EventMenuImage :event="event" :menu="item" cover :aspect-ratio="1" />
+                  </div>
 
                   <!-- 選択状態インジケーター -->
                   <v-chip
@@ -118,10 +121,19 @@ const selectedCount = computed(() => {
                   <v-card-title class="justify-center pb-3 text-wrap">
                     {{ item.menu_name }}
                   </v-card-title>
-                  <v-card-text class="text-left text-subtitle-2 pb-8">
+                  <v-card-text class="text-left text-subtitle-2 pb-2">
                     {{ item.menu_description }}
                   </v-card-text>
-                  <v-card-text class="text-right text-h5 pb-5"> ¥ {{ priceString(item.menu_price) }} </v-card-text>
+                  <v-card-text class="d-flex align-center px-4 pb-5">
+                    <MenuStatusChips
+                      v-if="item.is_sold_out || item.limit_per_event != null"
+                      :is-sold-out="item.is_sold_out"
+                      :limit-per-event="item.limit_per_event"
+                      align="start"
+                    />
+                    <v-spacer />
+                    <span class="text-h5">¥ {{ priceString(item.menu_price) }}</span>
+                  </v-card-text>
                 </v-card>
               </v-col>
             </v-row>
@@ -174,5 +186,8 @@ const selectedCount = computed(() => {
   top: 10px;
   right: 10px;
   z-index: 1;
+}
+.menu-image-wrapper {
+  position: relative;
 }
 </style>

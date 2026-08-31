@@ -14,6 +14,8 @@ import {
   computeTotalPayment,
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
+import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
   createOrder,
@@ -83,7 +85,17 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       if (eventMenu == null || !eventMenu.is_selected) {
         throw new HttpsError('failed-precondition', `メニューが選択されていません: ${menu.menu_id}`)
       }
+      if (eventMenu.is_sold_out) {
+        throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
+      }
     }
+
+    await assertMenuLimitsForCartAdd({
+      eventId: event_id,
+      eventMenus,
+      menus,
+      transaction,
+    })
 
     let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
     if (eventData.event_payment === 'enterprise_subsidy') {
@@ -287,6 +299,22 @@ export const confirmOrder = onCall(
           throw new HttpsError('failed-precondition', 'カート内の注文のみ確定できます')
         }
       }
+
+      const eventMenus = await eventData.getMenus(transaction)
+      const soldOutMenuIds = findSoldOutMenuIds(
+        eventMenus,
+        orders.map((order) => order.menu_id),
+      )
+      if (soldOutMenuIds.length > 0) {
+        throw new HttpsError('failed-precondition', SOLD_OUT_MENU_ERROR_MESSAGE)
+      }
+
+      await assertMenuLimitsForConfirm({
+        eventId: event_id,
+        eventMenus,
+        orders,
+        transaction,
+      })
 
       if (eventData.event_payment === 'enterprise_subsidy') {
         if (enterpriseId == null) {

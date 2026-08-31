@@ -69,6 +69,7 @@ export default {
     not_accepting_order: '注文受付開始前はカートに追加できません',
     limit_people: '定員に達しました。カートに追加できません',
     sold_out: '売り切れました。カートに追加できません',
+    menu_limit: '限定食数に達しました。カートに追加できません',
     event_canceled: 'イベントがキャンセルされたため、カートに追加できません',
   },
   event_card: {
@@ -144,6 +145,10 @@ export default {
     cannot_order_limit_people: '定員に達しました。注文確定できません。',
     cannot_order_unselected_menu:
       '現在注文できないメニューが含まれているため、注文を確定できません。お手数ですが、カートの内容を削除し、改めてメニューを選び直してください。',
+    cannot_order_sold_out:
+      '売り切れのメニューが含まれているため、注文を確定できません。お手数ですが、カートの内容を削除し、改めてメニューを選び直してください。',
+    cannot_order_menu_limit:
+      '限定食数の上限に達したメニューが含まれているため、注文を確定できません。お手数ですが、カートの内容を削除し、改めてメニューを選び直してください。',
     order_completed: '注文を完了しました。',
     payment_failed: '決済処理に失敗しました。サポートにお問い合わせください。',
     order_failed: '注文処理に失敗しました。サポートにお問い合わせください。',
@@ -393,12 +398,19 @@ export default {
     button_check_menu: 'メニューをみる',
     shop_not_found: 'お店が見つかりませんでした',
   },
+  menu_status: {
+    limit_per_event: '限定 {0} 食',
+    limited_period: '期間限定 {0}',
+  },
   event_menu: {
     select_menu_instruction: '参加者が注文できるメニューを選択いただけます',
     selected_count: '選択中: {count} / {total} メニュー',
     orderable: '選択中',
     not_orderable: '非表示',
     no_menus_found: '注文できるメニューがありません',
+    sold_out: '売り切れ',
+    remaining_count: '残り {0} 食',
+    limit_sold_out: '完売',
   },
   event_detail: {
     event_detail: '開催内容',

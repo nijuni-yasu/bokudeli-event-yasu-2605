@@ -217,13 +217,18 @@ const resolveEventStorePiniaId = (eventId: string, options: EventStoreOptions): 
       : typeof eventsId === 'string' && eventsId !== ''
         ? eventsId
         : null
+  let baseId: string
   if (enterpriseId != null && enterpriseId !== '') {
-    return `/events/${eventId}/e/${enterpriseId}`
+    baseId = `/events/${eventId}/e/${enterpriseId}`
+  } else if (hasOrdersFilter || hasEventsFilter) {
+    baseId = `/events/${eventId}/pf`
+  } else {
+    baseId = `/events/${eventId}`
   }
-  if (hasOrdersFilter || hasEventsFilter) {
-    return `/events/${eventId}/pf`
+  if (options.skipOrdersEnterpriseFilter === true) {
+    return `${baseId}/menu-limit-orders`
   }
-  return `/events/${eventId}`
+  return baseId
 }
 
 export const useEventStore = (target: string | BokudeliEvent, options: EventStoreOptions = {}) => {
@@ -442,7 +447,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     const subscribeOrders = () => {
       if (unsubscribeOrders == null) {
         const orderConstraints = [where('event_id', '==', eventId)]
-        if ('ordersEnterpriseId' in mergedOptions) {
+        if ('ordersEnterpriseId' in mergedOptions && mergedOptions.skipOrdersEnterpriseFilter !== true) {
           // undefined を渡すと where() が実行時エラーになるため null に正規化する
           orderConstraints.push(where('enterprise_id', '==', mergedOptions.ordersEnterpriseId ?? null))
         }

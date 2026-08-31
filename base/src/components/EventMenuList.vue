@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { mdiFoodForkDrink } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 /** 横長レイアウトを適用するメニュー数の上限（この数以下は横長、超えるとグリッド） */
 const HORIZONTAL_LAYOUT_MAX_COUNT = 2
@@ -23,6 +25,25 @@ const emit = defineEmits<{
 const display = useDisplay()
 const { t: $t } = useI18n()
 const eventStore = useAppEventStore(props.eventId)
+const { getRemainingForMenu, isMenuLimitSoldOut } = useMenuLimitRemaining(props.eventId)
+
+const isMenuAddDisabled = (menu: BokudeliEventMenu): boolean => {
+  return props.disabled || menu.is_sold_out || isMenuLimitSoldOut(menu)
+}
+
+const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
+  if (menu.is_sold_out) {
+    return $t('event_menu.sold_out')
+  }
+  if (isMenuLimitSoldOut(menu)) {
+    return $t('event_menu.limit_sold_out')
+  }
+  return $t('event_details.menu_join_button')
+}
+
+const showRemainingChip = (menu: BokudeliEventMenu, remainingInfo: ReturnType<typeof getRemainingForMenu>): boolean => {
+  return !menu.is_sold_out && !isMenuLimitSoldOut(menu) && remainingInfo != null && remainingInfo.remaining > 0
+}
 
 // is_selected が true のメニューのみを表示
 const filteredMenus = computed(() => {
@@ -34,13 +55,28 @@ const useHorizontalLayout = computed(() => {
   if (filteredMenus.value === undefined || filteredMenus.value.length === 0) return false
   return filteredMenus.value.length <= HORIZONTAL_LAYOUT_MAX_COUNT && !display.xs.value
 })
+
+type MenuWithRemaining = {
+  menu: BokudeliEventMenu
+  remainingInfo: ReturnType<typeof getRemainingForMenu>
+}
+
+const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
+  if (filteredMenus.value === undefined) {
+    return undefined
+  }
+  return filteredMenus.value.map((menu) => ({
+    menu,
+    remainingInfo: getRemainingForMenu(menu),
+  }))
+})
 </script>
 <template>
   <section>
     <v-row v-if="filteredMenus !== undefined && eventStore.event != null" class="align-stretch">
       <!-- 横長レイアウト: 2件以下 かつ PC・タブレットのみ -->
       <template v-if="useHorizontalLayout">
-        <v-col v-for="menu of filteredMenus" :key="menu.menu_id" cols="12" class="pa-3">
+        <v-col v-for="{ menu, remainingInfo } of menusWithRemaining" :key="menu.menu_id" cols="12" class="pa-3">
           <v-card class="d-flex flex-column menu-card-horizontal">
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="4" class="d-flex flex-shrink-0 align-stretch">
@@ -56,21 +92,28 @@ const useHorizontalLayout = computed(() => {
                   {{ menu.menu_description }}
                 </v-card-text>
                 <div class="menu-spacer" />
-                <div class="d-flex align-center justify-space-between flex-wrap gap-2 flex-shrink-0">
-                  <v-card-text class="text-left pa-0">
-                    <span class="yen-text">¥ </span>
-                    <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                  </v-card-text>
+                <div class="d-flex align-center flex-shrink-0 mb-2">
+                  <MenuStatusChips
+                    v-if="showRemainingChip(menu, remainingInfo)"
+                    :remaining="remainingInfo!.remaining"
+                    align="start"
+                  />
+                  <v-spacer />
+                  <span class="yen-text">¥ </span>
+                  <span class="price-text">{{ priceString(menu.menu_price) }}</span>
+                </div>
+                <div class="d-flex align-center justify-end flex-shrink-0">
                   <v-btn
                     class="menu-button menu-button-single"
-                    :class="{ 'disable-menu-button': disabled }"
+                    :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                    :disabled="isMenuAddDisabled(menu)"
                     color="primary"
                     rounded="pill"
                     elevation="5"
                     :prepend-icon="mdiFoodForkDrink"
                     @click="emit('selectMenu', menu)"
                   >
-                    {{ $t('event_details.menu_join_button') }}
+                    {{ getMenuJoinButtonLabel(menu) }}
                   </v-btn>
                 </div>
               </v-col>
@@ -81,7 +124,14 @@ const useHorizontalLayout = computed(() => {
 
       <!-- グリッドレイアウト: 4件以上 または スマホ（3件以下でも） -->
       <template v-else>
-        <v-col v-for="menu of filteredMenus" :key="menu.menu_id" md="4" sm="6" cols="12" class="pa-3">
+        <v-col
+          v-for="{ menu, remainingInfo } of menusWithRemaining"
+          :key="menu.menu_id"
+          md="4"
+          sm="6"
+          cols="12"
+          class="pa-3"
+        >
           <v-card height="100%" color="text-center" class="d-flex flex-column">
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="6" sm="12" class="d-flex flex-shrink-0">
@@ -105,23 +155,30 @@ const useHorizontalLayout = computed(() => {
                 </v-card-text>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
-                  <v-card-text class="text-right pa-0 ma-3">
+                  <div class="d-flex align-center px-1 ma-3">
+                    <MenuStatusChips
+                      v-if="showRemainingChip(menu, remainingInfo)"
+                      :remaining="remainingInfo!.remaining"
+                      align="start"
+                    />
+                    <v-spacer />
                     <span class="yen-text">¥ </span>
                     <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                  </v-card-text>
+                  </div>
                   <v-row class="pb-1 px-2">
                     <v-col cols="12">
                       <v-btn
                         class="menu-button"
                         block
-                        :class="{ 'disable-menu-button': disabled }"
+                        :class="{ 'disable-menu-button': isMenuAddDisabled(menu) }"
+                        :disabled="isMenuAddDisabled(menu)"
                         color="primary"
                         rounded="pill"
                         elevation="5"
                         :prepend-icon="mdiFoodForkDrink"
                         @click="emit('selectMenu', menu)"
                       >
-                        {{ $t('event_details.menu_join_button') }}
+                        {{ getMenuJoinButtonLabel(menu) }}
                       </v-btn>
                     </v-col>
                   </v-row>
@@ -166,6 +223,7 @@ const useHorizontalLayout = computed(() => {
   overflow: hidden;
   flex-shrink: 0;
   width: 100%;
+  position: relative;
 }
 
 /* グリッドレイアウト: 画像を正方形で揃える */

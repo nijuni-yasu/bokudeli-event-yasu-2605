@@ -205,6 +205,43 @@ export const hasOrderedOrders = async (
   return !snapshot.empty
 }
 
+const FIRESTORE_IN_QUERY_LIMIT = 30
+
+/** イベント内の menu_id ごとの確定済み（ordered）食数を返す */
+export const countOrderedMenus = async (
+  eventId: string,
+  menuIds: readonly string[],
+  transaction?: Transaction,
+): Promise<Map<string, number>> => {
+  const counts = new Map<string, number>()
+  if (menuIds.length === 0) {
+    return counts
+  }
+
+  const uniqueMenuIds = [...new Set(menuIds)]
+  for (const menuId of uniqueMenuIds) {
+    counts.set(menuId, 0)
+  }
+
+  const db = getFirestore()
+  for (let i = 0; i < uniqueMenuIds.length; i += FIRESTORE_IN_QUERY_LIMIT) {
+    const batch = uniqueMenuIds.slice(i, i + FIRESTORE_IN_QUERY_LIMIT)
+    const query = db
+      .collectionGroup('member_orders')
+      .where('event_id', '==', eventId)
+      .where('menu_id', 'in', batch)
+      .where('status', '==', 'ordered')
+      .withConverter(new EventMemberOrderConverter())
+    const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
+    for (const doc of snapshot.docs) {
+      const order = doc.data()
+      counts.set(order.menu_id, (counts.get(order.menu_id) ?? 0) + 1)
+    }
+  }
+
+  return counts
+}
+
 export const saveOrder = async (
   communityId: string,
   eventId: string,

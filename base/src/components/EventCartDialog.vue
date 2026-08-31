@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { FirebaseError } from 'firebase/app'
+import { useI18n } from 'vue-i18n'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
+import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
+import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
   eventId: string
 }>()
 
+const { t: $t } = useI18n()
 const eventStore = useAppEventStore(props.eventId)
+const { getRemainingForMenu, isMenuLimitSoldOut } = useMenuLimitRemaining(props.eventId)
 
 const isOpen = defineModel<boolean>()
 
@@ -19,15 +26,82 @@ const emit = defineEmits<{
   added: []
 }>()
 
-const countOptions = Array.from({ length: 5 }, (_, i) => i + 1)
 const selectedCount = ref(1)
+const addErrorMessage = ref('')
+
+const currentMenu = computed(() => {
+  const menus = eventStore.menus
+  if (menus == null) {
+    return props.menu
+  }
+  return menus.find((m) => m.menu_id === props.menu.menu_id) ?? props.menu
+})
+
+const remainingInfo = computed(() => getRemainingForMenu(currentMenu.value))
+
+const showRemainingChip = computed(
+  () =>
+    !currentMenu.value.is_sold_out &&
+    !isMenuLimitSoldOut(currentMenu.value) &&
+    remainingInfo.value != null &&
+    remainingInfo.value.remaining > 0,
+)
+
+const showSoldOutStatusChip = computed(() => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value))
+
+const maxSelectableCount = computed(() => {
+  const remaining = remainingInfo.value?.remaining
+  if (remaining == null) {
+    return 5
+  }
+  return Math.min(remaining, 5)
+})
+
+const countOptions = computed(() => {
+  const max = maxSelectableCount.value
+  if (max <= 0) {
+    return []
+  }
+  return Array.from({ length: max }, (_, i) => i + 1)
+})
+
+const isAddDisabled = computed(
+  () => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value) || countOptions.value.length === 0,
+)
+
+watch(isOpen, (open) => {
+  if (open) {
+    addErrorMessage.value = ''
+    selectedCount.value = countOptions.value[0] ?? 1
+  }
+})
+
+watch(countOptions, (options) => {
+  if (options.length === 0) {
+    return
+  }
+  if (!options.includes(selectedCount.value)) {
+    selectedCount.value = options[options.length - 1] ?? 1
+  }
+})
 
 const isAddingOrder = ref(false)
 
 const closeDialog = () => {
   isAddingOrder.value = false
   selectedCount.value = 1
+  addErrorMessage.value = ''
   isOpen.value = false
+}
+
+const getAddToCartErrorMessage = (error: unknown): string | null => {
+  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
+    return getUserFacingFailedPreconditionMessage(error.message)
+  }
+  if (error instanceof Error) {
+    return getUserFacingFailedPreconditionMessage(error.message)
+  }
+  return null
 }
 
 const addCart = async () => {
@@ -40,8 +114,12 @@ const addCart = async () => {
     console.warn('menu_id is null')
     return
   }
+  if (isAddDisabled.value) {
+    return
+  }
 
   isAddingOrder.value = true
+  addErrorMessage.value = ''
   try {
     await eventStore.addToCart({
       community_id: eventStore.event.community_id,
@@ -56,7 +134,13 @@ const addCart = async () => {
     emit('added')
     closeDialog()
   } catch (e) {
-    console.error(e)
+    const message = getAddToCartErrorMessage(e)
+    if (message != null) {
+      addErrorMessage.value = message
+    } else {
+      console.error(e)
+      addErrorMessage.value = $t('cart.update_failed')
+    }
   } finally {
     isAddingOrder.value = false
   }
@@ -66,20 +150,31 @@ const addCart = async () => {
 <template>
   <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeDialog()">
     <v-card class="pa-sm-10 pa-5">
-      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="menu" class="ma-3" />
+      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
       <v-card-title class="text-left text-h4 py-1 text-wrap">
-        {{ menu.menu_name }}
+        {{ currentMenu.menu_name }}
       </v-card-title>
       <v-card-text class="text-left py-2">
-        {{ menu.menu_description }}
+        {{ currentMenu.menu_description }}
       </v-card-text>
-      <v-card-text class="text-right pb-8">
+      <v-card-text class="d-flex align-center pb-8">
+        <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
+        <MenuStatusChips
+          v-else-if="showSoldOutStatusChip"
+          :is-sold-out="currentMenu.is_sold_out"
+          :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
+          align="start"
+        />
+        <v-spacer />
         <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(menu.menu_price) }}</span>
+        <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
       </v-card-text>
-      <v-row class="mx-3 mb-2">
+      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
       </v-row>
+      <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mx-3 mb-2">
+        {{ addErrorMessage }}
+      </v-alert>
       <v-row class="justify-center mx-1 my-2">
         <v-btn
           class="justify-center mx-1 align-self-center"
@@ -87,6 +182,7 @@ const addCart = async () => {
           color="primary"
           :prepend-icon="mdiCart"
           :loading="isAddingOrder"
+          :disabled="isAddDisabled"
           @click="addCart()"
         >
           {{ $t('cart_dialog.add') }}
@@ -105,5 +201,3 @@ const addCart = async () => {
     </v-card>
   </v-dialog>
 </template>
-
-<style lang="scss" scoped></style>

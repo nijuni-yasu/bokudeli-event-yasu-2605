@@ -44,7 +44,7 @@ function applyDefaultSelectedMenuIds(selectedMenuIds: string[], partnerMenus: Pa
  * @param eventId - イベントID
  * @param eventStartDatetime - イベント開始日時（期間チェック用）
  * @param selectedMenuIds - 選択されたmenu_idの配列
- * @returns 変換されたEventMenu。論理削除済み・売り切れ・期間外の場合は null
+ * @returns 変換されたEventMenu。論理削除済み・期間外の場合は null
  */
 export function convertFromPartnerMenuToEventMenu(
   partnerMenu: PartnerMenu,
@@ -54,11 +54,6 @@ export function convertFromPartnerMenuToEventMenu(
 ): EventMenu | null {
   // 論理削除チェック：削除済みメニューはEventMenuに含めない
   if (partnerMenu.is_deleted) {
-    return null
-  }
-
-  // 売り切れチェック：売り切れメニューはEventMenuに含めない
-  if (partnerMenu.is_sold_out) {
     return null
   }
 
@@ -77,6 +72,7 @@ export function convertFromPartnerMenuToEventMenu(
     menu_price: partnerMenu.menu_price,
     is_sold_out: partnerMenu.is_sold_out,
     menu_sort_number: partnerMenu.menu_sort_number,
+    limit_per_event: partnerMenu.limit_per_event,
     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
   })
 }
@@ -87,7 +83,7 @@ export function convertFromPartnerMenuToEventMenu(
  * @param eventId - イベントID
  * @param eventStartDatetime - イベント開始日時（期間チェック用）
  * @param selectedMenuIds - 選択されたmenu_idの配列（空配列の場合はデフォルトで全選択）
- * @returns 変換されたEventMenu配列。論理削除済み・売り切れ・期間外のメニューは除外
+ * @returns 変換されたEventMenu配列。論理削除済み・期間外のメニューは除外
  */
 export function convertPartnerMenusToEventMenus(
   partnerMenus: PartnerMenu[],

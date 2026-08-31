@@ -29,6 +29,7 @@ import { useEnterpriseTenantGuard } from '@/composable/useEnterpriseTenantGuard'
 import EnterpriseErrorPage from '@/components/EnterpriseErrorPage.vue'
 import { getChatPath } from '@/router/utils'
 import { useNavigateToEventChat } from '@shokujii/base/composable/useNavigateToEventChat.js'
+import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { usePublicEventNotFoundRedirect } from '@shokujii/base/composable/usePublicEventNotFoundRedirect.js'
 
 const route = useRoute()
@@ -45,6 +46,7 @@ if (enterpriseId.value == null) {
 usePublicEventNotFoundRedirect(eventId, communityAccount, buildEventStoreOptions(enterpriseId.value))
 
 const eventStore = useEventStore(eventId, buildEventStoreOptions(enterpriseId.value)) as EventStore
+const { isMenuLimitSoldOut } = useMenuLimitRemaining(eventId)
 const communityStore = useEnterpriseCommunityStore(communityAccount)
 const eventEnterpriseId = computed(() => eventStore.event?.enterprise_id)
 const communityEnterpriseId = computed(() => communityStore.community?.enterprise_id)
@@ -165,6 +167,18 @@ const selectMenu = (menu: BokudeliEventMenu) => {
       alertState.message = $t(`menu_disabled_reason.${disabledReason}`)
       alertState.isOpen = true
     }
+    return
+  }
+
+  if (menu.is_sold_out) {
+    alertState.message = $t('menu_disabled_reason.sold_out')
+    alertState.isOpen = true
+    return
+  }
+
+  if (isMenuLimitSoldOut(menu)) {
+    alertState.message = $t('menu_disabled_reason.menu_limit')
+    alertState.isOpen = true
     return
   }
 

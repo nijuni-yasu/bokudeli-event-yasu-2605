@@ -18,6 +18,22 @@ export function convertToDate(millis: number, zone = DEFAULT_TIME_ZONE, locale =
   return DateTime.fromMillis(millis, { zone, locale }).toFormat('yyyy/M/d')
 }
 
+/** 店舗メニューカード向け: 同一年内は終了日から年を省略（例: 2026/3/1〜3/31） */
+export function formatLimitedPeriodRange(
+  startMillis: number,
+  endMillis: number,
+  zone = DEFAULT_TIME_ZONE,
+  locale = DEFAULT_LOCALE,
+): string {
+  const startFormatted = convertToDate(startMillis, zone, locale)
+  const startDt = DateTime.fromMillis(startMillis, { zone, locale })
+  const endDt = DateTime.fromMillis(endMillis, { zone, locale })
+  if (startDt.toFormat('yyyy') === endDt.toFormat('yyyy')) {
+    return `${startFormatted}〜${endDt.toFormat('M/d')}`
+  }
+  return `${startFormatted}〜${convertToDate(endMillis, zone, locale)}`
+}
+
 /** スラッシュ区切りの日付 + 24h 時刻。月日・時は先頭ゼロなし。例 2026/3/30 6:00 */
 export function convertToDatetime(millis: number, zone = DEFAULT_TIME_ZONE, locale = DEFAULT_LOCALE): string {
   return DateTime.fromMillis(millis, { zone, locale }).toFormat('yyyy/M/d H:mm')

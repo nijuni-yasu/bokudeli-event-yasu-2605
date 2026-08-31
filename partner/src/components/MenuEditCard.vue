@@ -6,6 +6,7 @@ import { useValidators } from '@shokujii/base/composable/validators.js'
 import { useI18n } from 'vue-i18n'
 import ImageInput from '@shokujii/base/components/ImageInput.vue'
 import DateInput from '@shokujii/base/components/DateInput.vue'
+import { MENU_LIMIT_PER_EVENT_MAX } from '@shokujii/common/utils/menuLimit.js'
 
 const { requiredValidator, maxLengthValidator, betweenValidator } = useValidators()
 const { t: $t } = useI18n()
@@ -50,6 +51,31 @@ const dateEnd = computed({
   },
 })
 
+const limitPerEvent = computed({
+  get: () => menu.value.limit_per_event ?? '',
+  set: (value) => {
+    if (value === '' || value == null) {
+      menu.value.limit_per_event = null
+      return
+    }
+    const parsed = Number(value)
+    if (Number.isInteger(parsed) && parsed >= 1 && parsed <= MENU_LIMIT_PER_EVENT_MAX) {
+      menu.value.limit_per_event = parsed
+    }
+  },
+})
+
+const limitPerEventRule = (value: string | number): true | string => {
+  if (value === '' || value == null) {
+    return true
+  }
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > MENU_LIMIT_PER_EVENT_MAX) {
+    return $t('menu_edit_card.error_limit_per_event')
+  }
+  return true
+}
+
 // 販売期間のバリデーションを入力欄に紐付ける
 const dateRangeRule = (): true | string => {
   const hasStart = menu.value.menu_date_start != null
@@ -93,7 +119,7 @@ const handleSubmit = () => {
           <slot name="title" />
         </div>
       </template>
-      <v-card-text>
+      <v-card-text class="menu-edit-card__image pb-2">
         <v-row justify="center">
           <v-col cols="7">
             <ImageInput
@@ -103,69 +129,91 @@ const handleSubmit = () => {
               :cover="true"
               :rules="[requiredValidator]"
             />
-            {{ $t('menu_edit_card.image_hint') }}
+            <span class="text-caption text-medium-emphasis">{{ $t('menu_edit_card.image_hint') }}</span>
           </v-col>
         </v-row>
       </v-card-text>
-      <v-card-text>
+      <v-card-text class="menu-edit-card__fields pt-2">
         <v-text-field
           v-model="menu.menu_name"
           outlined
           dense
+          class="menu-edit-card__field"
           :label="$t('menu_edit_card.name')"
           :rules="[requiredValidator]"
         />
-      </v-card-text>
-      <v-card-text>
         <v-textarea
           v-model="menu.menu_description"
           outlined
+          class="menu-edit-card__field"
           :label="$t('menu_edit_card.description')"
           :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 140)]"
         />
-      </v-card-text>
-      <v-card-text>
-        <v-row>
-          <v-col cols="12">
-            <v-text-field
-              type="number"
-              min="10"
-              max="100000"
-              :prefix="$n(0, 'currency').replace('0', '')"
-              v-model.number="price"
-              :label="$t('menu_edit_card.price')"
-              :rules="[requiredValidator, (v: string) => betweenValidator(v, 10, 100000)]"
-            />
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-card-title>{{ $t('menu_edit_card.limited_edition') }}</v-card-title>
-      <v-card-text>
-        <v-row>
-          <v-col cols="6">
-            <DateInput
-              v-model="dateStart"
-              :clearable="true"
-              :label="$t('menu_edit_card.date_start')"
-              :rules="dateRangeRules"
-            />
-          </v-col>
-          <v-col cols="6">
-            <DateInput
-              v-model="dateEnd"
-              :clearable="true"
-              :label="$t('menu_edit_card.date_end')"
-              :rules="dateRangeRules"
-            />
-          </v-col>
-        </v-row>
-      </v-card-text>
-      <v-card-text>
-        <v-switch
-          v-model="menu.is_sold_out"
-          color="#FF0000"
-          :label="`${menu.is_sold_out ? $t('menu_edit_card.sold_out') : $t('menu_edit_card.in_stock')}`"
+        <v-text-field
+          type="number"
+          min="10"
+          max="100000"
+          class="menu-edit-card__field"
+          :prefix="$n(0, 'currency').replace('0', '')"
+          v-model.number="price"
+          :label="$t('menu_edit_card.price')"
+          :rules="[requiredValidator, (v: string) => betweenValidator(v, 10, 100000)]"
         />
+        <div class="menu-edit-card__section">
+          <div class="menu-edit-card__section-label">
+            {{ $t('menu_edit_card.limited_edition') }}
+          </div>
+          <v-row dense>
+            <v-col cols="6">
+              <DateInput
+                v-model="dateStart"
+                :clearable="true"
+                :label="$t('menu_edit_card.date_start')"
+                :rules="dateRangeRules"
+              />
+            </v-col>
+            <v-col cols="6">
+              <DateInput
+                v-model="dateEnd"
+                :clearable="true"
+                :label="$t('menu_edit_card.date_end')"
+                :rules="dateRangeRules"
+              />
+            </v-col>
+          </v-row>
+          <p class="menu-edit-card__hint">
+            {{ $t('menu_edit_card.limited_edition_hint') }}
+          </p>
+        </div>
+        <div class="menu-edit-card__section menu-edit-card__section--limit">
+          <div class="menu-edit-card__section-label">
+            {{ $t('menu_edit_card.limit_per_event_section') }}
+          </div>
+          <v-text-field
+            v-model="limitPerEvent"
+            type="number"
+            min="1"
+            :max="MENU_LIMIT_PER_EVENT_MAX"
+            clearable
+            :label="$t('menu_edit_card.limit_per_event')"
+            :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
+            :rules="[limitPerEventRule]"
+          />
+          <p class="menu-edit-card__hint">
+            {{ $t('menu_edit_card.limit_per_event_hint') }}
+          </p>
+        </div>
+        <div class="menu-edit-card__switch">
+          <v-switch
+            v-model="menu.is_sold_out"
+            color="error"
+            hide-details
+            :label="`${menu.is_sold_out ? $t('menu_edit_card.sold_out') : $t('menu_edit_card.in_stock')}`"
+          />
+          <p class="menu-edit-card__hint">
+            {{ $t('menu_edit_card.sold_out_sync_notice') }}
+          </p>
+        </div>
       </v-card-text>
       <template #actions>
         <v-spacer></v-spacer>
@@ -179,3 +227,48 @@ const handleSubmit = () => {
     </v-card>
   </v-form>
 </template>
+
+<style scoped lang="scss">
+.menu-edit-card__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-edit-card__field {
+  flex-shrink: 0;
+}
+
+.menu-edit-card__section-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  margin-bottom: 8px;
+}
+
+.menu-edit-card__section--limit {
+  margin-top: 12px;
+
+  :deep(.v-input__details) {
+    padding-inline: 0;
+  }
+}
+
+.menu-edit-card__hint {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  text-align: left;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.menu-edit-card__switch {
+  margin-top: 4px;
+
+  :deep(.v-selection-control) {
+    padding-inline-start: 0;
+  }
+}
+</style>
