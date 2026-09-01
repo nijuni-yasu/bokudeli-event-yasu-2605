@@ -276,15 +276,18 @@ service cloud.firestore {
             function communityEnterpriseIdUnchanged() {
                 return docEnterpriseId(request.resource.data) == docEnterpriseId(resource.data);
             }
+            // サポートアカウントは運営管理画面（support）でテナント横断の一覧を表示するため read 可
             allow read: if docEnterpriseId(resource.data) == null
-                        || isSameEnterprise(resource.data);
+                        || isSameEnterprise(resource.data)
+                        || isSupport();
             // コミュニティはログインユーザーなら申請可能（enterprise_id は canCreateCommunity で検証）
             allow create: if canCreateCommunity()
             // コミュマネ or サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
             allow update: if (isSupport() || isManager()) && communityEnterpriseIdUnchanged()
             match /events/{event} {
                 allow read: if docEnterpriseId(resource.data) == null
-                            || isSameEnterprise(resource.data);
+                            || isSameEnterprise(resource.data)
+                            || isSupport();
                 // コミュマネ or サポートアカウントはイベントの作成・更新ができる
                 allow create, update: if isSupport() && eventMinimumParticipantsWriteValid()
                                     && eventMembersVisibleMinCountValid()
@@ -314,7 +317,9 @@ service cloud.firestore {
                                    ));
                     allow write: if false
                     match /member_orders/{orderId} {
+                        // isSupport() は collectionGroup 側 member_orders と同一条件に保つ
                         allow read: if docEnterpriseId(resource.data) == null
+                                    || isSupport()
                                     || (request.auth != null && (
                                          isSameEnterprise(resource.data)
                                          || request.auth.uid == resource.data.user_id
@@ -456,14 +461,17 @@ service cloud.firestore {
         // collection group query 用ルール（/{path=**} 配下にネスト。フラットな /{path=**}/member_orders は評価されない）
         match /{path=**} {
             match /events/{event} {
+                // isSupport() はネスト側 events と同一（運営管理画面のテナント横断一覧）
                 allow read: if docEnterpriseId(resource.data) == null
-                            || isSameEnterprise(resource.data);
+                            || isSameEnterprise(resource.data)
+                            || isSupport();
             }
             match /member_orders/{order} {
                 // collectionGroup はネスト path とは別評価。read 条件はネスト側 member_orders と同一（#2278: PF は未認証 CG も可）
                 // PF（enterprise_id == null）は doc 全体が未認証 read 可（menu 名に加え stripe_id / processing_payment_intent 等も含む）。
                 // 機微情報を member_orders に追加しないこと。公開範囲の見直しは #2282。
                 allow read: if docEnterpriseId(resource.data) == null
+                            || isSupport()
                             || (request.auth != null && (
                                  isSameEnterprise(resource.data)
                                  || request.auth.uid == resource.data.user_id
