@@ -30,6 +30,7 @@
     "user",
     "enterprise",
     "partner",
+    "support",
     "terms",
     "functions/default",
     "tests/firestore-rules"
