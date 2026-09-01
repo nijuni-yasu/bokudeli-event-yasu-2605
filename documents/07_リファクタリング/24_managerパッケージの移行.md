@@ -1,5 +1,10 @@
 # support パッケージへの移行（レガシー manager 置換）
 
+> **実装仕様の正本は [documents/09_運営向け機能/03_managerパッケージの再実装.md](../09_運営向け機能/03_managerパッケージの再実装.md)。**
+> フェーズ1のスコープ・画面仕様・Rules 変更・PR 分割はそちらを参照すること。
+> 本ドキュメントは**移行の背景**（レガシー manager の技術的負債、デプロイできない要因、削除対象資産の棚卸し）を
+> 記録する資料として維持する。両者で記述が食い違う場合は 03 を優先する。
+
 ## 0. 目的
 
 運営向け管理画面は、現行のレガシー `manager` パッケージ（購入テンプレート Vuetify Material Dashboard PRO ベースの **Vue 2 / Vue CLI 世代**）として存在する。技術スタック・依存・CI のすべてが現行標準（`user` / `partner`）から取り残されている。
@@ -243,6 +248,7 @@ support/
 
 ## 11. 関連 Issue / ドキュメント
 
+- [03_managerパッケージの再実装.md](../09_運営向け機能/03_managerパッケージの再実装.md)（**実装仕様の正本**。フェーズ1 詳細）
 - [23_node20のversion更新.md](23_node20のversion更新.md)（Node 24 / Functions ランタイム、#1983）
 - [firebaseプロジェクト新規作成.md](../firebaseプロジェクト/firebaseプロジェクト新規作成.md)（hosting target マッピング）
 - スキル: `/shokujii-firestore`（store 追加）, `/shokujii-common-schemas`（スキーマ）, `/vue-best-practices`, `/frontend-design`, `/lint-and-format`
