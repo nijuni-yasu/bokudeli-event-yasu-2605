@@ -12,8 +12,9 @@
 | [x] | RC-4 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | ダッシュボードの件数カードが「取得中」と「取得失敗」を同一表示にしていた<br>チェックリスト「対象外・未設定と取得失敗を同一表示にしない」。`null` / `undefined` で区別した |
 | [x] | RC-5 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `supportCounts.countOf` の引数型が `ReturnType<typeof collection>` の union だった<br>`Query` 型で受ければ十分。可読性のため単純化した |
 | [x] | RC-6 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | S | 仕様書 §7 の「CG クエリが Rules で拒否される」という記述がエミュレータ実測と食い違っていた<br>拒否されるのは個別 read。実測に合わせて §7 を書き直した |
-| [ ] | RC-7 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 📐 リファクタ | M | `useOrderListStore` が取得失敗を握りつぶすため、注文一覧が永久ローディングになる<br>base store 側の変更が必要。`reportClientError` + エラー状態の公開を検討 |
-| [ ] | RC-8 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 📋 仕様追加 | M | 店舗一覧が全件取得（`useShopListStore` に `limit` が無い）<br>仕様書 §4.4 の申し送り。店舗件数を見てページング要否を判断する |
+| [x] | RC-7 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📐 リファクタ | M | `useOrderListStore` が取得失敗を握りつぶすため、注文一覧が永久ローディングになる<br>base store 側の変更が必要。`reportClientError` + エラー状態の公開を検討 |
+| [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📋 仕様追加 | M | 店舗一覧が全件取得（`useShopListStore` に `limit` が無い）<br>仕様書 §4.4 の申し送り。店舗件数を見てページング要否を判断する |
+| [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | URL フィルタ切替時に `orderedCounts` / `eventSummaries` / `counts` Map をクリアしていない<br>前フィルタの集計値が混在表示される。watch 内で Map を初期化した |
 
 ---
 
@@ -306,7 +307,7 @@ base store 側の変更が必要。`reportClientError` + エラー状態の公�
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -316,7 +317,7 @@ base store 側の変更が必要。`reportClientError` + エラー状態の公�
 
 **想定工数**: M
 
-**判断理由**: 既存の共有 store の挙動変更であり、`user` / `enterprise` の既存画面への影響確認が必要。auto-fix-policy の「S + 🔧 微修正」条件を満たさないため自動修正しない。
+**判断理由**: `loadError` を公開し、初回失敗時は `orders` を空配列にして永久ローディングを解消。`reportClientError` を追加。注文一覧 UI にエラーアラートと再試行を表示。既存 caller は `loadError` 未参照のため後方互換。
 
 ---
 
@@ -341,7 +342,7 @@ base store 側の変更が必要。`reportClientError` + エラー状態の公�
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -351,4 +352,63 @@ base store 側の変更が必要。`reportClientError` + エラー状態の公�
 
 **想定工数**: M
 
-**判断理由**: 実データの店舗件数という運用情報がないと要否を判断できず、base store の共有変更にもなる。仕様判断が必要なため自動修正の対象外。
+**判断理由**: `useShopListStore(filters, pageSize?)` に optional ページングを追加。support は `PAGE_SIZE=30`、`EventEdit` は pageSize 省略で従来どおり全件。`hasMore` / `loadError` も公開。
+
+---
+
+## 評価セッション（2026-09-04 22:52・shokujii-code-review）
+
+- **評価日時**: 2026-09-04 22:52 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/2087`
+- **PR**: 未作成
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-7 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📐 リファクタ | M | 注文一覧が失敗時に永久ローディング<br>`loadError` + UI エラー表示を追加 |
+| [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📋 仕様追加 | M | 店舗一覧が全件取得<br>optional pageSize でページング |
+| [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フィルタ切替時に派生 Map が残る<br>watch で Map を初期化 |
+
+---
+
+**識別子**: RC-9（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `support/src/pages/events/index.vue`, `support/src/pages/orders/index.vue`, `support/src/pages/communities/index.vue`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++watch(
++  () => route.query.status,
++  () => {
++    eventListStore.value = useEventListStore(buildFilters(), PAGE_SIZE, { autoContinue: false })
++  },
++)
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: URL クエリでフィルタを切り替えても `orderedCounts` / `eventSummaries` / `counts` の Map をクリアしていない → 前フィルタの集計値が混在表示される。store 再生成の watch 内で Map を `new Map()` に初期化すること。
+
+**コメント要約**: フィルタ切替時に派生 Map が残り、注文状況・イベント名・メンバー数が誤表示される。
+watch 内で Map を初期化した。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: ダッシュボードからの絞り込み遷移後にフィルタ解除すると、別条件の count が残る実害がある。修正方針が一意なため自動修正した。

@@ -22,11 +22,37 @@ const counts = reactive<Record<SummaryKey, number | null | undefined>>({
 })
 
 const cards: { key: SummaryKey; title: string; icon: string; to: string }[] = [
-  { key: 'pending_communities', title: $t('dashboard.pending_communities'), icon: mdiAccountGroup, to: '/communities' },
-  { key: 'pending_shops', title: $t('dashboard.pending_shops'), icon: mdiStorefrontOutline, to: '/shops' },
-  { key: 'accepting_events', title: $t('dashboard.accepting_events'), icon: mdiCalendar, to: '/events' },
-  { key: 'recent_orders', title: $t('dashboard.recent_orders'), icon: mdiCart, to: '/orders' },
+  {
+    key: 'pending_communities',
+    title: $t('dashboard.pending_communities'),
+    icon: mdiAccountGroup,
+    to: '/communities?is_approved=false',
+  },
+  {
+    key: 'pending_shops',
+    title: $t('dashboard.pending_shops'),
+    icon: mdiStorefrontOutline,
+    to: '/shops?is_approved=false',
+  },
+  {
+    key: 'accepting_events',
+    title: $t('dashboard.accepting_events'),
+    icon: mdiCalendar,
+    to: '/events?status=accepting_order',
+  },
+  { key: 'recent_orders', title: $t('dashboard.recent_orders'), icon: mdiCart, to: '/orders?recent=7' },
 ]
+
+const retryLoad = (key: SummaryKey): void => {
+  counts[key] = null
+  const fetchers: Record<SummaryKey, () => Promise<number>> = {
+    pending_communities: countPendingCommunities,
+    pending_shops: countPendingShops,
+    accepting_events: countAcceptingOrderEvents,
+    recent_orders: () => countOrdersOrderedSince(since),
+  }
+  load(key, fetchers[key])
+}
 
 const load = async (key: SummaryKey, fetch: () => Promise<number>): Promise<void> => {
   try {
@@ -60,7 +86,12 @@ load('recent_orders', () => countOrdersOrderedSince(since))
               <div class="text-h5">
                 <template v-if="counts[card.key] != null">{{ counts[card.key] }}</template>
                 <v-progress-circular v-else-if="counts[card.key] === null" indeterminate size="20" width="2" />
-                <span v-else class="text-body-2 text-error">{{ $t('common.load_failed') }}</span>
+                <span v-else class="text-body-2 text-error d-flex align-center gap-2">
+                  {{ $t('common.load_failed') }}
+                  <v-btn size="x-small" variant="text" @click.stop="retryLoad(card.key)">{{
+                    $t('common.retry')
+                  }}</v-btn>
+                </span>
               </div>
             </div>
           </v-card-text>

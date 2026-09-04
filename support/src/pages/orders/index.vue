@@ -1,19 +1,39 @@
 <script setup lang="ts">
-import { orderBy, where } from 'firebase/firestore'
-import { useOrderListStore } from '@shokujii/base/stores/orderList.js'
+import { orderBy, where, type QueryConstraint } from 'firebase/firestore'
+import { useOrderListStore, type OrderListStore } from '@shokujii/base/stores/orderList.js'
 import { useEventStore } from '@shokujii/base/stores/event.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { getEventUrl } from '@/utils/urls'
+import { orderStatusChipColor } from '@/utils/statusColors'
+import SupportFilterChip from '@/components/SupportFilterChip.vue'
 import { mdiOpenInNew } from '@mdi/js'
 
 const PAGE_SIZE = 50
+const RECENT_ORDER_DAYS = 7
 
-/** in_cart（カート投入のみ）は運営が確認したい「注文」ではないので除外する */
-const orderListStore = useOrderListStore(
-  'support/orders',
-  [where('status', '!=', 'in_cart'), orderBy('status'), orderBy('updated_at', 'desc')],
-  PAGE_SIZE,
+const route = useRoute()
+
+const buildFilters = (): QueryConstraint[] => {
+  if (route.query.recent === '7') {
+    const since = new Date(Date.now() - RECENT_ORDER_DAYS * 24 * 60 * 60 * 1000)
+    return [where('status', '==', 'ordered'), where('ordered_at', '>=', since), orderBy('ordered_at', 'desc')]
+  }
+  return [where('status', '!=', 'in_cart'), orderBy('status'), orderBy('updated_at', 'desc')]
+}
+
+const storeId = computed(() => (route.query.recent === '7' ? 'support/orders/recent7' : 'support/orders'))
+
+const orderListStore = shallowRef<OrderListStore>(useOrderListStore(storeId.value, buildFilters(), PAGE_SIZE))
+
+watch(
+  () => route.query.recent,
+  () => {
+    eventSummaries.value = new Map()
+    orderListStore.value = useOrderListStore(storeId.value, buildFilters(), PAGE_SIZE)
+  },
 )
+
+const showRecentFilter = computed(() => route.query.recent === '7')
 
 type EventSummary = { eventName: string; communityName: string; communityAccount: string; shopName: string }
 
@@ -21,7 +41,7 @@ type EventSummary = { eventName: string; communityName: string; communityAccount
 const eventSummaries = ref<Map<string, EventSummary>>(new Map())
 
 watch(
-  () => orderListStore.orders,
+  () => orderListStore.value.orders,
   async (orders) => {
     if (orders == null) {
       return
@@ -69,56 +89,71 @@ watch(
 <template>
   <div>
     <v-card>
-      <v-card-title>{{ $t('orders.title') }}</v-card-title>
+      <v-card-title class="d-flex align-center flex-wrap gap-2">
+        {{ $t('orders.title') }}
+        <SupportFilterChip v-if="showRecentFilter" :label="$t('filter.recent_orders')" />
+      </v-card-title>
 
-      <v-table density="compact" class="text-no-wrap">
-        <thead>
-          <tr>
-            <th>{{ $t('orders.status') }}</th>
-            <th>{{ $t('orders.ordered_at') }}</th>
-            <th>{{ $t('orders.event_name') }}</th>
-            <th>{{ $t('orders.community_name') }}</th>
-            <th>{{ $t('orders.shop_name') }}</th>
-            <th>{{ $t('orders.menu') }}</th>
-            <th class="text-end">{{ $t('orders.price') }}</th>
-            <th>{{ $t('orders.user') }}</th>
-            <th>{{ $t('orders.carted_at') }}</th>
-            <th>{{ $t('orders.canceled_at') }}</th>
-            <th>{{ $t('orders.cancel_source') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="{ order, eventId } in orderListStore.orders ?? []" :key="order.order_id">
-            <td>
-              <v-chip size="small" label>{{ $t(`order_status.${order.status}`) }}</v-chip>
-            </td>
-            <td>{{ order.ordered_at == null ? '' : convertToDatetime(order.ordered_at) }}</td>
-            <td>
-              <a
-                v-if="eventSummaries.get(eventId) != null"
-                :href="getEventUrl(eventSummaries.get(eventId)!.communityAccount, eventId)"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {{ eventSummaries.get(eventId)!.eventName }}
-                <v-icon :icon="mdiOpenInNew" size="14" />
-              </a>
-              <v-progress-circular v-else indeterminate size="16" width="2" />
-            </td>
-            <td>{{ eventSummaries.get(eventId)?.communityName }}</td>
-            <td>{{ eventSummaries.get(eventId)?.shopName }}</td>
-            <td>{{ order.menu_name }}</td>
-            <td class="text-end">{{ $n(order.menu_price, 'currency') }}</td>
-            <td>{{ order.user_id }}</td>
-            <td>{{ convertToDatetime(order.carted_at) }}</td>
-            <td>{{ order.canceled_at == null ? '' : convertToDatetime(order.canceled_at) }}</td>
-            <td>{{ order.cancel_source == null ? '' : $t(`cancel_source.${order.cancel_source}`) }}</td>
-          </tr>
-          <tr v-if="orderListStore.orders != null && orderListStore.orders.length === 0">
-            <td colspan="11" class="text-center py-6">{{ $t('common.no_data') }}</td>
-          </tr>
-        </tbody>
-      </v-table>
+      <v-alert v-if="orderListStore.loadError" type="error" variant="tonal" class="ma-4">
+        {{ $t('common.load_failed') }}
+        <v-btn variant="text" size="small" @click="orderListStore.reload()">{{ $t('common.retry') }}</v-btn>
+      </v-alert>
+
+      <div class="support-table-wrap">
+        <v-table density="compact" class="support-table text-no-wrap">
+          <thead>
+            <tr>
+              <th>{{ $t('orders.status') }}</th>
+              <th>{{ $t('orders.ordered_at') }}</th>
+              <th>{{ $t('orders.event_name') }}</th>
+              <th>{{ $t('orders.community_name') }}</th>
+              <th>{{ $t('orders.shop_name') }}</th>
+              <th>{{ $t('orders.menu') }}</th>
+              <th class="text-end">{{ $t('orders.price') }}</th>
+              <th>{{ $t('orders.user') }}</th>
+              <th>{{ $t('orders.carted_at') }}</th>
+              <th>{{ $t('orders.canceled_at') }}</th>
+              <th>{{ $t('orders.cancel_source') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="{ order, eventId } in orderListStore.orders ?? []" :key="order.order_id">
+              <td>
+                <v-chip size="small" label :color="orderStatusChipColor(order.status)">
+                  {{ $t(`order_status.${order.status}`) }}
+                </v-chip>
+              </td>
+              <td>{{ order.ordered_at == null ? '' : convertToDatetime(order.ordered_at) }}</td>
+              <td>
+                <a
+                  v-if="eventSummaries.get(eventId) != null"
+                  class="support-link"
+                  :href="getEventUrl(eventSummaries.get(eventId)!.communityAccount, eventId)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="line-clamp-2 d-inline-block">{{ eventSummaries.get(eventId)!.eventName }}</span>
+                  <v-icon :icon="mdiOpenInNew" size="14" />
+                </a>
+                <v-progress-circular v-else indeterminate size="16" width="2" />
+              </td>
+              <td>{{ eventSummaries.get(eventId)?.communityName }}</td>
+              <td>{{ eventSummaries.get(eventId)?.shopName }}</td>
+              <td>{{ order.menu_name }}</td>
+              <td class="text-end">{{ $n(order.menu_price, 'currency') }}</td>
+              <td>
+                <span class="support-mono-id" :title="order.user_id">{{ order.user_id }}</span>
+              </td>
+              <td>{{ convertToDatetime(order.carted_at) }}</td>
+              <td>{{ order.canceled_at == null ? '' : convertToDatetime(order.canceled_at) }}</td>
+              <td>{{ order.cancel_source == null ? '' : $t(`cancel_source.${order.cancel_source}`) }}</td>
+            </tr>
+            <tr v-if="orderListStore.orders != null && orderListStore.orders.length === 0">
+              <td colspan="11" class="text-center py-6">{{ $t('common.no_data') }}</td>
+            </tr>
+          </tbody>
+        </v-table>
+      </div>
 
       <div v-if="orderListStore.orders == null" class="d-flex justify-center py-8">
         <v-progress-circular indeterminate />
