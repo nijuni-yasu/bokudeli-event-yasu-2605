@@ -164,7 +164,9 @@ const hasMore = computed(
                 <div>{{ community.community_phone }}</div>
                 <div class="support-mono-id">{{ community.community_email }}</div>
               </td>
-              <td class="line-clamp-3 text-wrap">{{ community.community_use_purpose }}</td>
+              <td class="text-wrap">
+                <span class="line-clamp-3 d-block">{{ community.community_use_purpose || '—' }}</span>
+              </td>
               <td>
                 <div>{{ convertToDatetime(community.created_at) }}</div>
                 <div>{{ convertToDatetime(community.updated_at) }}</div>

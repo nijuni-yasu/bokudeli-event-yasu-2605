@@ -27,6 +27,10 @@ a {
     box-shadow: inset 0 -1px 0 rgba(var(--v-border-color), var(--v-border-opacity));
   }
 
+  tbody td {
+    vertical-align: top;
+  }
+
   tbody tr:hover {
     background: rgba(var(--v-theme-on-surface), 0.04);
   }
@@ -45,6 +49,7 @@ a {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  max-inline-size: 20rem;
 }
 
 .support-link {
@@ -63,6 +68,37 @@ a {
   &:hover .v-icon,
   &:focus-visible .v-icon {
     opacity: 1;
+  }
+}
+
+.support-table-col-nowrap {
+  white-space: nowrap;
+}
+
+.support-table-col-hours {
+  min-inline-size: 7.5rem;
+  white-space: nowrap;
+}
+
+.support-hours-menu {
+  min-inline-size: 16rem;
+  white-space: nowrap;
+}
+
+.support-hours-trigger {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgb(var(--v-theme-primary));
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    opacity: 0.85;
   }
 }
 

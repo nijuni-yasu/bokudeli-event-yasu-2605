@@ -18,7 +18,7 @@ const buildFilters = (): QueryConstraint[] => {
     const since = new Date(Date.now() - RECENT_ORDER_DAYS * 24 * 60 * 60 * 1000)
     return [where('status', '==', 'ordered'), where('ordered_at', '>=', since), orderBy('ordered_at', 'desc')]
   }
-  return [where('status', '!=', 'in_cart'), orderBy('status'), orderBy('updated_at', 'desc')]
+  return [orderBy('updated_at', 'desc')]
 }
 
 const storeId = computed(() => (route.query.recent === '7' ? 'support/orders/recent7' : 'support/orders'))
@@ -104,7 +104,7 @@ watch(
           <thead>
             <tr>
               <th>{{ $t('orders.status') }}</th>
-              <th>{{ $t('orders.ordered_at') }}</th>
+              <th>{{ $t('orders.updated_at') }}</th>
               <th>{{ $t('orders.event_name') }}</th>
               <th>{{ $t('orders.community_name') }}</th>
               <th>{{ $t('orders.shop_name') }}</th>
@@ -123,7 +123,7 @@ watch(
                   {{ $t(`order_status.${order.status}`) }}
                 </v-chip>
               </td>
-              <td>{{ order.ordered_at == null ? '' : convertToDatetime(order.ordered_at) }}</td>
+              <td>{{ convertToDatetime(order.updated_at) }}</td>
               <td>
                 <a
                   v-if="eventSummaries.get(eventId) != null"
