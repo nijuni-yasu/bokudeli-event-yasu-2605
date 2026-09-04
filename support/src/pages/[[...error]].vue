@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import Error from '@shokujii/base/components/Error.vue'
+import { parseErrorCodeFromRoute } from '@/router/utils'
 
 const route = useRoute()
-const error = route.params.error as string
-const errorCode = /^\d{3}$/.test(error) ? error : '404'
+const errorCode = computed(() => parseErrorCodeFromRoute(route.path, route.params.error) ?? '404')
 </script>
 
 <template>
