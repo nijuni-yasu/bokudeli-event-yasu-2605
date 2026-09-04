@@ -15,6 +15,9 @@
 | [x] | RC-7 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📐 リファクタ | M | `useOrderListStore` が取得失敗を握りつぶすため、注文一覧が永久ローディングになる<br>base store 側の変更が必要。`reportClientError` + エラー状態の公開を検討 |
 | [x] | RC-8 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 📋 仕様追加 | M | 店舗一覧が全件取得（`useShopListStore` に `limit` が無い）<br>仕様書 §4.4 の申し送り。店舗件数を見てページング要否を判断する |
 | [x] | RC-9 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | URL フィルタ切替時に `orderedCounts` / `eventSummaries` / `counts` Map をクリアしていない<br>前フィルタの集計値が混在表示される。watch 内で Map を初期化した |
+| [x] | RC-10 | 3935067586 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList の Firestore 取得が try/catch されず永久ローディングになり得る<br>`loadError` + 空配列 + `reportClientError` を追加 |
+| [x] | RC-11 | 3935067633 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | catch-all ルートの `error` param が配列のとき誤判定<br>`parseErrorCodeFromRoute` で正規化 |
+| [x] | RC-12 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 注文一覧の並びは updated_at だが列表示が ordered_at<br>「更新日時」列に変更 |
 
 ---
 
@@ -412,3 +415,124 @@ watch 内で Map を初期化した。
 **想定工数**: S
 
 **判断理由**: ダッシュボードからの絞り込み遷移後にフィルタ解除すると、別条件の count が残る実害がある。修正方針が一意なため自動修正した。
+
+---
+
+## 評価セッション（2026-09-04 23:42 JST・Copilot レビュー・partial）
+
+- **評価日時**: 2026-09-04 23:42 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/2087`
+- **PR**: #2345
+- **REVIEW_REQUEST_SINCE**: 2026-09-04T14:29:24Z
+- **partial**: true（Codex レビューなし。Copilot のみ）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼コメント）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-10 | 3935067586 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList 取得失敗時に永久ローディング<br>try/catch + loadError を追加 |
+| [x] | RC-11 | 3935067633 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | catch-all error param の配列未対応<br>parseErrorCodeFromRoute を追加 |
+
+---
+
+**識別子**: RC-10（GitHub id: 3935067586）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/userList.ts`
+
+**レビュワーのコメント（原文）**:
+
+[must] userList のページング処理で Firestore 呼び出し全体が try/catch されていないため、getCountFromServer/getDocs が失敗すると例外が上位に伝播して users が null のままになり、画面が永久ローディングになり得ます（TaskExecutor 側でも例外は吸収されません）。取得処理を try/catch で囲み、失敗時は users を空配列にしてローディングを解除しつつ reportClientError で記録してください。
+
+**コメント要約**: userList 取得失敗時に永久ローディング。try/catch + loadError + 空配列 + reportClientError。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: orderList と同パターンの実害。修正方針が一意なため自動修正した。
+
+---
+
+**識別子**: RC-11（GitHub id: 3935067633）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `support/src/pages/[[...error]].vue`
+
+**レビュワーのコメント（原文）**:
+
+[must] catch-all ルートの params は `string | string[]` になり得ますが、`route.params.error as string` で固定キャストすると配列ケースで意図しないコード判定になります。配列も扱えるように正規化してから 3 桁判定してください。
+
+**コメント要約**: catch-all error param の配列未対応。parseErrorCodeFromRoute で正規化。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: user アプリと同様の正規化が必要。修正方針が一意なため自動修正した。
+
+---
+
+## 評価セッション（2026-09-04 23:48 JST・shokujii-code-review）
+
+- **評価日時**: 2026-09-04 23:48 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/2087`
+- **PR**: #2345
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-12 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 注文一覧 sort=updated_at と表示列 ordered_at の不一致<br>更新日時列に変更 |
+
+---
+
+**識別子**: RC-12（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `support/src/pages/orders/index.vue`
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: 注文一覧の Firestore クエリを `updated_at` 降順に変更したが、テーブル第 2 列は `ordered_at` を表示している → 一覧上の並び順と日時列が一致せず運営が混乱する。「更新日時」列に `order.updated_at` を表示する。
+
+**コメント要約**: 並び順と表示列の不一致。更新日時列に変更した。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: ユーザー要望（updated 順）と UI の整合。修正方針が一意なため自動修正した。
