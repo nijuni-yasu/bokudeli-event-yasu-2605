@@ -40,6 +40,7 @@ export const useUserListStore = (filters: QueryConstraint[], pageSize: number = 
     const users = ref<User[] | null>(null)
     const totalCount = ref<number | null>(null)
     const hasMore = ref(true)
+    const loadError = ref(false)
 
     const usersSnapshot: QueryDocumentSnapshot<User>[] = []
 
@@ -48,30 +49,40 @@ export const useUserListStore = (filters: QueryConstraint[], pageSize: number = 
         return
       }
       paginationExecutor.addTask(async () => {
-        if (totalCount.value == null) {
-          totalCount.value = (await getCountFromServer(query(collection(db, 'users'), ...filters))).data().count
-        }
-        const lastVisibleDocument = usersSnapshot[usersSnapshot.length - 1]
-        const q = query(
-          collection(db, 'users'),
-          ...filters,
-          ...(lastVisibleDocument == null ? [] : [startAfter(lastVisibleDocument)]),
-          limit(pageSize),
-        ).withConverter(userConverter)
-        const querySnapshot = await getDocs(q)
-        if (querySnapshot.docs.length < pageSize) {
-          hasMore.value = false
-        }
-        usersSnapshot.push(...querySnapshot.docs)
-        users.value = usersSnapshot.flatMap((userSnapshot) => {
-          try {
-            return [userSnapshot.data()]
-          } catch (err) {
-            console.error(err)
-            reportClientError(err, { documentPath: userSnapshot.ref.path, severity: 'warn' })
-            return []
+        try {
+          if (totalCount.value == null) {
+            totalCount.value = (await getCountFromServer(query(collection(db, 'users'), ...filters))).data().count
           }
-        })
+          const lastVisibleDocument = usersSnapshot[usersSnapshot.length - 1]
+          const q = query(
+            collection(db, 'users'),
+            ...filters,
+            ...(lastVisibleDocument == null ? [] : [startAfter(lastVisibleDocument)]),
+            limit(pageSize),
+          ).withConverter(userConverter)
+          const querySnapshot = await getDocs(q)
+          if (querySnapshot.docs.length < pageSize) {
+            hasMore.value = false
+          }
+          usersSnapshot.push(...querySnapshot.docs)
+          users.value = usersSnapshot.flatMap((userSnapshot) => {
+            try {
+              return [userSnapshot.data()]
+            } catch (err) {
+              console.error(err)
+              reportClientError(err, { documentPath: userSnapshot.ref.path, severity: 'warn' })
+              return []
+            }
+          })
+        } catch (error) {
+          console.error('Failed to fetch users:', error)
+          reportClientError(error, { componentInfo: 'userList', severity: 'error' })
+          loadError.value = true
+          hasMore.value = false
+          if (users.value == null) {
+            users.value = []
+          }
+        }
       })
     }
 
@@ -80,6 +91,7 @@ export const useUserListStore = (filters: QueryConstraint[], pageSize: number = 
       users.value = null
       totalCount.value = null
       hasMore.value = true
+      loadError.value = false
       next()
     }
 
@@ -89,6 +101,7 @@ export const useUserListStore = (filters: QueryConstraint[], pageSize: number = 
       totalCount,
       users,
       hasMore,
+      loadError,
       reload,
       next,
     }

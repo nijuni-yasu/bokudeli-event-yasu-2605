@@ -20,6 +20,11 @@ const userListStore = useUserListStore([orderBy('created_at', 'desc')], PAGE_SIZ
         </v-chip>
       </v-card-title>
 
+      <v-alert v-if="userListStore.loadError" type="error" variant="tonal" class="ma-4">
+        {{ $t('common.load_failed') }}
+        <v-btn variant="text" size="small" @click="userListStore.reload()">{{ $t('common.retry') }}</v-btn>
+      </v-alert>
+
       <div class="support-table-wrap">
         <v-table density="compact" class="support-table text-no-wrap">
           <thead>
@@ -45,7 +50,9 @@ const userListStore = useUserListStore([orderBy('created_at', 'desc')], PAGE_SIZ
                   <v-icon :icon="mdiOpenInNew" size="14" />
                 </a>
               </td>
-              <td class="line-clamp-2 text-wrap">{{ user.user_description || '—' }}</td>
+              <td class="text-wrap">
+                <span class="line-clamp-2 d-block">{{ user.user_description || '—' }}</span>
+              </td>
               <td class="text-end">{{ user.participated_event_count }}</td>
               <td>{{ user.user_sns_twitter || '—' }}</td>
               <td>{{ user.user_sns_facebook || '—' }}</td>
