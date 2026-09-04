@@ -3,17 +3,17 @@ import type { Router } from 'vue-router'
 import { useConfigStore } from '@shokujii/base/stores/config.js'
 
 /** ログイン不要で表示するパス */
-const PUBLIC_PATHS = new Set(['/login', '/maintenance'])
+const PUBLIC_PATHS = new Set(['/login', '/pass-code', '/maintenance'])
 
 /** 運営アカウント以外を弾いたときに /login へ渡すクエリ */
 export const NOT_SUPPORT_QUERY = { error: 'not_support' } as const
 
 /** Firebase Auth の初回 onAuthStateChanged まで待つ。セッション復元前の currentUser が null のままになるのを避ける。 */
-const waitForAuthInitialState = (): Promise<void> =>
+const waitForAuthInitialState = (): Promise<User | null> =>
   new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(getAuth(), () => {
+    const unsubscribe = onAuthStateChanged(getAuth(), (user) => {
       unsubscribe()
-      resolve()
+      resolve(user)
     })
   })
 
@@ -59,7 +59,7 @@ export const setupRouter = (router: Router) => {
     const currentUser = getAuth().currentUser
 
     if (currentUser == null) {
-      if (to.path === '/login') {
+      if (PUBLIC_PATHS.has(to.path)) {
         return
       }
       return { path: '/login', query: { redirect: to.fullPath } }
@@ -76,7 +76,7 @@ export const setupRouter = (router: Router) => {
       return { path: '/login', query: NOT_SUPPORT_QUERY }
     }
 
-    if (to.path === '/login') {
+    if (to.path === '/login' || to.path === '/pass-code') {
       const redirect = to.query.redirect
       return typeof redirect === 'string' && !PUBLIC_PATHS.has(redirect) ? redirect : '/'
     }
