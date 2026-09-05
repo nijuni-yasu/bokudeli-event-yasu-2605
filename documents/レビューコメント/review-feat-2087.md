@@ -18,6 +18,8 @@
 | [x] | RC-10 | 3935067586 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList の Firestore 取得が try/catch されず永久ローディングになり得る<br>`loadError` + 空配列 + `reportClientError` を追加 |
 | [x] | RC-11 | 3935067633 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | catch-all ルートの `error` param が配列のとき誤判定<br>`parseErrorCodeFromRoute` で正規化 |
 | [x] | RC-12 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 注文一覧の並びは updated_at だが列表示が ordered_at<br>「更新日時」列に変更 |
+| [x] | RC-13 | 5542276372 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList store ID に JSON.stringify(filters) を使用<br>呼び出し元から storeId を渡す方式に変更 |
+| [x] | RC-14 | 5542276372 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 注文一覧でイベント取得失敗時に行スピナーが残留<br>failedEventIds で失敗 sentinel を追加 |
 
 ---
 
@@ -536,3 +538,79 @@ watch 内で Map を初期化した。
 **想定工数**: S
 
 **判断理由**: ユーザー要望（updated 順）と UI の整合。修正方針が一意なため自動修正した。
+
+---
+
+## 評価セッション（2026-09-05 00:34 JST・Copilot レビュー・partial）
+
+- **評価日時**: 2026-09-05 00:34 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・watcher 失敗後手動起動）
+- **ブランチ名**: `feat/2087`
+- **PR**: #2345
+- **REVIEW_REQUEST_SINCE**: 2026-09-04T14:52:51Z
+- **partial**: true（Codex レビューなし。Copilot のみ。watcher は GitHub API 接続エラーで exit 1）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（レビュー依頼コメント）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-13 | 5542276372 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList store ID の JSON.stringify(filters) 衝突<br>storeId 引数方式に変更 |
+| [x] | RC-14 | 5542276372 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | イベント取得失敗時の行スピナー残留<br>failedEventIds sentinel を追加 |
+
+---
+
+**識別子**: RC-13（GitHub id: 5542276372）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/userList.ts:38`
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `base/src/stores/userList.ts:38` の `JSON.stringify(filters)` は `QueryConstraint` を安定シリアライズできず、異なる条件でも store ID が衝突します。ID 生成方式の見直しが必要です。
+
+**コメント要約**: store ID 生成に JSON.stringify(filters) を使うと QueryConstraint の衝突が起きる。orderList と同様に呼び出し元から storeId を渡す。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: orderList と同パターンで storeId を明示渡しに変更。修正方針が一意なため自動修正した。
+
+---
+
+**識別子**: RC-14（GitHub id: 5542276372）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `support/src/pages/orders/index.vue:55-74,138`
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `support/src/pages/orders/index.vue:55-74,138` はイベント取得失敗時に行単位でローディング解除できず、スピナーが残留します。失敗状態を保持してエラー表示可能にすることを推奨します。
+
+**コメント要約**: イベント取得失敗/null 時に Map へ未登録のためスピナーが永久表示。failedEventIds で失敗を記録し「—」表示。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 取得失敗時の UX 実害。修正方針が一意なため自動修正した。

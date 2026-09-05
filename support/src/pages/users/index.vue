@@ -7,7 +7,7 @@ import { mdiOpenInNew } from '@mdi/js'
 
 const PAGE_SIZE = 50
 
-const userListStore = useUserListStore([orderBy('created_at', 'desc')], PAGE_SIZE)
+const userListStore = useUserListStore('support/users', [orderBy('created_at', 'desc')], PAGE_SIZE)
 </script>
 
 <template>

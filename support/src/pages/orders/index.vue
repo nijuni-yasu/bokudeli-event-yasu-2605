@@ -29,6 +29,7 @@ watch(
   () => route.query.recent,
   () => {
     eventSummaries.value = new Map()
+    failedEventIds.value = new Set()
     orderListStore.value = useOrderListStore(storeId.value, buildFilters(), PAGE_SIZE)
   },
 )
@@ -39,6 +40,7 @@ type EventSummary = { eventName: string; communityName: string; communityAccount
 
 /** 表示行の event_id だけを解決する。旧 manager のような全コミュニティ走査はしない。 */
 const eventSummaries = ref<Map<string, EventSummary>>(new Map())
+const failedEventIds = ref<Set<string>>(new Set())
 
 watch(
   () => orderListStore.value.orders,
@@ -47,7 +49,7 @@ watch(
       return
     }
     const unresolved = [...new Set(orders.map(({ eventId }) => eventId))].filter(
-      (eventId) => !eventSummaries.value.has(eventId),
+      (eventId) => !eventSummaries.value.has(eventId) && !failedEventIds.value.has(eventId),
     )
     if (unresolved.length === 0) {
       return
@@ -57,30 +59,34 @@ watch(
         try {
           const event = await useEventStore(eventId).getLoadedEvent()
           if (event == null) {
-            return null
+            return { eventId, summary: null as EventSummary | null }
           }
-          return [
+          return {
             eventId,
-            {
+            summary: {
               eventName: event.event_name,
               communityName: event.community_name,
               communityAccount: event.community_account,
               shopName: event.shop_name ?? '',
             },
-          ] as const
+          }
         } catch (error) {
           console.warn(error)
-          return null
+          return { eventId, summary: null as EventSummary | null }
         }
       }),
     )
-    const next = new Map(eventSummaries.value)
-    for (const result of results) {
-      if (result != null) {
-        next.set(result[0], result[1])
+    const nextSummaries = new Map(eventSummaries.value)
+    const nextFailed = new Set(failedEventIds.value)
+    for (const { eventId, summary } of results) {
+      if (summary == null) {
+        nextFailed.add(eventId)
+      } else {
+        nextSummaries.set(eventId, summary)
       }
     }
-    eventSummaries.value = next
+    eventSummaries.value = nextSummaries
+    failedEventIds.value = nextFailed
   },
   { immediate: true },
 )
@@ -135,6 +141,7 @@ watch(
                   <span class="line-clamp-2 d-inline-block">{{ eventSummaries.get(eventId)!.eventName }}</span>
                   <v-icon :icon="mdiOpenInNew" size="14" />
                 </a>
+                <span v-else-if="failedEventIds.has(eventId)" class="text-medium-emphasis">—</span>
                 <v-progress-circular v-else indeterminate size="16" width="2" />
               </td>
               <td>{{ eventSummaries.get(eventId)?.communityName }}</td>

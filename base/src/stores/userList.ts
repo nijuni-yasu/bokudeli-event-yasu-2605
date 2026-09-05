@@ -34,8 +34,8 @@ export type UserListStore = ReturnType<typeof useUserListStore>
  * users コレクションのページング付き一覧。運営管理画面（support）のユーザー一覧で使用する。
  * `users` は Rules 上 `allow read: if true` なので、テナント条件は不要。
  */
-export const useUserListStore = (filters: QueryConstraint[], pageSize: number = 20) => {
-  const store = defineStore(`/userList/${JSON.stringify(filters)}/${pageSize}`, () => {
+export const useUserListStore = (storeId: string, filters: QueryConstraint[], pageSize: number = 20) => {
+  const store = defineStore(`/userList/${storeId}/${pageSize}`, () => {
     const paginationExecutor = new TaskExecutor(1)
     const users = ref<User[] | null>(null)
     const totalCount = ref<number | null>(null)
