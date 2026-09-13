@@ -392,12 +392,7 @@ onUnmounted(() => {
     :event-id="event.event_id"
     @added="handleCartAdded"
   ></event-cart-dialog>
-  <confirm-dialog
-    v-model="isLoginRequired"
-    :is-confirm="true"
-    :ok-click="goToUnauthenticatedEntry"
-    max-width="700px"
-  >
+  <confirm-dialog v-model="isLoginRequired" :is-confirm="true" :ok-click="goToUnauthenticatedEntry" max-width="700px">
     <v-card-text class="pb-0" style="line-height: 2rem; white-space: pre-line">
       {{ $t('cart_dialog.login') }}
     </v-card-text>

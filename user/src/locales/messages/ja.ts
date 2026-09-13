@@ -617,8 +617,7 @@ export default {
     register_fail: '{sns_name}新規登録できませんでした',
     register_fail_generic: '新規登録できませんでした。',
     already_registered: 'このメールアドレスはすでに登録されています。ログインしてください。',
-    already_registered_login_code:
-      'このメールアドレスはすでに登録されています。ログイン用のコードを送信しました。',
+    already_registered_login_code: 'このメールアドレスはすでに登録されています。ログイン用のコードを送信しました。',
     link_dialog_body:
       '{try_register_provider_label}に設定されているメールアドレスは、すでに{link_provider_label}アカウントと連携されています。 アカウントを連携するためにログインしてください',
   },
