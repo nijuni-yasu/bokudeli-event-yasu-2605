@@ -9,6 +9,91 @@
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | S | §4.1 / §4.7 に #2090 時点の旧文言が残る<br>#2350 の着地・email 欠落時の戻り先と不一致。仕様書を更新済み |
 | [x] | RC-2 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | OTP 切替がメモリ上の `mode` のみで `history.state` を更新しない<br>リロード後に register 判定へ戻り、ログイン OTP が通らない。`replaceState` で永続化済み |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | `/register` 着地で stale pending を検証しない<br>#2350 でデフォルト入口が `/login` から移り、離脱済み SNS 連携が次ログインで発火しうる。login と同じヘルパーを呼ぶよう修正済み |
+| [ ] | RC-4 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 📋 仕様追加 | M | already-exists を常にログイン OTP へ切り替えると Auth-only ユーザーで復旧不能<br>requestEmailLogin は Firestore メール解決前提。origin の 20:02 レビューを RC-4 として統合 |
+
+---
+
+## 評価セッション（2026-09-13 20:02・shokujii-code-review）
+
+- **評価日時**: 2026-09-13 20:02 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/2350
+- **PR**: 番号不明（レビュー依頼コメントあり。origin/feat/2350 の記録を RC-4 として統合）
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 0
+- **注記**: 別 worktree では RC-1。本ファイルでは通し番号のため RC-4
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-4 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 📋 仕様追加 | M | already-exists を常にログイン OTP へ切り替えると Auth-only ユーザーで復旧不能<br>requestEmailLogin は Firestore メール解決前提。origin の 20:02 レビューを RC-4 として統合 |
+
+---
+
+**識別子**: RC-4（GitHub id: なし・エージェントレビュー。origin 記録では RC-1）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `user/src/pages/register/index.vue:55`, `user/src/pages/pass-code.vue:126`, `user/src/pages/pass-code.vue:217`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+diff --git a/user/src/pages/pass-code.vue b/user/src/pages/pass-code.vue
+@@ -102,15 +117,19 @@ const reSendPassCode = async () => {
+   } catch (error) {
+-    if (mode === 'register' && error instanceof FirebaseError && error.code === 'functions/already-exists') {
+-      notification.show($t('register.already_registered'), 'warning')
+-      await router.push(getLogin())
++    if (mode.value === 'register' && isAlreadyRegisteredEmailError(error)) {
++      try {
++        await switchRegisterOtpToLogin()
++      } catch (loginError) {
++        console.warn('Error switching register OTP to login:', loginError)
++        notification.show($t('passcode.send_code_failed'), 'error')
++      }
+       return
+     }
+diff --git a/user/src/pages/register/index.vue b/user/src/pages/register/index.vue
+@@ -53,9 +51,15 @@ const handleRegister = async (providerId: ProviderIdType | 'custom', emailInput?
+   } catch (error) {
+     console.error(error)
+-    if (providerId === 'custom' && error instanceof FirebaseError && error.code === 'functions/already-exists') {
+-      notification.show($t('register.already_registered'), 'warning')
+-      await router.push(getLogin())
++    if (providerId === 'custom' && emailInput != null && isAlreadyRegisteredEmailError(error)) {
++      try {
++        await requestEmailLogin({ email: emailInput })
++        notification.show($t('register.already_registered_login_code'), 'info')
++        await router.push(getPassCode(emailInput, 'login'))
++      } catch (loginError) {
++        console.error(loginError)
++        notification.show($t('login.login_fail_generic'), 'error')
++      }
+       return
+     } else {
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [📋仕様追加/M]: `functions/already-exists` を受けたら必ず `requestEmailLogin` に切り替える実装になっていますが、`requestEmailLogin` は Firestore の `users_personal_information` にメールがあるユーザーにしか OTP を送れません。`confirmEmailRegistration` 側は Auth にだけ同メールのユーザーが残っている場合でも `auth/email-already-exists` を `functions/already-exists` に変換するため、このケースでは登録画面/OTP画面の両方で「ログイン用コード送信」に切り替えた直後に `not-found` で失敗し、ユーザーが先に進めなくなります。 → `already-exists` からの復旧を `requestEmailLogin` 前提にしないで、少なくとも `requestEmailLogin` の `not-found` を別扱いして明示的な復旧導線を出すか、サーバー側で Auth-only ユーザーも解決できるようにしてください。
+
+**コメント要約**: already-exists を常にログイン OTP へ切り替えると Auth-only ユーザーで復旧不能。<br>requestEmailLogin は Firestore メール解決前提。origin の 20:02 レビューを RC-4 として統合。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 👤 UX
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 今回の変更で追加したクライアント分岐が、Functions 側の既存仕様と噛み合っていません。`requestEmailLogin` は Firestore の個人情報コレクションに対応ユーザーがいないと `not-found` を返す一方、`confirmEmailRegistration` は Auth-only の重複も `already-exists` に変換するため、登録中ユーザーを復旧不能状態にする実害があります。
 
 ---
 
