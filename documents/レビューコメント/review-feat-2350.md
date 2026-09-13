@@ -10,6 +10,9 @@
 | [x] | RC-2 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | OTP 切替がメモリ上の `mode` のみで `history.state` を更新しない<br>リロード後に register 判定へ戻り、ログイン OTP が通らない。`replaceState` で永続化済み |
 | [x] | RC-3 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | `/register` 着地で stale pending を検証しない<br>#2350 でデフォルト入口が `/login` から移り、離脱済み SNS 連携が次ログインで発火しうる。login と同じヘルパーを呼ぶよう修正済み |
 | [ ] | RC-4 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 📋 仕様追加 | M | already-exists を常にログイン OTP へ切り替えると Auth-only ユーザーで復旧不能<br>requestEmailLogin は Firestore メール解決前提。origin の 20:02 レビューを RC-4 として統合 |
+| [x] | RC-5 | 5652886035 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>Auth-only 指摘は RC-4 と同一。新規のコード指摘なし |
+| [x] | RC-6 | 5190484172 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | S | existingProviderId が password でも pid2 に載る<br>SNS 以外は pass-code へ。`isProviderIdType` 判定を追加済み |
+| [ ] | RC-7 | 3999450580 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更 |
 
 ---
 
@@ -279,3 +282,168 @@ diff --git a/user/src/pages/register/index.vue b/user/src/pages/register/index.v
 **判断理由**: #2185 RC-29 で `/login` マウント時の stale pending 検証が必須になった。本 PR はその入口を `/register` に移したため、同等の検証漏れは認可・アカウント連携の回帰になる。既存ヘルパーの呼び出しで方針は一意。手順 3a で `onMounted` 追加と `as` 除去を行った。影響は login と同じ検証を新着地へ移植する範囲に閉じる。
 
 ---
+
+## 評価セッション（2026-09-13 20:16・review-comments-evaluate）
+
+- **評価日時**: 2026-09-13 20:16 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3
+- **重複除外**: 4（同一指摘が RC-1〜RC-4 に記録済み）
+- **partial**: false
+- **手順 4a 自動修正**: RC-6（🚨 1件 / 🟡 0件）
+- **REVIEW_REQUEST_SINCE**: 2026-09-13T11:01:53Z
+
+### レビュー非該当スキップ
+
+- GitHub id 5652859513（issue comment）: 手順 12 のレビュー依頼定型文
+- GitHub id 5652886551（issue comment）: Codex 接続案内のみ
+- GitHub id 5652914879（issue comment）: 手順 12 のレビュー依頼定型文
+
+### 重複除外（RC 採番なし）
+
+- GitHub id 3999450577: RC-4 と同一（Auth-only を login OTP へ切り替えない）
+- GitHub id 3999450582: RC-1 と同一（仕様書の `/register` 役割）
+- GitHub id 3999450584: RC-2 と同一（history.state の mode）
+- GitHub id 3999450586: RC-3 と同一（`/register` の stale pending）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-5 | 5652886035 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>Auth-only 指摘は RC-4 と同一。新規のコード指摘なし |
+| [x] | RC-6 | 5190484172 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | S | existingProviderId が password でも pid2 に載る<br>SNS 以外は pass-code へ。`isProviderIdType` 判定を追加済み |
+| [ ] | RC-7 | 3999450580 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更 |
+
+---
+
+**識別子**: RC-5（GitHub id: 5652886035）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+>
+> @copilot この PR ��...
+
+レビューし、RC-1 を `documents/レビューコメント/review-feat-2350.md` に記録しました。`already-exists` 時に常にログインOTPへ切り替える実装は、Firestore 未作成の Auth-only ユーザーで `requestEmailLogin` が `not-found` になり復旧不能になるため、必須修正と判断しています。対応コミット: `30221aef`
+
+**コメント要約**: Copilot SWE の作業報告。<br>Auth-only 指摘は RC-4 と同一。新規のコード指摘なし。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: コード差分への新規指摘ではなく、既存 RC-4 と同じ判断を作業報告したコメント。
+
+---
+
+**識別子**: RC-6（GitHub id: 5190484172）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `user/src/router/index.ts:209`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -216,7 +206,7 @@ export const setupRouter = (router: Router) => {
+             }
+           } else {
+             return {
+-              path: '/login',
++              path: getUnauthenticatedEntry(),
+               query: { ...to.query, pid1: pendingCred?.providerId, pid2: existingProviderId },
+```
+
+**レビュワーのコメント（原文）**:
+
+### 🔵 Needs a closer look
+
+Unresolved authentication-routing and OTP issues, plus documentation mismatches, remain.
+
+Suppressed comments より該当箇所:
+
+**user/src/router/index.ts:209**
+* [must] `existingProviderId` は Firebase の `password` なども返し得ますが、ここでは null 以外をすべて SNS の `pid2` として `/register` に渡しています。`register/index.vue` はこれを `ProviderIdType` とみなして `signInByProviderService` を呼ぶため、メール認証アカウントでは無効 provider 例外になり、仕様の「メールのみは `/pass-code`」から外れます。SNS provider の場合だけこの分岐にし、それ以外は pass-code にしてください。
+
+レビュー全文: https://github.com/nijuniinc/bokudeli-event-new/pull/2353#pullrequestreview-5190484172
+
+**コメント要約**: existingProviderId が password でも pid2 に載る。<br>SNS 以外は pass-code へ。`isProviderIdType` 判定を追加済み。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: メール既存アカウントを SNS 連携ダイアログに流すと例外になり、#2350 の「メールのみは pass-code」から外れる。`isProviderIdType` で分岐する方針は一意のため手順 4a で修正した。同一レビュー内の EventDetailsCard 等が `getLogin()` のまま、という指摘は共通コンポーネント設計を含むため本 RC では扱わず要確認。
+
+---
+
+**識別子**: RC-7（GitHub id: 3999450580）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `user/src/pages/index.vue:50`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -47, 7 +47, 7 @@ const popularEvents = computed(
+         if (s.event == null) {
+           return []
+         }
+-        return { event: s.event }
++        return { event: s.event, members: s.members ?? [] }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  表示上限より前に参加者購読を絞ってください**
+
+参加者が15人を超える人気イベントでは、ここで `s.members` を評価すると `base/src/stores/event.ts` の computed が全 member ID に対して `useUserStore` を生成し、各ユーザードキュメントの `onSnapshot` を開始します。一方、`EventCard.vue` が実際に描画するのは `.slice(0, 15)` のみなので、トップページを開くだけで表示されない参加者まで全件購読され、人気イベントの規模に比例して初期 read 数・通信量・再計算負荷が増えます。購読を開始する前に15件へ制限できる取得経路にしてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 人気イベントで members 全件購読する。<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📤 スコープ外
+
+**ラベル**: —
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: #2352 の主目的は人気カードへのアイコン表示であり、EventStore の購読モデル変更は別設計。ラベルは推測を避け `—`。本 PR では実装せず、Issue 未作成のため未着手。
+
+---
+
