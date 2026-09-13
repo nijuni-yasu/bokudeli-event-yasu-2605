@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { FirebaseError } from 'firebase/app'
-import { getAdditionalUserInfo } from 'firebase/auth'
-import { requestEmailRegistration } from '@shokujii/base/apis/user'
+import { requestEmailLogin, requestEmailRegistration } from '@shokujii/base/apis/user'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { useNotification } from '@shokujii/base/composable/notification'
 import { useValidators } from '@shokujii/base/composable/validators.js'
@@ -11,8 +9,9 @@ import GoogleIcon from '@shokujii/base/icons/google.vue'
 import FacebookIcon from '@shokujii/base/icons/facebook.vue'
 import XIcon from '@shokujii/base/icons/x'
 import AuthEntryLayout from '@/components/auth/AuthEntryLayout.vue'
-import { rejectExistingUserOnRegister } from '@/router/authEntryGuards'
-import { getLogin, getPassCode } from '@/router/utils'
+import { getPassCode } from '@/router/utils'
+import { isAlreadyRegisteredEmailError } from '@/utils/emailAuthError'
+import { getLinkRequestDialogParams, parseLoginQueryPids, runLoginPageMountAutoLinkage } from '@/utils/loginAutoLinkage'
 
 const route = useRoute()
 const router = useRouter()
@@ -27,12 +26,18 @@ const linkRequestDialogParams = computed<{
   tryRegisterProviderId: ProviderIdType
   linkProviderId: ProviderIdType
 } | null>(() => {
-  return route.query.pid1 == null || route.query.pid2 == null
+  const params = getLinkRequestDialogParams(parseLoginQueryPids(route.query.pid1, route.query.pid2))
+  return params == null
     ? null
     : {
-        tryRegisterProviderId: route.query.pid1 as ProviderIdType,
-        linkProviderId: route.query.pid2 as ProviderIdType,
+        tryRegisterProviderId: params.tryLoginProviderId,
+        linkProviderId: params.linkProviderId,
       }
+})
+
+onMounted(() => {
+  // #2350: 未ログイン着地が /register になったため、/login と同じ stale pending 検証が必要
+  runLoginPageMountAutoLinkage(route.query.pid1, route.query.pid2)
 })
 
 const handleRegister = async (providerId: ProviderIdType | 'custom', emailInput?: string) => {
@@ -47,27 +52,22 @@ const handleRegister = async (providerId: ProviderIdType | 'custom', emailInput?
       })
       await router.push(getPassCode(emailInput, 'register'))
     } else {
-      const credential = await signInByProviderService(providerId)
-      // ここに来るのはポップアップ認証（デバッグ用）成功時のみ
-      const aui = getAdditionalUserInfo(credential)
-      if (aui?.isNewUser === false) {
-        notification.show($t('register.already_registered'), 'warning')
-        try {
-          await rejectExistingUserOnRegister()
-        } catch (error) {
-          console.error(error)
-        }
-        await router.push(getLogin())
-        return
-      }
+      await signInByProviderService(providerId)
+      // ここに来るのはポップアップ認証（デバッグ用）成功時のみ。既存アカウントも通常ログインする。
       setLastLoginProvider(providerId)
       window.location.href = '/register/complete'
     }
   } catch (error) {
     console.error(error)
-    if (providerId === 'custom' && error instanceof FirebaseError && error.code === 'functions/already-exists') {
-      notification.show($t('register.already_registered'), 'warning')
-      await router.push(getLogin())
+    if (providerId === 'custom' && emailInput != null && isAlreadyRegisteredEmailError(error)) {
+      try {
+        await requestEmailLogin({ email: emailInput })
+        notification.show($t('register.already_registered_login_code'), 'info')
+        await router.push(getPassCode(emailInput, 'login'))
+      } catch (loginError) {
+        console.error(loginError)
+        notification.show($t('login.login_fail_generic'), 'error')
+      }
       return
     } else {
       notification.show($t('register.register_fail', { sns_name: $t(`sns_name['${providerId}']`) }), 'error')

@@ -5,7 +5,15 @@ import logo from '@/assets/images/shokujii/shokujii_logo.png'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { useNotification } from '@shokujii/base/composable/notification'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
-import { getHomePath, getLogin, getRegister, getRegisterComplete, parsePassCodeMode } from '@/router/utils'
+import {
+  getHomePath,
+  getLogin,
+  getRegister,
+  getRegisterComplete,
+  getUnauthenticatedEntry,
+  parsePassCodeMode,
+} from '@/router/utils'
+import { isAlreadyRegisteredEmailError } from '@/utils/emailAuthError'
 import {
   confirmEmailLogin,
   confirmEmailRegistration,
@@ -41,14 +49,14 @@ const isValid = ref(false)
 
 const isLogin = getAuth().currentUser?.uid != null
 const rawEmail = history.state?.email as string | undefined
-const mode = parsePassCodeMode(history.state?.mode)
+const mode = ref(parsePassCodeMode(history.state?.mode))
 const hasEmail = typeof rawEmail === 'string' && rawEmail.length > 0
 
 if (!hasEmail) {
   if (isLogin) {
     await router.replace(getHomePath())
   } else {
-    await router.replace(mode === 'register' ? getRegister() : getLogin())
+    await router.replace(getUnauthenticatedEntry())
   }
 }
 
@@ -59,9 +67,17 @@ const isOpenUnMatchPassCodeDialog = ref(false)
 const linkProviderId = computed((): ProviderIdType | null => parsePassCodeLinkProviderId(route.query.pid))
 const isOpenLinkDialog = ref(linkProviderId.value != null)
 
+const switchRegisterOtpToLogin = async (): Promise<void> => {
+  await requestEmailLogin({ email })
+  mode.value = 'login'
+  passCode.value = ''
+  history.replaceState({ ...history.state, email, mode: 'login' }, '')
+  notification.show($t('register.already_registered_login_code'), 'info')
+}
+
 const runAutoLinkageOnMount = async () => {
   const { shouldAutoSendOtp } = runPassCodeMountAutoLinkageSetup({
-    mode,
+    mode: mode.value,
     isLogin,
     passCodePid: linkProviderId.value,
   })
@@ -102,15 +118,19 @@ const reSendPassCode = async () => {
   try {
     if (isLogin) {
       await currentUserStore.requestEmailChange(email)
-    } else if (mode === 'register') {
+    } else if (mode.value === 'register') {
       await requestEmailRegistration({ email })
     } else {
       await requestEmailLogin({ email })
     }
   } catch (error) {
-    if (mode === 'register' && error instanceof FirebaseError && error.code === 'functions/already-exists') {
-      notification.show($t('register.already_registered'), 'warning')
-      await router.push(getLogin())
+    if (mode.value === 'register' && isAlreadyRegisteredEmailError(error)) {
+      try {
+        await switchRegisterOtpToLogin()
+      } catch (loginError) {
+        console.warn('Error switching register OTP to login:', loginError)
+        notification.show($t('passcode.send_code_failed'), 'error')
+      }
       return
     }
     console.warn('Error resending pass code:', error)
@@ -176,7 +196,7 @@ const submit = async (passCodeInput: string) => {
       await currentUserStore.confirmEmailChange(email, passCodeInput)
       const redirectPath = getRedirectPath() ?? '/'
       await router.push(redirectPath)
-    } else if (mode === 'register') {
+    } else if (mode.value === 'register') {
       const result = await confirmEmailRegistration({ email, passCode: passCodeInput })
       const { token } = result.data
       await signInWithCustomToken(getAuth(), token)
@@ -195,9 +215,13 @@ const submit = async (passCodeInput: string) => {
       await router.push(redirectPath)
     }
   } catch (error: unknown) {
-    if (mode === 'register' && error instanceof FirebaseError && error.code === 'functions/already-exists') {
-      notification.show($t('register.already_registered'), 'warning')
-      await router.push(getLogin())
+    if (mode.value === 'register' && isAlreadyRegisteredEmailError(error)) {
+      try {
+        await switchRegisterOtpToLogin()
+      } catch (loginError) {
+        console.warn('Error switching register OTP to login:', loginError)
+        notification.show($t('passcode.send_code_failed'), 'error')
+      }
       return
     }
     console.warn('Error sending pass code:', error)
@@ -208,7 +232,7 @@ const submit = async (passCodeInput: string) => {
 }
 
 const goBack = () => {
-  if (mode === 'register') {
+  if (mode.value === 'register') {
     router.push(getRegister())
   } else {
     router.push(getLogin())
