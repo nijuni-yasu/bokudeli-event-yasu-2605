@@ -12,7 +12,10 @@
 | [ ] | RC-4 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 📋 仕様追加 | M | already-exists を常にログイン OTP へ切り替えると Auth-only ユーザーで復旧不能<br>requestEmailLogin は Firestore メール解決前提。origin の 20:02 レビューを RC-4 として統合 |
 | [x] | RC-5 | 5652886035 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>Auth-only 指摘は RC-4 と同一。新規のコード指摘なし |
 | [x] | RC-6 | 5190484172 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | S | existingProviderId が password でも pid2 に載る<br>SNS 以外は pass-code へ。`isProviderIdType` 判定を追加済み |
-| [ ] | RC-7 | 3999450580 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更 |
+| [x] | RC-7 | 3999450580 | 👌 修正不要 | — | — | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>#2352 を rebase でドロップし当 PR に該当差分なし |
+| [ ] | RC-8 | 3999464283 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | M | 17_SNS自動連携が #2090 の `/login` のみ記述のまま<br>15_アカウント作成 §3.2 と矛盾。関連仕様の URL 表・フローを揃える |
+| [x] | RC-9 | 5652927046 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>未解決は RC-4 / RC-7 と同一。新規のコード指摘なし |
+| [ ] | RC-10 | 5190497690 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害, 👤 UX | 📋 仕様追加 | M | base の参加・キャンセル・問い合わせが `getLogin()` のまま<br>#2350 の未ログイン着地が `/login` に残る。注入設計が必要 |
 
 ---
 
@@ -315,7 +318,7 @@ diff --git a/user/src/pages/register/index.vue b/user/src/pages/register/index.v
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-5 | 5652886035 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>Auth-only 指摘は RC-4 と同一。新規のコード指摘なし |
 | [x] | RC-6 | 5190484172 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | S | existingProviderId が password でも pid2 に載る<br>SNS 以外は pass-code へ。`isProviderIdType` 判定を追加済み |
-| [ ] | RC-7 | 3999450580 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更 |
+| [x] | RC-7 | 3999450580 | 👌 修正不要 | — | — | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>#2352 を rebase でドロップし当 PR に該当差分なし |
 
 ---
 
@@ -431,11 +434,11 @@ Useful? React with 👍 / 👎.
 
 **コメント要約**: 人気イベントで members 全件購読する。<br>カードは15件のみ描画。購読制限は既存 EventStore の設計変更。
 
-**評価**: 🟡 修正提案
+**評価**: 👌 修正不要
 
-**ステータス**: 未着手
+**ステータス**: —
 
-**PRスコープ**: 📤 スコープ外
+**PRスコープ**: —
 
 **ラベル**: —
 
@@ -443,7 +446,196 @@ Useful? React with 👍 / 👎.
 
 **想定工数**: M
 
-**判断理由**: #2352 の主目的は人気カードへのアイコン表示であり、EventStore の購読モデル変更は別設計。ラベルは推測を避け `—`。本 PR では実装せず、Issue 未作成のため未着手。
+**判断理由**: #2352（人気イベントの参加者アイコン表示）を rebase でドロップしたため、指摘の `s.members` 評価は本 PR の差分に含まれない。EventStore の購読最適化は将来 #2352 を再開する際に検討。
+
+---
+
+## 評価セッション（2026-09-13 20:22・review-comments-evaluate）
+
+- **評価日時**: 2026-09-13 20:22 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3
+- **重複除外**: 3（Auth-only は RC-4 と同一）
+- **partial**: false
+- **手順 4a 自動修正**: なし（🚨 0件適用 / 🟡 1件は 📑 仕様書のため対象外）
+- **REVIEW_REQUEST_SINCE**: 2026-09-13T11:14:11Z
+
+### レビュー非該当スキップ
+
+- GitHub id 5652914879（issue comment）: 手順 12 のレビュー依頼定型文
+- GitHub id 5652927743（issue comment）: Codex 接続案内のみ
+- GitHub id 5190496053（review）: Codex レビューヘッダと接続案内のみ。具体指摘なし
+
+### 重複除外（RC 採番なし）
+
+- GitHub id 3999466171: RC-4 と同一（pass-code の Auth-only → `not-found`）
+- GitHub id 3999466190: RC-4 と同一（register 切替の Auth-only → `not-found`）
+- Review 5190497690 の suppressed（`15_アカウント作成.md:134`）: RC-4 と同一（仕様表と `requestEmailLogin` の矛盾）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-8 | 3999464283 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | M | 17_SNS自動連携が #2090 の `/login` のみ記述のまま<br>15_アカウント作成 §3.2 と矛盾。関連仕様の URL 表・フローを揃える |
+| [x] | RC-9 | 5652927046 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>未解決は RC-4 / RC-7 と同一。新規のコード指摘なし |
+| [ ] | RC-10 | 5190497690 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害, 👤 UX | 📋 仕様追加 | M | base の参加・キャンセル・問い合わせが `getLogin()` のまま<br>#2350 の未ログイン着地が `/login` に残る。注入設計が必要 |
+
+---
+
+**識別子**: RC-8（GitHub id: 3999464283）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `documents/03_参加者獲得/15_アカウント作成.md:167`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -162,8 +164,7 @@ PF版（一般ユーザーアプリ）で、**新規ユーザーが明示的な
+ | 入口 | 状況 | 挙動 | #2090 |
+ |------|------|------|-------|
+-| `/login` | `account-exists-with-different-credential`（別 SNS と同じメール） | 既存がメールのみ → `/pass-code` mode=login / 既存が SNS → `/login?pid1=&pid2=`（連携ダイアログ） | 変更なし |
+-| `/register` | 同上 | 警告 → **`/login` のみ**（pass-code ログインには進まない） | **変更** |
++| `/login` / `/register` | `account-exists-with-different-credential`（別 SNS と同じメール） | 既存がメールのみ → `/pass-code` mode=login / 既存が SNS → `/register?pid1=&pid2=`（連携ダイアログ） | **#2350**（#2090 の `/register` は `/login` のみ） |
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P3 Badge](https://img.shields.io/badge/P3-lightgrey?style=flat)</sub></sub>  SNS自動連携仕様も新しい遷移先に揃えてください**
+
+この行では `/register` 起点の credential 衝突も自動連携へ進む仕様に変更していますが、リポジトリ全体を確認すると `documents/03_参加者獲得/17_SNSアカウント自動連携.md` の220〜228行は、同じフローについて「pending を破棄して `/login` のみに遷移し、自動連携には進まない」と引き続き定義しています。認証連携の実装・テストで参照される仕様が正反対になるため、関連仕様書のURL表、フロー図、`/register` 起点の説明も今回の挙動に合わせて更新してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 17_SNS自動連携が #2090 の `/login` のみ記述のまま<br>15_アカウント作成 §3.2 と矛盾。関連仕様の URL 表・フローを揃える
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 📄 ドキュメントのみ
+
+**想定工数**: M
+
+**判断理由**: #2350 で 15 側の衝突フローを変えた以上、17 の §4.4 / L-1 / T-4 等が旧仕様のままでは実装判断が割れる。範囲は仕様書横断のため M。📑 のため手順 4a の自動修正対象外。
+
+---
+
+**識別子**: RC-9（GitHub id: 5652927046）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+>
+> @copilot この PR ��...
+
+レビューし、`documents/レビューコメント/review-feat-2350.md` に RC-5 を追記しました。現時点では RC-4（Auth-only ユーザーで `already-exists` 後に復旧不能）と RC-5（人気イベントで表示外メンバーまで購読）が未解決です。対応コミット: `19d8aa2`
+
+**コメント要約**: Copilot SWE の作業報告<br>未解決は RC-4 / RC-7 と同一。新規のコード指摘なし
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: コード差分への新規指摘ではなく、既存 RC の進捗報告。SWE 側の「RC-5」は本ファイルの RC-7（members 購読）を指す。
+
+---
+
+**識別子**: RC-10（GitHub id: 5190497690）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `user/src/router/utils.ts:56`（suppressed。関連: `base/src/components/CommunityMembershipButton.vue:123-126`、`CancelPolicyDialog.vue:9-11`、`EventDetailsCard.vue:130-133`）
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+/** 未ログイン時のデフォルト着地。ナビ・要認証ガードを含む全導線で使う（#2350） */
+export const getUnauthenticatedEntry = () => getRegister()
+```
+
+**レビュワーのコメント（原文）**:
+
+### 🟡 Changes recommended
+
+Auth-only OTP recovery and remaining `/login` unauthenticated routes must be addressed.
+
+*Get a fresh assessment by requesting another Copilot review.*
+
+<details>
+<summary>Review details</summary>
+
+### Suppressed comments (2)
+
+**documents/03_参加者獲得/15_アカウント作成.md:134**
+* [must] この仕様表は Auth-only ユーザーでもログイン OTP に切り替わると記載していますが、現行の `requestEmailLogin` は Firestore のメール情報がないと `not-found` を返すため、実装と矛盾します。Auth-only の復旧仕様を実装するまで実際の挙動に合わせるか、コード修正と同時にこの記述を更新してください。
+**user/src/router/utils.ts:56**
+* [must] このヘルパーを追加しただけでは #2350 の未ログイン導線が全体で統一されていません。`base/src/components/CommunityMembershipButton.vue:123-126`、`CancelPolicyDialog.vue:9-11`、`EventDetailsCard.vue:130-133` は依然 `getLogin()` を返すため、コミュニティ参加・注文履歴リンク・イベント詳細の問い合わせ確認から `/login` に着地します。ユーザー側の遷移先を注入するなど、共有 base がアプリごとの入口を選べるようにしてこれらの導線も `/register` に揃えてください。
+```
+/** 未ログイン時のデフォルト着地。ナビ・要認証ガードを含む全導線で使う（#2350） */
+export const getUnauthenticatedEntry = () => getRegister()
+```
+
+- **Files reviewed:** 20/20 changed files
+- **Comments generated:** 2
+- **Review effort level:** Lite
+</details>
+
+**コメント要約**: base の参加・キャンセル・問い合わせが `getLogin()` のまま<br>#2350 の未ログイン着地が `/login` に残る。注入設計が必要
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害, 👤 UX
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: #2350 完了条件は強制認証ダイアログも含め未ログイン着地を `/register` に揃える。base 共有コンポーネントを直書きで `getRegister()` にすると enterprise の入口まで変わるため、注入方針の確認が必要。仕様判断・設計のため手順 4a の自動修正対象外。Auth-only の suppressed は RC-4 と同一のため本 RC では扱わない。
+
+---
+
+## 評価セッション（2026-09-19・#2352 取りやめ）
+
+- **評価日時**: 2026-09-19 JST
+- **評価者**: Cursor Agent
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **操作**: `git rebase --onto c84c126cc bd2ab9d30` により #2352 の doc / user コミット 2 本を履歴から削除
+- **RC 更新**: RC-7 を 👌 修正不要（該当差分なし）に更新
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-7 | 3999450580 | 👌 修正不要 | — | — | — | 📐 リファクタ | M | 人気イベントで members 全件購読する<br>#2352 を rebase でドロップし当 PR に該当差分なし |
 
 ---
 
