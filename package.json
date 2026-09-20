@@ -10,7 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "verify:functions-deploy": "python3 .agents/scripts/verify_functions_deploy_list.py",
-    "test:verify-functions-deploy": "python3 .agents/scripts/verify_functions_deploy_list_test.py",
+    "test:verify-functions-deploy": "python3 .agents/scripts/verify_functions_deploy_list_test.py && python3 .agents/scripts/parse_failure_policy_functions_test.py && bash .github/scripts/firebase-deploy-functions.test.sh",
     "verify:vue-tsc-gate": "bash scripts/verify-vue-tsc-gate.sh"
   },
   "devDependencies": {

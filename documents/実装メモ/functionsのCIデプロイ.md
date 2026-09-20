@@ -4,9 +4,10 @@
 
 ## 方針
 
-1. CI は `firebase --project <PROJECT_ID> deploy --only functions` の **1 コマンドのみ**。`--force` は使わず、自動再試行もしない
-2. デプロイ対象の正本は `functions/default/src/index.ts` の export。**yml に関数名リストを書かない**
-3. Firebase CLI が確認プロンプトで abort したら CI は赤で止め、**人が対処する**（誤削除・意図しない更新を CI が自動承認しない）
+1. CI の本体は `firebase --project <PROJECT_ID> deploy --only functions`。**全体デプロイに `--force` は付けない**
+2. `retry: true` の初回だけ、ログの関数名を `index.ts` の export と照合し、**名前指定**で `deploy --force --only functions:<name>` してから全体デプロイを再実行する（[`.github/scripts/firebase-deploy-functions.sh`](../../.github/scripts/firebase-deploy-functions.sh)）
+3. デプロイ対象の正本は `functions/default/src/index.ts` の export。**yml に関数名リストを書かない**
+4. orphan 削除・minInstances・危険なトリガー変更など、failure policy 以外の確認で abort したら CI は赤で止め、**人が対処する**
 
 確認プロンプトによる abort は Firebase CLI が変更を適用する前に起きるため、その時点では **何もデプロイされていない**（cleanup policy エラーのみデプロイ後に発生する）。原因を解消して再実行すれば復旧する。
 
@@ -24,7 +25,7 @@
 
 破壊的なのは orphan 削除のみ。旧 CI（`--only functions:<明示リスト>`）は、Firebase CLI がデプロイ計画を立てる際にフィルタ外の既存関数を削除候補から除外するため、`--force` でも既存関数は消えなかった（そのため旧 Gen1 関数などが残存していた）。一方 `--only functions`（codebase 全体）では **`index.ts` に無い全関数が削除候補**になるため、全体デプロイと `--force` は併用しない。
 
-`--force` は **対象を絞った手動デプロイ**（`--only functions:<name>`）でのみ使う。
+`--force` は **対象を絞ったデプロイ**（`--only functions:<name>`）でのみ使う。CI が自動で付けるのもこの形だけ。全体デプロイ（`--only functions`）との併用は禁止。
 
 ## CI の構成
 
@@ -32,13 +33,14 @@
 | :-- | :-- |
 | ワークフロー | [`.github/workflows/deploy_functions.yml`](../../.github/workflows/deploy_functions.yml)（1 ジョブ / timeout 30 分） |
 | 起動条件 | `functions/**` `common/**` `firebase.json` `.github/workflows/deploy_functions.yml` `.github/actions/deploy/**` への push、または workflow_dispatch |
-| デプロイ | `./.github/actions/deploy` に `args: '--only functions'` |
+| デプロイ | `./.github/actions/deploy` に `args: '--only functions'` と `named_force_on_failure_policy: 'true'` |
 | 静的検証 | `npm run verify:functions-deploy` / `npm run test:verify-functions-deploy`（PR verify・[`/lint-and-format`](../../.agents/skills/lint-and-format/SKILL.md) で実行） |
 
 `verify:functions-deploy`（[verify_functions_deploy_list.py](../../.agents/scripts/verify_functions_deploy_list.py)）の検証内容:
 
-- `deploy_functions.yml` に `--force` / `strategy:` / `--only functions:<name>` が無い
+- `deploy_functions.yml` に `--force` / `strategy:` / `--only functions:<name>` が無い（名前指定 `--force` はスクリプト側）
 - `./.github/actions/deploy` を使うステップが 1 件で、`args` が `--only functions` 完全一致
+- `named_force_on_failure_policy` が `true`
 - `index.ts` の export が 1 件以上ある
 - `firebase.json` の functions が `codebase: default` / `source: functions/default` 単一
 
@@ -85,7 +87,7 @@ quota 429 対策として意図的に `--force` 常時再デプロイは廃止�
 | ログのメッセージ | 原因 | 対処 |
 | :-- | :-- | :-- |
 | `do not exist in your local source code` | `index.ts` に無い関数が GCP 上に残存 | `functions:list` で確認 → `functions:delete` → 再実行 |
-| `Pass the --force option to deploy functions with a failure policy` | `retry: true` の新規エンドポイント | 該当関数のみ手動で `deploy --only functions:<name> --force` を 1 回実行 → CI 再実行（以降は発生しない） |
+| `Pass the --force option to deploy functions with a failure policy` | `retry: true` の新規エンドポイント | CI が名前指定 `--force` のあと全体デプロイを再実行する。関数名が `index.ts` に無い・ログから取れないときだけ手動で `deploy --only functions:<name> --force` |
 | `Skipping updates for functions that may be unsafe to update`（CI は緑） | トリガー種別変更が未適用 | 警告対象の関数を手動で更新（新規作成 → 旧削除） |
 | `could not set up cleanup policy` | cleanup policy 未設定リージョン | `functions:artifacts:setpolicy` を 1 回実行 |
 | `Pass the --force option to deploy functions that increase the minimum bill` | minInstances 増加 | 意図を確認して手動デプロイ |
@@ -100,5 +102,6 @@ quota 429 対策として意図的に `--force` 常時再デプロイは廃止�
 
 | Issue | 内容 |
 | :-- | :-- |
-| [#2260](https://github.com/nijuniinc/bokudeli-event-new/issues/2260) | 3 ジョブ並列 + 関数名の明示リスト + `--force` 常時付与を廃止し、1 ジョブ + `--only functions`（`--force` なし）に統一 |
+| [#2260](https://github.com/nijuniinc/bokudeli-event-new/issues/2260) | 3 ジョブ並列 + 関数名の明示リスト + `--force` 常時付与を廃止し、1 ジョブ + `--only functions`（全体への `--force` なし）に統一 |
+| （本変更） | failure policy 初回はログの関数名を絞った `--force` を CI が実行。全体デプロイへは付けない |
 | （本 PR 追記） | 「Skipped (No changes detected)」と CI 緑時の注意を §デプロイ成功時の注意 に明文化 |

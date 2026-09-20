@@ -35,6 +35,7 @@ jobs:
         with:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
+          named_force_on_failure_policy: 'true'
 """
 
 SAMPLE_DEPLOY_LEGACY = """\
@@ -122,6 +123,7 @@ jobs:
         with:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
+          named_force_on_failure_policy: 'true'
 """
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -146,6 +148,7 @@ jobs:
         with:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
+          named_force_on_failure_policy: 'true'
       - name: Deploy hosting
         uses: ./.github/actions/deploy
         with:
@@ -173,6 +176,7 @@ jobs:
         with:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
+          named_force_on_failure_policy: 'true'
       - name: Decoy deploy without args
         uses: ./.github/actions/deploy
         with:
@@ -233,7 +237,7 @@ jobs:
             deploy_path.write_text(deploy, encoding="utf-8")
             firebase_path.write_text(SAMPLE_FIREBASE_OK, encoding="utf-8")
             errors = vfd.collect_deploy_config_errors(deploy_path, index_path, firebase_path)
-            self.assertTrue(any("実際の値" in err for err in errors))
+            self.assertTrue(any("実際の値" in err or "--only functions" in err for err in errors))
 
     def test_collect_deploy_config_errors_rejects_env_args_decoy(self) -> None:
         deploy = """\
@@ -268,6 +272,7 @@ jobs:
         uses: ./.github/actions/deploy
         with:
           args: '--only functions'
+          named_force_on_failure_policy: 'true'
 """
         with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as f:
             f.write(deploy)
@@ -337,6 +342,28 @@ export const {
             firebase_path.write_text(SAMPLE_FIREBASE_OK, encoding="utf-8")
             errors = vfd.collect_deploy_config_errors(deploy_path, index_path, firebase_path)
             self.assertTrue(any("export がありません" in err for err in errors))
+
+    def test_collect_deploy_config_errors_requires_named_force(self) -> None:
+        deploy = """\
+jobs:
+  deploy:
+    steps:
+      - name: Deploy to Firebase
+        uses: ./.github/actions/deploy
+        with:
+          project_id: ${{ vars.PROJECT_ID }}
+          args: '--only functions'
+"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index_path = root / "index.ts"
+            deploy_path = root / "deploy.yml"
+            firebase_path = root / "firebase.json"
+            index_path.write_text(SAMPLE_INDEX, encoding="utf-8")
+            deploy_path.write_text(deploy, encoding="utf-8")
+            firebase_path.write_text(SAMPLE_FIREBASE_OK, encoding="utf-8")
+            errors = vfd.collect_deploy_config_errors(deploy_path, index_path, firebase_path)
+            self.assertTrue(any("named_force_on_failure_policy" in err for err in errors))
 
     def test_verify_ok_with_repo_defaults(self) -> None:
         self.assertEqual(vfd.verify(), 0)
