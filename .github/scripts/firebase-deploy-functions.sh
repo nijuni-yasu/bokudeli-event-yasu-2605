@@ -70,5 +70,10 @@ if [[ "${ONLY_ARGS}" == "--only functions" || "${ONLY_ARGS}" != --only\ function
 fi
 
 echo "failure policy: 対象関数のみ --force でデプロイします: ${ONLY_ARGS}"
-"${FIREBASE_BIN}" --project "${PROJECT_ID}" deploy --force "${ONLY_ARGS}"
+read -r only_flag only_selector <<< "${ONLY_ARGS}"
+if [[ "${only_flag}" != "--only" || "${only_selector}" != functions:* || "${only_selector}" == "functions" ]]; then
+  echo "ERROR: 名前指定 --only の引数分割に失敗しました: ${ONLY_ARGS}" >&2
+  exit 1
+fi
+"${FIREBASE_BIN}" --project "${PROJECT_ID}" deploy --force --only "${only_selector}"
 "${FIREBASE_BIN}" --project "${PROJECT_ID}" deploy --only functions

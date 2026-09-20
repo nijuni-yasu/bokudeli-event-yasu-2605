@@ -21,7 +21,8 @@ from verify_functions_deploy_list import parse_index_exports
 FAILURE_POLICY_ERROR = "Pass the --force option to deploy functions with a failure policy"
 RETRY_LINE_RE = re.compile(r"will newly be retried in case of failure:\s*(.+)", re.IGNORECASE)
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
-FUNC_TOKEN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?$")
+# CLI は `name(region). Retried executions...` と同一行に説明文を続ける。
+FUNC_TOKEN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?")
 
 
 def strip_ansi(text: str) -> str:
@@ -35,15 +36,21 @@ def extract_function_names(log: str) -> list[str]:
         match = RETRY_LINE_RE.search(raw_line)
         if match is None:
             continue
-        for token in match.group(1).split(","):
-            token_match = FUNC_TOKEN_RE.match(token.strip())
+        rest = match.group(1).strip()
+        while rest:
+            rest = rest.lstrip()
+            token_match = FUNC_TOKEN_RE.match(rest)
             if token_match is None:
-                continue
+                break
             name = token_match.group(1)
-            if name in seen:
+            rest = rest[token_match.end() :].lstrip()
+            if name not in seen:
+                seen.add(name)
+                names.append(name)
+            if rest.startswith(","):
+                rest = rest[1:]
                 continue
-            seen.add(name)
-            names.append(name)
+            break
     return names
 
 

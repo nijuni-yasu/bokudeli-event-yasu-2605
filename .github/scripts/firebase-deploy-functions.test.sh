@@ -8,7 +8,7 @@ failures=0
 assert_no_full_force() {
   local calls_log="$1"
   while IFS= read -r line; do
-    if [[ "${line}" == *"--force"* ]] && [[ "${line}" == *"--only functions" && "${line}" != *"--only functions:"* ]]; then
+    if [[ "${line}" == *"<--force>"* ]] && [[ "${line}" == *"<--only><functions>"* ]]; then
       echo "FAIL: 全体デプロイに --force が付いている: ${line}" >&2
       return 1
     fi
@@ -31,7 +31,12 @@ EOF
 
   cat >"${tmp}/firebase" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' "\$*" >> "${tmp}/calls.log"
+{
+  for _arg in "\$@"; do
+    printf '<%s>' "\${_arg}"
+  done
+  printf '\\n'
+} >> "${tmp}/calls.log"
 mode="${mode}"
 count=0
 if [[ -f "${tmp}/calls.log" ]]; then
@@ -43,7 +48,7 @@ case "\${mode}" in
     ;;
   failure_policy)
     if [[ "\${count}" -eq 1 ]]; then
-      echo "⚠  functions: The following functions will newly be retried in case of failure: onPartnerMenuSoldOutChanged(asia-northeast1)"
+      echo "⚠  functions: The following functions will newly be retried in case of failure: onPartnerMenuSoldOutChanged(asia-northeast1). Retried executions are billed as any other execution, and functions are retried repeatedly until they either successfully execute or the maximum retry period has elapsed."
       echo "Error: Pass the --force option to deploy functions with a failure policy"
       exit 1
     fi
@@ -109,19 +114,21 @@ calls_count() {
 first_call_no_force() {
   local first
   first="$(head -n 1 "${CALLS_LOG}")"
-  [[ "${first}" != *"--force"* ]] && [[ "${first}" == *"--only functions" ]] && [[ "${first}" != *"--only functions:"* ]]
+  [[ "${first}" != *"<--force>"* ]] && [[ "${first}" == *"<--only><functions>"* ]]
 }
 
 second_call_named_force() {
   local second
   second="$(sed -n '2p' "${CALLS_LOG}")"
-  [[ "${second}" == *"--force"* ]] && [[ "${second}" == *"--only functions:onPartnerMenuSoldOutChanged"* ]]
+  [[ "${second}" == *"<--force>"* ]] &&
+    [[ "${second}" == *"<--only><functions:onPartnerMenuSoldOutChanged>"* ]] &&
+    [[ "${second}" != *"<--only functions:"* ]]
 }
 
 third_call_full_no_force() {
   local third
   third="$(sed -n '3p' "${CALLS_LOG}")"
-  [[ "${third}" != *"--force"* ]] && [[ "${third}" == *"--only functions" ]] && [[ "${third}" != *"--only functions:"* ]]
+  [[ "${third}" != *"<--force>"* ]] && [[ "${third}" == *"<--only><functions>"* ]]
 }
 
 run_case success success 0 \

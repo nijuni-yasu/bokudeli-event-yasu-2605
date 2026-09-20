@@ -35,6 +35,13 @@ The following functions will newly be retried in case of failure: onPartnerMenuS
 Error: Pass the --force option to deploy functions with a failure policy
 """
 
+# sandbox CI 実ログ（関数名の直後にピリオド＋課金説明が続く）
+REAL_CLI_LOG = """\
+⚠  functions: The following functions will newly be retried in case of failure: onPartnerMenuSoldOutChanged(asia-northeast1). Retried executions are billed as any other execution, and functions are retried repeatedly until they either successfully execute or the maximum retry period has elapsed, which can be up to 7 days. For safety, you might want to ensure that your functions are idempotent; see https://firebase.google.com/docs/functions/retries to learn more.
+
+Error: Pass the --force option to deploy functions with a failure policy
+"""
+
 ORPHAN_LOG = """\
 The following functions are found in your project but do not exist in your local source
 Command aborted.
@@ -52,6 +59,19 @@ class ParseFailurePolicyFunctionsTest(unittest.TestCase):
         self.assertEqual(
             pfp.extract_function_names(MULTI_LOG),
             ["onPartnerMenuSoldOutChanged", "onChatReactionWritten"],
+        )
+
+    def test_extract_real_cli_line_with_trailing_sentence(self) -> None:
+        self.assertEqual(
+            pfp.extract_function_names(REAL_CLI_LOG),
+            ["onPartnerMenuSoldOutChanged"],
+        )
+        self.assertEqual(
+            pfp.parse_named_only_args(
+                REAL_CLI_LOG,
+                {"onPartnerMenuSoldOutChanged", "onChatReactionWritten"},
+            ),
+            "--only functions:onPartnerMenuSoldOutChanged",
         )
 
     def test_parse_named_only_args(self) -> None:

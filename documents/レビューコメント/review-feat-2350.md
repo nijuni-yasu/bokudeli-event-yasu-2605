@@ -16,6 +16,9 @@
 | [ ] | RC-8 | 3999464283 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | M | 17_SNS自動連携が #2090 の `/login` のみ記述のまま<br>15_アカウント作成 §3.2 と矛盾。関連仕様の URL 表・フローを揃える |
 | [x] | RC-9 | 5652927046 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot SWE の作業報告<br>未解決は RC-4 / RC-7 と同一。新規のコード指摘なし |
 | [ ] | RC-10 | 5190497690 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害, 👤 UX | 📋 仕様追加 | M | base の参加・キャンセル・問い合わせが `getLogin()` のまま<br>#2350 の未ログイン着地が `/login` に残る。注入設計が必要 |
+| [ ] | RC-11 | 4056738193 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | failure policy 文言だけで名前指定 `--force` する<br>同じ関数の minInstances / 危険トリガー確認もまとめて YES になる |
+| [x] | RC-12 | 4056738207 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `"${ONLY_ARGS}"` が `--only functions:name` を1引数にする<br>`--only` と selector を分割して渡すよう修正済み |
+| [x] | RC-13 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | CLI 実ログは関数名の直後に `. Retried executions...` が続く<br>トークン全体一致だと抽出失敗。先頭トークン列だけ取るよう修正済み |
 
 ---
 
@@ -668,6 +671,163 @@ export const getUnauthenticatedEntry = () => getRegister()
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | — | （新規 RC なし） | — | — | — | — | — | — | — | 本セッションは RC-10 再確認のみ |
+
+---
+
+## 評価セッション（2026-09-20 19:57・review-comments-evaluate auto）
+
+- **評価日時**: 2026-09-20 19:57 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・PR review wake）
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **REVIEW_REQUEST_SINCE**: 2026-09-20T10:28:43Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2
+- **重複除外（RC 採番なし）**: 4
+- **新規 RC**: RC-11 / RC-12
+- **手順 4a 自動修正**: RC-12（🚨 1件）。RC-11 は 🔒 のため対象外
+
+### レビュー非該当スキップ
+
+- GitHub id 5749234771（issue comment）: 手順 12 のレビュー依頼定型文
+- GitHub id 5260373242（Codex review 本体）: 接続案内ボイラープレートのみ（指摘は inline）
+
+### 重複除外（RC 採番なし）
+
+- GitHub id 5749272964（Copilot issue comment）: RC-4 / RC-10 と同一
+- GitHub id 5260370002（Copilot overview）: RC-4 / RC-10 / RC-11 / RC-12 の再掲
+- GitHub id 4056741381（Codex inline）: RC-11 と同一
+- GitHub id 4056741379（Codex inline）: RC-12 と同一
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-11 | 4056738193 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | failure policy 文言だけで名前指定 `--force` する<br>同じ関数の minInstances / 危険トリガー確認もまとめて YES になる |
+| [x] | RC-12 | 4056738207 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `"${ONLY_ARGS}"` が `--only functions:name` を1引数にする<br>`--only` と selector を分割して渡すよう修正済み |
+
+---
+
+**識別子**: RC-11（GitHub id: 4056738193）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `.github/scripts/firebase-deploy-functions.sh:50`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++if ! grep -Fq "Pass the --force option to deploy functions with a failure policy" "${LOG}"; then
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この条件は failure policy の文言の有無しか見ていません。`--force` は failure policy だけでなく minInstances 増加や危険なトリガー変更も承認する単一フラグなので、同じ対象に別の確認が必要な場合でも後続の名前指定 `--force` が自動実行されます。failure policy 以外の確認を検出して abort するか、安全な扱いを明示的に分離してください。
+
+**コメント要約**: failure policy 文言だけで名前指定 `--force` する<br>同じ関数の minInstances / 危険トリガー確認もまとめて YES になる
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 案 C は orphan 削除を避けるために関数名へ `--force` を限定した。同じ関数に他の確認が同時に乗るケースは稀だが、`--force` が単一フラグである指摘は妥当。どの CLI 文言で abort するかは影響範囲の確認が要るため自動修正しない。
+
+---
+
+**識別子**: RC-12（GitHub id: 4056738207）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `.github/scripts/firebase-deploy-functions.sh:73`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++echo "failure policy: 対象関数のみ --force でデプロイします: ${ONLY_ARGS}"
++"${FIREBASE_BIN}" --project "${PROJECT_ID}" deploy --force "${ONLY_ARGS}"
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `ONLY_ARGS` は `--only functions:<name>` という文字列全体を 1 つの argv として渡しています。Firebase CLI では `--only` と selector を別引数にする必要があるため、failure policy の名前指定リトライ自体が失敗します。現在のモックテストは `$*` しか見ておらず、この境界を検出できません。
+
+**コメント要約**: `"${ONLY_ARGS}"` が `--only functions:name` を1引数にする<br>`--only` と selector を分割して渡すよう修正済み
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Firebase CLI は `--only` と selector を別 argv とする。引用した1引数だと名前指定デプロイが失敗する。`read` で分割し、テストは `arg` 単位で境界を見るよう直した。
+
+---
+
+## 評価セッション（2026-09-20 19:57・shokujii-code-review）
+
+- **評価日時**: 2026-09-20 19:57 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **新規 RC**: RC-13
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-13 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | CLI 実ログは関数名の直後に `. Retried executions...` が続く<br>トークン全体一致だと抽出失敗。先頭トークン列だけ取るよう修正済み |
+
+---
+
+**識別子**: RC-13（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `.agents/scripts/parse_failure_policy_functions.py:31`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+-FUNC_TOKEN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?$")
++FUNC_TOKEN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?")
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 CLI 実ログは `onPartnerMenuSoldOutChanged(asia-northeast1). Retried executions are billed...` と同一行に説明文が続く。トークン全体一致だと抽出 0 件になり、名前指定 `--force` に進めない。
+
+**コメント要約**: CLI 実ログは関数名の直後に `. Retried executions...` が続く<br>トークン全体一致だと抽出失敗。先頭トークン列だけ取るよう修正済み
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: sandbox run 35505209554 で再現済み。先頭の `name(region)` 列だけ取り、カンマ以外で打ち切る。実ログをテストに追加した。
 
 ---
 
