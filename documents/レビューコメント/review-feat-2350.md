@@ -639,3 +639,35 @@ export const getUnauthenticatedEntry = () => getRegister()
 
 ---
 
+## 評価セッション（2026-09-19 22:12・review-comments-evaluate auto）
+
+- **評価日時**: 2026-09-19 22:12 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・PR review wake）
+- **ブランチ名**: feat/2350
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2353
+- **REVIEW_REQUEST_SINCE**: 2026-09-19T13:02:12Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2
+- **重複除外（RC 採番なし）**: 3
+- **新規 RC**: 0
+- **手順 4a 自動修正**: なし（🚨 RC-4 / RC-10 は 📋 仕様追加・M のため対象外）
+
+### レビュー非該当スキップ
+
+- GitHub id 5742091538（issue comment）: 手順 12 のレビュー依頼定型文
+- GitHub id 5742102374（issue comment）: Copilot 進捗報告（未解決は RC-4 / RC-10 と同一。新規のコード指摘なし）
+
+### 重複除外（RC 採番なし）
+
+- GitHub id 4053269948（Copilot inline）: RC-10 と同一（base の `getLogin()` 残存）
+- GitHub id 4053273849（Codex inline）: RC-10 と同一（base 未ログイン導線の注入）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| — | （新規 RC なし） | — | — | — | — | — | — | — | 本セッションは RC-10 再確認のみ |
+
+---
+
