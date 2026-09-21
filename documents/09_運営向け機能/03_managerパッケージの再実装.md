@@ -113,7 +113,7 @@ URL は旧のキャメルケース（`/ShopList`）から **小文字・複数�
 | :-- | :-- |
 | 承認待ちコミュニティ | `communities` の `is_approved == false` |
 | 承認待ち店舗 | `collectionGroup('shops')` の `is_approved == false` |
-| 受付中イベント | `collectionGroup('events')` の `event_status.value == 'accepting_order'` |
+| 受付中イベント | `collectionGroup('events')` の `event_status.value == 'accepting_order'` かつ `is_deleted == false` |
 | 直近 7 日の注文 | `collectionGroup('member_orders')` の `status == 'ordered'` かつ `ordered_at >= 7日前` |
 
 ### 4.2 イベント一覧 `/events`
@@ -166,13 +166,15 @@ Functions で Event に集計フィールドを持たせる案はフェーズ1�
 | collection group | scope | フィールド | 用途 |
 | :-- | :-- | :-- | :-- |
 | `events` | CG | `is_deleted` ASC, `event_start_datetime` DESC | イベント一覧 |
+| `events` | CG | `event_status.value` ASC, `is_deleted` ASC | ダッシュボードの受付中イベント数 |
 | `events` | CG | `community_id` ASC, `is_deleted` ASC | コミュニティ一覧のイベント数 |
 | `member_orders` | CG | `status` ASC, `updated_at` DESC | 注文一覧 |
 | `member_orders` | CG | `status` ASC, `ordered_at` ASC | ダッシュボードの直近 7 日注文 |
 | `shops` | CG（単一フィールド） | `is_approved` ASC | ダッシュボードの承認待ち店舗 |
 
-`event_status.value` + `is_deleted` の等価 2 条件（受付中イベント数）は、既存の
-`event_status.value, is_deleted, event_deadline_datetime` 等の**先頭プレフィックス**で賄える。
+`event_status.value` + `is_deleted` の等価 2 条件（`getCountFromServer`）は、
+3 フィールド以上の複合インデックスの先頭プレフィックスでは使えない（sandbox で failed-precondition）。
+専用の 2 フィールドインデックスが必要。
 
 ### 4.3 コミュニティ一覧 `/communities`
 
