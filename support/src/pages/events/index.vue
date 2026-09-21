@@ -1,22 +1,49 @@
 <script setup lang="ts">
 import { orderBy, where, type QueryConstraint } from 'firebase/firestore'
 import { useEventListStore, type EventListStore } from '@shokujii/base/stores/eventList.js'
+import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { countOrderedByEventId } from '@shokujii/base/stores/supportCounts.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { getEventUrl, getCommunityUrl } from '@/utils/urls'
-import { eventStatusChipColor } from '@/utils/statusColors'
+import { eventStatusTicketTone } from '@/utils/statusColors'
+import { matchesSearch } from '@/utils/search'
+import { formatRelativeJa, formatScheduleRange } from '@/utils/format'
+import { isQueryFlagActive, withQueryFlag } from '@/utils/queryFlag'
 import SupportFilterChip from '@/components/SupportFilterChip.vue'
-import { mdiOpenInNew, mdiAlertCircleOutline } from '@mdi/js'
+import SupportPageHeader from '@/components/SupportPageHeader.vue'
+import SupportStatusTicket from '@/components/SupportStatusTicket.vue'
+import SupportDetailDrawer from '@/components/SupportDetailDrawer.vue'
+import SupportDetailField from '@/components/SupportDetailField.vue'
+import SupportExternalLink from '@/components/SupportExternalLink.vue'
+import { mdiAlertCircleOutline } from '@mdi/js'
 
 const PAGE_SIZE = 30
 const route = useRoute()
+const router = useRouter()
 
 const { t: $t } = useI18n()
 
+const searchQuery = ref('')
+const selected = shallowRef<BokudeliEvent | null>(null)
+
+const drawerOpen = computed({
+  get: () => selected.value != null,
+  set: (open: boolean) => {
+    if (!open) {
+      selected.value = null
+    }
+  },
+})
+
+type EventStatusFilter = 'accepting_order' | 'applying_reservation'
+
+const isEventStatusFilter = (value: unknown): value is EventStatusFilter =>
+  value === 'accepting_order' || value === 'applying_reservation'
+
 const buildFilters = (): QueryConstraint[] => {
   const filters: QueryConstraint[] = [orderBy('event_start_datetime', 'desc')]
-  if (route.query.status === 'accepting_order') {
-    filters.unshift(where('event_status.value', '==', 'accepting_order'))
+  if (isEventStatusFilter(route.query.status)) {
+    filters.unshift(where('event_status.value', '==', route.query.status))
   }
   return filters
 }
@@ -31,9 +58,37 @@ watch(
   },
 )
 
-const showAcceptingFilter = computed(() => route.query.status === 'accepting_order')
+const showAcceptingFilter = computed(() => isQueryFlagActive(route.query.status, 'accepting_order'))
+const showApplyingFilter = computed(() => isQueryFlagActive(route.query.status, 'applying_reservation'))
 
 const events = computed(() => eventListStore.value.eventStores?.flatMap((store) => store.event ?? []) ?? null)
+
+const filteredEvents = computed(() => {
+  if (events.value == null) {
+    return null
+  }
+  return events.value.filter((event) =>
+    matchesSearch(
+      [
+        event.event_name,
+        event.community_name,
+        event.community_account,
+        event.shop_name,
+        event.organizer_email,
+        event.organizer_fullname,
+        event.organizer_company,
+      ],
+      searchQuery.value,
+    ),
+  )
+})
+
+const showingCount = computed(() => {
+  if (searchQuery.value.trim() === '' || filteredEvents.value == null) {
+    return null
+  }
+  return filteredEvents.value.length
+})
 
 /** イベントごとの注文済み件数。表示中の行だけ遅延ロードする。 */
 const orderedCounts = ref<Map<string, number>>(new Map())
@@ -77,41 +132,74 @@ const isOrderOverCapacity = (eventId: string, maxPeople: number): boolean => {
   const count = orderedCounts.value.get(eventId)
   return count != null && count > maxPeople
 }
+
+const rowClass = (event: BokudeliEvent): string[] => {
+  const classes = ['support-row-clickable']
+  if (isOrderOverCapacity(event.event_id, event.event_max_people) || event.calculatedEventStatus === 'event_canceled') {
+    classes.push('support-row--danger')
+  }
+  return classes
+}
+
+const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
+  void router.replace({ query: withQueryFlag(route.query, 'status', status, active) })
+}
 </script>
 
 <template>
-  <div>
-    <v-card>
-      <v-card-title class="d-flex align-center flex-wrap gap-2">
-        {{ $t('events.title') }}
-        <v-chip v-if="eventListStore.totalCount != null" size="small">
-          {{ $t('common.total_count', { count: eventListStore.totalCount }) }}
-        </v-chip>
-        <SupportFilterChip v-if="showAcceptingFilter" :label="$t('filter.accepting_events')" />
-      </v-card-title>
+  <div class="support-page">
+    <v-card class="support-sheet" elevation="0" rounded="0">
+      <SupportPageHeader
+        v-model:search="searchQuery"
+        :title="$t('events.title')"
+        :total-count="eventListStore.totalCount"
+        :showing-count="showingCount"
+      >
+        <template #filters>
+          <SupportFilterChip
+            :active="showAcceptingFilter"
+            :label="$t('filter.accepting_events')"
+            @update:active="(active) => setStatusFilter('accepting_order', active)"
+          />
+          <SupportFilterChip
+            :active="showApplyingFilter"
+            :label="$t('filter.applying_reservation')"
+            @update:active="(active) => setStatusFilter('applying_reservation', active)"
+          />
+        </template>
+      </SupportPageHeader>
 
       <div class="support-table-wrap">
-        <v-table density="compact" class="support-table text-no-wrap">
+        <v-table density="compact" class="support-table">
           <thead>
             <tr>
+              <th>{{ $t('events.event_name') }}</th>
               <th>{{ $t('events.status') }}</th>
               <th>{{ $t('events.order_status') }}</th>
-              <th>{{ $t('events.community_name') }}</th>
-              <th>{{ $t('events.event_name') }}</th>
-              <th>{{ $t('events.shop_name') }}</th>
               <th>{{ $t('events.schedule') }}</th>
               <th>{{ $t('events.deadline') }}</th>
-              <th>{{ $t('events.payment') }}</th>
-              <th>{{ $t('events.visibility') }}</th>
-              <th>{{ $t('events.organizer') }}</th>
+              <th>{{ $t('events.shop_name') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="event in events ?? []" :key="event.event_id">
+            <tr
+              v-for="event in filteredEvents ?? []"
+              :key="event.event_id"
+              :class="rowClass(event)"
+              @click="selected = event"
+            >
               <td>
-                <v-chip size="small" label :color="eventStatusChipColor(event.calculatedEventStatus)">
-                  {{ $t(`event_status.${event.calculatedEventStatus}`) }}
-                </v-chip>
+                <SupportExternalLink
+                  :href="getEventUrl(event.community_account, event.event_id)"
+                  :label="event.event_name"
+                />
+                <div class="support-cell-sub">{{ event.community_name }}</div>
+              </td>
+              <td>
+                <SupportStatusTicket
+                  :label="$t(`event_status.${event.calculatedEventStatus}`)"
+                  :tone="eventStatusTicketTone(event.calculatedEventStatus)"
+                />
               </td>
               <td>
                 <template v-if="orderedCounts.get(event.event_id) != null">
@@ -139,44 +227,21 @@ const isOrderOverCapacity = (eventId: string, maxPeople: number): boolean => {
                 </template>
                 <v-progress-circular v-else indeterminate size="16" width="2" />
               </td>
-              <td>
-                <a
-                  class="support-link"
-                  :href="getCommunityUrl(event.community_account)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ event.community_name }}
-                  <v-icon :icon="mdiOpenInNew" size="14" />
-                </a>
+              <td class="support-table-col-nowrap">
+                {{ formatScheduleRange(event.event_start_datetime, event.event_end_datetime) }}
               </td>
               <td>
-                <a
-                  class="support-link"
-                  :href="getEventUrl(event.community_account, event.event_id)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span class="line-clamp-2 d-inline-block">{{ event.event_name }}</span>
-                  <v-icon :icon="mdiOpenInNew" size="14" />
-                </a>
+                <div>{{ formatRelativeJa(event.event_deadline_datetime) }}</div>
+                <div class="support-cell-sub">{{ convertToDatetime(event.event_deadline_datetime) }}</div>
               </td>
-              <td>{{ event.shop_name }}</td>
               <td>
-                {{ convertToDatetime(event.event_start_datetime) }}<br />
-                〜{{ convertToDatetime(event.event_end_datetime) }}
-              </td>
-              <td>{{ convertToDatetime(event.event_deadline_datetime) }}</td>
-              <td>{{ $t(`payment.${event.event_payment}`) }}</td>
-              <td>{{ event.is_public ? $t('communities.is_public_on') : $t('communities.is_public_off') }}</td>
-              <td>
-                <div>{{ event.organizer_company }}</div>
-                <div>{{ event.organizer_fullname }}</div>
-                <div class="support-mono-id">{{ event.organizer_email }}</div>
+                <span class="line-clamp-2">{{ event.shop_name }}</span>
               </td>
             </tr>
-            <tr v-if="events != null && events.length === 0">
-              <td colspan="10" class="text-center py-6">{{ $t('common.no_data') }}</td>
+            <tr v-if="filteredEvents != null && filteredEvents.length === 0">
+              <td colspan="6" class="text-center py-6">
+                {{ events != null && events.length > 0 ? $t('common.search_no_match') : $t('common.no_data') }}
+              </td>
             </tr>
           </tbody>
         </v-table>
@@ -190,5 +255,69 @@ const isOrderOverCapacity = (eventId: string, maxPeople: number): boolean => {
         <v-btn variant="tonal" @click="eventListStore.next()">{{ $t('common.load_more') }}</v-btn>
       </v-card-actions>
     </v-card>
+
+    <SupportDetailDrawer v-model="drawerOpen" :title="selected?.event_name ?? $t('events.title')">
+      <dl v-if="selected != null" class="support-detail-list">
+        <SupportDetailField :label="$t('events.status')">
+          <SupportStatusTicket
+            :label="$t(`event_status.${selected.calculatedEventStatus}`)"
+            :tone="eventStatusTicketTone(selected.calculatedEventStatus)"
+          />
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.community_name')">
+          {{ selected.community_name }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.shop_name')">{{ selected.shop_name }}</SupportDetailField>
+        <SupportDetailField :label="$t('events.schedule')">
+          {{ formatScheduleRange(selected.event_start_datetime, selected.event_end_datetime) }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.deadline')">
+          {{ convertToDatetime(selected.event_deadline_datetime) }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.payment')">
+          {{ $t(`payment.${selected.event_payment}`) }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.visibility')">
+          {{ selected.is_public ? $t('communities.is_public_on') : $t('communities.is_public_off') }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.place')">
+          {{ selected.event_place || selected.fullAddress || '—' }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.organizer')">
+          <div>{{ selected.organizer_company }}</div>
+          <div>{{ selected.organizer_fullname }}</div>
+          <div class="support-mono-id">{{ selected.organizer_email }}</div>
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.organizer_phone_company')">
+          {{ selected.organizer_phone_company || '—' }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.organizer_phone_personal')">
+          {{ selected.organizer_phone_personal || '—' }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('events.organizer_memo')">
+          {{ selected.organizer_memo || '—' }}
+        </SupportDetailField>
+      </dl>
+      <template #actions>
+        <v-btn
+          v-if="selected != null"
+          variant="tonal"
+          :href="getEventUrl(selected.community_account, selected.event_id)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ $t('common.open_external') }}
+        </v-btn>
+        <v-btn
+          v-if="selected != null"
+          variant="text"
+          :href="getCommunityUrl(selected.community_account)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ $t('events.community_name') }}
+        </v-btn>
+      </template>
+    </SupportDetailDrawer>
   </div>
 </template>

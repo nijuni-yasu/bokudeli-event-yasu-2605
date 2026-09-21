@@ -5,6 +5,9 @@
 const props = defineProps<{
   modelValue: boolean
   disabled?: boolean
+  onLabel: string
+  offLabel: string
+  tone?: 'live' | 'pending'
 }>()
 
 const emit = defineEmits<{
@@ -16,11 +19,18 @@ const { t: $t } = useI18n()
 const dialogOpen = ref(false)
 const pendingValue = ref<boolean | null>(null)
 
-const onToggle = (value: boolean | null): void => {
-  if (value == null || value === props.modelValue || props.disabled === true) {
+const pillClass = computed(() => {
+  if (!props.modelValue) {
+    return props.tone === 'pending' ? 'support-status-pill--pending' : 'support-status-pill--off'
+  }
+  return 'support-status-pill--live'
+})
+
+const onToggle = (): void => {
+  if (props.disabled === true) {
     return
   }
-  pendingValue.value = value
+  pendingValue.value = !props.modelValue
   dialogOpen.value = true
 }
 
@@ -39,15 +49,11 @@ const cancel = (): void => {
 </script>
 
 <template>
-  <v-switch
-    :model-value="modelValue"
-    :disabled="disabled"
-    density="compact"
-    hide-details
-    @update:model-value="onToggle"
-  />
+  <button type="button" class="support-status-pill" :class="pillClass" :disabled="disabled" @click.stop="onToggle">
+    {{ modelValue ? onLabel : offLabel }}
+  </button>
   <v-dialog v-model="dialogOpen" max-width="480" persistent>
-    <v-card class="pa-4">
+    <v-card class="pa-4 support-sheet" elevation="0">
       <v-card-title class="text-h6">{{ $t('confirm.status_change_title') }}</v-card-title>
       <v-card-text>{{ $t('confirm.status_change_body') }}</v-card-text>
       <v-card-actions>

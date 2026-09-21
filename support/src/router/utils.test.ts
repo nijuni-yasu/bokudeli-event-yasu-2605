@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { parseErrorCodeFromRoute } from './utils'
+import {
+  getCommunitiesLocation,
+  getEventsLocation,
+  getOrdersLocation,
+  getShopsLocation,
+  parseErrorCodeFromRoute,
+} from './utils'
 
 describe('parseErrorCodeFromRoute', () => {
   it('明示パス /404 /520 を解決する', () => {
@@ -14,5 +20,30 @@ describe('parseErrorCodeFromRoute', () => {
 
   it('catch-all の配列パラメータの末尾セグメントを解決する', () => {
     expect(parseErrorCodeFromRoute('/unknown', ['foo', '520'])).toBe('520')
+  })
+})
+
+describe('一覧 location', () => {
+  it('フィルタ付きクエリを組み立てる', () => {
+    expect(getEventsLocation({ acceptingOrder: true })).toEqual({
+      path: '/events',
+      query: { status: 'accepting_order' },
+    })
+    expect(getEventsLocation({ applyingReservation: true })).toEqual({
+      path: '/events',
+      query: { status: 'applying_reservation' },
+    })
+    expect(getCommunitiesLocation({ pendingApproval: true })).toEqual({
+      path: '/communities',
+      query: { is_approved: 'false' },
+    })
+    expect(getShopsLocation({ pendingApproval: true })).toEqual({
+      path: '/shops',
+      query: { is_approved: 'false' },
+    })
+    expect(getOrdersLocation({ recentDays: 7 })).toEqual({
+      path: '/orders',
+      query: { recent: '7' },
+    })
   })
 })

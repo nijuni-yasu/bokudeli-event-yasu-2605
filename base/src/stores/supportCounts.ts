@@ -63,6 +63,14 @@ export const countAcceptingOrderEvents = async (): Promise<number> => {
   ])
 }
 
+/** 予約申請中のイベント数 */
+export const countApplyingReservationEvents = async (): Promise<number> => {
+  return countOf(collectionGroup(db, 'events'), [
+    where('event_status.value', '==', 'applying_reservation'),
+    where('is_deleted', '==', false),
+  ])
+}
+
 /** 指定日時以降に確定した注文件数 */
 export const countOrdersOrderedSince = async (since: Date): Promise<number> => {
   return countOf(collectionGroup(db, 'member_orders'), [

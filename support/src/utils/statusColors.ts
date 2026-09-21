@@ -1,34 +1,34 @@
-/** イベント calculatedEventStatus → v-chip color */
-export const eventStatusChipColor = (status: string): string => {
+export type SupportTicketTone = 'live' | 'warn' | 'danger' | 'muted' | 'ink' | 'pending'
+
+/** イベント calculatedEventStatus → 食券トーン */
+export const eventStatusTicketTone = (status: string): SupportTicketTone => {
   switch (status) {
     case 'accepting_order':
-      return 'success'
+      return 'live'
+    case 'applying_reservation':
+      return 'pending'
     case 'order_closed':
     case 'full':
-      return 'warning'
+      return 'warn'
     case 'event_canceled':
-      return 'error'
+      return 'danger'
     case 'finished':
-      return 'secondary'
-    case 'in_draft':
-    case 'applying_reservation':
-    case 'applying_to_admin':
-      return 'default'
+      return 'muted'
     default:
-      return 'default'
+      return 'ink'
   }
 }
 
-/** 注文 status → v-chip color */
-export const orderStatusChipColor = (status: string): string => {
+/** 注文 status → 食券トーン */
+export const orderStatusTicketTone = (status: string): SupportTicketTone => {
   switch (status) {
     case 'ordered':
-      return 'success'
+      return 'live'
     case 'processing':
-      return 'warning'
+      return 'warn'
     case 'canceled':
-      return 'error'
+      return 'danger'
     default:
-      return 'default'
+      return 'ink'
   }
 }

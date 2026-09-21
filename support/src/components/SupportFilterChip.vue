@@ -1,17 +1,27 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   label: string
+  active: boolean
 }>()
 
-const router = useRouter()
+const emit = defineEmits<{
+  'update:active': [value: boolean]
+}>()
 
-const clearFilter = (): void => {
-  router.replace({ query: {} })
+const toggle = (): void => {
+  emit('update:active', !props.active)
 }
 </script>
 
 <template>
-  <v-chip class="ms-2" size="small" color="primary" variant="tonal" closable @click:close="clearFilter">
+  <v-chip
+    size="small"
+    :variant="active ? 'flat' : 'outlined'"
+    :color="active ? 'warning' : undefined"
+    :closable="active"
+    @click="toggle"
+    @click:close.stop="emit('update:active', false)"
+  >
     {{ label }}
   </v-chip>
 </template>

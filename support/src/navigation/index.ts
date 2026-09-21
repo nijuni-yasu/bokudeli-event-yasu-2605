@@ -1,5 +1,13 @@
 import type { HorizontalNavItems, VerticalNavItems } from '@layouts/types'
 import {
+  getCommunitiesLocation,
+  getDashboardLocation,
+  getEventsLocation,
+  getOrdersLocation,
+  getShopsLocation,
+  getUsersLocation,
+} from '@/router/utils'
+import {
   mdiViewDashboardOutline,
   mdiCalendar,
   mdiAccountGroup,
@@ -13,32 +21,32 @@ export const useNavItems = (): HorizontalNavItems | VerticalNavItems => {
   return [
     {
       title: $t('navigation.dashboard'),
-      to: { path: '/' },
+      to: getDashboardLocation(),
       icon: { icon: mdiViewDashboardOutline },
     },
     {
       title: $t('navigation.events'),
-      to: { path: '/events' },
+      to: getEventsLocation(),
       icon: { icon: mdiCalendar },
     },
     {
       title: $t('navigation.communities'),
-      to: { path: '/communities' },
+      to: getCommunitiesLocation(),
       icon: { icon: mdiAccountGroup },
     },
     {
       title: $t('navigation.shops'),
-      to: { path: '/shops' },
+      to: getShopsLocation(),
       icon: { icon: mdiStorefrontOutline },
     },
     {
       title: $t('navigation.orders'),
-      to: { path: '/orders' },
+      to: getOrdersLocation(),
       icon: { icon: mdiCart },
     },
     {
       title: $t('navigation.users'),
-      to: { path: '/users' },
+      to: getUsersLocation(),
       icon: { icon: mdiAccount },
     },
   ]
