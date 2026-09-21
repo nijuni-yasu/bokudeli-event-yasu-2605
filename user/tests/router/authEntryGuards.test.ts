@@ -24,12 +24,7 @@ vi.mock('@shokujii/base/plugins/i18n/index.js', () => ({
   getI18n: mockGetI18n,
 }))
 
-import {
-  handleProfileUpdateFailure,
-  rejectExistingUserOnRegister,
-  rejectNewUserOnLogin,
-  signOutBestEffort,
-} from '@/router/authEntryGuards.js'
+import { handleProfileUpdateFailure, rejectNewUserOnLogin, signOutBestEffort } from '@/router/authEntryGuards.js'
 
 const createUserCredential = (): UserCredential =>
   ({
@@ -62,15 +57,6 @@ describe('authEntryGuards', () => {
       await expect(rejectNewUserOnLogin(userCredential)).rejects.toThrow('delete failed')
 
       expect(mockSignOut).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('rejectExistingUserOnRegister', () => {
-    it('signs out without deleting the user', async () => {
-      await rejectExistingUserOnRegister()
-
-      expect(mockDelete).not.toHaveBeenCalled()
-      expect(mockSignOut).toHaveBeenCalledWith({ uid: 'auth-instance' })
     })
   })
 
@@ -107,14 +93,14 @@ describe('authEntryGuards', () => {
       expect(result).toEqual({ path: '/register', query: {} })
     })
 
-    it('already-exists なら /login へリダイレクトする', async () => {
+    it('already-exists なら /register へリダイレクトする', async () => {
       mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true })
       const userCredential = createUserCredential()
       const error = new FirebaseError('functions/already-exists', 'already exists')
 
       const result = await handleProfileUpdateFailure('/register', { redirect: '1' }, userCredential, error)
 
-      expect(result).toEqual({ path: '/login', query: { redirect: '1' } })
+      expect(result).toEqual({ path: '/register', query: { redirect: '1' } })
     })
 
     it('/login 導線では signOut のみ行い /login へ戻す', async () => {
@@ -146,7 +132,7 @@ describe('authEntryGuards', () => {
       expect(window.alert).toHaveBeenCalledWith('register.register_fail_generic')
     })
 
-    it('cleanup 失敗時は signOut して /login へリダイレクトする', async () => {
+    it('cleanup 失敗時は signOut して /register へリダイレクトする', async () => {
       mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true })
       mockDelete.mockRejectedValue(new Error('delete failed'))
       const userCredential = createUserCredential()
@@ -154,7 +140,7 @@ describe('authEntryGuards', () => {
       const result = await handleProfileUpdateFailure('/register', {}, userCredential, new Error('failed'))
 
       expect(mockSignOut).toHaveBeenCalledOnce()
-      expect(result).toEqual({ path: '/login', query: {} })
+      expect(result).toEqual({ path: '/register', query: {} })
       expect(window.alert).toHaveBeenCalledOnce()
       expect(window.alert).toHaveBeenCalledWith('login.login_fail_generic')
     })

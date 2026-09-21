@@ -11,6 +11,8 @@ on:
       - 'firebase.json'
       - '.github/workflows/deploy_functions.yml'
       - '.github/actions/deploy/**'
+      - '.github/scripts/firebase-deploy-functions.sh'
+      - '.agents/scripts/parse_failure_policy_functions.py'
   workflow_dispatch:
     inputs:
       environment:
@@ -64,3 +66,4 @@ jobs:
         with:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
+          named_force_on_failure_policy: 'true'

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { getEventEditPathByRawStatus, getEventPath } from '@/router/utils.js'
+import { getEventEditPathByRawStatus, getEventPath, getUnauthenticatedEntry } from '@/router/utils.js'
 
 describe('router utils', () => {
+  it('getUnauthenticatedEntry は /register を返す', () => {
+    expect(getUnauthenticatedEntry()).toBe('/register')
+  })
+
   it('getEventPath builds community event path', () => {
     expect(getEventPath('acc', 'e1')).toBe('/c/acc/e/e1')
   })

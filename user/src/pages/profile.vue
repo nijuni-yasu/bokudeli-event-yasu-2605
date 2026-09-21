@@ -361,7 +361,6 @@ const handleDeleteCompleteOkClick = async () => {
                 rows="5"
                 variant="outlined"
                 :disabled="isProfileLoading"
-                :rules="[requiredValidator]"
               />
 
               <UserProfileTagsEditSection />

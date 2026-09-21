@@ -61,7 +61,7 @@ onDocumentWritten 等の Firestore トリガーも createModuleLogger 等の共�
 
 ### CI デプロイ（必須）
 
-`functions/default/src/index.ts` で **Cloud Functions として export する**関数を追加・削除したら、同 PR で index.ts の Promise.all import と export オブジェクトを更新すること。CI（`.github/workflows/deploy_functions.yml`）は **1 ジョブ + `firebase deploy --only functions`**（`--force` なし）で default codebase の全 export をデプロイするため、yml への手書きリスト追加は不要。
+`functions/default/src/index.ts` で **Cloud Functions として export する**関数を追加・削除したら、同 PR で index.ts の Promise.all import と export オブジェクトを更新すること。CI（`.github/workflows/deploy_functions.yml`）は **1 ジョブ + `firebase deploy --only functions`**（全体への `--force` なし）で default codebase の全 export をデプロイするため、yml への手書きリスト追加は不要。Trigger に `retry: true` を付けた場合、その環境への初回は CLI が failure policy の確認を出す。CI がログの関数名を `index.ts` と照合し、**名前指定だけ** `--force` する。全体デプロイに `--force` を足さないこと。
 
 export 漏れすると development / production では Trigger・Callable が未デプロイのままになる（コードはマージ済みでも GCP 上に存在しない）。
 

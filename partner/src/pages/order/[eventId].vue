@@ -272,7 +272,7 @@ const downloadNamesPrint = async () => {
               </p>
               <v-textarea
                 v-model="shopComment"
-                rows="2"
+                rows="4"
                 class="ml-5"
                 :placeholder="
                   reservationAction === 0

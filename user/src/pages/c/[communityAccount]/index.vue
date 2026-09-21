@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { getEventPath, getManageCommunityPath, getLogin } from '@/router/utils'
+import { getEventPath, getManageCommunityPath, getUnauthenticatedEntry } from '@/router/utils'
 import CommunityContactDialog from '@shokujii/base/components/CommunityContactDialog.vue'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
@@ -90,8 +90,8 @@ const openContactDialog = () => {
     isOpenContactDialogVisible.value = true
   }
 }
-const login = () => {
-  router.push(getLogin())
+const goToUnauthenticatedEntry = () => {
+  router.push(getUnauthenticatedEntry())
 }
 
 /** 表示順は communityStore.community の community_album_item_ids（store の albumItems で反映） */
@@ -198,7 +198,7 @@ const albumSlides = computed(() => {
       :community-name="communityStore.community.community_name"
       :community-id="communityStore.community.community_id"
     />
-    <confirm-dialog v-model="isOpenConfirmDialog" :is-confirm="true" :ok-click="login">
+    <confirm-dialog v-model="isOpenConfirmDialog" :is-confirm="true" :ok-click="goToUnauthenticatedEntry">
       {{ $t('community.contact_after_login') }}
     </confirm-dialog>
   </section>

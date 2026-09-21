@@ -2,7 +2,9 @@
 """Functions デプロイ設定の静的検証。
 
 前提（正本: documents/実装メモ/functionsのCIデプロイ.md）:
-- deploy_functions.yml は 1 ジョブ + `args: '--only functions'`（`--force` は CI では使わない）
+- deploy_functions.yml は 1 ジョブ + `args: '--only functions'`
+- 全体デプロイに `--force` は付けない。failure policy は名前指定 `--force`（スクリプト）
+- `named_force_on_failure_policy: 'true'` が必須
 - export 正本は functions/default/src/index.ts のみ（yml 手書きリスト不要）
 - firebase.json の functions 配列に default codebase が 1 エントリ
 """
@@ -59,8 +61,8 @@ def _iter_deploy_action_step_lines(lines: list[str]) -> Iterator[list[str]]:
             yield step_lines
 
 
-def _parse_with_args(step_lines: list[str]) -> str | None:
-    """Deploy ステップの `with:` 直下にある `args:` の値を返す。"""
+def _parse_with_value(step_lines: list[str], key: str) -> str | None:
+    """Deploy ステップの `with:` 直下にあるキーの値を返す。"""
     in_with = False
     with_indent = -1
     for line in step_lines:
@@ -76,9 +78,14 @@ def _parse_with_args(step_lines: list[str]) -> str | None:
             continue
         if indent <= with_indent:
             break
-        if stripped.startswith("args:"):
+        if stripped.startswith(f"{key}:"):
             return stripped.split(":", 1)[1].strip().strip("'\"")
     return None
+
+
+def _parse_with_args(step_lines: list[str]) -> str | None:
+    """Deploy ステップの `with:` 直下にある `args:` の値を返す。"""
+    return _parse_with_value(step_lines, "args")
 
 
 def parse_deploy_step_args_list(deploy_path: Path) -> list[str | None]:
@@ -142,10 +149,15 @@ def collect_deploy_config_errors(
         if pattern.search(deploy_text):
             errors.append(
                 f"deploy_functions.yml に廃止された設定が残っています: {label}\n"
-                f"  → 1 ジョブ + args: '--only functions'（--force なし）に統一してください。"
+                f"  → 1 ジョブ + args: '--only functions'（全体への --force なし）に統一してください。"
             )
 
-    deploy_args_list = parse_deploy_step_args_list(deploy_path)
+    deploy_step_lines = list(_iter_deploy_action_step_lines(deploy_text.splitlines()))
+    deploy_args_list = [_parse_with_args(step_lines) for step_lines in deploy_step_lines]
+    deploy_named_force = [
+        _parse_with_value(step_lines, "named_force_on_failure_policy")
+        for step_lines in deploy_step_lines
+    ]
     if not deploy_args_list:
         errors.append(
             "deploy_functions.yml に `./.github/actions/deploy` を使う "
@@ -160,6 +172,13 @@ def collect_deploy_config_errors(
         errors.append(
             "Deploy to Firebase ステップの args が `--only functions` ではありません:\n"
             f"  → 実際の値: {deploy_args_list[0]!r}"
+        )
+    elif deploy_named_force[0] != "true":
+        errors.append(
+            "Deploy to Firebase ステップに "
+            "`named_force_on_failure_policy: 'true'` がありません。\n"
+            "  → failure policy は名前指定 --force で吸収します。"
+            " 全体デプロイへ --force は付けないでください。"
         )
 
     try:
@@ -229,7 +248,8 @@ def verify(
 
     exports = parse_index_exports(index_path)
     print(
-        f"OK: deploy_functions.yml は 1 ジョブ + --only functions（--force なし）。"
+        f"OK: deploy_functions.yml は 1 ジョブ + --only functions"
+        f"（全体 --force なし、failure policy は名前指定）。"
         f" index.ts export {len(exports)} 件、firebase.json codebase: default。"
     )
     return 0

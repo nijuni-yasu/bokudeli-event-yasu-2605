@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   getEventEditPathByRawStatus,
   getEventEditShopNoticePath,
-  getLogin,
+  getUnauthenticatedEntry,
   getManageCommunityPath,
 } from '@/router/utils'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
@@ -191,9 +191,9 @@ const selectMenu = (menu: BokudeliEventMenu) => {
   selectedMenuState.isOpen = true
 }
 
-const goToLogin = () => {
+const goToUnauthenticatedEntry = () => {
   router.push({
-    path: getLogin(),
+    path: getUnauthenticatedEntry(),
   })
 }
 
@@ -392,7 +392,7 @@ onUnmounted(() => {
     :event-id="event.event_id"
     @added="handleCartAdded"
   ></event-cart-dialog>
-  <confirm-dialog v-model="isLoginRequired" :is-confirm="true" :ok-click="goToLogin" max-width="700px">
+  <confirm-dialog v-model="isLoginRequired" :is-confirm="true" :ok-click="goToUnauthenticatedEntry" max-width="700px">
     <v-card-text class="pb-0" style="line-height: 2rem; white-space: pre-line">
       {{ $t('cart_dialog.login') }}
     </v-card-text>

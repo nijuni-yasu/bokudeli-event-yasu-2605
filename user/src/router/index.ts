@@ -28,14 +28,13 @@ import {
   setRedirectPath,
 } from '@shokujii/base/utils/redirect'
 import {
-  rejectExistingUserOnRegister,
   rejectNewUserOnLogin,
   alertExistsCredential,
   alertProfileLinkageFailed,
   handleProfileUpdateFailure,
   signOutBestEffort,
 } from './authEntryGuards.js'
-import { getManageCommunityListPath } from './utils'
+import { getManageCommunityListPath, getUnauthenticatedEntry } from './utils'
 import { isEnterpriseUserFromClaims } from '@shokujii/base/utils/enterpriseUserClaims.js'
 import { resolveDocumentTitle } from './documentTitle.js'
 import { resolveEventLoadFailureRedirect } from './eventRouteGuard.js'
@@ -107,9 +106,9 @@ export const setupRouter = (router: Router) => {
 
     // ログアウト or 初期化時の処理
     if (user === null) {
-      // ログイン必須ページの場合はログインページへ
+      // ログイン必須ページの場合は未ログイン入口（/register）へ
       if (isLoginRequired(path)) {
-        router.replace({ path: '/login', state: { redirect: fullPath } })
+        router.replace({ path: getUnauthenticatedEntry(), state: { redirect: fullPath } })
         // ログイン状態 → ログアウト時のみ
       } else if (lastUser !== null) {
         router.replace('/')
@@ -160,7 +159,7 @@ export const setupRouter = (router: Router) => {
     }
     if (to.path === '/inapp-login' && !isInApp) {
       return {
-        path: getRedirectPath(false) ?? '/login',
+        path: getRedirectPath(false) ?? getUnauthenticatedEntry(),
         query: to.query,
       }
     }
@@ -184,15 +183,6 @@ export const setupRouter = (router: Router) => {
         userCredential = await handleRedirect(user)
       } catch (err: unknown) {
         if (err instanceof FirebaseError && err.code === 'auth/account-exists-with-different-credential') {
-          if (to.path === '/register') {
-            clearPendingLinkRequest()
-            const i18n = getI18n()
-            window.alert(
-              // @ts-expect-error i18n.global.t の型がユニオンになってしまう TODO 直し方確認
-              i18n.global.t('register.already_registered'),
-            )
-            return { path: '/login', query: to.query }
-          }
           if (to.path === '/profile') {
             clearPendingLinkRequest()
             const pendingCred = credentialFromError(err)
@@ -204,8 +194,8 @@ export const setupRouter = (router: Router) => {
           const email = err.customData!.email as string
           const methods = await fetchSignInMethodsForEmail(getAuth(), email)
           const existingProviderId = methods[0]
-          if (existingProviderId == null) {
-            // カスタムトークンログインを行い、メールアドレスが既に存在している場合
+          if (existingProviderId == null || !isProviderIdType(existingProviderId)) {
+            // 既存がメールのみ、またはカスタムトークンログインで methods が空の場合
             const pendingProviderId = pendingCred?.providerId
             return {
               path: '/pass-code',
@@ -216,7 +206,7 @@ export const setupRouter = (router: Router) => {
             }
           } else {
             return {
-              path: '/login',
+              path: getUnauthenticatedEntry(),
               query: { ...to.query, pid1: pendingCred?.providerId, pid2: existingProviderId },
             }
           }
@@ -299,23 +289,6 @@ export const setupRouter = (router: Router) => {
             i18n.global.t('login.not_registered'),
           )
           return { path: '/register', query: to.query }
-        }
-      }
-
-      if (to.path === '/register' && userCredential != null) {
-        const aui = getAdditionalUserInfo(userCredential)
-        if (aui?.isNewUser === false) {
-          const i18n = getI18n()
-          window.alert(
-            // @ts-expect-error i18n.global.t の型がユニオンになってしまう TODO 直し方確認
-            i18n.global.t('register.already_registered'),
-          )
-          try {
-            await rejectExistingUserOnRegister()
-          } catch (err) {
-            console.error(err)
-          }
-          return { path: '/login', query: to.query }
         }
       }
 
@@ -421,7 +394,7 @@ export const setupRouter = (router: Router) => {
     }
     if (user == null) {
       if (isLoginRequired(to.path)) {
-        return { path: '/login', state: { redirect: to.fullPath } }
+        return { path: getUnauthenticatedEntry(), state: { redirect: to.fullPath } }
       }
     } else {
       if (['/login', '/register', '/inapp-login'].includes(to.path)) {

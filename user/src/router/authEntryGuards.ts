@@ -2,6 +2,7 @@ import { FirebaseError } from 'firebase/app'
 import { getAdditionalUserInfo, getAuth, signOut, type UserCredential } from 'firebase/auth'
 import type { LocationQuery } from 'vue-router'
 import { getI18n } from '@shokujii/base/plugins/i18n/index.js'
+import { getLogin, getUnauthenticatedEntry } from './utils.js'
 
 /**
  * /login 導線で OAuth により誤って作成された Auth ユーザーを削除してサインアウトする。
@@ -10,14 +11,6 @@ import { getI18n } from '@shokujii/base/plugins/i18n/index.js'
  */
 export async function rejectNewUserOnLogin(userCredential: UserCredential): Promise<void> {
   await userCredential.user.delete()
-  await signOut(getAuth())
-}
-
-/**
- * /register 導線で既存 SNS ユーザーを拒否したあと、Auth セッションを残さない。
- * 正当な既存ユーザーのため delete は行わない。
- */
-export async function rejectExistingUserOnRegister(): Promise<void> {
   await signOut(getAuth())
 }
 
@@ -68,8 +61,9 @@ export const alertProfileLinkageFailed = (providerId: string | undefined) => {
 
 /**
  * OAuth 復帰時に updateProfileFromProviders が失敗した場合の cleanup とリダイレクト先を返す。
- * cleanup 失敗時は /login へリダイレクトする。
+ * cleanup 失敗時は未ログイン入口（/register）へリダイレクトする。
  * /profile では signOut せず undefined を返し、当該画面に留まる。
+ * /login 導線の失敗は明示的にログイン画面へ戻す。
  */
 export async function handleProfileUpdateFailure(
   toPath: string,
@@ -98,7 +92,7 @@ export async function handleProfileUpdateFailure(
       // @ts-expect-error i18n.global.t の型がユニオンになってしまう TODO 直し方確認
       i18n.global.t('login.login_fail_generic'),
     )
-    return { path: '/login', query }
+    return { path: getUnauthenticatedEntry(), query }
   }
 
   const providerId = userCredential?.providerId
@@ -116,7 +110,7 @@ export async function handleProfileUpdateFailure(
       // @ts-expect-error i18n.global.t の型がユニオンになってしまう TODO 直し方確認
       i18n.global.t('register.already_registered'),
     )
-    return { path: '/login', query }
+    return { path: getUnauthenticatedEntry(), query }
   }
 
   if (toPath === '/register') {
@@ -134,7 +128,7 @@ export async function handleProfileUpdateFailure(
         i18n.global.t('register.register_fail_generic'),
       )
     }
-    return { path: '/register', query }
+    return { path: getUnauthenticatedEntry(), query }
   }
 
   if (providerId != null) {
@@ -151,5 +145,5 @@ export async function handleProfileUpdateFailure(
       i18n.global.t('login.login_fail_generic'),
     )
   }
-  return { path: '/login', query }
+  return { path: toPath === '/login' ? getLogin() : getUnauthenticatedEntry(), query }
 }
