@@ -20,6 +20,7 @@
 | [x] | RC-12 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 注文一覧の並びは updated_at だが列表示が ordered_at<br>「更新日時」列に変更 |
 | [x] | RC-13 | 5542276372 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | userList store ID に JSON.stringify(filters) を使用<br>呼び出し元から storeId を渡す方式に変更 |
 | [x] | RC-14 | 5542276372 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 注文一覧でイベント取得失敗時に行スピナーが残留<br>failedEventIds で失敗 sentinel を追加 |
+| [x] | RC-15 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | Stop gate のソース変更検知に `support/*` が無い<br>運営画面だけの差分だとセルフレビュー gate がスキップされる。検知対象に追加した |
 
 ---
 
@@ -614,3 +615,55 @@ watch 内で Map を初期化した。
 **想定工数**: S
 
 **判断理由**: 取得失敗時の UX 実害。修正方針が一意なため自動修正した。
+
+---
+
+## 評価セッション（2026-09-21 21:20・shokujii-code-review）
+
+- **評価日時**: 2026-09-21 21:20 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/2087`
+- **PR**: 未作成
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-15 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | Stop gate のソース変更検知に `support/*` が無い<br>`support/*` を lint/review 対象に追加した |
+
+---
+
+**識別子**: RC-15（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `.agents/hooks/source-change-detect.sh:39`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+-    common/* | base/* | user/* | partner/* | enterprise/* | functions/* | terms/*)
++    common/* | base/* | user/* | partner/* | enterprise/* | support/* | functions/* | terms/*)
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `.agents/hooks/source-change-detect.sh:39` の lint/review 対象に `support/*` が無く、運営管理画面だけの未コミット差分では Stop gate がセルフレビューを要求しない。`pr-verify.yml` は `support/**` を見ているので、検知スクリプト側も揃えること。
+
+**コメント要約**: Stop gate のソース変更検知に `support/*` が無い。検知対象に追加した。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: support パッケージ追加時の漏れ。修正方針は対象パスを1行足すだけなので自動修正した。

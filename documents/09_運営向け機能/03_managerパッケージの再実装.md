@@ -113,6 +113,7 @@ URL は旧のキャメルケース（`/ShopList`）から **小文字・複数�
 | :-- | :-- |
 | 承認待ちコミュニティ | `communities` の `is_approved == false` |
 | 承認待ち店舗 | `collectionGroup('shops')` の `is_approved == false` |
+| 予約申請中イベント | `collectionGroup('events')` の `event_status.value == 'applying_reservation'` かつ `is_deleted == false` |
 | 受付中イベント | `collectionGroup('events')` の `event_status.value == 'accepting_order'` かつ `is_deleted == false` |
 | 直近 7 日の注文 | `collectionGroup('member_orders')` の `status == 'ordered'` かつ `ordered_at >= 7日前` |
 
@@ -121,6 +122,8 @@ URL は旧のキャメルケース（`/ShopList`）から **小文字・複数�
 **データ源**: `useEventListStore`（`collectionGroup('events')` + `eventConverter`。`is_deleted == false` は store 内で付与済み）
 
 **filters**: `orderBy('event_start_datetime', 'desc')`。
+クエリ `status=accepting_order` または `status=applying_reservation` のとき、
+`event_status.value` の等価条件を先頭に付ける（チップは排他。受付中のみ / 予約申請中のみ）。
 CG `events` の `is_deleted ASC` + `event_start_datetime DESC` は既存インデックスに無いため新規追加する
 （既存の類似インデックスはすべて `community_account` / `partner_id` / `event_status.value` 等を先頭に含む）。
 
@@ -166,7 +169,7 @@ Functions で Event に集計フィールドを持たせる案はフェーズ1�
 | collection group | scope | フィールド | 用途 |
 | :-- | :-- | :-- | :-- |
 | `events` | CG | `is_deleted` ASC, `event_start_datetime` DESC | イベント一覧 |
-| `events` | CG | `event_status.value` ASC, `is_deleted` ASC | ダッシュボードの受付中イベント数 |
+| `events` | CG | `event_status.value` ASC, `is_deleted` ASC | ダッシュボードの受付中 / 予約申請中イベント数 |
 | `events` | CG | `community_id` ASC, `is_deleted` ASC | コミュニティ一覧のイベント数 |
 | `member_orders` | CG | `status` ASC, `updated_at` DESC | 注文一覧 |
 | `member_orders` | CG | `status` ASC, `ordered_at` ASC | ダッシュボードの直近 7 日注文 |
