@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { orderBy } from 'firebase/firestore'
-import { useUserListStore } from '@shokujii/base/stores/userList.js'
+import { orderBy, type QueryConstraint } from 'firebase/firestore'
+import { useUserListStore, type UserListStore } from '@shokujii/base/stores/userList.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import type { User } from '@shokujii/common/schemas/User.js'
 import { getUserUrl } from '@/utils/urls'
 import { matchesSearch } from '@/utils/search'
 import { userInitial } from '@/utils/format'
+import { isQueryFlagActive, withQueryFlag } from '@/utils/queryFlag'
+import SupportFilterChip from '@/components/SupportFilterChip.vue'
 import SupportPageHeader from '@/components/SupportPageHeader.vue'
 import SupportStatusTicket from '@/components/SupportStatusTicket.vue'
 import SupportDetailDrawer from '@/components/SupportDetailDrawer.vue'
 import SupportDetailField from '@/components/SupportDetailField.vue'
 
 const PAGE_SIZE = 50
+const route = useRoute()
+const router = useRouter()
 
 const searchQuery = ref('')
 const selected = shallowRef<User | null>(null)
@@ -25,13 +29,35 @@ const drawerOpen = computed({
   },
 })
 
-const userListStore = useUserListStore('support/users', [orderBy('created_at', 'desc')], PAGE_SIZE)
+const showDeletedFilter = computed(() => isQueryFlagActive(route.query.is_deleted, 'true'))
+
+const userListStoreId = (deletedOnly: boolean): string => (deletedOnly ? 'support/users/deleted' : 'support/users')
+
+const buildFilters = (): QueryConstraint[] => {
+  if (showDeletedFilter.value) {
+    return [orderBy('deleted_at', 'desc')]
+  }
+  return [orderBy('created_at', 'desc')]
+}
+
+const userListStore = shallowRef<UserListStore>(
+  useUserListStore(userListStoreId(showDeletedFilter.value), buildFilters(), PAGE_SIZE),
+)
+
+watch(
+  () => route.query.is_deleted,
+  () => {
+    userListStore.value = useUserListStore(userListStoreId(showDeletedFilter.value), buildFilters(), PAGE_SIZE)
+  },
+)
+
+const users = computed(() => userListStore.value.users)
 
 const filteredUsers = computed(() => {
-  if (userListStore.users == null) {
+  if (users.value == null) {
     return null
   }
-  return userListStore.users.filter((user) =>
+  return users.value.filter((user) =>
     matchesSearch(
       [
         user.user_name,
@@ -54,6 +80,13 @@ const showingCount = computed(() => {
 })
 
 const displayName = (user: User): string => (user.user_name.trim() === '' ? '—' : user.user_name)
+
+const formatDeletedAt = (user: User): string =>
+  user.deleted_at == null ? '—' : convertToDatetime(user.deleted_at)
+
+const setDeletedFilter = (active: boolean): void => {
+  void router.replace({ query: withQueryFlag(route.query, 'is_deleted', 'true', active) })
+}
 </script>
 
 <template>
@@ -64,7 +97,15 @@ const displayName = (user: User): string => (user.user_name.trim() === '' ? '—
         :title="$t('users.title')"
         :total-count="userListStore.totalCount"
         :showing-count="showingCount"
-      />
+      >
+        <template #filters>
+          <SupportFilterChip
+            :active="showDeletedFilter"
+            :label="$t('filter.deleted_users')"
+            @update:active="setDeletedFilter"
+          />
+        </template>
+      </SupportPageHeader>
 
       <v-alert v-if="userListStore.loadError" type="error" variant="tonal" class="ma-4">
         {{ $t('common.load_failed') }}
@@ -112,9 +153,7 @@ const displayName = (user: User): string => (user.user_name.trim() === '' ? '—
             <tr v-if="filteredUsers != null && filteredUsers.length === 0">
               <td colspan="4" class="text-center py-6">
                 {{
-                  userListStore.users != null && userListStore.users.length > 0
-                    ? $t('common.search_no_match')
-                    : $t('common.no_data')
+                  users != null && users.length > 0 ? $t('common.search_no_match') : $t('common.no_data')
                 }}
               </td>
             </tr>
@@ -122,7 +161,7 @@ const displayName = (user: User): string => (user.user_name.trim() === '' ? '—
         </v-table>
       </div>
 
-      <div v-if="userListStore.users == null" class="d-flex justify-center py-8">
+      <div v-if="users == null" class="d-flex justify-center py-8">
         <v-progress-circular indeterminate />
       </div>
 
@@ -159,6 +198,9 @@ const displayName = (user: User): string => (user.user_name.trim() === '' ? '—
         </SupportDetailField>
         <SupportDetailField :label="$t('users.is_deleted')">
           {{ selected.is_deleted ? $t('common.yes') : $t('common.no') }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('users.deleted_at')">
+          {{ formatDeletedAt(selected) }}
         </SupportDetailField>
       </dl>
       <template #actions>

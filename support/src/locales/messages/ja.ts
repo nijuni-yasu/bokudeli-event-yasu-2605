@@ -72,6 +72,7 @@ export default {
     accepting_events: '受付中のみ',
     applying_reservation: '予約申請中のみ',
     recent_orders: '直近7日の注文',
+    deleted_users: '削除済みのみ',
   },
   confirm: {
     status_change_title: '設定を変更しますか？',
@@ -185,6 +186,7 @@ export default {
     participated_event_count: '参加イベント数',
     created_at: '作成日',
     updated_at: '更新日',
+    deleted_at: '削除日',
     is_deleted: '削除済み',
     deleted: '削除',
   },
