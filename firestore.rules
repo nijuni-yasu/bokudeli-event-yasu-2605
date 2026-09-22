@@ -303,6 +303,9 @@ service cloud.firestore {
                 match /system/{docId} {
                     allow read, write: if false;
                 }
+                match /invoice_payments/{docId} {
+                    allow read, write: if isSupport();
+                }
                 // 旧 orders（移行完了後に削除）
                 match /orders/{order} {
                     allow read, write: if false
