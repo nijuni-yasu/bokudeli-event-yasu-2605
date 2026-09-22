@@ -17,6 +17,8 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
   computeTotalPayment,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
+import { computeUserPaymentFeeFromSelfPay } from '@shokujii/common/utils/paymentUserFee.js'
+import { buildUserPaymentFeeCheckoutLineItem } from './utils/paymentUserFeeStripe.js'
 import { computeEnterpriseSubsidyTotalPayment } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 import {
   assertActiveEnterpriseMember,
@@ -259,6 +261,12 @@ export const createStripeCheckoutSession = onCall<
         },
         quantity: item.quantity,
       }))
+
+    const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
+    const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
+    if (feeLineItem != null) {
+      lineItems.push(feeLineItem)
+    }
 
     if (lineItems.length === 0 && totalPayment > 0) {
       logger.error('Checkout line items empty despite positive totalPayment', {

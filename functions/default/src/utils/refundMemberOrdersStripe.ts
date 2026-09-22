@@ -28,6 +28,15 @@ export type RefundMemberOrdersStripeResult = {
 }
 
 /**
+ * Stripe 返金額は食事の自己負担（menu_price − 割引）のみ。
+ * 決済手数料（EventStripe.pay_user_fee_amount）は返金しない。
+ * pay_amount が手数料込みでも、返金額に手数料を足さない。
+ */
+export function computeStripeRefundAmountForMemberOrders(orders: EventMemberOrder[]): number {
+  return orders.reduce((sum, o) => sum + o.menu_price - getMemberOrderDiscountAmount(o), 0)
+}
+
+/**
  * cancelOrders / cancelEventBulkCore 共通の Stripe 返金（stripe_id 単位）。
  */
 export async function refundMemberOrdersStripe(params: {
@@ -65,7 +74,7 @@ export async function refundMemberOrdersStripe(params: {
         throw new Error(`stripes ドキュメントが見つかりません: ${stripeId}`)
       }
 
-      const refundAmount = groupOrders.reduce((sum, o) => sum + o.menu_price - getMemberOrderDiscountAmount(o), 0)
+      const refundAmount = computeStripeRefundAmountForMemberOrders(groupOrders)
       if (refundAmount <= 0) {
         logger.info('Skip Stripe refund (zero or negative amount)', {
           stripeId,

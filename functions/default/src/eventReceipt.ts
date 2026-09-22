@@ -3,13 +3,12 @@ import { getFirestore } from 'firebase-admin/firestore'
 import path from 'path'
 import { DateTime } from 'luxon'
 import { EventReceiptRequest, EventReceiptResponse } from '@shokujii/common/apis/eventReceipt.js'
-import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
-import { convertToDate, convertDateToId } from '@shokujii/common/utils/datetime.js'
-import { computeInclusive8ExTaxAndTax } from '@shokujii/common/utils/invoice.js'
+import { convertDateToId } from '@shokujii/common/utils/datetime.js'
 import { createModuleLogger } from './utils/logger.js'
 import { getEvent } from './stores/event.js'
 import { getPartner } from './stores/partner.js'
 import { getStripe, saveStripe } from './stores/memberOrder.js'
+import { buildEventReceiptMergeData } from './utils/eventReceiptMergeData.js'
 import { PdfGenerator } from './utils/PdfGenerator.js'
 
 const logger = createModuleLogger('eventReceipt')
@@ -70,23 +69,22 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     })
 
     const refundedTotal = stripe.refunds.reduce((sum, r) => sum + r.amount, 0)
-    // 個別キャンセル後は返金分を差し引いた残額を領収書に記載（番号は初回採番のまま、再発行時は金額のみ更新）
-    const totalPrice = Math.max(0, stripe.pay_amount - refundedTotal)
-    const { exTaxPrice, taxPrice } = computeInclusive8ExTaxAndTax(totalPrice)
-
-    const jsonDataForMerge = {
-      event: event.event_name + ' / お食事代として',
-      number: receiptNumber,
-      orderDate: convertToDate(stripe.created_at),
-      price: convertNumberToYen(totalPrice),
-      date: convertToDate(DateTime.now().toMillis()),
-      shop: shop.shop_name,
-      invoiceId: shop.shop_invoice_number ?? 'なし',
-      address: shop.fullAddress,
-      rawPrice: convertNumberToYen(exTaxPrice),
-      tax: convertNumberToYen(taxPrice),
+    // 個別キャンセル後は食事の返金分だけ差し引く。決済手数料は満額のまま（番号は初回採番）
+    const jsonDataForMerge = buildEventReceiptMergeData({
+      eventName: event.event_name,
+      eventStartDatetime: event.event_start_datetime,
+      shopName: shop.shop_name ?? '',
+      shopInvoiceNumber: shop.shop_invoice_number,
+      shopAddress: shop.fullAddress,
+      receiptNumber,
       reissue,
-    }
+      orderCreatedAt: stripe.created_at,
+      issuedAt: DateTime.now().toMillis(),
+      payAmount: stripe.pay_amount,
+      payUserFeeAmount: stripe.pay_user_fee_amount,
+      refundedTotal,
+      menus: stripe.menus,
+    })
 
     const pdfGenerator = new PdfGenerator()
     const url = await pdfGenerator.executeDocumentMergeForUrl(path.join('templates', 'receipt.docx'), jsonDataForMerge)

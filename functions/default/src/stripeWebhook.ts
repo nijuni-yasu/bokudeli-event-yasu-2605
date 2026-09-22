@@ -17,6 +17,10 @@ import { getEventInCommunity } from './stores/event.js'
 import { applyOrderConfirmedSideEffects } from './orderConfirmedSideEffects.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
+  computeEventStripePayFields,
+  isCheckoutAmountTotalMatchingPayAmount,
+} from '@shokujii/common/utils/paymentUserFee.js'
+import {
   computeOrderSelfPayUnitAmount,
   getEventEnterpriseId,
   processEnterpriseSubsidyOrdersForWebhook,
@@ -397,9 +401,24 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
     }
 
     const orderedAt = Timestamp.now().toMillis()
-    const payAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
+    const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
+    const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(selfPayAmount)
+    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount)) {
+      logger.error('Checkout amount_total does not match recomputed pay_amount', {
+        paymentIntent,
+        amountTotal: session.amount_total,
+        selfPayAmount,
+        userFeeAmount,
+        payAmount,
+      })
+      return {
+        kind: 'client_error',
+        message: `amount_total mismatch: session=${session.amount_total} pay_amount=${payAmount}`,
+      }
+    }
     if (enterpriseOrderCreateLog != null) {
-      enterpriseOrderCreateLog.totalPayment = payAmount
+      // 監査上の total_payment は食事の自己負担。手数料は pay_user_fee_amount に載せる
+      enterpriseOrderCreateLog.totalPayment = selfPayAmount
     }
     const sessionPayCommunityBillOffAmount = orders.reduce((sum, o) => sum + (o.pay_community_bill_off_amount ?? 0), 0)
 
@@ -442,6 +461,7 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
       ...(sessionPayCommunityBillOffAmount > 0
         ? { pay_community_bill_off_amount: sessionPayCommunityBillOffAmount }
         : {}),
+      ...(userFeeAmount != null ? { pay_user_fee_amount: userFeeAmount } : {}),
       menus: Array.from(menusMap.values()),
       refunds: [],
     })
