@@ -6,6 +6,7 @@ import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { type EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { orderCanceledLabelI18nKey } from '@shokujii/common/utils/orderCancelSource.js'
 import { computeOrderLineNet } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
+import { previewUserPaymentFee } from '@shokujii/common/utils/paymentUserFee.js'
 import { convertToDate, convertToDatetimeWeekdayShort } from '@shokujii/common/utils/datetime.js'
 import EventStatusChip from '@shokujii/base/components/EventStatusChip.vue'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
@@ -72,6 +73,12 @@ const formatOrderMenuLine = (menu: { menu_name: string; count: number }): string
 const totalPrice = computed(() =>
   props.orders.filter((o) => o.status !== 'canceled').reduce((sum, o) => sum + orderLineNet(o), 0),
 )
+
+const paymentFee = computed(() =>
+  previewUserPaymentFee(props.event.event_payment, totalPrice.value, props.event.community_bill_settings),
+)
+
+const grandTotal = computed(() => totalPrice.value + paymentFee.value)
 
 const isShowCancelButton = computed(
   () =>
@@ -345,7 +352,11 @@ const submitCancel = () => {
         </div>
       </v-card-text>
       <v-card-text v-if="showOrderSummary && isOwner" class="px-2 pt-1 pb-4 event-card">
-        {{ $t(totalPriceLabelKey, [$n(totalPrice, 'currency')]) }}
+        <div>{{ $t(totalPriceLabelKey, [$n(totalPrice, 'currency')]) }}</div>
+        <template v-if="paymentFee > 0">
+          <div>{{ $t('user_event_card.payment_fee', [$n(paymentFee, 'currency')]) }}</div>
+          <div>{{ $t('user_event_card.grand_total', [$n(grandTotal, 'currency')]) }}</div>
+        </template>
       </v-card-text>
     </template>
     <v-card-text>
