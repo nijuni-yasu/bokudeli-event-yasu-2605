@@ -126,7 +126,7 @@ def main() -> int:
     summary_p.add_argument("--platform", default="cursor", choices=("cursor", "claude"))
     summary_p.add_argument("--duration-ms", type=int)
 
-    stop_p = sub.add_parser("stop", help="Process stop hook: record turn + optional followup_message")
+    stop_p = sub.add_parser("stop", help="Process stop hook: record turn (no usage followup)")
     stop_p.add_argument("--platform", required=True, choices=("cursor", "claude"))
 
     gate_skip_p = sub.add_parser(

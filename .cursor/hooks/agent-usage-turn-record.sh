@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# stop / Stop 用 — ターン終了記録 + 使用量 followup_message（Cursor）
+# stop / Stop 用 — ターン終了記録（使用量 followup は出さない）
 set -uo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
