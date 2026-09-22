@@ -159,7 +159,7 @@ const getEventBillInvoice = async (eventId: string, invoiceId: string, writableS
  * 請求書PDFを生成し Cloud Storage に保存する。
  * writableStream が指定された場合は HTTP レスポンスにもパイプする。
  */
-const createEventBillInvoice = async (
+export const createEventBillInvoice = async (
   community: ShokujiiCommunity,
   event: ShokujiiEvent,
   writableStream?: Writable,
@@ -352,7 +352,47 @@ export const eventBillInvoice = onRequest(
   },
 )
 
-const EVENT_INVOICE_TEMPLATE_ID = 'd-48e3179255834b8bb895cd995b1aac28'
+export const EVENT_INVOICE_TEMPLATE_ID = 'd-48e3179255834b8bb895cd995b1aac28'
+
+/**
+ * SendGrid ダッシュボードで督促テンプレート作成後、実 ID に差し替える。
+ * 件名・本文案は documents/06_メール通知/メール既存仕様.md の手動督促を参照。
+ */
+export const EVENT_INVOICE_REMINDER_TEMPLATE_ID = 'd-00000000000000000000000000000000'
+
+export type CommunityBillInvoiceMailKind = 'initial' | 'reminder'
+
+export const sendCommunityBillInvoiceMail = async (
+  community: ShokujiiCommunity,
+  event: ShokujiiEvent,
+  kind: CommunityBillInvoiceMailKind,
+): Promise<{ to: string; cc?: string; invoiceId: string }> => {
+  const to = event.bill_email?.trim()
+  if (!to) {
+    throw new HttpsError('failed-precondition', 'bill_email is empty')
+  }
+
+  const invoiceId = await createEventBillInvoice(community, event)
+  const cc = event.organizer_email?.trim()
+  const templateId = kind === 'reminder' ? EVENT_INVOICE_REMINDER_TEMPLATE_ID : EVENT_INVOICE_TEMPLATE_ID
+
+  await sgMail.send({
+    to,
+    from: DEFAULT_FROM,
+    cc: cc && cc !== to ? cc : undefined,
+    bcc: SUPPORT_MAIL,
+    templateId,
+    dynamicTemplateData: {
+      company: event.organizer_company,
+      person: event.bill_fullname,
+      event_name: event.event_name,
+      event_invoice_url: getEventBillInvoiceDirectUrl(event.id, invoiceId),
+      ...(kind === 'reminder' ? { deadline: convertToDate(getLastDayOfNextMonth(event.event_end_datetime)) } : {}),
+    },
+  })
+
+  return { to, cc: cc && cc !== to ? cc : undefined, invoiceId }
+}
 
 /**
  * イベント終了後に請求書PDFを生成し、主催者にメールで送信する（ポーリング用）
@@ -376,23 +416,7 @@ export async function sendInvoiceMailToOrganizers(start: number, end: number): P
           return
         }
 
-        const invoiceId = await createEventBillInvoice(community, event)
-
-        const cc = event.organizer_email?.trim()
-
-        await sgMail.send({
-          to,
-          from: DEFAULT_FROM,
-          cc: cc && cc !== to ? cc : undefined,
-          bcc: SUPPORT_MAIL,
-          templateId: EVENT_INVOICE_TEMPLATE_ID,
-          dynamicTemplateData: {
-            company: event.organizer_company,
-            person: event.bill_fullname,
-            event_name: event.event_name,
-            event_invoice_url: getEventBillInvoiceDirectUrl(event.id, invoiceId),
-          },
-        })
+        await sendCommunityBillInvoiceMail(community, event, 'initial')
         logger.info('Invoice mail sent', { eventId: event.id, to })
       } catch (err) {
         logger.warn('Failed to send invoice mail', {
