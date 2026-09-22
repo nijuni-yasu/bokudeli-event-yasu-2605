@@ -352,13 +352,11 @@ export const eventBillInvoice = onRequest(
   },
 )
 
+/** SendGrid: shokujii_community_bill_invoice */
 export const EVENT_INVOICE_TEMPLATE_ID = 'd-48e3179255834b8bb895cd995b1aac28'
 
-/**
- * SendGrid ダッシュボードで督促テンプレート作成後、実 ID に差し替える。
- * 件名・本文案は documents/06_メール通知/メール既存仕様.md の手動督促を参照。
- */
-export const EVENT_INVOICE_REMINDER_TEMPLATE_ID = 'd-00000000000000000000000000000000'
+/** SendGrid: shokujii_community_bill_invoice_reminder */
+export const EVENT_INVOICE_REMINDER_TEMPLATE_ID = 'd-056dd09ac5ce41a1a4293c932a6263e9'
 
 export type CommunityBillInvoiceMailKind = 'initial' | 'reminder'
 
