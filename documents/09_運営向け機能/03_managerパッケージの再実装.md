@@ -384,10 +384,26 @@ PR 2 は早い段階に置く。これが入るまでイベント一覧・コミ
 
 ## 請求書払い管理（フェーズ3）
 
-- イベントの「請求書払い」の状況を管理することができる。
-- 未確認、支払い済み、未払いか。
-- 再度請求書を発行することができる。
-- 配送料の請求を行うようになった際には、配送料請求についても請求書再発行できる。
+関連 Issue: [#2357](https://github.com/nijuniinc/bokudeli-event-new/issues/2357)
+
+### 実装済み（入金ステータス + 督促再送信）
+
+- 専用画面 `/invoices`（ナビ「請求書払い」）で `event_payment == 'community_bill'` のイベントを一覧する。
+  入金列は常時表示し、表示中行だけ `invoice_payments/current` を遅延ロードする。
+- 入金ステータス（未確認 / 未払い / 支払い済み）はクライアント側の排他チップ（`/invoices?status=`）で絞る。
+  Firestore の受付中との AND は対象外。ドキュメント未作成は表示上「未確認」。
+- 入金状態の正本は Event ではなく
+  `communities/{communityId}/events/{eventId}/invoice_payments/current`。
+  Rules は `isSupport()` のみ read/write。
+- ステータス: `unconfirmed`（未確認） / `unpaid`（未払い） / `paid`（支払い済み）。メモ可。
+- 未払い時のみ、確認ダイアログ付きで督促メールを再送信する（`resendCommunityBillInvoiceMail`）。
+  宛先はサーバが `bill_email` から読む。PDF は既存があれば再利用する。
+- イベント一覧（`/events`）には請求書払いチップ・入金列・入金パネルを置かない。
+
+### 未着手
+
+- 請求書 PDF の再発行（注文変更後の作り直し）。
+- 配送料請求の再発行。
 
 ## 店舗明細一覧の管理（フェーズ4）
 
