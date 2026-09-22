@@ -356,6 +356,7 @@ const submitCancel = () => {
         <template v-if="paymentFee > 0">
           <div>{{ $t('user_event_card.payment_fee', [$n(paymentFee, 'currency')]) }}</div>
           <div>{{ $t('user_event_card.grand_total', [$n(grandTotal, 'currency')]) }}</div>
+          <p class="text-caption text-medium-emphasis mt-1 mb-0">{{ $t('user_event_card.payment_fee_note') }}</p>
         </template>
       </v-card-text>
     </template>

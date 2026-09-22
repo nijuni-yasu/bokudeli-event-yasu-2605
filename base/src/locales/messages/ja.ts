@@ -130,6 +130,7 @@ export default {
     company_subsidy_total: '会社負担合計',
     your_payment: 'お支払い額',
     payment_fee: '決済手数料',
+    payment_fee_note: 'クレジットカード決済時の手数料です。最低110円・最大330円。キャンセルしても返金されません。',
     grand_total: '合計',
     enterprise_subsidy_month: '{0}分の福利厚生割引として適用されます',
     enterprise_subsidy_partial: '⚠ {0}分の割引上限に達するため、一部は全額自己負担となります',
@@ -468,9 +469,11 @@ export default {
     payment: '支払い設定',
     payment_hint_user_advance: `参加者事前決済 を設定した場合<br />
       食事の代金は、参加者がクレジットカード・Apple Pay・Google Pay・PayPay などで事前にお支払いいただきます。<br />
+      参加者には決済手数料（最低110円・最大330円）がかかります。キャンセルしても返金されません。<br />
       支払い設定は予約申請後、変更できないためご注意ください。`,
     payment_hint_enterprise_subsidy: `福利厚生割引 を設定した場合<br />
       企業の割引ルールが適用されます。残額は参加者がクレジットカード等でお支払いいただきます。<br />
+      自己負担がある場合は決済手数料（最低110円・最大330円）がかかり、キャンセルしても返金されません。<br />
       自己負担0円の場合は決済不要で注文確定できます。`,
     payment_hint_community_bill_title: '主催者請求書払いについて',
     payment_hint_community_bill: `
@@ -535,6 +538,7 @@ export default {
     total_price: '【支払い金額】{0}',
     total_self_pay: '【自己負担額】{0}',
     payment_fee: '【決済手数料】{0}',
+    payment_fee_note: '最低110円・最大330円。キャンセルしても返金されません。',
     grand_total: '【合計金額】{0}',
     event_payment: '【支払い方法】{0}',
     cancel_order: '参加注文をキャンセルする',
@@ -643,7 +647,7 @@ export default {
     注文期限内であれば `,
     orders_link: '注文履歴',
     desc_after:
-      ' にてご自身でキャンセルを行うことができます。注文期限後、キャンセルはできませんのでご了承ください。<br />決済手数料は返金されません。',
+      ' にてご自身でキャンセルを行うことができます。注文期限後、キャンセルはできませんのでご了承ください。<br />決済手数料（最低110円・最大330円）は返金されません。金額はカートと注文履歴に表示します。',
   },
   letter_status: {
     draft: '下書き',
@@ -1072,8 +1076,8 @@ export default {
       <b>【お支払い期限】翌月末日</b><br />
       <b>【請求書払い手数料】注文金額の10%</b><br />
       ※2025年11月1日以降のイベント開催分より、「請求書払い手数料」を加算してご請求させていただきます。<br />
-      ※参加者による事前のオンライン決済の場合は、手数料は発生しません。<br />
-      ※詳細は、<a href="https://docs.google.com/presentation/d/1rCoJlhzoPE9pOAYHYGxWimAOc1hVi0slJMp_-HhjqbE/edit#slide=id.g353224adc3a_0_0" target="_blank">支払い設定について</a> をご確認ください。`,
+      ※請求書払い手数料は主催者への請求です。参加者が事前にクレジットカード等で支払う場合は、参加者に決済手数料がかかり、主催者への請求書払い手数料は発生しません。<br />
+      ※詳細は、<a href="https://docs.google.com/presentation/d/1rCoJlhzoPE9pOAYHYGxWimAOc1hVi0slJMp_-HhjqbE/edit#slide=id.g353224adc3a_0_0" target="_blank" rel="noopener noreferrer">支払い設定について</a> をご確認ください。`,
     },
     slack: {
       description: `<b>shokujii の SlackApp を追加</b>すると<br/>

@@ -1048,6 +1048,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                     ¥{{ priceString(checkoutTotalForItem(cartItem)) }}
                   </span>
                 </div>
+                <p class="text-caption text-medium-emphasis mt-2 mb-0">{{ $t('cart.payment_fee_note') }}</p>
               </template>
               <div v-if="cartItem.totalPrice === 0" class="mt-3">
                 <v-alert variant="tonal" color="success" density="compact" class="mb-0 cart-subsidy-summary-alert">
@@ -1096,6 +1097,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                 priceString(checkoutTotalForItem(cartItem))
               }}</span>
             </div>
+            <p class="text-caption text-medium-emphasis mt-2 mb-0">{{ $t('cart.payment_fee_note') }}</p>
           </template>
           <template v-else>
             <span class="text-right ma-2 text-h6">{{ $t('cart.total') }}</span>

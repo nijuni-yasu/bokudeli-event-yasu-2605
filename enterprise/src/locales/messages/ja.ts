@@ -856,8 +856,8 @@ export default {
       <b>【お支払い期限】翌月末日</b><br />
       <b>【請求書払い手数料】注文金額の10%</b><br />
       ※2025年11月1日以降のイベント開催分より、「請求書払い手数料」を加算してご請求させていただきます。<br />
-      ※参加者による事前のオンライン決済の場合は、手数料は発生しません。<br />
-      ※詳細は、<a href="https://docs.google.com/presentation/d/1rCoJlhzoPE9pOAYHYGxWimAOc1hVi0slJMp_-HhjqbE/edit#slide=id.g353224adc3a_0_0" target="_blank">支払い設定について</a> をご確認ください。`,
+      ※請求書払い手数料は主催者への請求です。参加者が事前にクレジットカード等で支払う場合は、参加者に決済手数料がかかり、主催者への請求書払い手数料は発生しません。<br />
+      ※詳細は、<a href="https://docs.google.com/presentation/d/1rCoJlhzoPE9pOAYHYGxWimAOc1hVi0slJMp_-HhjqbE/edit#slide=id.g353224adc3a_0_0" target="_blank" rel="noopener noreferrer">支払い設定について</a> をご確認ください。`,
     },
     flyer: {
       title: 'QRコード付きのチラシを印刷して、告知・集客に役立てよう！',
