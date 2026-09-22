@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { eventStatusTicketTone, orderStatusTicketTone } from './statusColors'
+import { eventStatusTicketTone, invoicePaymentTicketTone, orderStatusTicketTone } from './statusColors'
 
 describe('eventStatusTicketTone', () => {
   it('受付中は live、超過系は warn、キャンセルは danger', () => {
@@ -9,6 +9,14 @@ describe('eventStatusTicketTone', () => {
     expect(eventStatusTicketTone('event_canceled')).toBe('danger')
     expect(eventStatusTicketTone('finished')).toBe('muted')
     expect(eventStatusTicketTone('in_draft')).toBe('ink')
+  })
+})
+
+describe('invoicePaymentTicketTone', () => {
+  it('支払い済みは live、未払いは warn、未確認は pending', () => {
+    expect(invoicePaymentTicketTone('paid')).toBe('live')
+    expect(invoicePaymentTicketTone('unpaid')).toBe('warn')
+    expect(invoicePaymentTicketTone('unconfirmed')).toBe('pending')
   })
 })
 

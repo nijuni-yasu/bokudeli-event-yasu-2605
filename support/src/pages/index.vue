@@ -94,10 +94,7 @@ const pendingCommunityStore = useCommunityListStore(
   { lightweight: true },
 )
 
-const pendingShopStore = useShopListStore(
-  [where('is_approved', '==', false), orderBy('createdAt', 'desc')],
-  QUEUE_SIZE,
-)
+const pendingShopStore = useShopListStore([where('is_approved', '==', false), orderBy('createdAt', 'desc')], QUEUE_SIZE)
 
 const applyingEventStore = useEventListStore(
   [where('event_status.value', '==', 'applying_reservation'), orderBy('event_start_datetime', 'desc')],
@@ -113,12 +110,8 @@ const acceptingEventStore = useEventListStore(
 
 const pendingCommunities = computed(() => pendingCommunityStore.communities)
 const pendingShops = computed(() => pendingShopStore.shops)
-const applyingEvents = computed(
-  () => applyingEventStore.eventStores?.flatMap((store) => store.event ?? []) ?? null,
-)
-const acceptingEvents = computed(
-  () => acceptingEventStore.eventStores?.flatMap((store) => store.event ?? []) ?? null,
-)
+const applyingEvents = computed(() => applyingEventStore.eventStores?.flatMap((store) => store.event ?? []) ?? null)
+const acceptingEvents = computed(() => acceptingEventStore.eventStores?.flatMap((store) => store.event ?? []) ?? null)
 
 const retryLoad = (key: SummaryKey): void => {
   counts[key] = null

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   getCommunitiesLocation,
   getEventsLocation,
+  getInvoicesLocation,
+  getInvoicesPath,
   getOrdersLocation,
   getShopsLocation,
   parseErrorCodeFromRoute,
@@ -44,6 +46,12 @@ describe('一覧 location', () => {
     expect(getOrdersLocation({ recentDays: 7 })).toEqual({
       path: '/orders',
       query: { recent: '7' },
+    })
+    expect(getInvoicesPath()).toBe('/invoices')
+    expect(getInvoicesLocation()).toEqual({ path: '/invoices', query: {} })
+    expect(getInvoicesLocation({ paymentStatus: 'unpaid' })).toEqual({
+      path: '/invoices',
+      query: { status: 'unpaid' },
     })
   })
 })

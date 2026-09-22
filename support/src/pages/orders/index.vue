@@ -44,7 +44,9 @@ const buildFilters = (): QueryConstraint[] => {
   return [orderBy('updated_at', 'desc')]
 }
 
-const storeId = computed(() => (isQueryFlagActive(route.query.recent, '7') ? 'support/orders/recent7' : 'support/orders'))
+const storeId = computed(() =>
+  isQueryFlagActive(route.query.recent, '7') ? 'support/orders/recent7' : 'support/orders',
+)
 
 const orderListStore = shallowRef<OrderListStore>(useOrderListStore(storeId.value, buildFilters(), PAGE_SIZE))
 
@@ -151,11 +153,7 @@ const selectedSummary = computed(() => {
 <template>
   <div class="support-page">
     <v-card class="support-sheet" elevation="0" rounded="0">
-      <SupportPageHeader
-        v-model:search="searchQuery"
-        :title="$t('orders.title')"
-        :showing-count="showingCount"
-      >
+      <SupportPageHeader v-model:search="searchQuery" :title="$t('orders.title')" :showing-count="showingCount">
         <template #filters>
           <SupportFilterChip
             :active="showRecentFilter"

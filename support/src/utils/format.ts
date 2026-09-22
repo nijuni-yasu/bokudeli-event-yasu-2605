@@ -43,5 +43,5 @@ export const summarizeRangeMinOrders = (
 
 export const userInitial = (name: string): string => {
   const trimmed = name.trim()
-  return trimmed === '' ? '?' : [...trimmed][0] ?? '?'
+  return trimmed === '' ? '?' : ([...trimmed][0] ?? '?')
 }

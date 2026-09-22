@@ -81,8 +81,7 @@ const showingCount = computed(() => {
 
 const displayName = (user: User): string => (user.user_name.trim() === '' ? '—' : user.user_name)
 
-const formatDeletedAt = (user: User): string =>
-  user.deleted_at == null ? '—' : convertToDatetime(user.deleted_at)
+const formatDeletedAt = (user: User): string => (user.deleted_at == null ? '—' : convertToDatetime(user.deleted_at))
 
 const setDeletedFilter = (active: boolean): void => {
   void router.replace({ query: withQueryFlag(route.query, 'is_deleted', 'true', active) })
@@ -142,19 +141,13 @@ const setDeletedFilter = (active: boolean): void => {
               <td class="text-end">{{ user.participated_event_count }}</td>
               <td class="support-table-col-nowrap">{{ convertToDatetime(user.created_at) }}</td>
               <td>
-                <SupportStatusTicket
-                  v-if="user.is_deleted"
-                  :label="$t('users.deleted')"
-                  tone="muted"
-                />
+                <SupportStatusTicket v-if="user.is_deleted" :label="$t('users.deleted')" tone="muted" />
                 <span v-else class="support-cell-sub">{{ $t('common.no') }}</span>
               </td>
             </tr>
             <tr v-if="filteredUsers != null && filteredUsers.length === 0">
               <td colspan="4" class="text-center py-6">
-                {{
-                  users != null && users.length > 0 ? $t('common.search_no_match') : $t('common.no_data')
-                }}
+                {{ users != null && users.length > 0 ? $t('common.search_no_match') : $t('common.no_data') }}
               </td>
             </tr>
           </tbody>

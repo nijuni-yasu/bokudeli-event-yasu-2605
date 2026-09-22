@@ -2,10 +2,16 @@
 import { orderBy, where, type QueryConstraint } from 'firebase/firestore'
 import { useEventListStore, type EventListStore } from '@shokujii/base/stores/eventList.js'
 import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
-import { countOrderedByEventId } from '@shokujii/base/stores/supportCounts.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { getEventUrl, getCommunityUrl } from '@/utils/urls'
-import { eventStatusTicketTone } from '@/utils/statusColors'
+import { getEventInvoicePayment } from '@shokujii/base/stores/eventInvoicePayment.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
+import {
+  INVOICE_PAYMENT_DOC_ID,
+  type CommunityBillPaymentStatusType,
+  type EventInvoicePayment,
+} from '@shokujii/common/schemas/EventInvoicePayment.js'
+import { eventStatusTicketTone, invoicePaymentTicketTone } from '@/utils/statusColors'
 import { matchesSearch } from '@/utils/search'
 import { formatRelativeJa, formatScheduleRange } from '@/utils/format'
 import { isQueryFlagActive, withQueryFlag } from '@/utils/queryFlag'
@@ -15,9 +21,15 @@ import SupportStatusTicket from '@/components/SupportStatusTicket.vue'
 import SupportDetailDrawer from '@/components/SupportDetailDrawer.vue'
 import SupportDetailField from '@/components/SupportDetailField.vue'
 import SupportExternalLink from '@/components/SupportExternalLink.vue'
-import { mdiAlertCircleOutline } from '@mdi/js'
+import SupportInvoicePaymentPanel from '@/components/SupportInvoicePaymentPanel.vue'
 
 const PAGE_SIZE = 30
+const PAYMENT_STATUS_FILTERS: CommunityBillPaymentStatusType[] = ['unconfirmed', 'unpaid', 'paid']
+const COMMUNITY_BILL_FILTERS: QueryConstraint[] = [
+  where('event_payment', '==', 'community_bill'),
+  orderBy('event_start_datetime', 'desc'),
+]
+
 const route = useRoute()
 const router = useRouter()
 
@@ -35,51 +47,32 @@ const drawerOpen = computed({
   },
 })
 
-type EventStatusFilter = 'accepting_order' | 'applying_reservation'
-
-const isEventStatusFilter = (value: unknown): value is EventStatusFilter =>
-  value === 'accepting_order' || value === 'applying_reservation'
-
-const buildFilters = (): QueryConstraint[] => {
-  const filters: QueryConstraint[] = [orderBy('event_start_datetime', 'desc')]
-  if (isEventStatusFilter(route.query.status)) {
-    filters.unshift(where('event_status.value', '==', route.query.status))
-  }
-  return filters
-}
-
-const eventListStoreKey = (): string =>
-  isEventStatusFilter(route.query.status) ? `support/events/${route.query.status}` : 'support/events'
+const isPaymentStatusFilter = (value: unknown): value is CommunityBillPaymentStatusType =>
+  value === 'unconfirmed' || value === 'unpaid' || value === 'paid'
 
 const eventListStore = shallowRef<EventListStore>(
-  useEventListStore(buildFilters(), PAGE_SIZE, { autoContinue: false, storeKey: eventListStoreKey() }),
+  useEventListStore(COMMUNITY_BILL_FILTERS, PAGE_SIZE, { autoContinue: false, storeKey: 'support/invoices' }),
 )
 
-/** イベントごとの注文済み件数。表示中の行だけ遅延ロードする。 */
-const orderedCounts = ref<Map<string, number>>(new Map())
-
-watch(
-  () => route.query.status,
-  () => {
-    orderedCounts.value = new Map()
-    eventListStore.value = useEventListStore(buildFilters(), PAGE_SIZE, {
-      autoContinue: false,
-      storeKey: eventListStoreKey(),
-    })
-  },
-)
-
-const showAcceptingFilter = computed(() => isQueryFlagActive(route.query.status, 'accepting_order'))
-const showApplyingFilter = computed(() => isQueryFlagActive(route.query.status, 'applying_reservation'))
+/** 請求書払いイベントの入金ドキュメント。未作成は null。 */
+const invoicePayments = ref<Map<string, EventInvoicePayment | null>>(new Map())
 
 const events = computed(() => eventListStore.value.eventStores?.flatMap((store) => store.event ?? []) ?? null)
+
+const paymentStatusFilter = computed(() => {
+  const value = route.query.status
+  return isPaymentStatusFilter(value) ? value : undefined
+})
+
+const invoicePaymentStatus = (eventId: string): CommunityBillPaymentStatusType =>
+  invoicePayments.value.get(eventId)?.status ?? 'unconfirmed'
 
 const filteredEvents = computed(() => {
   if (events.value == null) {
     return null
   }
-  return events.value.filter((event) =>
-    matchesSearch(
+  return events.value.filter((event) => {
+    const matched = matchesSearch(
       [
         event.event_name,
         event.community_name,
@@ -88,14 +81,27 @@ const filteredEvents = computed(() => {
         event.organizer_email,
         event.organizer_fullname,
         event.organizer_company,
+        event.bill_email,
       ],
       searchQuery.value,
-    ),
-  )
+    )
+    if (!matched) {
+      return false
+    }
+    const filter = paymentStatusFilter.value
+    if (filter == null) {
+      return true
+    }
+    if (!invoicePayments.value.has(event.event_id)) {
+      return false
+    }
+    return invoicePaymentStatus(event.event_id) === filter
+  })
 })
 
 const showingCount = computed(() => {
-  if (searchQuery.value.trim() === '' || filteredEvents.value == null) {
+  const filtering = searchQuery.value.trim() !== '' || paymentStatusFilter.value != null
+  if (!filtering || filteredEvents.value == null) {
     return null
   }
   return filteredEvents.value.length
@@ -107,51 +113,64 @@ watch(
     if (list == null) {
       return
     }
-    const unresolved = list.filter((event) => !orderedCounts.value.has(event.event_id))
+    const unresolved = list.filter((event) => !invoicePayments.value.has(event.event_id))
     if (unresolved.length === 0) {
       return
     }
     const results = await Promise.all(
       unresolved.map(async (event) => {
         try {
-          return [event.event_id, await countOrderedByEventId(event.event_id)] as const
+          const payment = await getEventInvoicePayment(event.community_id, event.event_id)
+          return [event.event_id, payment ?? null] as const
         } catch (error) {
           console.warn(error)
-          return null
+          reportClientError(error, {
+            componentInfo: 'invoices.index.loadPayment',
+            documentPath: `communities/${event.community_id}/events/${event.event_id}/invoice_payments/${INVOICE_PAYMENT_DOC_ID}`,
+            severity: 'warn',
+          })
+          return [event.event_id, null] as const
         }
       }),
     )
-    const next = new Map(orderedCounts.value)
+    const next = new Map(invoicePayments.value)
     for (const result of results) {
       if (result != null) {
         next.set(result[0], result[1])
       }
     }
-    orderedCounts.value = next
+    invoicePayments.value = next
   },
   { immediate: true },
 )
+
+const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment): void => {
+  if (selected.value == null) {
+    return
+  }
+  const next = new Map(invoicePayments.value)
+  next.set(selected.value.event_id, payment)
+  invoicePayments.value = next
+}
 
 const hasMore = computed(
   () => eventListStore.value.totalCount != null && (events.value?.length ?? 0) < eventListStore.value.totalCount,
 )
 
-const isOrderOverCapacity = (eventId: string, maxPeople: number): boolean => {
-  const count = orderedCounts.value.get(eventId)
-  return count != null && count > maxPeople
-}
-
 const rowClass = (event: BokudeliEvent): string[] => {
   const classes = ['support-row-clickable']
-  if (isOrderOverCapacity(event.event_id, event.event_max_people) || event.calculatedEventStatus === 'event_canceled') {
+  if (event.calculatedEventStatus === 'event_canceled') {
     classes.push('support-row--danger')
   }
   return classes
 }
 
-const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
+const setPaymentStatusFilter = (status: CommunityBillPaymentStatusType, active: boolean): void => {
   void router.replace({ query: withQueryFlag(route.query, 'status', status, active) })
 }
+
+const isPaymentStatusChipActive = (status: CommunityBillPaymentStatusType): boolean =>
+  isQueryFlagActive(route.query.status, status)
 </script>
 
 <template>
@@ -159,20 +178,17 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
     <v-card class="support-sheet" elevation="0" rounded="0">
       <SupportPageHeader
         v-model:search="searchQuery"
-        :title="$t('events.title')"
+        :title="$t('invoices.title')"
         :total-count="eventListStore.totalCount"
         :showing-count="showingCount"
       >
         <template #filters>
           <SupportFilterChip
-            :active="showAcceptingFilter"
-            :label="$t('filter.accepting_events')"
-            @update:active="(active) => setStatusFilter('accepting_order', active)"
-          />
-          <SupportFilterChip
-            :active="showApplyingFilter"
-            :label="$t('filter.applying_reservation')"
-            @update:active="(active) => setStatusFilter('applying_reservation', active)"
+            v-for="status in PAYMENT_STATUS_FILTERS"
+            :key="status"
+            :active="isPaymentStatusChipActive(status)"
+            :label="$t(`filter.invoice_${status}`)"
+            @update:active="(active) => setPaymentStatusFilter(status, active)"
           />
         </template>
       </SupportPageHeader>
@@ -183,7 +199,7 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
             <tr>
               <th>{{ $t('events.event_name') }}</th>
               <th>{{ $t('events.status') }}</th>
-              <th>{{ $t('events.order_status') }}</th>
+              <th>{{ $t('invoices.payment') }}</th>
               <th>{{ $t('events.schedule') }}</th>
               <th>{{ $t('events.deadline') }}</th>
               <th>{{ $t('events.shop_name') }}</th>
@@ -210,29 +226,11 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
                 />
               </td>
               <td>
-                <template v-if="orderedCounts.get(event.event_id) != null">
-                  <span
-                    :class="{
-                      'order-status-over': isOrderOverCapacity(event.event_id, event.event_max_people),
-                    }"
-                  >
-                    {{ orderedCounts.get(event.event_id) }} / {{ event.event_max_people }}
-                  </span>
-                  <v-tooltip
-                    v-if="isOrderOverCapacity(event.event_id, event.event_max_people)"
-                    :text="$t('events.order_status_over')"
-                  >
-                    <template #activator="{ props: tooltipProps }">
-                      <v-icon
-                        v-bind="tooltipProps"
-                        :icon="mdiAlertCircleOutline"
-                        size="16"
-                        color="error"
-                        class="ms-1"
-                      />
-                    </template>
-                  </v-tooltip>
-                </template>
+                <SupportStatusTicket
+                  v-if="invoicePayments.has(event.event_id)"
+                  :label="$t(`invoice_payment_status.${invoicePaymentStatus(event.event_id)}`)"
+                  :tone="invoicePaymentTicketTone(invoicePaymentStatus(event.event_id))"
+                />
                 <v-progress-circular v-else indeterminate size="16" width="2" />
               </td>
               <td class="support-table-col-nowrap">
@@ -264,7 +262,7 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
       </v-card-actions>
     </v-card>
 
-    <SupportDetailDrawer v-model="drawerOpen" :title="selected?.event_name ?? $t('events.title')">
+    <SupportDetailDrawer v-model="drawerOpen" :title="selected?.event_name ?? $t('invoices.title')">
       <dl v-if="selected != null" class="support-detail-list">
         <SupportDetailField :label="$t('events.status')">
           <SupportStatusTicket
@@ -285,6 +283,7 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
         <SupportDetailField :label="$t('events.payment')">
           {{ $t(`payment.${selected.event_payment}`) }}
         </SupportDetailField>
+        <SupportInvoicePaymentPanel :event="selected" @updated="onDrawerInvoicePaymentUpdated" />
         <SupportDetailField :label="$t('events.visibility')">
           {{ selected.is_public ? $t('communities.is_public_on') : $t('communities.is_public_off') }}
         </SupportDetailField>

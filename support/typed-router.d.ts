@@ -22,6 +22,7 @@ declare module 'vue-router/auto-routes' {
     '/[[...error]]': RouteRecordInfo<'/[[...error]]', '/:error(.*)?', { error?: ParamValueZeroOrOne<true> }, { error?: ParamValueZeroOrOne<false> }>,
     '/communities/': RouteRecordInfo<'/communities/', '/communities', Record<never, never>, Record<never, never>>,
     '/events/': RouteRecordInfo<'/events/', '/events', Record<never, never>, Record<never, never>>,
+    '/invoices/': RouteRecordInfo<'/invoices/', '/invoices', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/maintenance': RouteRecordInfo<'/maintenance', '/maintenance', Record<never, never>, Record<never, never>>,
     '/orders/': RouteRecordInfo<'/orders/', '/orders', Record<never, never>, Record<never, never>>,

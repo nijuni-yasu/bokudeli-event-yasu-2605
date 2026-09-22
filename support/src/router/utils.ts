@@ -1,4 +1,5 @@
 import type { RouteLocationRaw } from 'vue-router'
+import type { CommunityBillPaymentStatusType } from '@shokujii/common/schemas/EventInvoicePayment.js'
 
 export type PassCodeMode = 'login'
 
@@ -18,6 +19,15 @@ export const getEventsLocation = (options?: {
         : {}
   return { path: '/events', query }
 }
+
+export const getInvoicesPath = (): string => '/invoices'
+
+export const getInvoicesLocation = (options?: {
+  paymentStatus?: CommunityBillPaymentStatusType
+}): RouteLocationRaw => ({
+  path: getInvoicesPath(),
+  query: options?.paymentStatus != null ? { status: options.paymentStatus } : {},
+})
 
 export const getCommunitiesLocation = (options?: { pendingApproval?: boolean }): RouteLocationRaw => ({
   path: '/communities',

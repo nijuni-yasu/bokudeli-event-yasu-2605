@@ -16,4 +16,10 @@ describe('withQueryFlag', () => {
       other: '1',
     })
   })
+
+  it('同一キーの入金ステータスは置き換え、再クリックで消す', () => {
+    expect(withQueryFlag({ status: 'unconfirmed' }, 'status', 'unpaid', true)).toEqual({ status: 'unpaid' })
+    expect(withQueryFlag({ status: 'unpaid' }, 'status', 'paid', true)).toEqual({ status: 'paid' })
+    expect(withQueryFlag({ status: 'unpaid', other: '1' }, 'status', 'unpaid', false)).toEqual({ other: '1' })
+  })
 })

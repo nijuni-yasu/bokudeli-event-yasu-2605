@@ -3,6 +3,7 @@ import {
   getCommunitiesLocation,
   getDashboardLocation,
   getEventsLocation,
+  getInvoicesLocation,
   getOrdersLocation,
   getShopsLocation,
   getUsersLocation,
@@ -10,6 +11,7 @@ import {
 import {
   mdiViewDashboardOutline,
   mdiCalendar,
+  mdiReceiptTextOutline,
   mdiAccountGroup,
   mdiStorefrontOutline,
   mdiCart,
@@ -28,6 +30,11 @@ export const useNavItems = (): HorizontalNavItems | VerticalNavItems => {
       title: $t('navigation.events'),
       to: getEventsLocation(),
       icon: { icon: mdiCalendar },
+    },
+    {
+      title: $t('navigation.invoices'),
+      to: getInvoicesLocation(),
+      icon: { icon: mdiReceiptTextOutline },
     },
     {
       title: $t('navigation.communities'),
