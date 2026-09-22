@@ -25,6 +25,11 @@ export type EventListStoreOptions = {
    * manage イベント一覧グリッドなど、IncrementalLoader のビューポート判定に依存しない全件読み込み向け。
    */
   autoContinue?: boolean
+  /**
+   * Pinia store ID の一部。QueryConstraint の JSON.stringify は type しか残らず、
+   * 別クエリ同士が衝突することがあるため、画面固有の一覧では明示する。
+   */
+  storeKey?: string
 }
 
 export const useEventListStore = (
@@ -32,7 +37,13 @@ export const useEventListStore = (
   pageSize: number = 3,
   options: EventListStoreOptions = {},
 ) => {
-  const store = defineStore(filters == null ? 'eventList' : `eventList/${JSON.stringify(filters)}/${pageSize}`, () => {
+  const storeId =
+    options.storeKey != null
+      ? `eventList/${options.storeKey}/${pageSize}`
+      : filters == null
+        ? 'eventList'
+        : `eventList/${JSON.stringify(filters)}/${pageSize}`
+  const store = defineStore(storeId, () => {
     const paginationExecutor = new TaskExecutor(1)
     const eventStores = ref<EventStore[] | null>(null)
     const totalCount = ref<number | null>(null)
