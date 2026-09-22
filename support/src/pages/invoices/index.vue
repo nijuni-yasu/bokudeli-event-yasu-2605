@@ -144,12 +144,9 @@ watch(
   { immediate: true },
 )
 
-const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment): void => {
-  if (selected.value == null) {
-    return
-  }
+const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment, eventId: string): void => {
   const next = new Map(invoicePayments.value)
-  next.set(selected.value.event_id, payment)
+  next.set(eventId, payment)
   invoicePayments.value = next
 }
 

@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updated: [payment: EventInvoicePayment]
+  updated: [payment: EventInvoicePayment, eventId: string]
 }>()
 
 const { t: $t } = useI18n()
@@ -57,20 +57,34 @@ const reminderBlock = computed(() =>
 
 const reminderOnCooldown = computed(() => isInvoiceReminderOnCooldown(payment.value?.last_mail_sent_at, nowTick.value))
 
+const isCurrentEvent = (communityId: string, eventId: string): boolean =>
+  props.event.community_id === communityId && props.event.event_id === eventId
+
 const loadPayment = async (): Promise<void> => {
+  const communityId = props.event.community_id
+  const eventId = props.event.event_id
   loaded.value = false
   loadError.value = false
   try {
-    payment.value = await getEventInvoicePayment(props.event.community_id, props.event.event_id)
-    memoDraft.value = payment.value?.memo ?? ''
+    const next = await getEventInvoicePayment(communityId, eventId)
+    if (!isCurrentEvent(communityId, eventId)) {
+      return
+    }
+    payment.value = next
+    memoDraft.value = next?.memo ?? ''
   } catch (error) {
+    if (!isCurrentEvent(communityId, eventId)) {
+      return
+    }
     console.warn(error)
     reportClientError(error, { componentInfo: 'SupportInvoicePaymentPanel.loadPayment', severity: 'warn' })
     payment.value = undefined
     memoDraft.value = ''
     loadError.value = true
   } finally {
-    loaded.value = true
+    if (isCurrentEvent(communityId, eventId)) {
+      loaded.value = true
+    }
   }
 }
 
@@ -81,6 +95,8 @@ watch(
     statusDialogOpen.value = false
     reminderChecked.value = false
     pendingStatus.value = null
+    saving.value = false
+    sending.value = false
     void loadPayment()
   },
   { immediate: true },
@@ -94,19 +110,27 @@ const requireUid = (): string => {
   return uid
 }
 
-const persist = async (status: CommunityBillPaymentStatusType, memo: string): Promise<void> => {
-  if (loadError.value) {
+const persist = async (
+  communityId: string,
+  eventId: string,
+  status: CommunityBillPaymentStatusType,
+  memo: string,
+): Promise<void> => {
+  if (isCurrentEvent(communityId, eventId) && loadError.value) {
     return
   }
   saving.value = true
   try {
-    const next = await updateEventInvoicePaymentStatus(props.event.community_id, props.event.event_id, requireUid(), {
+    const next = await updateEventInvoicePaymentStatus(communityId, eventId, requireUid(), {
       status,
       memo,
     })
+    emit('updated', next, eventId)
+    if (!isCurrentEvent(communityId, eventId)) {
+      return
+    }
     payment.value = next
     memoDraft.value = next.memo ?? ''
-    emit('updated', next)
     if (notification != null) {
       notification.message = $t('common.updated')
       notification.color = 'success'
@@ -114,12 +138,14 @@ const persist = async (status: CommunityBillPaymentStatusType, memo: string): Pr
   } catch (error) {
     console.error(error)
     reportClientError(error, { componentInfo: 'SupportInvoicePaymentPanel.persist' })
-    if (notification != null) {
+    if (isCurrentEvent(communityId, eventId) && notification != null) {
       notification.message = $t('common.update_failed')
       notification.color = 'error'
     }
   } finally {
-    saving.value = false
+    if (isCurrentEvent(communityId, eventId)) {
+      saving.value = false
+    }
   }
 }
 
@@ -133,16 +159,19 @@ const requestStatusChange = (status: CommunityBillPaymentStatusType): void => {
 
 const confirmStatusChange = async (): Promise<void> => {
   const status = pendingStatus.value
+  const communityId = props.event.community_id
+  const eventId = props.event.event_id
+  const memo = memoDraft.value
   statusDialogOpen.value = false
   pendingStatus.value = null
   if (status == null) {
     return
   }
-  await persist(status, memoDraft.value)
+  await persist(communityId, eventId, status, memo)
 }
 
 const saveMemo = async (): Promise<void> => {
-  await persist(displayStatus.value, memoDraft.value)
+  await persist(props.event.community_id, props.event.event_id, displayStatus.value, memoDraft.value)
 }
 
 const openReminder = (): void => {
@@ -159,17 +188,27 @@ const sendReminder = async (): Promise<void> => {
   if (!reminderChecked.value || reminderOnCooldown.value || sending.value) {
     return
   }
+  const communityId = props.event.community_id
+  const eventId = props.event.event_id
   sending.value = true
   try {
     const result = await resendCommunityBillInvoiceMail({
-      communityId: props.event.community_id,
-      eventId: props.event.event_id,
+      communityId,
+      eventId,
     })
-    reminderOpen.value = false
-    await loadPayment()
-    if (payment.value != null) {
-      emit('updated', payment.value)
+    const recorded = await getEventInvoicePayment(communityId, eventId)
+    if (recorded != null) {
+      emit('updated', recorded, eventId)
     }
+    if (!isCurrentEvent(communityId, eventId)) {
+      return
+    }
+    reminderOpen.value = false
+    if (recorded != null) {
+      payment.value = recorded
+      memoDraft.value = recorded.memo ?? ''
+    }
+    nowTick.value = Date.now()
     if (notification != null) {
       notification.message = $t('invoices.reminder_sent', { email: result.data.to })
       notification.color = 'success'
@@ -177,12 +216,14 @@ const sendReminder = async (): Promise<void> => {
   } catch (error) {
     console.error(error)
     reportClientError(error, { componentInfo: 'SupportInvoicePaymentPanel.sendReminder' })
-    if (notification != null) {
+    if (isCurrentEvent(communityId, eventId) && notification != null) {
       notification.message = $t('invoices.reminder_failed')
       notification.color = 'error'
     }
   } finally {
-    sending.value = false
+    if (isCurrentEvent(communityId, eventId)) {
+      sending.value = false
+    }
   }
 }
 </script>
