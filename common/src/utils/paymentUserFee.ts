@@ -1,14 +1,22 @@
 /**
  * Stripe 実課金の自己負担額に対するユーザー決済手数料。
- * `MAX(110, FLOOR(自己負担 × 0.1, 100) × 1.1)` と同等。自己負担 0 以下は 0。
+ * `MIN(330, MAX(110, FLOOR(自己負担 × 0.1, 100) × 1.1))` と同等。自己負担 0 以下は 0。
  *
  * @see documents/01_マネタイズと決済/02_ユーザー決済手数料.md
  */
 import type { CommunityBillSettingsType, EventPaymentType } from '../schemas/Event.js'
 
+/** 1,000 円刻みの税込手数料単位（最低額でもある） */
+export const USER_PAYMENT_FEE_UNIT = 110
+/** 1 セッションあたりの手数料上限 */
+export const USER_PAYMENT_FEE_MAX = 330
+
 export function computeUserPaymentFeeFromSelfPay(selfPay: number): number {
   if (selfPay <= 0) return 0
-  return Math.max(110, Math.floor(selfPay / 1000) * 110)
+  return Math.min(
+    USER_PAYMENT_FEE_MAX,
+    Math.max(USER_PAYMENT_FEE_UNIT, Math.floor(selfPay / 1000) * USER_PAYMENT_FEE_UNIT),
+  )
 }
 
 export function computeCheckoutTotalFromSelfPay(selfPay: number): { selfPay: number; fee: number; total: number } {

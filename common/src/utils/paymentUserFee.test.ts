@@ -23,8 +23,10 @@ describe('computeUserPaymentFeeFromSelfPay', () => {
     expect(computeUserPaymentFeeFromSelfPay(1000)).toBe(110)
     expect(computeUserPaymentFeeFromSelfPay(1999)).toBe(110)
     expect(computeUserPaymentFeeFromSelfPay(2000)).toBe(220)
+    expect(computeUserPaymentFeeFromSelfPay(3000)).toBe(330)
     expect(computeUserPaymentFeeFromSelfPay(3500)).toBe(330)
-    expect(computeUserPaymentFeeFromSelfPay(10000)).toBe(1100)
+    expect(computeUserPaymentFeeFromSelfPay(4000)).toBe(330)
+    expect(computeUserPaymentFeeFromSelfPay(10000)).toBe(330)
   })
 })
 
