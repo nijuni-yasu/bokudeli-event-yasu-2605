@@ -101,6 +101,12 @@ vi.mock('./utils/recountUserProfileCounts.js', () => ({
   recountUserProfileCountsForUsers: (...args: unknown[]) => recountUserProfileCountsForUsersMock(...args),
 }))
 
+const deleteChatUnreadMailStateMock = vi.fn()
+
+vi.mock('./stores/chatUnreadMailState.js', () => ({
+  deleteChatUnreadMailState: (...args: unknown[]) => deleteChatUnreadMailStateMock(...args),
+}))
+
 vi.mock('./stores/chatMembership.js', () => ({
   listChatMembershipsForUser: (...args: unknown[]) => listChatMembershipsForUserMock(...args),
   getChatMembershipRef: vi.fn(() => ({ path: 'users/uid/chat_memberships/room1' })),
@@ -149,6 +155,7 @@ beforeEach(() => {
   listFriendUserIdsMock.mockReset()
   recountUserProfileCountsForUsersMock.mockReset()
   listChatMembershipsForUserMock.mockReset()
+  deleteChatUnreadMailStateMock.mockReset()
   batchCommitMock.mockReset()
   batchUpdateMock.mockReset()
   batchSetMock.mockReset()
@@ -173,6 +180,7 @@ beforeEach(() => {
   listFriendUserIdsMock.mockResolvedValue(['userA', 'userC'])
   recountUserProfileCountsForUsersMock.mockResolvedValue(undefined)
   listChatMembershipsForUserMock.mockResolvedValue([])
+  deleteChatUnreadMailStateMock.mockResolvedValue(undefined)
   batchCommitMock.mockResolvedValue(undefined)
   chatRoomSnapshots.clear()
 })
@@ -186,6 +194,7 @@ describe('deleteUserAccount', () => {
     const result = await callDeleteUserAccount('userB')
 
     expect(result).toEqual({ success: true })
+    expect(deleteChatUnreadMailStateMock).toHaveBeenCalledWith('userB')
     expect(listFriendUserIdsMock).toHaveBeenCalledWith('userB')
     expect(recountUserProfileCountsForUsersMock).toHaveBeenCalledWith(['userA', 'userC'])
     expect(deleteUserMock).toHaveBeenCalledWith('userB')

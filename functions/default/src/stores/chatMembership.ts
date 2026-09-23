@@ -161,6 +161,30 @@ export const listChatMembershipsForUser = async (userId: string): Promise<ChatMe
   return snapshot.docs.map((doc) => doc.data())
 }
 
+export type UnreadChatMembershipRow = {
+  userId: string
+  membership: ChatMembership
+}
+
+export const listActiveUnreadChatMemberships = async (): Promise<UnreadChatMembershipRow[]> => {
+  const snapshot = await getFirestore()
+    .collectionGroup('chat_memberships')
+    .where('is_active', '==', true)
+    .where('unread_count', '>', 0)
+    .withConverter(new ChatMembershipConverter())
+    .get()
+
+  const rows: UnreadChatMembershipRow[] = []
+  for (const doc of snapshot.docs) {
+    const userId = doc.ref.parent.parent?.id
+    if (userId == null || userId === '') {
+      continue
+    }
+    rows.push({ userId, membership: doc.data() })
+  }
+  return rows
+}
+
 export const updateMembershipLastMessage = (
   membership: ChatMembership,
   params: { preview: string; lastMessageAt: number },

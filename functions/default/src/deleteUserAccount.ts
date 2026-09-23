@@ -12,6 +12,7 @@ import { listFriendUserIds } from './stores/userFriend.js'
 import { anonymizeUser, anonymizeUserPersonalInformation, getUserPersonalInformation } from './stores/user.js'
 import { recountUserProfileCountsForUsers } from './utils/recountUserProfileCounts.js'
 import { listChatMembershipsForUser, getChatMembershipRef } from './stores/chatMembership.js'
+import { deleteChatUnreadMailState } from './stores/chatUnreadMailState.js'
 import { batchRemoveMemberFromChatRoom, getChatRoomRef } from './stores/chatRoom.js'
 
 const db = getFirestore()
@@ -19,6 +20,7 @@ const logger = createModuleLogger('deleteUserAccount')
 const FIRESTORE_BATCH_LIMIT = 500
 
 const cleanupUserChatData = async (uid: string): Promise<void> => {
+  await deleteChatUnreadMailState(uid)
   const memberships = await listChatMembershipsForUser(uid)
   if (memberships.length === 0) {
     return
