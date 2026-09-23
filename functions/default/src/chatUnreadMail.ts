@@ -29,8 +29,15 @@ const logger = createModuleLogger('chatUnreadMail')
 /** SendGrid 採番前のプレースホルダ。実送信前に差し替える */
 export const CHAT_UNREAD_MAIL_TEMPLATE_ID = 'd-pending-chat-unread'
 
+/** コンソールでグループ作成後に差し替える。0 のあいだは送らない */
+export const CHAT_UNREAD_MAIL_ASM_GROUP_ID = 0
+
 export const isChatUnreadMailTemplateConfigured = (): boolean => {
   return CHAT_UNREAD_MAIL_TEMPLATE_ID.startsWith('d-') && !CHAT_UNREAD_MAIL_TEMPLATE_ID.includes('pending')
+}
+
+export const isChatUnreadMailDeliveryConfigured = (): boolean => {
+  return isChatUnreadMailTemplateConfigured() && CHAT_UNREAD_MAIL_ASM_GROUP_ID > 0
 }
 
 const groupMembershipsByUserId = (
@@ -139,6 +146,7 @@ const sendChatUnreadMailToUser = async (
       templateId: CHAT_UNREAD_MAIL_TEMPLATE_ID,
       subject: buildChatUnreadMailSubject(sorted.length, firstRoomName),
       dynamicTemplateData,
+      ...(CHAT_UNREAD_MAIL_ASM_GROUP_ID > 0 ? { asm: { groupId: CHAT_UNREAD_MAIL_ASM_GROUP_ID } } : {}),
     })
   } catch (error) {
     logger.error('Failed to send chat unread mail', {
@@ -165,7 +173,15 @@ export const sendChatUnreadMails = async (nowMillis: number): Promise<void> => {
   const grouped = groupMembershipsByUserId(rows)
   const results = await Promise.allSettled(
     [...grouped.entries()].map(async ([userId, memberships]) => {
-      return sendChatUnreadMailToUser(userId, memberships, nowMillis)
+      try {
+        return await sendChatUnreadMailToUser(userId, memberships, nowMillis)
+      } catch (error) {
+        logger.error('Failed to send chat unread mail', {
+          userId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        return 'failed'
+      }
     }),
   )
 
@@ -211,10 +227,11 @@ export const chatUnreadMail = onSchedule(
     secrets: ['SENDGRID_API_KEY'],
     memory: '1GiB',
     timeoutSeconds: 540,
+    maxInstances: 1,
   },
   async (event) => {
-    if (!isChatUnreadMailTemplateConfigured()) {
-      logger.warn('Chat unread mail template id is not configured')
+    if (!isChatUnreadMailDeliveryConfigured()) {
+      logger.warn('Chat unread mail delivery is not configured')
       return
     }
     const nowMillis = DateTime.fromISO(event.scheduleTime, { zone: CHAT_UNREAD_MAIL_TIME_ZONE }).toMillis()
