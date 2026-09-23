@@ -39,6 +39,20 @@ const reminderChecked = ref(false)
 const pendingStatus = ref<CommunityBillPaymentStatusType | null>(null)
 const statusDialogOpen = ref(false)
 const nowTick = ref(Date.now())
+const REMINDER_NOW_TICK_MS = 30_000
+let nowTickTimer: ReturnType<typeof setInterval> | undefined
+
+onMounted(() => {
+  nowTickTimer = setInterval(() => {
+    nowTick.value = Date.now()
+  }, REMINDER_NOW_TICK_MS)
+})
+
+onUnmounted(() => {
+  if (nowTickTimer != null) {
+    clearInterval(nowTickTimer)
+  }
+})
 
 const displayStatus = computed<CommunityBillPaymentStatusType>(() => payment.value?.status ?? 'unconfirmed')
 
@@ -196,22 +210,33 @@ const sendReminder = async (): Promise<void> => {
       communityId,
       eventId,
     })
-    const recorded = await getEventInvoicePayment(communityId, eventId)
-    if (recorded != null) {
-      emit('updated', recorded, eventId)
+    if (isCurrentEvent(communityId, eventId)) {
+      reminderOpen.value = false
+      nowTick.value = Date.now()
+      if (notification != null) {
+        notification.message = $t('invoices.reminder_sent', { email: result.data.to })
+        notification.color = 'success'
+      }
     }
-    if (!isCurrentEvent(communityId, eventId)) {
-      return
-    }
-    reminderOpen.value = false
-    if (recorded != null) {
-      payment.value = recorded
-      memoDraft.value = recorded.memo ?? ''
-    }
-    nowTick.value = Date.now()
-    if (notification != null) {
-      notification.message = $t('invoices.reminder_sent', { email: result.data.to })
-      notification.color = 'success'
+    try {
+      const recorded = await getEventInvoicePayment(communityId, eventId)
+      if (recorded != null) {
+        emit('updated', recorded, eventId)
+        if (isCurrentEvent(communityId, eventId)) {
+          payment.value = recorded
+          memoDraft.value = recorded.memo ?? ''
+        }
+      }
+    } catch (refreshError) {
+      console.warn(refreshError)
+      reportClientError(refreshError, {
+        componentInfo: 'SupportInvoicePaymentPanel.sendReminder.refresh',
+        severity: 'warn',
+      })
+      if (isCurrentEvent(communityId, eventId) && notification != null) {
+        notification.message = $t('common.update_failed')
+        notification.color = 'error'
+      }
     }
   } catch (error) {
     console.error(error)

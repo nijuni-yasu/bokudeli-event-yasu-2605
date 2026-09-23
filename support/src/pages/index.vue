@@ -99,13 +99,13 @@ const pendingShopStore = useShopListStore([where('is_approved', '==', false), or
 const applyingEventStore = useEventListStore(
   [where('event_status.value', '==', 'applying_reservation'), orderBy('event_start_datetime', 'desc')],
   QUEUE_SIZE,
-  { autoContinue: false },
+  { autoContinue: false, storeKey: 'support/dashboard/applying' },
 )
 
 const acceptingEventStore = useEventListStore(
   [where('event_status.value', '==', 'accepting_order'), orderBy('event_start_datetime', 'desc')],
   QUEUE_SIZE,
-  { autoContinue: false },
+  { autoContinue: false, storeKey: 'support/dashboard/accepting' },
 )
 
 const pendingCommunities = computed(() => pendingCommunityStore.communities)

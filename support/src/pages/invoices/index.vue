@@ -54,8 +54,9 @@ const eventListStore = shallowRef<EventListStore>(
   useEventListStore(COMMUNITY_BILL_FILTERS, PAGE_SIZE, { autoContinue: false, storeKey: 'support/invoices' }),
 )
 
-/** 請求書払いイベントの入金ドキュメント。未作成は null。 */
+/** 請求書払いイベントの入金ドキュメント。未作成は null。取得失敗は loadErrors。 */
 const invoicePayments = ref<Map<string, EventInvoicePayment | null>>(new Map())
+const invoicePaymentLoadErrors = ref(new Set<string>())
 
 const events = computed(() => eventListStore.value.eventStores?.flatMap((store) => store.event ?? []) ?? null)
 
@@ -92,6 +93,9 @@ const filteredEvents = computed(() => {
     if (filter == null) {
       return true
     }
+    if (invoicePaymentLoadErrors.value.has(event.event_id)) {
+      return false
+    }
     if (!invoicePayments.value.has(event.event_id)) {
       return false
     }
@@ -107,47 +111,69 @@ const showingCount = computed(() => {
   return filteredEvents.value.length
 })
 
+const loadInvoicePayments = async (targets: BokudeliEvent[]): Promise<void> => {
+  if (targets.length === 0) {
+    return
+  }
+  const results = await Promise.all(
+    targets.map(async (event) => {
+      try {
+        const payment = await getEventInvoicePayment(event.community_id, event.event_id)
+        return { eventId: event.event_id, payment: payment ?? null, error: false }
+      } catch (error) {
+        console.warn(error)
+        reportClientError(error, {
+          componentInfo: 'invoices.index.loadPayment',
+          documentPath: `communities/${event.community_id}/events/${event.event_id}/invoice_payments/${INVOICE_PAYMENT_DOC_ID}`,
+          severity: 'warn',
+        })
+        return { eventId: event.event_id, payment: null, error: true }
+      }
+    }),
+  )
+  const next = new Map(invoicePayments.value)
+  const nextErrors = new Set(invoicePaymentLoadErrors.value)
+  for (const result of results) {
+    if (result.error) {
+      nextErrors.add(result.eventId)
+      next.set(result.eventId, null)
+      continue
+    }
+    nextErrors.delete(result.eventId)
+    next.set(result.eventId, result.payment)
+  }
+  invoicePaymentLoadErrors.value = nextErrors
+  invoicePayments.value = next
+}
+
 watch(
   events,
-  async (list) => {
+  (list) => {
     if (list == null) {
       return
     }
-    const unresolved = list.filter((event) => !invoicePayments.value.has(event.event_id))
-    if (unresolved.length === 0) {
-      return
-    }
-    const results = await Promise.all(
-      unresolved.map(async (event) => {
-        try {
-          const payment = await getEventInvoicePayment(event.community_id, event.event_id)
-          return [event.event_id, payment ?? null] as const
-        } catch (error) {
-          console.warn(error)
-          reportClientError(error, {
-            componentInfo: 'invoices.index.loadPayment',
-            documentPath: `communities/${event.community_id}/events/${event.event_id}/invoice_payments/${INVOICE_PAYMENT_DOC_ID}`,
-            severity: 'warn',
-          })
-          return [event.event_id, null] as const
-        }
-      }),
-    )
-    const next = new Map(invoicePayments.value)
-    for (const result of results) {
-      if (result != null) {
-        next.set(result[0], result[1])
-      }
-    }
-    invoicePayments.value = next
+    void loadInvoicePayments(list.filter((event) => !invoicePayments.value.has(event.event_id)))
   },
   { immediate: true },
 )
+
+const retryInvoicePaymentLoad = (event: BokudeliEvent): void => {
+  const next = new Map(invoicePayments.value)
+  next.delete(event.event_id)
+  invoicePayments.value = next
+  const nextErrors = new Set(invoicePaymentLoadErrors.value)
+  nextErrors.delete(event.event_id)
+  invoicePaymentLoadErrors.value = nextErrors
+  void loadInvoicePayments([event])
+}
 
 const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment, eventId: string): void => {
   const next = new Map(invoicePayments.value)
   next.set(eventId, payment)
   invoicePayments.value = next
+  const nextErrors = new Set(invoicePaymentLoadErrors.value)
+  nextErrors.delete(eventId)
+  invoicePaymentLoadErrors.value = nextErrors
 }
 
 const hasMore = computed(
@@ -224,7 +250,13 @@ const isPaymentStatusChipActive = (status: CommunityBillPaymentStatusType): bool
               </td>
               <td>
                 <SupportStatusTicket
-                  v-if="invoicePayments.has(event.event_id)"
+                  v-if="invoicePaymentLoadErrors.has(event.event_id)"
+                  :label="$t('common.load_failed')"
+                  tone="danger"
+                  @click.stop="retryInvoicePaymentLoad(event)"
+                />
+                <SupportStatusTicket
+                  v-else-if="invoicePayments.has(event.event_id)"
                   :label="$t(`invoice_payment_status.${invoicePaymentStatus(event.event_id)}`)"
                   :tone="invoicePaymentTicketTone(invoicePaymentStatus(event.event_id))"
                 />
