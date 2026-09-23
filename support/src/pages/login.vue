@@ -4,6 +4,7 @@ import { requestEmailLogin } from '@shokujii/base/apis/user'
 import { useNotification } from '@shokujii/base/composable/notification'
 import { useValidators } from '@shokujii/base/composable/validators.js'
 import { getLastLoginProvider } from '@shokujii/base/utils/lastLoginProvider.js'
+import { setRedirectPath } from '@shokujii/base/utils/redirect'
 import AuthEntryLayout from '@/components/auth/AuthEntryLayout.vue'
 import { getPassCode } from '@/router/utils'
 
@@ -24,9 +25,21 @@ onMounted(() => {
   }
 })
 
+const persistLoginRedirect = (): void => {
+  const redirect = route.query.redirect
+  if (typeof redirect !== 'string' || !redirect.startsWith('/') || redirect.startsWith('//')) {
+    return
+  }
+  if (redirect === '/login' || redirect === '/pass-code' || redirect === '/maintenance') {
+    return
+  }
+  setRedirectPath(redirect)
+}
+
 const handleLogin = async () => {
   isLoading.value = true
   try {
+    persistLoginRedirect()
     await requestEmailLogin({ email: email.value })
     await router.push(getPassCode(email.value))
   } catch (error) {

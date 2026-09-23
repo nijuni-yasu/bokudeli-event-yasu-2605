@@ -131,6 +131,7 @@ const changeStatus = async (
   updating.value = new Set(updating.value).add(community.community_id)
   try {
     await updateCommunityStatus(community.community_id, status)
+    Object.assign(community, status)
     if (notification != null) {
       notification.message = $t('common.updated')
       notification.color = 'success'

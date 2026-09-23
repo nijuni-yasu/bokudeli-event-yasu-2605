@@ -115,6 +115,7 @@ const changeStatus = async (
   updating.value = new Set(updating.value).add(shop.shop_id)
   try {
     await updateShopStatus(shop.partner_id, shop.shop_id, status)
+    Object.assign(shop, status)
     if (notification != null) {
       notification.message = $t('common.updated')
       notification.color = 'success'
