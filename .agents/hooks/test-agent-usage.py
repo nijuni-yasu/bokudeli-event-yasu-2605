@@ -29,7 +29,7 @@ CURSOR_TURN = {
     "loop_count": 0,
 }
 
-# followup_min_jpy (100) 以上になるよう fresh input を多めにした payload
+# 高コスト相当の payload。followup を出さないことの回帰用
 CURSOR_TURN_HIGH_COST = {
     **CURSOR_TURN,
     "input_tokens": 600000,
@@ -163,23 +163,14 @@ def test_usd_to_jpy() -> None:
     assert lib.usd_to_jpy(None) is None
 
 
-def test_build_turn_usage_followup() -> None:
-    msg = lib.build_turn_usage_followup(CURSOR_TURN_HIGH_COST, platform="cursor")
-    assert msg is not None
-    assert msg.startswith(lib.USAGE_REPORT_PREFIX)
-    assert "input" in msg
-    assert "output" in msg
-    assert "¥" in msg
-    assert "応答・思考不要" in msg
-    assert "今回のトークン使用量" not in msg
+def test_process_stop_hook_records_without_followup() -> None:
+    with patch.object(lib, "record_turn_end") as mock_record:
+        result = lib.process_stop_hook(CURSOR_TURN_HIGH_COST, platform="cursor")
+        assert result == {}
+        mock_record.assert_called_once()
 
 
-def test_build_turn_usage_followup_below_threshold() -> None:
-    msg = lib.build_turn_usage_followup(CURSOR_TURN, platform="cursor")
-    assert msg is None
-
-
-def test_process_stop_hook_skips_usage_ack() -> None:
+def test_process_stop_hook_skips_usage_ack_followup() -> None:
     ack_payload = {
         **CURSOR_TURN_HIGH_COST,
         "prompt": f"{lib.USAGE_REPORT_PREFIX} input 1.0k、推定 ¥50（参考）。応答・思考不要。",
@@ -188,19 +179,6 @@ def test_process_stop_hook_skips_usage_ack() -> None:
         result = lib.process_stop_hook(ack_payload, platform="cursor")
         assert result == {}
         mock_record.assert_called_once()
-
-
-def test_process_stop_hook_emits_followup() -> None:
-    with patch.object(lib, "record_turn_end"):
-        result = lib.process_stop_hook(CURSOR_TURN_HIGH_COST, platform="cursor")
-        assert "followup_message" in result
-        assert result["followup_message"].startswith(lib.USAGE_REPORT_PREFIX)
-
-
-def test_process_stop_hook_skips_followup_below_threshold() -> None:
-    with patch.object(lib, "record_turn_end"):
-        result = lib.process_stop_hook(CURSOR_TURN, platform="cursor")
-        assert result == {}
 
 
 def test_usage_report_preserves_active_task() -> None:
@@ -221,34 +199,6 @@ def test_usage_report_preserves_active_task() -> None:
             assert after.get("task_skill") == before.get("task_skill")
             assert after.get("task_id") == before.get("task_id")
             assert after.get("phase") == before.get("phase")
-            assert after.get(lib.SKIP_NEXT_FOLLOWUP_KEY) is True
-
-
-def test_followup_resumes_after_usage_report_ack() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        active = Path(tmp) / "active.json"
-        with patch.object(lib, "ACTIVE_TASKS_PATH", active):
-            payload = {"conversation_id": "c-usage", "prompt": "/github-actions-deploy"}
-            lib.start_task(payload, platform="cursor", prompt=payload["prompt"])
-
-            report_prompt = {
-                "conversation_id": "c-usage",
-                "prompt": f"{lib.USAGE_REPORT_PREFIX} 推定 ¥10",
-            }
-            lib.record_task_start(report_prompt, platform="cursor")
-
-            with patch.object(lib, "record_turn_end"):
-                ack_turn = {**CURSOR_TURN, **report_prompt}
-                result = lib.process_stop_hook(ack_turn, platform="cursor")
-            assert result == {}
-            assert lib.get_active_task(payload).get(lib.SKIP_NEXT_FOLLOWUP_KEY) is None
-
-            with patch.object(lib, "record_turn_end"):
-                result = lib.process_stop_hook(
-                    {**CURSOR_TURN_HIGH_COST, "conversation_id": "c-usage"},
-                    platform="cursor",
-                )
-            assert "followup_message" in result
 
 
 def test_is_usage_report_prompt() -> None:
@@ -417,10 +367,7 @@ def test_hook_adapter_smoke() -> None:
         )
         assert proc.returncode == 0, proc.stderr
         out = json.loads(proc.stdout.strip() or "{}")
-        if adapter == CURSOR_ADAPTER:
-            assert "followup_message" in out
-        else:
-            assert out == {}
+        assert out == {}
 
 
 def main() -> int:
@@ -435,13 +382,9 @@ def main() -> int:
         test_detect_wake_deploy,
         test_estimate_cost,
         test_usd_to_jpy,
-        test_build_turn_usage_followup,
-        test_build_turn_usage_followup_below_threshold,
-        test_process_stop_hook_skips_usage_ack,
-        test_process_stop_hook_emits_followup,
-        test_process_stop_hook_skips_followup_below_threshold,
+        test_process_stop_hook_records_without_followup,
+        test_process_stop_hook_skips_usage_ack_followup,
         test_usage_report_preserves_active_task,
-        test_followup_resumes_after_usage_report_ack,
         test_is_usage_report_prompt,
         test_last_session_id_prefers_session_end,
         test_parse_since_invalid,

@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@shokujii/base/firebase.js'
 import { TaskExecutor } from '@shokujii/base/utils/executors.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import type { FirestoreDataConverter, DocumentData, SnapshotOptions } from 'firebase/firestore'
 
@@ -39,6 +40,7 @@ export const useOrderListStore = (storeId: string, filters: QueryConstraint[], p
     const paginationExecutor = new TaskExecutor(1)
     const orders = ref<{ order: EventMemberOrder; eventId: string }[] | null>(null)
     const hasMore = ref(true)
+    const loadError = ref(false)
 
     const ordersSnapshot: QueryDocumentSnapshot<EventMemberOrder>[] = []
 
@@ -67,6 +69,12 @@ export const useOrderListStore = (storeId: string, filters: QueryConstraint[], p
           })
         } catch (error) {
           console.error('Failed to fetch orders:', error)
+          reportClientError(error, { componentInfo: 'orderList', severity: 'error' })
+          loadError.value = true
+          hasMore.value = false
+          if (orders.value == null) {
+            orders.value = []
+          }
         }
       })
     }
@@ -75,6 +83,7 @@ export const useOrderListStore = (storeId: string, filters: QueryConstraint[], p
       ordersSnapshot.splice(0) // clear
       orders.value = null
       hasMore.value = true
+      loadError.value = false
       next()
     }
 
@@ -82,6 +91,7 @@ export const useOrderListStore = (storeId: string, filters: QueryConstraint[], p
 
     return {
       hasMore,
+      loadError,
       orders,
       reload,
       next,

@@ -34,7 +34,6 @@ SHELL_PHASE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 
 USAGE_REPORT_PREFIX = "[agent-usage-report]"
 SELF_REVIEW_FOLLOWUP_PREFIX = "[self-review]"
-SKIP_NEXT_FOLLOWUP_KEY = "skip_next_followup"
 SKIP_NEXT_SELF_REVIEW_GATE_KEY = "skip_next_self_review_gate"
 # Cursor beforeSubmitPrompt の composer_mode。Ask = chat
 READONLY_COMPOSER_MODES = frozenset({"chat"})
@@ -235,14 +234,6 @@ def should_skip_self_review_gate(
     return False, None
 
 
-def is_usage_report_ack_turn(payload: dict[str, Any], *, path: Path | None = None) -> bool:
-    """True when this turn should not emit another usage followup."""
-    if is_usage_report_prompt(prompt_from_payload(payload)):
-        return True
-    task = get_active_task(payload, path=path)
-    return bool(task.get(SKIP_NEXT_FOLLOWUP_KEY))
-
-
 def detect_task_from_prompt(prompt: str) -> tuple[str | None, str | None, str | None]:
     """Returns (task_skill, phase, wake_mode)."""
     text = prompt.strip()
@@ -428,18 +419,6 @@ def load_pricing(*, path: Path = PRICING_PATH) -> dict[str, Any]:
     return _read_json(path, {"default": {}, "models": {}})
 
 
-def followup_min_jpy(*, path: Path = PRICING_PATH) -> int | None:
-    """Minimum estimated JPY to emit stop-hook followup. None disables threshold."""
-    pricing = load_pricing(path=path)
-    val = pricing.get("followup_min_jpy")
-    if val is None:
-        return None
-    try:
-        return int(val)
-    except (TypeError, ValueError):
-        return None
-
-
 def estimate_cost_usd(tokens: dict[str, int | None], model_id: str | None) -> float | None:
     pricing = load_pricing()
     models = pricing.get("models", {})
@@ -555,35 +534,12 @@ def clear_active_task(session_id: str, *, path: Path | None = None) -> None:
     update_active_tasks(mutator, path=path)
 
 
-def clear_skip_next_followup(payload: dict[str, Any], *, path: Path | None = None) -> None:
-    key = session_key(payload)
-
-    def mutator(tasks: dict[str, dict[str, Any]]) -> None:
-        task = tasks.get(key)
-        if not task or SKIP_NEXT_FOLLOWUP_KEY not in task:
-            return None
-        del task[SKIP_NEXT_FOLLOWUP_KEY]
-        tasks[key] = task
-        return None
-
-    update_active_tasks(mutator, path=path)
-
-
 def record_task_start(payload: dict[str, Any], *, platform: str) -> None:
     prompt = prompt_from_payload(payload)
     persist_session_hook_meta(payload)
 
+    # 旧 followup や手動貼り付けが active task を上書きしないようにする
     if is_usage_report_prompt(prompt):
-        key = session_key(payload)
-
-        def mutator(tasks: dict[str, dict[str, Any]]) -> None:
-            task = tasks.get(key)
-            if task:
-                task[SKIP_NEXT_FOLLOWUP_KEY] = True
-                tasks[key] = task
-            return None
-
-        update_active_tasks(mutator)
         return
 
     skill, _, _ = detect_task_from_prompt(prompt)
@@ -725,72 +681,10 @@ def _format_usd(v: float | None) -> str:
     return f"${v:.2f}"
 
 
-def _format_jpy(v: float | None) -> str:
-    if v is None:
-        return "—"
-    return f"¥{v:,.0f}"
-
-
-def build_turn_usage_followup(payload: dict[str, Any], *, platform: str) -> str | None:
-    if platform == "cursor":
-        tokens = normalize_tokens_from_cursor(payload)
-    else:
-        tokens = normalize_tokens_from_claude(payload)
-
-    inp = tokens.get("input")
-    out = tokens.get("output")
-    if inp is None and out is None:
-        return None
-
-    model_id = resolve_model_id(payload)
-    cost_usd = estimate_cost_usd(tokens, model_id)
-    cost_jpy = usd_to_jpy(cost_usd)
-
-    parts: list[str] = []
-    if inp is not None:
-        parts.append(f"input {_format_tokens(inp)}")
-    fresh = tokens.get("fresh_input")
-    if fresh is not None and inp is not None and fresh != inp:
-        parts.append(f"fresh {_format_tokens(fresh)}")
-    if out is not None:
-        parts.append(f"output {_format_tokens(out)}")
-
-    cost_str = _format_jpy(cost_jpy) if cost_jpy is not None else _format_usd(cost_usd)
-    token_str = " / ".join(parts)
-
-    min_jpy = followup_min_jpy()
-    if min_jpy is not None:
-        threshold_jpy = cost_jpy if cost_jpy is not None else usd_to_jpy(cost_usd)
-        if threshold_jpy is None or threshold_jpy < min_jpy:
-            return None
-
-    return (
-        f"{USAGE_REPORT_PREFIX} {token_str}、"
-        f"推定 {cost_str}（参考）。応答・思考不要。"
-    )
-
-
 def process_stop_hook(payload: dict[str, Any], *, platform: str) -> dict[str, Any]:
-    """stop hook: ledger 記録 + Cursor 向け followup_message（必要時）。"""
-    skip_followup = is_usage_report_ack_turn(payload)
+    """stop hook: ledger 記録のみ。使用量 followup は出さない。"""
     record_turn_end(payload, platform=platform)
-
-    if skip_followup:
-        clear_skip_next_followup(payload)
-        return {}
-
-    status = str(payload.get("status") or payload.get("stop_reason") or "completed")
-    if status in ("aborted", "error"):
-        return {}
-
-    if platform != "cursor":
-        return {}
-
-    followup = build_turn_usage_followup(payload, platform=platform)
-    if not followup:
-        return {}
-
-    return {"followup_message": followup}
+    return {}
 
 
 def aggregate_entries(entries: list[dict[str, Any]]) -> dict[str, Any]:

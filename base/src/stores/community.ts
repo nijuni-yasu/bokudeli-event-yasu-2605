@@ -201,6 +201,21 @@ export const checkSoleManagerCommunity = async (userId: string): Promise<boolean
   })
 }
 
+/**
+ * コミュニティの公開設定・運営承認だけを更新する。運営管理画面（support）の一覧スイッチ用。
+ *
+ * `updateCommunity()` は converter 経由でドキュメント全体を書き戻すため、レガシーデータでは
+ * Zod バリデーションに落ちうる。スイッチ 2 項目の切り替えでは本関数を使うこと。
+ * Rules 上 `communities/{id}` の update は `isSupport()` またはコミュマネに限定されている。
+ */
+export const updateCommunityStatus = async (
+  communityId: string,
+  status: { is_public?: boolean; is_approved?: boolean },
+): Promise<void> => {
+  const communityRef = doc(db, 'communities', communityId).withConverter(communityConverter)
+  await updateDoc(communityRef, { ...status, updated_at: Timestamp.now() })
+}
+
 export type CommunityStore = ReturnType<typeof useCommunityStore>
 
 export async function resolveCommunityDocumentRef(

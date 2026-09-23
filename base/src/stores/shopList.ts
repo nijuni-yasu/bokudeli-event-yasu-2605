@@ -4,6 +4,7 @@ import {
   getDocs,
   getCountFromServer,
   startAfter,
+  limit,
   QueryConstraint,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore'
@@ -12,14 +13,22 @@ import { ref } from 'vue'
 import { db } from '@shokujii/base/firebase'
 import { shopConverter, type BokudeliPartnerShop } from '@shokujii/base/stores/partner.js'
 import { TaskExecutor } from '@shokujii/base/utils/executors'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
+
+const buildShopListStoreId = (filters: QueryConstraint[], pageSize?: number): string => {
+  const base = `shopList/${JSON.stringify(filters)}`
+  return pageSize == null ? base : `${base}/${pageSize}`
+}
 
 // EventEdit は Incremental search 向けに出来ていないので pageSize は一旦ペンディング
 // EventEdit そのものの構造を変更してからの方が効率的に実装できるはず
-export const useShopListStore = (filters: QueryConstraint[] /*, pageSize: number = 6*/) => {
-  const store = defineStore(`shopList/${JSON.stringify(filters)}` /*/${pageSize}`*/, () => {
+export const useShopListStore = (filters: QueryConstraint[], pageSize?: number) => {
+  const store = defineStore(buildShopListStoreId(filters, pageSize), () => {
     const paginationExecutor = new TaskExecutor(1)
-    const shops = ref<BokudeliPartnerShop[]>([])
+    const shops = ref<BokudeliPartnerShop[] | null>(null)
     const totalCount = ref<number | null>(null)
+    const hasMore = ref(pageSize != null)
+    const loadError = ref(false)
 
     const shopsSnapshot: QueryDocumentSnapshot<BokudeliPartnerShop>[] = []
 
@@ -39,9 +48,12 @@ export const useShopListStore = (filters: QueryConstraint[] /*, pageSize: number
             collectionGroup(db, 'shops'),
             ...filters,
             ...(lastVisibleDocument == null ? [] : [startAfter(lastVisibleDocument)]),
-            // limit(pageSize),
+            ...(pageSize == null ? [] : [limit(pageSize)]),
           ).withConverter(shopConverter)
           const querySnapshot = await getDocs(q)
+          if (pageSize != null && querySnapshot.docs.length < pageSize) {
+            hasMore.value = false
+          }
           shopsSnapshot.push(...querySnapshot.docs)
           shops.value = shopsSnapshot.flatMap((shopSnapshot) => {
             const shop = shopSnapshot.data()
@@ -49,14 +61,22 @@ export const useShopListStore = (filters: QueryConstraint[] /*, pageSize: number
           })
         } catch (error) {
           console.error('Failed to fetch shops:', error)
+          reportClientError(error, { componentInfo: 'shopList', severity: 'error' })
+          loadError.value = true
+          hasMore.value = false
+          if (shops.value == null) {
+            shops.value = []
+          }
         }
       })
     }
 
     const reload = () => {
       shopsSnapshot.splice(0) // clear
-      shops.value = []
+      shops.value = null
       totalCount.value = null
+      hasMore.value = pageSize != null
+      loadError.value = false
       next()
     }
 
@@ -65,6 +85,8 @@ export const useShopListStore = (filters: QueryConstraint[] /*, pageSize: number
     return {
       totalCount,
       shops,
+      hasMore,
+      loadError,
       reload,
       next,
     }

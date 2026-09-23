@@ -72,6 +72,7 @@ AIエージェント向けプロジェクトガイド。
 | **/user**              | 一般ユーザー向けアプリ       | Vue 3 + Vite + Vuetify 3                     |
 | **/partner**           | 飲食店向け管理画面           | Vue 3 + Vite + Vuetify 3                     |
 | **/enterprise**        | エンタープライズ向けアプリ   | Vue 3 + Vite + Vuetify 3                     |
+| **/support**           | 運営（サポーター）向け管理画面 | Vue 3 + Vite + Vuetify 3                   |
 | **/functions/default** | バックエンドロジック         | Firebase Functions v2 (Node 24) + TypeScript |
 | **/common**            | 共有コード             | TypeScript (Schema, Utils)                   |
 | **/base**              | 共有UIコンポーネント   | Vue 3 (Materio Template)                     |
@@ -80,7 +81,7 @@ AIエージェント向けプロジェクトガイド。
 
 | パス         | 概要                      |
 | :----------- | :------------------------ |
-| **/manager** | 運営向け管理画面 (Legacy) |
+| **/manager** | 運営向け管理画面 (Legacy)。Vue 3 で `/support` に再実装済み（#2087）。削除はフェーズ5 |
 
 Slack / LINE bot および旧 legacy Functions は `functions/default` に統合済み（#2060 Phase 2/3）。
 
@@ -140,7 +141,7 @@ npm -w <pkg> run format:check
 6. functions/default で Function を追加・修正する場合は、shokujii-functions-implementation を参照すること
 7. セッション開始時、`.agents/state/pr-review-pending-wake.json` に未処理 wake があれば [`wait-ai-pr-review`](.agents/skills/wait-ai-pr-review/SKILL.md) 手順 6 に従い evaluate 未処理をユーザーへ報告する。対象のレビュー記録ファイル（`review-<slug>.md` またはレガシー `pr-<n>.md`）に当該 `since` 以降の評価セッションが無い場合は auto evaluate 未完了として [`review-comments-evaluate`](.agents/skills/review-comments-evaluate/SKILL.md) auto モード（手順 4a・4 まで）の実行を提案する
 8. セッション開始時、`.agents/state/deploy-pending-wake.json` に未処理 wake（`consumed: false`）があれば **deploy 結果報告未処理**としてユーザーへ報告する。ユーザーが報告を依頼した場合は [`github-actions-deploy`](.agents/skills/github-actions-deploy/SKILL.md) を **mode=report** で完走する
-9. Agent 使用量の確認: Cursor 2.x 以降の stop hook は top-level の `input_tokens` 等を提供する環境では自動計上される。トークン未提供（`aborted`・旧版・CLI 等）の場合は ledger に `null` が記録され followup も出ない（Phase 1 制限）。payload にトークンが無い場合は `transcript_path` から Claude 互換 transcript の usage をフォールバック取得する。stop hook が推定 ¥100 以上のターンのみ `followup_message` で使用量を表示する（`[agent-usage-report]` プレフィックス。閾値は `.agents/config/agent-usage-pricing.json` の `followup_min_jpy`）。手動確認は `python3 .agents/scripts/agent_usage.py report --last-session` または `.agents/state/agent-usage/reports/` を参照（hook による推定値）
+9. Agent 使用量の確認: Cursor 2.x 以降の stop hook は top-level の `input_tokens` 等を提供する環境では自動計上される。トークン未提供（`aborted`・旧版・CLI 等）の場合は ledger に `null` が記録される（Phase 1 制限）。payload にトークンが無い場合は `transcript_path` から Claude 互換 transcript の usage をフォールバック取得する。チャットへの使用量 followup は出さない。手動確認は `python3 .agents/scripts/agent_usage.py report --last-session` または `.agents/state/agent-usage/reports/` を参照（hook による推定値）
 
 ## 作業完了前の必須手順（コード変更）
 
@@ -216,7 +217,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
   - 例: `[firebase] #1901 firestore.indexes.json の重複インデックスを削除`
   - 例: `[ai] #1800 分割コミットスキルに ci と firebase タグを追加`
   - 例: `[enterprise] #2071 カート月次 usage を enterprise 側から注入`
-  - 使用可能なタグ: `[user]` `[partner]` `[enterprise]` `[base]` `[common]` `[functions]` `[doc]` `[ci]` `[terraform]` `[firebase]` `[ai]`
+  - 使用可能なタグ: `[user]` `[partner]` `[enterprise]` `[support]` `[base]` `[common]` `[functions]` `[doc]` `[ci]` `[terraform]` `[firebase]` `[ai]`
   - [doc]: documents/ 内の更新のみ。[ci]: `.github/workflows/`。[terraform]: `terraform/`。[firebase]: `firebase.json` / `.firebaserc` / `firestore.rules` / `storage.rules` / `firestore.indexes.json`。[ai]: `.cursor` / `.agents` / `.claude` / `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md` 等の AI エージェント向け指示・設定
   - ルートの `package.json` / `package-lock.json` 等、上記タグに該当しないモノレポ横断設定は**接頭辞なし**（`#イシュー番号` と要約タイトルのみ）。PR タイトルも同様。手順・判定ルール・例は `/git-commit-message` と `/git-create-pull-request` スキルを参照。
 

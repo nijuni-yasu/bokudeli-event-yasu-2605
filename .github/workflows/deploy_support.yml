@@ -1,0 +1,81 @@
+name: Deploy support
+
+on:
+  push:
+    branches:
+      - development
+      - production
+    paths:
+      - 'support/**'
+      - 'base/**'
+      - 'common/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    # push のときだけ GITHUB_REF_NAME を使う（workflow_dispatch のときは inputs.environment を使う）
+    # 可読性に欠けるが、うまい手がみつからない
+    environment: ${{ github.event_name == 'push' && (github.ref_name == 'production' && 'production' || github.ref_name == 'development' && 'development') || inputs.environment }}
+    env:
+      # environment の値を動的に取得する方法がないため、再度 env に同じ値を設定する
+      # TODO Reusable workflow 等を使用して二重定義を解消する
+      ENVIRONMENT: ${{ github.event_name == 'push' && (github.ref_name == 'production' && 'production' || github.ref_name == 'development' && 'development') || inputs.environment }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ./.node-version
+          cache: 'npm'
+          cache-dependency-path: ./package-lock.json
+      - name: Install dependencies
+        run: |
+          npm ci
+      - name: Generate .env file
+        working-directory: ./support
+        run: |
+          echo '${{ vars.SUPPORT_ENV }}' | tr -d '\r' > .env
+      - name: Check Format
+        run: |
+          npm -w common run format:check
+          npm -w base run format:check
+          npm -w support run format:check
+      - name: Build
+        run: |
+          npm -w support run build
+      - name: Lint
+        run: |
+          npm -w common run lint
+          npm -w base run lint
+          npm -w support run lint
+      - name: Generate .firebaserc
+        run: |
+          echo '${{ vars.FIREBASERC }}' > .firebaserc
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCLOUD_SERVICE_KEY }}
+          project_id: ${{ vars.PROJECT_ID }}
+      - name: Deploy to Firebase
+        uses: ./.github/actions/deploy
+        with:
+          project_id: ${{ vars.PROJECT_ID }}
+          args: '--only hosting:support'

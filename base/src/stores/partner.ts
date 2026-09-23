@@ -65,6 +65,22 @@ const menuConverter: FirestoreDataConverter<BokudeliPartnerMenu> = {
 
 const db = getFirestore()
 
+/**
+ * 店舗の開店設定・運営承認だけを更新する。運営管理画面（support）の一覧スイッチ用。
+ *
+ * `updateShop()` は converter 経由でドキュメント全体を書き戻すため、レガシーデータでは
+ * Zod バリデーションに落ちうる。スイッチ 2 項目の切り替えでは本関数を使うこと。
+ * Rules 上 `partners/{id}/shops` の update は店舗本人または `isSupport()` に限定されている。
+ */
+export const updateShopStatus = async (
+  partnerId: string,
+  shopId: string,
+  status: { is_open?: boolean; is_approved?: boolean },
+): Promise<void> => {
+  const shopRef = doc(db, 'partners', partnerId, 'shops', shopId).withConverter(shopConverter)
+  await updateDoc(shopRef, { ...status, updatedAt: Timestamp.now() })
+}
+
 export type PartnerStore = ReturnType<typeof usePartnerStore>
 
 export const usePartnerStore = (partnerId: string) => {
