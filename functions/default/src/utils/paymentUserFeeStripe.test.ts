@@ -42,10 +42,10 @@ describe('Webhook EventStripe 金額', () => {
     expect(computeEventStripePayFields(0)).toEqual({ pay_amount: 0 })
   })
 
-  it('自己負担 10000 円は手数料上限 330 円', () => {
+  it('自己負担 10000 円は手数料上限 220 円', () => {
     expect(computeEventStripePayFields(10000)).toEqual({
-      pay_amount: 10330,
-      pay_user_fee_amount: 330,
+      pay_amount: 10220,
+      pay_user_fee_amount: 220,
     })
   })
 })
