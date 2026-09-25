@@ -4,6 +4,7 @@
 
 import type { CommunityBillSettingsType } from '../schemas/Event.js'
 import type { EventMemberOrder } from '../schemas/EventMemberOrder.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from './menuOption.js'
 
 /** 請求書 PDF の明細モード（documents/01_マネタイズと決済/03_無料参加・割引参加_請求書.md §1） */
 export type CommunityBillInvoiceMode = 'menu' | 'discount'
@@ -147,14 +148,15 @@ export interface InvoiceMenuItem {
 export function aggregateOrderMenus(orders: EventMemberOrder[]): InvoiceMenuItem[] {
   const menuMap = new Map<string, InvoiceMenuItem>()
   for (const order of orders) {
-    const existing = menuMap.get(order.menu_id)
+    const key = getOrderMenuGroupKey(order)
+    const existing = menuMap.get(key)
     if (existing != null) {
       existing.count++
       existing.totalPrice += order.menu_price
     } else {
-      menuMap.set(order.menu_id, {
+      menuMap.set(key, {
         menu_id: order.menu_id,
-        name: order.menu_name,
+        name: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
         price: order.menu_price,
         count: 1,
         totalPrice: order.menu_price,
@@ -210,8 +212,8 @@ export function groupOrderedCommunityBillOffByAmount(orders: EventMemberOrder[])
     if (o.status !== 'ordered') continue
     const amount = o.pay_community_bill_off_amount
     if (typeof amount !== 'number' || amount <= 0) continue
-    const menuName = o.menu_name
-    const key = `${amount}\u0000${menuName}`
+    const menuName = formatOrderMenuDisplayName(o.menu_name, o.selected_options)
+    const key = `${getOrderMenuGroupKey(o)}\u0000${amount}`
     const cur = groupMap.get(key) ?? { menuName, amountPerOrder: amount, orderCount: 0 }
     cur.orderCount += 1
     groupMap.set(key, cur)

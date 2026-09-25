@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import {
+  MenuAllergenListSchema,
+  MenuBadgeListSchema,
+  OptionIdListSchema,
+  type MenuAllergenType,
+  type MenuBadgeType,
+} from './menuOption.js'
 
 const PartnerMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
@@ -15,6 +22,11 @@ const PartnerMenuDbSchema = z.object({
   menu_date_end: TimestampSchema.nullable(),
   is_deleted: z.boolean().optional(),
   deleted_at: TimestampSchema.optional(),
+  option_ids: OptionIdListSchema.optional(),
+  allergens: MenuAllergenListSchema.optional(),
+  is_vegan: z.boolean().optional(),
+  is_halal: z.boolean().optional(),
+  badges: MenuBadgeListSchema.optional(),
 })
 
 const PartnerMenuAppSchema = z.object({
@@ -30,6 +42,11 @@ const PartnerMenuAppSchema = z.object({
   menu_date_end: EpochMillisSchema.nullable().default(null),
   is_deleted: z.boolean().default(false),
   deleted_at: EpochMillisSchema.optional(),
+  option_ids: OptionIdListSchema.default([]),
+  allergens: MenuAllergenListSchema.default([]),
+  is_vegan: z.boolean().default(false),
+  is_halal: z.boolean().default(false),
+  badges: MenuBadgeListSchema.default([]),
 })
 
 const convertToDb = (menu: PartnerMenu) => {
@@ -56,6 +73,11 @@ export class PartnerMenu {
   menu_date_end!: number | null
   is_deleted!: boolean
   deleted_at?: number
+  option_ids!: string[]
+  allergens!: MenuAllergenType[]
+  is_vegan!: boolean
+  is_halal!: boolean
+  badges!: MenuBadgeType[]
 
   constructor(partner_id: string, menu_id: string, src: Partial<PartnerMenu>) {
     Object.assign(this, PartnerMenuAppSchema.parse(src))

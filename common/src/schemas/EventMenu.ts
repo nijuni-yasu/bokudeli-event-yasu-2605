@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import {
+  EventMenuOptionSchema,
+  MenuAllergenListSchema,
+  MenuBadgeListSchema,
+  type MenuAllergenType,
+  type MenuBadgeType,
+} from './menuOption.js'
 
 const EventMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
@@ -11,6 +18,11 @@ const EventMenuDbSchema = z.object({
   menu_sort_number: z.number().int().nonnegative(),
   is_selected: z.boolean(),
   limit_per_event: LimitPerEventDbFieldSchema,
+  options: z.array(EventMenuOptionSchema).optional(),
+  allergens: MenuAllergenListSchema.optional(),
+  is_vegan: z.boolean().optional(),
+  is_halal: z.boolean().optional(),
+  badges: MenuBadgeListSchema.optional(),
 })
 
 const EventMenuAppSchema = z.object({
@@ -24,6 +36,11 @@ const EventMenuAppSchema = z.object({
   // Mandatory
   menu_sort_number: z.number().int().nonnegative(),
   limit_per_event: LimitPerEventAppFieldSchema,
+  options: z.array(EventMenuOptionSchema).default([]),
+  allergens: MenuAllergenListSchema.default([]),
+  is_vegan: z.boolean().default(false),
+  is_halal: z.boolean().default(false),
+  badges: MenuBadgeListSchema.default([]),
 })
 
 const convertToDb = (menu: EventMenu) => {
@@ -46,6 +63,11 @@ export class EventMenu {
   menu_sort_number!: number
   is_selected!: boolean
   limit_per_event!: number | null
+  options!: z.infer<typeof EventMenuOptionSchema>[]
+  allergens!: MenuAllergenType[]
+  is_vegan!: boolean
+  is_halal!: boolean
+  badges!: MenuBadgeType[]
 
   constructor(event_id: string, menu_id: string, src: Partial<EventMenu>) {
     Object.assign(this, EventMenuAppSchema.parse(src))

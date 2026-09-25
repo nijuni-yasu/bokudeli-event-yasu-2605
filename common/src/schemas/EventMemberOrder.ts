@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema, optionalDeleteField } from './firebase/index.js'
+import { SelectedOptionSchema } from './menuOption.js'
 
 const nowMillis = () => DateTime.now().toMillis()
 
@@ -98,6 +99,7 @@ const EventMemberOrderDbSchema = z.object({
   pay_community_bill_off_amount: z.number().int().nonnegative().optional(),
   enterprise_id: z.string().nonempty().nullable().optional(),
   pay_enterprise_subsidy_amount: z.number().int().nonnegative().optional(),
+  selected_options: z.array(SelectedOptionSchema).optional(),
 })
 
 const EventMemberOrderAppSchema = z.object({
@@ -121,6 +123,7 @@ const EventMemberOrderAppSchema = z.object({
   pay_community_bill_off_amount: z.number().int().nonnegative().optional(),
   enterprise_id: z.string().nonempty().nullable().optional(),
   pay_enterprise_subsidy_amount: z.number().int().nonnegative().optional(),
+  selected_options: z.array(SelectedOptionSchema).optional(),
 })
 
 const convertOrderToDb = (order: EventMemberOrder) => {
@@ -156,6 +159,7 @@ export class EventMemberOrder {
   pay_community_bill_off_amount?: number
   enterprise_id?: string | null
   pay_enterprise_subsidy_amount?: number
+  selected_options?: z.infer<typeof SelectedOptionSchema>[]
 
   constructor(orderId: string, src: Partial<EventMemberOrder>) {
     Object.assign(this, EventMemberOrderAppSchema.parse(src))

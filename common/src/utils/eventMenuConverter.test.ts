@@ -49,6 +49,60 @@ describe('convertFromPartnerMenuToEventMenu', () => {
 
     expect(result?.limit_per_event).toBe(20)
   })
+
+  it('オプション定義とアレルギーを EventMenu にコピーする', () => {
+    const partnerMenu = makePartnerMenu('menu1', {
+      option_ids: ['opt-size'],
+      allergens: ['tamago'],
+      is_vegan: true,
+      badges: ['recommended'],
+    })
+    const result = convertFromPartnerMenuToEventMenu(
+      partnerMenu,
+      EVENT_ID,
+      EVENT_START,
+      ['menu1'],
+      [
+        {
+          option_id: 'opt-size',
+          option_name: 'サイズ',
+          selection: 'single',
+          required: true,
+          option_items: [{ item_id: 'large', name: '大盛', price_delta: 100 }],
+        },
+      ],
+    )
+
+    expect(result?.options).toHaveLength(1)
+    expect(result?.options[0]?.option_name).toBe('サイズ')
+    expect(result?.allergens).toEqual(['tamago'])
+    expect(result?.is_vegan).toBe(true)
+    expect(result?.badges).toEqual(['recommended'])
+  })
+
+  it('最小合計が 1 円未満のメニューはコピーしない', () => {
+    const partnerMenu = makePartnerMenu('menu1', {
+      menu_price: 10,
+      option_ids: ['opt-minus'],
+    })
+    const result = convertFromPartnerMenuToEventMenu(
+      partnerMenu,
+      EVENT_ID,
+      EVENT_START,
+      ['menu1'],
+      [
+        {
+          option_id: 'opt-minus',
+          option_name: '割引',
+          selection: 'multiple',
+          required: false,
+          option_items: [{ item_id: 'cut', name: '値引き', price_delta: -20 }],
+        },
+      ],
+    )
+
+    expect(result).toBeNull()
+  })
 })
 
 describe('convertPartnerMenusToEventMenus', () => {

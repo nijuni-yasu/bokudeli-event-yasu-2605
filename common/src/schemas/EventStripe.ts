@@ -8,6 +8,7 @@ const StripeMenuSchema = z.object({
   menu_name: z.string().nonempty(),
   menu_price: z.number().int().nonnegative(),
   count: z.number().int().positive(),
+  selected_item_names: z.array(z.string().nonempty()).optional(),
 })
 export type StripeMenuType = z.infer<typeof StripeMenuSchema>
 
