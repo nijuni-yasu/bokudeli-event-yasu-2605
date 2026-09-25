@@ -56,7 +56,7 @@ export function shouldApplyUserPaymentFee(
   return eventPayment === 'community_bill' && communityBillSettings?.type === 'discount'
 }
 
-/** カート・マイページ用のプレビュー。確定後の正本は EventStripe.pay_user_fee_amount。 */
+/** カート用のプレビュー。注文履歴の確定後は EventStripe.pay_user_fee_amount。 */
 export function previewUserPaymentFee(
   eventPayment: EventPaymentType,
   selfPay: number,
@@ -64,4 +64,33 @@ export function previewUserPaymentFee(
 ): number {
   if (!shouldApplyUserPaymentFee(eventPayment, selfPay, communityBillSettings)) return 0
   return computeUserPaymentFeeFromSelfPay(selfPay)
+}
+
+export type ChargedFeeOrderRef = {
+  status: string
+  stripe_id?: string
+}
+
+/**
+ * 注文履歴に出す確定手数料。
+ * キャンセル以外の注文が参照する stripe の pay_user_fee_amount を合算する。
+ * フィールド未設定・ドキュメント無しは 0（リリース前の決済）。
+ */
+export function sumChargedUserPaymentFee(
+  orders: readonly ChargedFeeOrderRef[],
+  feeByStripeId: Readonly<Record<string, number | undefined>>,
+): number {
+  const stripeIds = new Set<string>()
+  for (const order of orders) {
+    if (order.status === 'canceled') continue
+    const stripeId = order.stripe_id
+    if (stripeId == null || stripeId === '') continue
+    stripeIds.add(stripeId)
+  }
+  let sum = 0
+  for (const stripeId of stripeIds) {
+    const fee = feeByStripeId[stripeId] ?? 0
+    if (fee > 0) sum += fee
+  }
+  return sum
 }

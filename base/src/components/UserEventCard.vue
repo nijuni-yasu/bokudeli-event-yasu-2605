@@ -6,10 +6,10 @@ import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { type EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { orderCanceledLabelI18nKey } from '@shokujii/common/utils/orderCancelSource.js'
 import { computeOrderLineNet } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
-import { previewUserPaymentFee } from '@shokujii/common/utils/paymentUserFee.js'
 import { convertToDate, convertToDatetimeWeekdayShort } from '@shokujii/common/utils/datetime.js'
 import EventStatusChip from '@shokujii/base/components/EventStatusChip.vue'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
+import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
 import { convertStoragePathToURL } from '../utils/storage'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 
@@ -26,6 +26,11 @@ const props = defineProps<{
   ordersError?: boolean
   /** 指定時はカバー・タイトルをイベント詳細へリンク（操作ボタンはリンク外） */
   eventDetailPath?: RouteLocationRaw
+  /**
+   * 確定済みの決済手数料（円）。EventStripe.pay_user_fee_amount の合計。
+   * null は未取得。0 または null のときは手数料行を出さない。
+   */
+  chargedPaymentFee: number | null
 }>()
 
 const { t } = useI18n()
@@ -74,9 +79,7 @@ const totalPrice = computed(() =>
   props.orders.filter((o) => o.status !== 'canceled').reduce((sum, o) => sum + orderLineNet(o), 0),
 )
 
-const paymentFee = computed(() =>
-  previewUserPaymentFee(props.event.event_payment, totalPrice.value, props.event.community_bill_settings),
-)
+const paymentFee = computed(() => props.chargedPaymentFee ?? 0)
 
 const grandTotal = computed(() => totalPrice.value + paymentFee.value)
 
@@ -354,9 +357,11 @@ const submitCancel = () => {
       <v-card-text v-if="showOrderSummary && isOwner" class="px-2 pt-1 pb-4 event-card">
         <div>{{ $t(totalPriceLabelKey, [$n(totalPrice, 'currency')]) }}</div>
         <template v-if="paymentFee > 0">
-          <div>{{ $t('user_event_card.payment_fee', [$n(paymentFee, 'currency')]) }}</div>
+          <div class="d-inline-flex align-center ga-1">
+            {{ $t('user_event_card.payment_fee', [$n(paymentFee, 'currency')]) }}
+            <PaymentFeeNoteButton :note="$t('user_event_card.payment_fee_note')" />
+          </div>
           <div>{{ $t('user_event_card.grand_total', [$n(grandTotal, 'currency')]) }}</div>
-          <p class="text-caption text-medium-emphasis mt-1 mb-0">{{ $t('user_event_card.payment_fee_note') }}</p>
         </template>
       </v-card-text>
     </template>

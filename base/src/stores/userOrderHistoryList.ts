@@ -23,6 +23,7 @@ import {
   type UserEventListOrderEntry,
 } from './userEventOrdersShared.js'
 import { profileListFilterKey, profileListFilterToConstraints, type ProfileListFilter } from './profileListFilter.js'
+import { fetchChargedUserPaymentFee } from './eventStripe.js'
 
 export type UserOrderHistoryListStore = ReturnType<typeof useUserOrderHistoryByUserId>
 
@@ -65,6 +66,7 @@ export const useUserOrderHistoryByUserId = (
         orders: null,
         loading: false,
         error: null,
+        chargedPaymentFee: null,
       }
       orderStateByEventId.value = {
         ...orderStateByEventId.value,
@@ -80,11 +82,13 @@ export const useUserOrderHistoryByUserId = (
         patchOrderState(id, { loading: true, error: null })
         const list = await fetchMemberOrdersForUser(event.community_id, event.event_id, userId)
         if (generation !== loadGeneration) return
-        patchOrderState(id, { orders: list, loading: false, error: null })
+        const chargedPaymentFee = await fetchChargedUserPaymentFee(event.community_id, event.event_id, list)
+        if (generation !== loadGeneration) return
+        patchOrderState(id, { orders: list, loading: false, error: null, chargedPaymentFee })
       } catch (e) {
         if (generation !== loadGeneration) return
         console.error('Failed to fetch member_orders:', e)
-        patchOrderState(id, { orders: null, loading: false, error: e })
+        patchOrderState(id, { orders: null, loading: false, error: e, chargedPaymentFee: null })
       }
     }
 
@@ -201,7 +205,7 @@ export const useUserOrderHistoryByUserId = (
           if (collectedNewEvents.length > 0) {
             events.value = sortEventsByStartDatetime([...events.value, ...collectedNewEvents])
             for (const ev of collectedNewEvents) {
-              patchOrderState(ev.event_id, { orders: null, loading: true, error: null })
+              patchOrderState(ev.event_id, { orders: null, loading: true, error: null, chargedPaymentFee: null })
             }
             await loadOrdersForEventsParallel(collectedNewEvents, generation)
             if (generation !== loadGeneration) return

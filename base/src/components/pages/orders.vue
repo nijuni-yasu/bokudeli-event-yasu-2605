@@ -159,6 +159,7 @@ watch(
               :orders="orderHistoryStateByEventId[event.event_id]?.orders ?? []"
               :orders-loading="orderHistoryStateByEventId[event.event_id]?.loading ?? false"
               :orders-error="orderHistoryStateByEventId[event.event_id]?.error != null"
+              :charged-payment-fee="orderHistoryStateByEventId[event.event_id]?.chargedPaymentFee ?? null"
               :event="event"
               :is-owner="true"
               :hide-private-scope-chip="true"

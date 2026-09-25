@@ -6,6 +6,7 @@ import {
   isCheckoutAmountTotalMatchingPayAmount,
   previewUserPaymentFee,
   shouldApplyUserPaymentFee,
+  sumChargedUserPaymentFee,
 } from './paymentUserFee.js'
 
 describe('computeUserPaymentFeeFromSelfPay', () => {
@@ -81,5 +82,48 @@ describe('shouldApplyUserPaymentFee / previewUserPaymentFee', () => {
     expect(shouldApplyUserPaymentFee('community_bill', 1000, { type: 'free' })).toBe(false)
     expect(previewUserPaymentFee('user_on_day', 1000)).toBe(0)
     expect(previewUserPaymentFee('community_bill', 1000, { type: 'free' })).toBe(0)
+  })
+})
+
+describe('sumChargedUserPaymentFee', () => {
+  it('pay_user_fee_amount 未設定の決済は 0', () => {
+    expect(
+      sumChargedUserPaymentFee(
+        [
+          { status: 'ordered', stripe_id: 'legacy' },
+          { status: 'ordered', stripe_id: 'legacy' },
+        ],
+        { legacy: undefined },
+      ),
+    ).toBe(0)
+  })
+
+  it('同じ stripe は 1 回だけ足す', () => {
+    expect(
+      sumChargedUserPaymentFee(
+        [
+          { status: 'ordered', stripe_id: 's1' },
+          { status: 'ordered', stripe_id: 's1' },
+          { status: 'ordered', stripe_id: 's2' },
+        ],
+        { s1: 220, s2: 110 },
+      ),
+    ).toBe(330)
+  })
+
+  it('キャンセル済み注文の stripe は含めない', () => {
+    expect(
+      sumChargedUserPaymentFee(
+        [
+          { status: 'canceled', stripe_id: 'gone' },
+          { status: 'ordered', stripe_id: 'keep' },
+        ],
+        { gone: 220, keep: 110 },
+      ),
+    ).toBe(110)
+  })
+
+  it('stripe_id が無い注文は 0', () => {
+    expect(sumChargedUserPaymentFee([{ status: 'ordered' }, { status: 'processing', stripe_id: '' }], {})).toBe(0)
   })
 })
