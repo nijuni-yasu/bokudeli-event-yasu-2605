@@ -90,6 +90,19 @@ describe('shouldSendChatUnreadMail', () => {
     ).toEqual({ send: false, reason: 'no_new_unread' })
   })
 
+  it('does not send a fresh unread just because an older room already waited 15 minutes', () => {
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: jst('2026-09-22T18:05:00+09:00'),
+        lastSentAt: jst('2026-09-22T10:15:00+09:00'),
+        unreadMemberships: [
+          { is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T09:50:00+09:00') },
+          { is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T17:59:00+09:00') },
+        ],
+      }),
+    ).toEqual({ send: false, reason: 'debounce' })
+  })
+
   it('sends in the evening when there is a newer unread', () => {
     expect(
       shouldSendChatUnreadMail({

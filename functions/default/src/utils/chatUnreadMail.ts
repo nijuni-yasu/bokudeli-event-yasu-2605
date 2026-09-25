@@ -78,22 +78,26 @@ export const shouldSendChatUnreadMail = (params: {
   }
 
   const debounceCutoff = params.nowMillis - CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS
-  const hasDebouncedUnread = unread.some(
-    (membership) => membership.last_message_at != null && membership.last_message_at <= debounceCutoff,
-  )
-  if (!hasDebouncedUnread) {
-    return { send: false, reason: 'debounce' }
+  const isDebounced = (lastMessageAt: number | undefined): boolean => {
+    return lastMessageAt != null && lastMessageAt <= debounceCutoff
   }
 
   if (lastSentAt == null) {
+    const hasDebouncedUnread = unread.some((membership) => isDebounced(membership.last_message_at))
+    if (!hasDebouncedUnread) {
+      return { send: false, reason: 'debounce' }
+    }
     return { send: true }
   }
 
-  const hasNewUnread = unread.some(
+  const newUnread = unread.filter(
     (membership) => membership.last_message_at != null && membership.last_message_at > lastSentAt,
   )
-  if (!hasNewUnread) {
+  if (newUnread.length === 0) {
     return { send: false, reason: 'no_new_unread' }
+  }
+  if (!newUnread.some((membership) => isDebounced(membership.last_message_at))) {
+    return { send: false, reason: 'debounce' }
   }
 
   if (params.nowMillis - lastSentAt < CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS) {
