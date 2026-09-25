@@ -25,6 +25,8 @@ import SupportInvoicePaymentPanel from '@/components/SupportInvoicePaymentPanel.
 
 const PAGE_SIZE = 30
 const PAYMENT_STATUS_FILTERS: CommunityBillPaymentStatusType[] = ['unconfirmed', 'unpaid', 'paid']
+const invoicePaymentKey = (event: Pick<BokudeliEvent, 'community_id' | 'event_id'>): string =>
+  `${event.community_id}/${event.event_id}`
 const COMMUNITY_BILL_FILTERS: QueryConstraint[] = [
   where('event_payment', '==', 'community_bill'),
   orderBy('event_start_datetime', 'desc'),
@@ -65,8 +67,9 @@ const paymentStatusFilter = computed(() => {
   return isPaymentStatusFilter(value) ? value : undefined
 })
 
-const invoicePaymentStatus = (eventId: string): CommunityBillPaymentStatusType =>
-  invoicePayments.value.get(eventId)?.status ?? 'unconfirmed'
+const invoicePaymentStatus = (
+  event: Pick<BokudeliEvent, 'community_id' | 'event_id'>,
+): CommunityBillPaymentStatusType => invoicePayments.value.get(invoicePaymentKey(event))?.status ?? 'unconfirmed'
 
 const filteredEvents = computed(() => {
   if (events.value == null) {
@@ -93,13 +96,13 @@ const filteredEvents = computed(() => {
     if (filter == null) {
       return true
     }
-    if (invoicePaymentLoadErrors.value.has(event.event_id)) {
+    if (invoicePaymentLoadErrors.value.has(invoicePaymentKey(event))) {
       return false
     }
-    if (!invoicePayments.value.has(event.event_id)) {
+    if (!invoicePayments.value.has(invoicePaymentKey(event))) {
       return false
     }
-    return invoicePaymentStatus(event.event_id) === filter
+    return invoicePaymentStatus(event) === filter
   })
 })
 
@@ -119,7 +122,7 @@ const loadInvoicePayments = async (targets: BokudeliEvent[]): Promise<void> => {
     targets.map(async (event) => {
       try {
         const payment = await getEventInvoicePayment(event.community_id, event.event_id)
-        return { eventId: event.event_id, payment: payment ?? null, error: false }
+        return { key: invoicePaymentKey(event), payment: payment ?? null, error: false }
       } catch (error) {
         console.warn(error)
         reportClientError(error, {
@@ -127,7 +130,7 @@ const loadInvoicePayments = async (targets: BokudeliEvent[]): Promise<void> => {
           documentPath: `communities/${event.community_id}/events/${event.event_id}/invoice_payments/${INVOICE_PAYMENT_DOC_ID}`,
           severity: 'warn',
         })
-        return { eventId: event.event_id, payment: null, error: true }
+        return { key: invoicePaymentKey(event), payment: null, error: true }
       }
     }),
   )
@@ -135,12 +138,12 @@ const loadInvoicePayments = async (targets: BokudeliEvent[]): Promise<void> => {
   const nextErrors = new Set(invoicePaymentLoadErrors.value)
   for (const result of results) {
     if (result.error) {
-      nextErrors.add(result.eventId)
-      next.set(result.eventId, null)
+      nextErrors.add(result.key)
+      next.set(result.key, null)
       continue
     }
-    nextErrors.delete(result.eventId)
-    next.set(result.eventId, result.payment)
+    nextErrors.delete(result.key)
+    next.set(result.key, result.payment)
   }
   invoicePaymentLoadErrors.value = nextErrors
   invoicePayments.value = next
@@ -152,27 +155,33 @@ watch(
     if (list == null) {
       return
     }
-    void loadInvoicePayments(list.filter((event) => !invoicePayments.value.has(event.event_id)))
+    void loadInvoicePayments(list.filter((event) => !invoicePayments.value.has(invoicePaymentKey(event))))
   },
   { immediate: true },
 )
 
 const retryInvoicePaymentLoad = (event: BokudeliEvent): void => {
+  const key = invoicePaymentKey(event)
   const next = new Map(invoicePayments.value)
-  next.delete(event.event_id)
+  next.delete(key)
   invoicePayments.value = next
   const nextErrors = new Set(invoicePaymentLoadErrors.value)
-  nextErrors.delete(event.event_id)
+  nextErrors.delete(key)
   invoicePaymentLoadErrors.value = nextErrors
   void loadInvoicePayments([event])
 }
 
 const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment, eventId: string): void => {
+  const selectedEvent = selected.value
+  if (selectedEvent == null || selectedEvent.event_id !== eventId) {
+    return
+  }
+  const key = invoicePaymentKey(selectedEvent)
   const next = new Map(invoicePayments.value)
-  next.set(eventId, payment)
+  next.set(key, payment)
   invoicePayments.value = next
   const nextErrors = new Set(invoicePaymentLoadErrors.value)
-  nextErrors.delete(eventId)
+  nextErrors.delete(key)
   invoicePaymentLoadErrors.value = nextErrors
 }
 
@@ -231,7 +240,7 @@ const isPaymentStatusChipActive = (status: CommunityBillPaymentStatusType): bool
           <tbody>
             <tr
               v-for="event in filteredEvents ?? []"
-              :key="event.event_id"
+              :key="invoicePaymentKey(event)"
               :class="rowClass(event)"
               @click="selected = event"
             >
@@ -250,15 +259,15 @@ const isPaymentStatusChipActive = (status: CommunityBillPaymentStatusType): bool
               </td>
               <td>
                 <SupportStatusTicket
-                  v-if="invoicePaymentLoadErrors.has(event.event_id)"
+                  v-if="invoicePaymentLoadErrors.has(invoicePaymentKey(event))"
                   :label="$t('common.load_failed')"
                   tone="danger"
                   @click.stop="retryInvoicePaymentLoad(event)"
                 />
                 <SupportStatusTicket
-                  v-else-if="invoicePayments.has(event.event_id)"
-                  :label="$t(`invoice_payment_status.${invoicePaymentStatus(event.event_id)}`)"
-                  :tone="invoicePaymentTicketTone(invoicePaymentStatus(event.event_id))"
+                  v-else-if="invoicePayments.has(invoicePaymentKey(event))"
+                  :label="$t(`invoice_payment_status.${invoicePaymentStatus(event)}`)"
+                  :tone="invoicePaymentTicketTone(invoicePaymentStatus(event))"
                 />
                 <v-progress-circular v-else indeterminate size="16" width="2" />
               </td>
