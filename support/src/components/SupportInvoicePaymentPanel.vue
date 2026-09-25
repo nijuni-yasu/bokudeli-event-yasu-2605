@@ -20,7 +20,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  updated: [payment: EventInvoicePayment, eventId: string]
+  updated: [payment: EventInvoicePayment, communityId: string, eventId: string]
 }>()
 
 const { t: $t } = useI18n()
@@ -139,7 +139,7 @@ const persist = async (
       status,
       memo,
     })
-    emit('updated', next, eventId)
+    emit('updated', next, communityId, eventId)
     if (!isCurrentEvent(communityId, eventId)) {
       return
     }
@@ -221,7 +221,7 @@ const sendReminder = async (): Promise<void> => {
     try {
       const recorded = await getEventInvoicePayment(communityId, eventId)
       if (recorded != null) {
-        emit('updated', recorded, eventId)
+        emit('updated', recorded, communityId, eventId)
         if (isCurrentEvent(communityId, eventId)) {
           payment.value = recorded
           memoDraft.value = recorded.memo ?? ''

@@ -59,10 +59,12 @@ const eventListStore = shallowRef<EventListStore>(
 /** イベントごとの注文済み件数。表示中の行だけ遅延ロードする。 */
 const orderedCounts = ref<Map<string, number>>(new Map())
 const orderedCountLoadErrors = ref(new Set<string>())
+let orderedCountLoadGeneration = 0
 
 watch(
   () => route.query.status,
   () => {
+    orderedCountLoadGeneration += 1
     orderedCounts.value = new Map()
     orderedCountLoadErrors.value = new Set()
     eventListStore.value = useEventListStore(buildFilters(), PAGE_SIZE, {
@@ -108,6 +110,7 @@ const loadOrderedCounts = async (targets: BokudeliEvent[]): Promise<void> => {
   if (targets.length === 0) {
     return
   }
+  const generation = orderedCountLoadGeneration
   const results = await Promise.all(
     targets.map(async (event) => {
       try {
@@ -123,6 +126,9 @@ const loadOrderedCounts = async (targets: BokudeliEvent[]): Promise<void> => {
       }
     }),
   )
+  if (generation !== orderedCountLoadGeneration) {
+    return
+  }
   const next = new Map(orderedCounts.value)
   const nextErrors = new Set(orderedCountLoadErrors.value)
   for (const result of results) {

@@ -171,12 +171,8 @@ const retryInvoicePaymentLoad = (event: BokudeliEvent): void => {
   void loadInvoicePayments([event])
 }
 
-const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment, eventId: string): void => {
-  const selectedEvent = selected.value
-  if (selectedEvent == null || selectedEvent.event_id !== eventId) {
-    return
-  }
-  const key = invoicePaymentKey(selectedEvent)
+const onDrawerInvoicePaymentUpdated = (payment: EventInvoicePayment, communityId: string, eventId: string): void => {
+  const key = invoicePaymentKey({ community_id: communityId, event_id: eventId })
   const next = new Map(invoicePayments.value)
   next.set(key, payment)
   invoicePayments.value = next
