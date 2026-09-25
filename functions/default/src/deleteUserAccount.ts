@@ -20,7 +20,11 @@ const logger = createModuleLogger('deleteUserAccount')
 const FIRESTORE_BATCH_LIMIT = 500
 
 const cleanupUserChatData = async (uid: string): Promise<void> => {
-  await deleteChatUnreadMailState(uid)
+  try {
+    await deleteChatUnreadMailState(uid)
+  } catch (error) {
+    logger.error('deleteChatUnreadMailState failed', { userId: uid, error })
+  }
   const memberships = await listChatMembershipsForUser(uid)
   if (memberships.length === 0) {
     return
