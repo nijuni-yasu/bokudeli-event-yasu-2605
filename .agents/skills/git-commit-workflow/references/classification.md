@@ -180,7 +180,7 @@ A1 fixup に進む前に、**吸収先コミットごと**に判定する。デ�
 
 ### イシュー（A1-full / squash / 新規コミット時のみ）
 - 吸収先 #NNNN: coherence-full OK|NG
-- 採用: #NNNN（full 時）
+- 採用: #NNNN または なし（full 時。なしでも C は止めない）
 
 ### 実行計画
 1. …

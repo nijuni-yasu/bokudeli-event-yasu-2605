@@ -1,6 +1,6 @@
 ---
 name: git-create-pull-request
-description: ブランチの変更差分を読み込み、pull_request_template.md の構造に沿って PR 本文を生成する。関連 Issue / closes はコミット log・diff・gh 検証で解決（ブランチ名のみ禁止。Refs と closes を分離）。gh pr create/edit の前に origin へ push（履歴書き換え確認時のみ force-with-lease、diverge 時はユーザー確認）。その後、**必ず** gh pr edit で @copilot / Codex を reviewer 追加し、Copilot / Codex 向け 2 行固定文の gh pr comment を送り、手順 13 で wait-ai-pr-review へ委譲する（デフォルト ON）。マージ前の整理、force push や squash 後の更新など PR 全般。「PRつくって」「プルリクを作って」「PR本文を更新して」と依頼された時に使用する。
+description: ブランチの変更差分を読み込み、pull_request_template.md の構造に沿って PR 本文を生成する。関連 Issue / closes はコミット log・diff・gh 検証で解決（ブランチ名のみ禁止。Refs と closes を分離）。gh pr create/edit の前に origin へ push（ローカルの rebase 等で diverge したときは force-with-lease。リモート専用の独自コミットがあるときはユーザー確認）。その後、**必ず** gh pr edit で @copilot / Codex を reviewer 追加し、Copilot / Codex 向け 2 行固定文の gh pr comment を送り、手順 13 で wait-ai-pr-review へ委譲する（デフォルト ON）。マージ前の整理、force push や squash 後の更新など PR 全般。「PRつくって」「プルリクを作って」「PR本文を更新して」と依頼された時に使用する。
 ---
 
 # PR 本文生成
@@ -89,15 +89,29 @@ python3 .agents/scripts/self_review_wake.py list \
    | `origin/$ref` が無い | リモート未作成 | 通常 push |
    | `HEAD` = `origin/$ref` | 同期済み | **スキップ** |
    | `HEAD` が `origin/$ref` の子孫のみ（ahead） | 未 push のみ | 通常 push |
-   | diverge / behind 混在（履歴書き換え未確認） | remote 更新の可能性 | **中断・ユーザー確認** |
-   | 会話文脈で fixup/squash/amend/rebase 直後 | 履歴書き換え確認済み | **`--force-with-lease`** |
+   | behind のみ（ローカルに無いリモートコミットだけ） | リモートが進んでいる | **中断・ユーザー確認** |
+   | diverge かつリモート専用がすべてローカルの書き換え | rebase / amend / fixup / squash（会話外でも可） | **`--force-with-lease`** |
+   | diverge かつリモート専用に独自コミットがある | 他の push の可能性 | **中断・ユーザー確認** |
    | ユーザーが force push / force-with-lease を明示指示 | ユーザー承認済み | **`--force-with-lease`** |
 
-   判定例:
+   判定:
 
    ```bash
-   git rev-list --left-right --count "origin/$ref...HEAD" 2>/dev/null || echo "0 0"
+   git rev-list --left-right --count "origin/$ref...HEAD"
+   # 左が origin のみ、右が HEAD のみ。両方 0 より大きいときだけ diverge
+   git cherry -v HEAD "origin/$ref"
+   # 先頭が `-` のコミットは、同等パッチが HEAD にある（書き換え済み）
+   git log --format='%an%x09%s' "origin/$ref..HEAD"
    ```
+
+   **diverge をローカルの履歴書き換えとみなす条件**（会話内で rebase していなくても可。すべて満たす）:
+
+   1. `origin/$ref` にだけある各コミットが、次のいずれか
+      - `git cherry -v HEAD origin/$ref` で `-`（同等パッチが HEAD にある）
+      - または `+` でも、`origin/$ref..HEAD` に **同じ作者かつ同じ件名** のコミットがある（amend で差分が変わった rebase / fixup / squash）
+   2. 保護 ref（`development` / `main` / `production` / `v` + 数字タグ）ではない
+
+   リモート専用コミットのうち、上記に当てはまらないものが 1 件でもあれば **push せず中断**する。
 
    **push 先 ref の検証（厳守）** — [`git-reflect-after-commit` 手順 4](../git-reflect-after-commit/SKILL.md) と同一:
 
@@ -107,10 +121,10 @@ python3 .agents/scripts/self_review_wake.py list \
 
    **`--force-with-lease` を実行してよい条件**（いずれか）:
 
-   1. 当該会話内で fixup / squash / amend / rebase 等の履歴書き換えが完了している
+   1. 上表の **diverge かつリモート専用がすべてローカルの書き換え**（rebase / amend / fixup / squash。当該会話の外で行っていても、判定を満たせば可）
    2. ユーザーが force push / `--force-with-lease` を明示指示した
 
-   上記以外（diverge / behind / non-fast-forward で履歴書き換え未確認）は **push せず中断**し、リモート更新の可能性をユーザーに伝えて確認する。`-f` は勝手に使わない。
+   behind のみ、またはリモート専用に独自コミットがある diverge は **push せず中断**し、リモート更新の可能性をユーザーに伝えて確認する。通常 push が non-fast-forward で reject されたときも、上の判定を満たす場合だけ `--force-with-lease` で再試行してよい。満たさなければ再試行しない。`-f` は勝手に使わない。
 
    **push コマンド**（`ref` は通常、現在ブランチ名）:
 
@@ -121,8 +135,6 @@ python3 .agents/scripts/self_review_wake.py list \
    # ahead のみ等（通常）
    git push origin "HEAD:$ref"
    ```
-
-   通常 push が non-fast-forward で reject された場合も **自動再試行しない**。中断しユーザーに確認する。
 
    push 成功またはスキップ後に手順 10 以降へ進む。
 
@@ -291,7 +303,7 @@ closes #2252
 - 推定できない箇所は空欄または「要確認」と記述し、手動で補完を促す
 - gh pr create および gh pr edit を実行する場合は、ユーザーに確認を取ってから実行する
 - 手順 10（gh pr create/edit）の前に手順 9 の origin push を省略しない（reflect から同期済みの場合を除く）
-- origin push の `--force-with-lease` は履歴書き換え確認またはユーザー明示承認時のみ。diverge 時の自動 force は禁止。保護 ref への push は禁止
+- origin push の `--force-with-lease` は、ローカル書き換えと判定できた diverge、またはユーザー明示承認時のみ。リモート専用の独自コミットがある diverge と behind のみは禁止。保護 ref への push は禁止
 - 手順 10 を実行したときは**手順 11 と 12 を即座に実行する**（ユーザーへの確認不要。reviewer 追加と Codex 向け `gh pr comment` を省略しない）
 - 手順 12 完了後は**手順 13**で wait を起動する（オプトアウト時を除く）。evaluate 本体は wait スキルが sentinel 受信後に実行する
 

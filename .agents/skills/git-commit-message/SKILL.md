@@ -1,6 +1,6 @@
 ---
 name: git-commit-message
-description: ステージング diff からコミットメッセージを生成する。gh でイシュー実在・内容一致を確認し、必要時 git-create-issue に委譲する。git-commit-workflow / git-fixup / git-squash / git-split-commit から委譲される。メッセージフォーマットの正本は本スキルのみ。
+description: ステージング diff からコミットメッセージを生成する。gh で内容一致する Issue があればタイトルに番号を付け、無ければ番号なしで生成する。git-commit-workflow / git-fixup / git-squash / git-split-commit から委譲される。メッセージフォーマットの正本は本スキルのみ。
 ---
 
 # コミットメッセージ生成
@@ -14,10 +14,10 @@ git-commit-workflow / git-fixup / git-squash / git-split-commit から委譲さ�
 1. 呼び出し元コンテキスト（下記）を確認し、解決モードを決める
 2. `git diff --cached --stat` でステージング差分のサマリーを取得する
 3. `git diff --cached` で全差分を取得する
-4. [issue-resolution.md](references/issue-resolution.md) を **full**（または inherit → 不一致時 full）で実行し、採用 `#` を決定する
-   - 未解決のまま次へ進まない
+4. [issue-resolution.md](references/issue-resolution.md) を **full**（または inherit → 不一致時 full）で実行し、採用を `#NNNN` または番号なしに決める
+   - 番号なしも解決済み。メッセージ生成を止めない
    - 出力に `### イシュー` セクションを含める
-5. 下記フォーマットに従い、採用 `#` をタイトルに含めてコミットメッセージを生成する
+5. 下記フォーマットに従いコミットメッセージを生成する。採用が `#NNNN` のときだけタイトルにその番号を書く
 
 fixup の A1-fast では issue-resolution は不要（classification + coherence-lite）。A1-full 昇格時は coherence-full、メッセージ書き換えは squash / amend / C で full。
 
@@ -50,8 +50,16 @@ git diff --cached
 
 ### タイトル
 
+内容が一致する Issue があるとき:
+
 ```
 [タグ] #イシュー番号 変更内容を端的に表す日本語タイトル
+```
+
+一致する Issue が無いとき（番号は書かない）:
+
+```
+[タグ] 変更内容を端的に表す日本語タイトル
 ```
 
 タグは変更したディレクトリ・領域に対応するものを選ぶ。複数可。
@@ -79,13 +87,19 @@ git diff --cached
 - eslint.config.mjs / .prettierrc / tsconfig\*.json 等、特定アプリパッケージに属さないリポジトリルートの設定
 - 上記パッケージタグ・ci・terraform・firebase・doc・ai のいずれにも該当しない変更
 
-このときのタイトル例：
+このとき、一致する Issue がある例:
 
 ```
 #イシュー番号 変更内容を端的に表す日本語タイトル
 ```
 
-**`#イシュー番号` は原則必須**。issue-resolution で解決できない場合はメッセージを生成せず、git-create-issue の提案まで中断する。
+一致する Issue が無い例:
+
+```
+変更内容を端的に表す日本語タイトル
+```
+
+**`#イシュー番号` は一致する Issue があるときだけ付ける**。無いときは番号なしでメッセージを生成し、コミットを中断しない。コミットのためだけに Issue を作らない。
 
 AGENTS.md に無い新しい角括弧タグを増やさない。
 
@@ -110,7 +124,7 @@ AGENTS.md に無い新しい角括弧タグを増やさない。
 - 日本語で記述する
 - タイトルは1行に収める
 - 本文は変更の規模に応じて詳細度を調整する
-- イシュー番号は [issue-resolution.md](references/issue-resolution.md) で解決する。ブランチ名だけを根拠に `#` を付けない
+- イシュー番号は [issue-resolution.md](references/issue-resolution.md) で解決する。一致したときだけ `#` を付ける。ブランチ名だけを根拠に `#` を付けない
 
 ---
 
@@ -165,9 +179,9 @@ deploy_firestore ワークフローで Firebase へデプロイする直前に�
 
 ```
 ### イシュー
-- 採用: #2000（理由: 新規作成）
+- 採用: なし（理由: 内容一致する open Issue が無い）
 
-#2000 ルート依存を更新
+ルート依存を更新
 
 npm audit fix 後に package-lock.json を再生成した。
 

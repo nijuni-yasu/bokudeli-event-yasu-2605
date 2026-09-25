@@ -11,7 +11,7 @@ AIエージェント向けプロジェクトガイド。
 | タスク                                                                          | スキル                       |
 | :------------------------------------------------------------------------------ | :--------------------------- |
 | コミット整理（fixup / squash / 分割 / 新規 / amend の自律判断）                 | `/git-commit-workflow`       |
-| コミットメッセージ生成（gh でイシュー検証。不一致時は create-issue）            | `/git-commit-message`        |
+| コミットメッセージ生成（一致する Issue があれば `#`、無ければ番号なし）       | `/git-commit-message`        |
 | GitHub イシュー作成                                                             | `/git-create-issue`          |
 | PR 本文生成                                                                     | `/git-create-pull-request`   |
 | AI レビュー完了待ち → evaluate（watcher 起動時 Shell に notify_on_output 必須） | `/wait-ai-pr-review`         |
@@ -210,22 +210,23 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 - コミットメッセージは日本語で記述する
 - main ブランチへの直接コミット禁止
 - `package-lock.json` は必ずコミットする
-- タイトルの接頭辞に変更したディレクトリと Issue 番号を含める
+- タイトルの接頭辞に、変更したディレクトリのタグを含める。内容が一致する Issue があるときだけ `#イシュー番号` を付ける。一致する Issue が無いときは番号を付けずコミットする（コミットのためだけに Issue を作らない）
   - 例: `[partner] #1777 注文詳細画面の修正`
   - 例: `[base][common] #1799 withConverter の削除を禁止`
   - 例: `[ci] #2084 deploy_user の checkout を v6 に更新`
   - 例: `[firebase] #1901 firestore.indexes.json の重複インデックスを削除`
   - 例: `[ai] #1800 分割コミットスキルに ci と firebase タグを追加`
   - 例: `[enterprise] #2071 カート月次 usage を enterprise 側から注入`
+  - 例（一致する Issue が無いとき）: `[ai] rebase 後の force-with-lease を許可する`
   - 使用可能なタグ: `[user]` `[partner]` `[enterprise]` `[support]` `[base]` `[common]` `[functions]` `[doc]` `[ci]` `[terraform]` `[firebase]` `[ai]`
   - [doc]: documents/ 内の更新のみ。[ci]: `.github/workflows/`。[terraform]: `terraform/`。[firebase]: `firebase.json` / `.firebaserc` / `firestore.rules` / `storage.rules` / `firestore.indexes.json`。[ai]: `.cursor` / `.agents` / `.claude` / `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md` 等の AI エージェント向け指示・設定
-  - ルートの `package.json` / `package-lock.json` 等、上記タグに該当しないモノレポ横断設定は**接頭辞なし**（`#イシュー番号` と要約タイトルのみ）。PR タイトルも同様。手順・判定ルール・例は `/git-commit-message` と `/git-create-pull-request` スキルを参照。
+  - ルートの `package.json` / `package-lock.json` 等、上記タグに該当しないモノレポ横断設定は**接頭辞なし**（一致する Issue があるとき `#イシュー番号` と要約、無いときは要約のみ）。PR タイトルは Issue 番号を含めない。手順・判定ルール・例は `/git-commit-message` と `/git-create-pull-request` スキルを参照。
 
 ### 作業ブランチの命名（プレフィックス）
 
 実装作業・PR・sandbox デプロイ・レビュー記録（`review-<slug>.md`）の正本は、次の **作業ブランチ** とする。命名は `<prefix>/<issue番号>` を基本とし、サブスコープがある場合は `<prefix>/<issue番号>-<suffix>`（例: `feat/1594-event-tags`）も可。
 
-**1 つの作業ブランチに複数 Issue のコミットが混在してもよい**（例: `feat/1774` に #1774 の実装と #2342 の `AGENTS.md` 更新）。ブランチ名は主たる Issue を表す番号でよい。各コミットメッセージの `#イシュー番号` は、そのコミットの変更内容に対応する Issue を付ける（`/git-commit-message` 参照）。
+**1 つの作業ブランチに複数 Issue のコミットが混在してもよい**（例: `feat/1774` に #1774 の実装と #2342 の `AGENTS.md` 更新）。ブランチ名は主たる Issue を表す番号でよい。各コミットメッセージは、そのコミットの変更内容に一致する Issue があるときだけ `#イシュー番号` を付ける。無いコミットは番号なし（`/git-commit-message` 参照）。
 
 | プレフィックス | 用途 | 例 |
 | :-- | :-- | :-- |
