@@ -30,6 +30,10 @@
 | [x] | RC-22 | 4068413513 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | OTP 後に redirect が消えて常に `/`<br>login で `setRedirectPath` して OTP 後まで保持する |
 | [ ] | RC-23 | 4071042953 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | M | support が `DEFAULT_TIME_ZONE` を直接 import<br>表示計算を common に移す |
 | [ ] | RC-24 | 4071042930 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 🐛 実害 | 📋 仕様追加 | M | 外部リンクが PF ホスト固定<br>enterprise 行はテナントホスト解決が必要 |
+| [x] | RC-25 | 4079838160 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 入金 Map/Set を `event_id` だけで識別している<br>`community_id`/`event_id` の複合キーに揃えた |
+| [ ] | RC-26 | 4079838196 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | 注文行のイベント解決が `useEventStore(eventId)` の `docs[0]`<br>`community_id` 付きの直接取得が必要 |
+| [ ] | RC-27 | 4079838225 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | `countOrderedByEventId` が `event_id` のみで合算する<br>collectionGroup に `community_id` を足し、インデックスも必要 |
+| [x] | RC-28 | 4079838302 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 注文件数の取得失敗で永久スピナーになる<br>失敗を別状態で表示し再試行できるようにした |
 
 ---
 
@@ -1362,5 +1366,360 @@ enterprise 行はテナントホスト解決が必要。
 **想定工数**: M
 
 **判断理由**: 指摘は妥当だが、#2357 / フェーズ1 の仕様にテナントホスト解決は無い。support 側に `enterprise_id` も渡していない。別 Issue 化が自然。本評価では Issue 未作成のため未着手。
+
+---
+
+## 評価セッション（2026-09-23 16:06・review-comments-evaluate）
+
+- **評価日時**: 2026-09-23 16:06 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/2357`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2358
+- **partial**: true（Codex limits / connect。Copilot のみ評価）
+- **REVIEW_REQUEST_SINCE**: `2026-09-23T06:51:28Z`
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（5790406842 レビュー依頼定型文）
+- **重複除外**: 4079838112（RC-4 / RC-8 と同一）、4079838262（RC-17 と同一）、4079838334（RC-23 と同一）、review 5287843975（overview・インラインの要約）
+- **新規 RC**: RC-25〜RC-28
+- **手順 4a 自動修正**: RC-25・RC-28（🟡 2件）。RC-26 / RC-27 は工数 M のため対象外
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-25 | 4079838160 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 入金 Map/Set を `event_id` だけで識別している<br>`community_id`/`event_id` の複合キーに揃えた |
+| [ ] | RC-26 | 4079838196 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | 注文行のイベント解決が `useEventStore(eventId)` の `docs[0]`<br>`community_id` 付きの直接取得が必要 |
+| [ ] | RC-27 | 4079838225 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | `countOrderedByEventId` が `event_id` のみで合算する<br>collectionGroup に `community_id` を足し、インデックスも必要 |
+| [x] | RC-28 | 4079838302 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 注文件数の取得失敗で永久スピナーになる<br>失敗を別状態で表示し再試行できるようにした |
+
+---
+
+**識別子**: RC-25（GitHub id: 4079838160）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `support/src/pages/invoices/index.vue:69`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,359 @@
++<script setup lang="ts">
++import { orderBy, where, type QueryConstraint } from 'firebase/firestore'
++import { useEventListStore, type EventListStore } from '@shokujii/base/stores/eventList.js'
++import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import { getEventUrl, getCommunityUrl } from '@/utils/urls'
++import { getEventInvoicePayment } from '@shokujii/base/stores/eventInvoicePayment.js'
++import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
++import {
++  INVOICE_PAYMENT_DOC_ID,
++  type CommunityBillPaymentStatusType,
++  type EventInvoicePayment,
++} from '@shokujii/common/schemas/EventInvoicePayment.js'
++import { eventStatusTicketTone, invoicePaymentTicketTone } from '@/utils/statusColors'
++import { matchesSearch } from '@/utils/search'
++import { formatRelativeJa, formatScheduleRange } from '@/utils/format'
++import { isQueryFlagActive, withQueryFlag } from '@/utils/queryFlag'
++import SupportFilterChip from '@/components/SupportFilterChip.vue'
++import SupportPageHeader from '@/components/SupportPageHeader.vue'
++import SupportStatusTicket from '@/components/SupportStatusTicket.vue'
++import SupportDetailDrawer from '@/components/SupportDetailDrawer.vue'
++import SupportDetailField from '@/components/SupportDetailField.vue'
++import SupportExternalLink from '@/components/SupportExternalLink.vue'
++import SupportInvoicePaymentPanel from '@/components/SupportInvoicePaymentPanel.vue'
++
++const PAGE_SIZE = 30
++const PAYMENT_STATUS_FILTERS: CommunityBillPaymentStatusType[] = ['unconfirmed', 'unpaid', 'paid']
++const COMMUNITY_BILL_FILTERS: QueryConstraint[] = [
++  where('event_payment', '==', 'community_bill'),
++  orderBy('event_start_datetime', 'desc'),
++]
++
++const route = useRoute()
++const router = useRouter()
++
++const { t: $t } = useI18n()
++
++const searchQuery = ref('')
++const selected = shallowRef<BokudeliEvent | null>(null)
++
++const drawerOpen = computed({
++  get: () => selected.value != null,
++  set: (open: boolean) => {
++    if (!open) {
++      selected.value = null
++    }
++  },
++})
++
++const isPaymentStatusFilter = (value: unknown): value is CommunityBillPaymentStatusType =>
++  value === 'unconfirmed' || value === 'unpaid' || value === 'paid'
++
++const eventListStore = shallowRef<EventListStore>(
++  useEventListStore(COMMUNITY_BILL_FILTERS, PAGE_SIZE, { autoContinue: false, storeKey: 'support/invoices' }),
++)
++
++/** 請求書払いイベントの入金ドキュメント。未作成は null。取得失敗は loadErrors。 */
++const invoicePayments = ref<Map<string, EventInvoicePayment | null>>(new Map())
++const invoicePaymentLoadErrors = ref(new Set<string>())
++
++const events = computed(() => eventListStore.value.eventStores?.flatMap((store) => store.event ?? []) ?? null)
++
++const paymentStatusFilter = computed(() => {
++  const value = route.query.status
++  return isPaymentStatusFilter(value) ? value : undefined
++})
++
++const invoicePaymentStatus = (eventId: string): CommunityBillPaymentStatusType =>
++  invoicePayments.value.get(eventId)?.status ?? 'unconfirmed'
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 入金状態の Map/Set を `event_id` だけで識別していますが、Firestore の正本パスは `communities/{communityId}/events/{eventId}` で、`event_id` 単体はテナント横断の一意キーではありません。同じ ID のイベントが別コミュニティにあると、後続行の取得がスキップされ、先行イベントの入金状態で表示・絞り込み・更新されます。`community_id` と `event_id` の複合キーを一貫して使ってください。
+
+**コメント要約**: 入金 Map/Set を `event_id` だけで識別している。
+`community_id`/`event_id` の複合キーに揃えた。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: support はテナント横断のため `event_id` 単体では衝突しうる。複合キーへの置換は方針が一意で工数 S。手順 4a で自動修正した。
+
+---
+
+**識別子**: RC-26（GitHub id: 4079838196）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `support/src/pages/orders/index.vue:85`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略）
++const showRecentFilter = computed(() => isQueryFlagActive(route.query.recent, '7'))
++
++type EventSummary = { eventName: string; communityName: string; communityAccount: string; shopName: string }
++
++/** 表示行の event_id だけを解決する。旧 manager のような全コミュニティ走査はしない。 */
++const eventSummaries = ref<Map<string, EventSummary>>(new Map())
++const failedEventIds = ref<Set<string>>(new Set())
++
++watch(
++  () => orderListStore.value.orders,
++  async (orders) => {
++    if (orders == null) {
++      return
++    }
++    const unresolved = [...new Set(orders.map(({ eventId }) => eventId))].filter(
++      (eventId) => !eventSummaries.value.has(eventId) && !failedEventIds.value.has(eventId),
++    )
++    if (unresolved.length === 0) {
++      return
++    }
++    const results = await Promise.all(
++      unresolved.map(async (eventId) => {
++        try {
++          const event = await useEventStore(eventId).getLoadedEvent()
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 注文には `community_id` があるのにここで捨てて、`useEventStore(eventId)` の collectionGroup 検索結果から任意の `docs[0]` を採用しています。サポートはテナント横断なので、同じ event ID が複数コミュニティにあれば別イベントの名前・店舗・URLを表示します。`community_id` を保持して対象コミュニティのイベント文書を直接取得するか、テナント条件付きで解決してください。
+
+**コメント要約**: 注文行のイベント解決が `useEventStore(eventId)` の `docs[0]`。
+`community_id` 付きの直接取得が必要。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当。直接取得とテナント条件付きの二案があり、store API とキャッシュキーの見直しが必要。工数 M のため自動修正しない。
+
+---
+
+**識別子**: RC-27（GitHub id: 4079838225）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/supportCounts.ts:32`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,80 @@
++import {
++  collection,
++  collectionGroup,
++  getCountFromServer,
++  query,
++  where,
++  type Query,
++  type QueryConstraint,
++} from 'firebase/firestore'
++import { db } from '@shokujii/base/firebase.js'
++
++/**
++ * 運営管理画面（support）の横断集計。
++ *
++ * Event ドキュメントには注文の集計フィールドが無いため、一覧の行ごとに
++ * `member_orders` の collectionGroup を count する。count 集計は 1000 ドキュメントあたり
++ * 1 read 相当なので、一覧の行数ぶん発行してもコストは実用範囲に収まる。
++ *
++ * いずれの関数もテナント条件（enterprise_id）を付けない。Rules の `isSupport()` によって
++ * サポートアカウントのみテナント横断の read が許可されている（#2087）。
++ */
++
++const countOf = async (target: Query, filters: QueryConstraint[]): Promise<number> => {
++  return (await getCountFromServer(query(target, ...filters))).data().count
++}
++
++/** イベントの注文済み件数 */
++export const countOrderedByEventId = async (eventId: string): Promise<number> => {
++  return countOf(collectionGroup(db, 'member_orders'), [
++    where('event_id', '==', eventId),
++    where('status', '==', 'ordered'),
++  ])
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] collectionGroup `member_orders` の件数を `event_id` だけで集計しているため、同じ `event_id` の別コミュニティの注文も合算されます。support のイベント一覧は行ごとの注文数を表示するので、`community_id` も `where` 条件に含め、呼び出し側から渡してください。
+
+**コメント要約**: `countOrderedByEventId` が `event_id` のみで合算する。
+collectionGroup に `community_id` を足し、インデックスも必要。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当。`community_id` 条件追加は store 署名変更と collectionGroup インデックスが必要。工数 M のため自動修正しない。
+
+---
+
+**識別子**: RC-28（GitHub id: 4079838302）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `support/src/pages/events/index.vue:120`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略）
++/** イベントごとの注文済み件数。表示中の行だけ遅延ロードする。 */
++const orderedCounts = ref<Map<string, number>>(new Map())
++
++watch(
++  () => route.query.status,
++  () => {
++    orderedCounts.value = new Map()
++    eventListStore.value = useEventListStore(buildFilters(), PAGE_SIZE, {
++      autoContinue: false,
++      storeKey: eventListStoreKey(),
++    })
++  },
++)
++
++const showAcceptingFilter = computed(() => isQueryFlagActive(route.query.status, 'accepting_order'))
++const showApplyingFilter = computed(() => isQueryFlagActive(route.query.status, 'applying_reservation'))
++
++const events = computed(() => eventListStore.value.eventStores?.flatMap((store) => store.event ?? []) ?? null)
++
++const filteredEvents = computed(() => {
++  if (events.value == null) {
++    return null
++  }
++  return events.value.filter((event) =>
++    matchesSearch(
++      [
++        event.event_name,
++        event.community_name,
++        event.community_account,
++        event.shop_name,
++        event.organizer_email,
++        event.organizer_fullname,
++        event.organizer_company,
++      ],
++      searchQuery.value,
++    ),
++  )
++})
++
++const showingCount = computed(() => {
++  if (searchQuery.value.trim() === '' || filteredEvents.value == null) {
++    return null
++  }
++  return filteredEvents.value.length
++})
++
++watch(
++  events,
++  async (list) => {
++    if (list == null) {
++      return
++    }
++    const unresolved = list.filter((event) => !orderedCounts.value.has(event.event_id))
++    if (unresolved.length === 0) {
++      return
++    }
++    const results = await Promise.all(
++      unresolved.map(async (event) => {
++        try {
++          return [event.event_id, await countOrderedByEventId(event.event_id)] as const
++        } catch (error) {
++          console.warn(error)
++          return null
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 件数取得に失敗した場合、`null` を返すだけで `orderedCounts` に失敗状態を記録していません。そのため `orderedCounts.get(...) != null` が永遠に false のままとなり、該当行はスピナーを表示し続けて再試行もできません。失敗を別状態として表示し、必要なら再取得できるようにしてください。
+
+This issue also appears on line 258 of the same file.
+
+**コメント要約**: 注文件数の取得失敗で永久スピナーになる。
+失敗を別状態で表示し再試行できるようにした。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-12 と同じパターン。失敗を Set に残し再試行 UI を出す方針は一意で工数 S。行 258 の一覧全体スピナーは RC-18（store loadError）と同一のため本 RC では注文件数列のみ直した。手順 4a で自動修正した。
 
 ---
