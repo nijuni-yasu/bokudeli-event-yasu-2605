@@ -9,6 +9,7 @@ import type {
 } from 'firebase/firestore'
 import { PartnerShop } from '@shokujii/common/schemas/PartnerShop.js'
 import { PartnerMenu } from '@shokujii/common/schemas/PartnerMenu.js'
+import { PartnerOption } from '@shokujii/common/schemas/PartnerOption.js'
 import { defineStore } from 'pinia'
 import {
   collection,
@@ -16,6 +17,7 @@ import {
   getDoc,
   getFirestore,
   onSnapshot,
+  deleteDoc,
   setDoc,
   Timestamp,
   updateDoc,
@@ -39,6 +41,13 @@ export class BokudeliPartnerMenu extends PartnerMenu {
   }
 }
 
+export class BokudeliPartnerOption extends PartnerOption {
+  constructor(partner_id: string, option_id: string | null, src: Partial<PartnerOption>) {
+    option_id = option_id ?? doc(collection(db, 'partners', partner_id, 'options')).id
+    super(partner_id, option_id, { ...src })
+  }
+}
+
 /**
  * shopList で使用するので export するが、他では使用しないこと
  */
@@ -52,6 +61,21 @@ export const shopConverter: FirestoreDataConverter<BokudeliPartnerShop> = {
     return new BokudeliPartnerShop(partner_id, snapshot.id, data)
   },
 }
+const optionConverter: FirestoreDataConverter<BokudeliPartnerOption> = {
+  toFirestore: (option: BokudeliPartnerOption): DocumentData => {
+    return option.toFirestore()
+  },
+  fromFirestore: (snapshot: QueryDocumentSnapshot, options: SnapshotOptions) => {
+    const data = snapshot.data(options)
+    const partner_id = snapshot.ref.parent.parent!.id
+    return new BokudeliPartnerOption(partner_id, snapshot.id, data)
+  },
+}
+
+export const getPartnerOptionRef = (partnerId: string, optionId: string): DocumentReference<BokudeliPartnerOption> => {
+  return doc(db, 'partners', partnerId, 'options', optionId).withConverter(optionConverter)
+}
+
 const menuConverter: FirestoreDataConverter<BokudeliPartnerMenu> = {
   toFirestore: (menu: BokudeliPartnerMenu): DocumentData => {
     return menu.toFirestore()
@@ -88,6 +112,7 @@ export const usePartnerStore = (partnerId: string) => {
     const partnerRef: DocumentReference = doc(db, 'partners', partnerId)
     const _shops = ref<BokudeliPartnerShop[] | null>(null)
     const _menus = ref<BokudeliPartnerMenu[] | null>(null)
+    const _options = ref<BokudeliPartnerOption[] | null>(null)
     const _shopImageCacheBusters = ref<Map<string, number>>(new Map())
     const _menuImageCacheBusters = ref<Map<string, number>>(new Map())
 
@@ -129,6 +154,31 @@ export const usePartnerStore = (partnerId: string) => {
         })
       }
     }
+
+    let unsubscribeOptions: Unsubscribe | null = null
+    const subscribeOptions = () => {
+      if (unsubscribeOptions == null) {
+        unsubscribeOptions = onSnapshot(
+          collection(partnerRef, 'options').withConverter(optionConverter),
+          (optionsSnapshot) => {
+            _options.value = optionsSnapshot.docs.flatMap((optionDoc) => {
+              try {
+                return optionDoc.data()
+              } catch (err) {
+                console.error(err)
+                reportClientError(err, { documentPath: optionDoc.ref.path, severity: 'warn' })
+                return []
+              }
+            })
+          },
+        )
+      }
+    }
+
+    const options = computed(() => {
+      subscribeOptions()
+      return _options.value
+    })
 
     const menus = computed(() => {
       subscribeMenus()
@@ -222,6 +272,16 @@ export const usePartnerStore = (partnerId: string) => {
       await updateDoc(menuRef, { is_deleted: true, deleted_at: Timestamp.now() })
     }
 
+    const updateOption = async (data: BokudeliPartnerOption) => {
+      const optionRef = getPartnerOptionRef(partnerId, data.option_id)
+      return await setDoc(optionRef, data)
+    }
+
+    const deleteOption = async (optionId: string) => {
+      const optionRef = getPartnerOptionRef(partnerId, optionId)
+      await deleteDoc(optionRef)
+    }
+
     const updateMenuSortOrder = async (menuIds: string[]) => {
       const batch = writeBatch(db)
       menuIds.forEach((menuId, index) => {
@@ -234,18 +294,23 @@ export const usePartnerStore = (partnerId: string) => {
     return {
       shops,
       menus,
+      options,
       shopImageUrls,
       menuImageUrls,
       getLoadedShops,
       updateShop,
       updateMenu,
       deleteMenu,
+      updateOption,
+      deleteOption,
       updateMenuSortOrder,
       unsubscribe: () => {
         unsubscribeShops?.()
         unsubscribeShops = null
         unsubscribeMenus?.()
         unsubscribeMenus = null
+        unsubscribeOptions?.()
+        unsubscribeOptions = null
       },
     }
   })

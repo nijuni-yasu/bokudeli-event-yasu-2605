@@ -8,6 +8,7 @@ import { getCommunityPath, getEventPath, getProfile } from '@/router/utils'
 import { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 import { CartItem, useCurrentUserStore } from '@shokujii/base/stores/currentUser'
 import { useEventStore, buildEventStoreOptions, type EventStoreOptions } from '@shokujii/base/stores/event'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
@@ -101,6 +102,7 @@ async function resolveEventStoreOptions(): Promise<EventStoreOptions> {
 }
 
 type GroupedMenu = {
+  group_key: string
   menu_id: string
   menu_name: string
   menu_price: number
@@ -111,13 +113,15 @@ type GroupedMenu = {
   totalPayment: number
   /** 1個分の割引。enterprise_subsidy では品目ごとに異なり得るため表示は totalDiscount/count を使用 */
   offAmountPerUnit: number
+  selected_items?: { option_id: string; item_id: string }[]
 }
 
 const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
   const map = new Map<string, GroupedMenu>()
   for (const order of orders) {
     const discount = getMemberOrderDiscountAmount(order)
-    const existing = map.get(order.menu_id)
+    const key = getOrderMenuGroupKey(order)
+    const existing = map.get(key)
     if (existing) {
       existing.count++
       existing.order_ids.push(order.order_id)
@@ -125,9 +129,14 @@ const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
       existing.totalDiscount += discount
       existing.totalPayment += order.menu_price - discount
     } else {
-      map.set(order.menu_id, {
+      map.set(key, {
+        group_key: key,
         menu_id: order.menu_id,
-        menu_name: order.menu_name,
+        menu_name: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
+        selected_items: order.selected_options?.map((item) => ({
+          option_id: item.option_id,
+          item_id: item.item_id,
+        })),
         menu_price: order.menu_price,
         count: 1,
         order_ids: [order.order_id],
@@ -681,7 +690,7 @@ const showDeleteConfirm = (event: BokudeliEvent, orderId: string) => {
 }
 
 const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
-  const menuKey = `add_${menu.menu_id}`
+  const menuKey = `add_${menu.group_key}`
   if (menuUpdatingStates.value[menuKey]) return
   menuUpdatingStates.value[menuKey] = true
   try {
@@ -694,6 +703,8 @@ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
         {
           menu_id: menu.menu_id,
           count: 1,
+          selected_items: menu.selected_items,
+          presented_menu_price: menu.menu_price,
         },
       ],
     })
@@ -707,7 +718,7 @@ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
 
 const decrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
   if (menu.count <= 1) return
-  const menuKey = `remove_${menu.menu_id}`
+  const menuKey = `remove_${menu.group_key}`
   if (menuUpdatingStates.value[menuKey]) return
   menuUpdatingStates.value[menuKey] = true
   try {
@@ -727,8 +738,10 @@ const decrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
   }
 }
 
-const isMenuUpdating = (menuId: string) => {
-  return (menuUpdatingStates.value[`add_${menuId}`] || menuUpdatingStates.value[`remove_${menuId}`]) ?? false
+const isMenuUpdating = (menu: GroupedMenu) => {
+  return (
+    (menuUpdatingStates.value[`add_${menu.group_key}`] || menuUpdatingStates.value[`remove_${menu.group_key}`]) ?? false
+  )
 }
 
 const isOpenCancelpolicyDialog = ref(false)
@@ -934,7 +947,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="menu in cartItem.groupedMenus" :key="menu.menu_id">
+                  <tr v-for="menu in cartItem.groupedMenus" :key="menu.group_key">
                     <td style="padding: 1px">
                       {{ menu.menu_name }}
                       <span
@@ -962,7 +975,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                           v-if="menu.count > 1"
                           :icon="mdiMinusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu.menu_id)"
+                          :loading="isMenuUpdating(menu)"
                           @click="decrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>
@@ -978,7 +991,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                         <v-btn
                           :icon="mdiPlusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu.menu_id)"
+                          :loading="isMenuUpdating(menu)"
                           :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu)"
                           @click="incrementMenuCount(cartItem.event, menu)"
                         >

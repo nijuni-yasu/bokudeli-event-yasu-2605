@@ -7,6 +7,7 @@ import { type EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder
 import { orderCanceledLabelI18nKey } from '@shokujii/common/utils/orderCancelSource.js'
 import { computeOrderLineNet } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { convertToDate, convertToDatetimeWeekdayShort } from '@shokujii/common/utils/datetime.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 import EventStatusChip from '@shokujii/base/components/EventStatusChip.vue'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
 import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
@@ -64,11 +65,12 @@ const orderLineNet = (o: EventMemberOrder) =>
 const groupedMenus = computed(() => {
   const map = new Map<string, { menu_name: string; count: number }>()
   for (const o of props.orders.filter((o) => o.status !== 'canceled')) {
-    const existing = map.get(o.menu_id)
+    const key = getOrderMenuGroupKey(o)
+    const existing = map.get(key)
     if (existing) {
       existing.count++
     } else {
-      map.set(o.menu_id, { menu_name: o.menu_name, count: 1 })
+      map.set(key, { menu_name: formatOrderMenuDisplayName(o.menu_name, o.selected_options), count: 1 })
     }
   }
   return Array.from(map.entries()).map(([menu_id, v]) => ({ menu_id, ...v }))
@@ -216,7 +218,7 @@ const initCancelDialogRows = () => {
     const ts = getOrderTimestamp(o)
     return {
       orderId: o.id,
-      menu_name: o.menu_name,
+      menu_name: formatOrderMenuDisplayName(o.menu_name, o.selected_options),
       orderDateMillis: ts > 0 ? ts : null,
       menu_price: o.menu_price,
       line_net: orderLineNet(o),
@@ -230,7 +232,7 @@ const initCancelDialogRows = () => {
     const ts = getOrderTimestamp(o)
     return {
       orderId: o.id,
-      menu_name: o.menu_name,
+      menu_name: formatOrderMenuDisplayName(o.menu_name, o.selected_options),
       orderDateMillis: ts > 0 ? ts : null,
       menu_price: o.menu_price,
       canceledLabelKey: orderCanceledLabelKey(o),

@@ -333,6 +333,14 @@ const partnerMenus = computed<BokudeliPartnerMenu[] | null>(() => {
   return partnerStore.menus ?? null
 })
 
+const partnerOptions = computed(() => {
+  const partnerId = event.value?.partner_id
+  if (partnerId == null || partnerId === '') {
+    return []
+  }
+  return usePartnerStore(partnerId).options
+})
+
 const persistedEventIdForMenus = computed(() => {
   if (props.eventId != null) {
     return props.eventId
@@ -360,7 +368,7 @@ const isLoadingMenu = computed(() => {
     return existingMenus.value === null
   }
   if (shouldRegenerateFromPartnerMenus(eventStatus)) {
-    return partnerMenus.value === null
+    return partnerMenus.value === null || partnerOptions.value === null
   }
   return false
 })
@@ -477,8 +485,14 @@ const eventMenus = computed(() => {
   }
 
   if (shouldRegenerateFromPartnerMenus(eventStatus)) {
-    if (partnerMenus.value === null) return []
-    return convertPartnerMenusToEventMenus(partnerMenus.value, eventId, eventStartDatetime, userSelectedMenuIds.value)
+    if (partnerMenus.value === null || partnerOptions.value === null) return []
+    return convertPartnerMenusToEventMenus(
+      partnerMenus.value,
+      eventId,
+      eventStartDatetime,
+      userSelectedMenuIds.value,
+      partnerOptions.value,
+    )
   }
 
   return []

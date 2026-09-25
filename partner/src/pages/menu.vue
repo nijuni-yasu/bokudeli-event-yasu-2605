@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { getAuth } from 'firebase/auth'
 import { useI18n } from 'vue-i18n'
-import { usePartnerStore, BokudeliPartnerMenu } from '@shokujii/base/stores/partner.js'
+import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import MenuEditCard from '@/components/MenuEditCard.vue'
+import OptionEditCard from '@/components/OptionEditCard.vue'
+import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
 import MenuCard from '@shokujii/base/components/MenuCard.vue'
 import { mdiPlus, mdiClose } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
@@ -19,6 +21,7 @@ const partnerId = getAuth().currentUser?.uid ?? ''
 const partnerStore = usePartnerStore(partnerId)
 
 const menus = computed<BokudeliPartnerMenu[]>(() => partnerStore.menus ?? [])
+const options = computed<BokudeliPartnerOption[]>(() => partnerStore.options ?? [])
 
 // 並び替え用のローカル状態
 const sortMenuIds = ref<string[]>([])
@@ -66,8 +69,103 @@ const dialog = computed({
 const openDialog = (menu: BokudeliPartnerMenu) => {
   targetMenu.value = Object.assign(Object.create(Object.getPrototypeOf(menu)), menu)
 }
-const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null) => {
+const targetOption: Ref<BokudeliPartnerOption | null> = ref(null)
+const optionDialog = computed({
+  get: () => targetOption.value != null,
+  set: (value) => {
+    if (!value) {
+      targetOption.value = null
+    }
+  },
+})
+
+const createBlankOption = () =>
+  new BokudeliPartnerOption(partnerId, null, {
+    option_items: [{ item_id: crypto.randomUUID(), name: '', price_delta: 0 }],
+  })
+
+const openOptionDialog = (option: BokudeliPartnerOption) => {
+  targetOption.value = new BokudeliPartnerOption(partnerId, option.option_id, {
+    ...option,
+    option_items: option.option_items.map((item) => ({ ...item })),
+  })
+}
+
+const saveOption = async (option: BokudeliPartnerOption) => {
   try {
+    if (partnerStore.menus == null) {
+      notification.show($t('menu.option_save_error'), 'error')
+      return
+    }
+    if (!option.isValidForDatabase()) {
+      notification.show($t('menu.option_save_error'), 'error')
+      return
+    }
+    const invalidMenu = menus.value.find((menu) => {
+      if (!(menu.option_ids ?? []).includes(option.option_id)) {
+        return false
+      }
+      const attached = (menu.option_ids ?? [])
+        .map((optionId) =>
+          optionId === option.option_id ? option : options.value.find((item) => item.option_id === optionId),
+        )
+        .filter((item): item is BokudeliPartnerOption => item != null)
+      return !isMenuMinTotalValid(menu.menu_price, attached)
+    })
+    if (invalidMenu != null) {
+      notification.show($t('menu_edit_card.error_min_total'), 'error')
+      return
+    }
+    await partnerStore.updateOption(option)
+    notification.show($t('menu.option_saved'), 'success')
+    optionDialog.value = false
+  } catch (e) {
+    console.error(e)
+    notification.show($t('menu.option_save_error'), 'error')
+  }
+}
+
+const onDeleteOption = async (option: BokudeliPartnerOption) => {
+  const result = window.confirm($t('menu.option_delete_confirm'))
+  if (!result) {
+    return
+  }
+  if (partnerStore.menus == null) {
+    notification.show($t('menu.option_delete_error'), 'error')
+    return
+  }
+  try {
+    const attachedMenus = menus.value.filter((menu) => (menu.option_ids ?? []).includes(option.option_id))
+    await Promise.all(
+      attachedMenus.map((menu) => {
+        const next = new BokudeliPartnerMenu(partnerId, menu.menu_id, {
+          ...menu,
+          option_ids: (menu.option_ids ?? []).filter((id) => id !== option.option_id),
+        })
+        return partnerStore.updateMenu(next)
+      }),
+    )
+    await partnerStore.deleteOption(option.option_id)
+    notification.show($t('menu.option_deleted'), 'success')
+  } catch (e) {
+    console.error(e)
+    notification.show($t('menu.option_delete_error'), 'error')
+  }
+}
+
+const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null): Promise<boolean> => {
+  try {
+    if (partnerStore.options == null) {
+      notification.show($t('menu.save_error'), 'error')
+      return false
+    }
+    const attached = (menu.option_ids ?? [])
+      .map((optionId) => options.value.find((option) => option.option_id === optionId))
+      .filter((option): option is BokudeliPartnerOption => option != null)
+    if (!isMenuMinTotalValid(menu.menu_price, attached)) {
+      notification.show($t('menu_edit_card.error_min_total'), 'error')
+      return false
+    }
     // 新規作成の場合、menu_sort_number を設定
     if (menu.menu_id == null || menus.value.find((m) => m.menu_id === menu.menu_id) == null) {
       // 既存のメニュー数をカウントして最後の値にする
@@ -78,9 +176,11 @@ const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null) => {
 
     await partnerStore.updateMenu(menu, file ?? undefined)
     notification.show($t('menu.saved'), 'success')
+    return true
   } catch (e) {
     console.error(e)
     notification.show($t('menu.save_error'), 'error')
+    return false
   }
 }
 const onDelete = (menu: BokudeliPartnerMenu) => {
@@ -140,6 +240,32 @@ const saveSortOrder = async () => {
         >
           {{ $t('menu.add') }}
         </v-btn>
+        <v-btn color="secondary" size="x-large" :prepend-icon="mdiPlus" @click="openOptionDialog(createBlankOption())">
+          {{ $t('menu.add_option') }}
+        </v-btn>
+      </div>
+      <div class="ma-4">
+        <h2 class="text-h6 mb-2">{{ $t('menu.option_section') }}</h2>
+        <v-list>
+          <v-list-item v-for="option in options" :key="option.option_id" @click="openOptionDialog(option)">
+            <v-list-item-title>{{ option.option_name }}</v-list-item-title>
+            <v-list-item-subtitle>
+              {{
+                option.selection === 'single'
+                  ? $t('option_edit_card.selection_single')
+                  : $t('option_edit_card.selection_multiple')
+              }}
+              /
+              {{ option.required ? $t('option_edit_card.required') : '' }}
+              {{ $t('option_edit_card.items') }} {{ option.option_items.length }}
+            </v-list-item-subtitle>
+            <template #append>
+              <v-btn variant="text" size="small" @click.stop="onDeleteOption(option)">
+                {{ $t('option_edit_card.remove_item') }}
+              </v-btn>
+            </template>
+          </v-list-item>
+        </v-list>
       </div>
       <draggable v-model="sortedMenus" class="d-flex flex-wrap" @end="saveSortOrder">
         <div v-for="menu in sortedMenus" :key="menu.menu_id" class="menu-item-wrapper">
@@ -170,15 +296,26 @@ const saveSortOrder = async () => {
     <MenuEditCard
       v-model="targetMenu"
       :image-url="partnerStore.menuImageUrls.get(targetMenu.menu_id) ?? ''"
+      :options="options"
       @save="
-        (menu, imageFile) => {
-          ;(saveMenu(menu, imageFile), (dialog = false))
+        async (menu, imageFile) => {
+          const saved = await saveMenu(menu, imageFile)
+          if (saved) {
+            dialog = false
+          }
         }
       "
       @cancel="dialog = false"
     >
       <template #title> {{ targetMenu.menu_id == null ? $t('menu.add') : $t('menu.edit') }} </template>
     </MenuEditCard>
+  </v-dialog>
+  <v-dialog v-if="targetOption != null" v-model="optionDialog" max-width="600px">
+    <OptionEditCard v-model="targetOption" @save="saveOption" @cancel="optionDialog = false">
+      <template #title>
+        {{ targetOption.option_name === '' ? $t('menu.add_option') : $t('menu.option_section') }}
+      </template>
+    </OptionEditCard>
   </v-dialog>
 </template>
 

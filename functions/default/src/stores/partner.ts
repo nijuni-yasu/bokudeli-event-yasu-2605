@@ -6,6 +6,7 @@ import {
   Transaction,
 } from 'firebase-admin/firestore'
 import { PartnerMenu } from '@shokujii/common/schemas/PartnerMenu.js'
+import { PartnerOption } from '@shokujii/common/schemas/PartnerOption.js'
 import { PartnerShop } from '@shokujii/common/schemas/PartnerShop.js'
 import { Event } from '@shokujii/common/schemas/Event.js'
 
@@ -16,6 +17,16 @@ class PartnerMenuConverter implements FirestoreDataConverter<PartnerMenu> {
   fromFirestore(snapshot: QueryDocumentSnapshot): PartnerMenu {
     const partnerId = snapshot.ref.parent.parent!.id
     return new PartnerMenu(partnerId, snapshot.id, snapshot.data())
+  }
+}
+
+class PartnerOptionConverter implements FirestoreDataConverter<PartnerOption> {
+  toFirestore(option: PartnerOption): DocumentData {
+    return option.toFirestore()
+  }
+  fromFirestore(snapshot: QueryDocumentSnapshot): PartnerOption {
+    const partnerId = snapshot.ref.parent.parent!.id
+    return new PartnerOption(partnerId, snapshot.id, snapshot.data())
   }
 }
 
@@ -67,6 +78,17 @@ export class Partner {
     } else {
       transaction.set(menusRef.doc(menu.id), menu, { merge: true })
     }
+  }
+
+  async getOptions(transaction?: Transaction): Promise<PartnerOption[]> {
+    const db = getFirestore()
+    const optionsRef = db
+      .collection('partners')
+      .doc(this.id)
+      .collection('options')
+      .withConverter(new PartnerOptionConverter())
+    const snapshot = await (transaction === undefined ? optionsRef.get() : transaction.get(optionsRef))
+    return snapshot.docs.map((doc) => doc.data())
   }
 
   async getShops(transaction?: Transaction): Promise<PartnerShop[]> {

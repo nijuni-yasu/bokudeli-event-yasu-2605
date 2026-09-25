@@ -22,6 +22,7 @@ import { buildFacebookUrl, buildTwitterUrl, buildInstagramUrl } from '@shokujii/
 import { priceString } from '@shokujii/base/schemes/converter'
 import type { User } from '@shokujii/common/schemas/User'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 const { t: $t } = useI18n()
 const route = useRoute()
@@ -128,6 +129,7 @@ const downloadCsvFile = () => {
     statusLabel: $t('manage.member.status'),
     nameLabel: $t('manage.member.name'),
     orderLabel: $t('manage.member.order'),
+    optionLabel: $t('manage.member.option'),
     menuPriceLabel: $t('manage.member.menu_price'),
     communityBillOffLabel: $t('manage.member.community_bill_off_amount'),
     dateOrderedLabel: $t('manage.member.date.ordered'),
@@ -229,7 +231,7 @@ const downloadCsvFile = () => {
                         <v-spacer />
                       </td>
                       <td class="menu-cell text-body-2">
-                        {{ order.menu_name }}
+                        {{ formatOrderMenuDisplayName(order.menu_name, order.selected_options) }}
                       </td>
                       <td class="text-right text-body-2 amount-cell">¥{{ priceString(order.menu_price) }}</td>
                       <td v-if="isCommunityBill" class="text-right text-body-2 amount-cell">

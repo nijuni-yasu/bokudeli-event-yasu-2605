@@ -18,6 +18,7 @@ import { getNamesPrintPath } from '@/navigation/utils'
 import { getNamesPrintPdf } from '@shokujii/base/utils/namesPrint.js'
 import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl.js'
 import { computed, ref, watch } from 'vue'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { getEventUrl, getUserUrl } from '@shokujii/common/utils/urls.js'
 import {
@@ -342,7 +343,7 @@ const downloadNamesPrint = async () => {
                     </div>
                   </a>
                 </td>
-                <td>{{ order.menu_name }}</td>
+                <td>{{ formatOrderMenuDisplayName(order.menu_name, order.selected_options) }}</td>
                 <td>{{ $n(order.menu_price, 'currency') }}</td>
                 <td>{{ order.ordered_at != null ? convertToDatetime(order.ordered_at) : '' }}</td>
               </tr>

@@ -1,6 +1,7 @@
 import { buildFacebookUrl, buildTwitterUrl, buildInstagramUrl } from '@shokujii/base/utils/buildSnsLinks.js'
 import { downloadCsv } from '@shokujii/base/utils/downloadCsv.js'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { formatSelectedOptionItemNames } from '@shokujii/common/utils/menuOption.js'
 import type { User } from '@shokujii/common/schemas/User.js'
 import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
@@ -46,6 +47,7 @@ export type BuildEventMemberCsvHeadersOptions = {
   statusLabel: string
   nameLabel: string
   orderLabel: string
+  optionLabel: string
   menuPriceLabel: string
   communityBillOffLabel: string
   dateOrderedLabel: string
@@ -56,7 +58,13 @@ export type BuildEventMemberCsvHeadersOptions = {
 
 export const buildEventMemberCsvHeaders = (options: BuildEventMemberCsvHeadersOptions): string[] => {
   const includeSnsColumns = options.includeSnsColumns !== false
-  const headers = [options.statusLabel, options.nameLabel, options.orderLabel, options.menuPriceLabel]
+  const headers = [
+    options.statusLabel,
+    options.nameLabel,
+    options.orderLabel,
+    options.optionLabel,
+    options.menuPriceLabel,
+  ]
   if (options.includeCommunityBill) {
     headers.push(options.communityBillOffLabel)
   }
@@ -74,7 +82,13 @@ export const buildEventMemberCsvRows = (
 ): string[][] =>
   rows.map(({ order, member, statusLabel }) => {
     const includeSnsColumns = options.includeSnsColumns !== false
-    const row = [statusLabel, member.user_name, order.menu_name, formatCsvAmount(order.menu_price)]
+    const row = [
+      statusLabel,
+      member.user_name,
+      order.menu_name,
+      formatSelectedOptionItemNames(order.selected_options),
+      formatCsvAmount(order.menu_price),
+    ]
     if (options.includeCommunityBill) {
       row.push(formatCsvAmount(order.pay_community_bill_off_amount ?? 0))
     }

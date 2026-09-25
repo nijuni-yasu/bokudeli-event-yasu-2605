@@ -7,13 +7,24 @@ import { useI18n } from 'vue-i18n'
 import ImageInput from '@shokujii/base/components/ImageInput.vue'
 import DateInput from '@shokujii/base/components/DateInput.vue'
 import { MENU_LIMIT_PER_EVENT_MAX } from '@shokujii/common/utils/menuLimit.js'
+import type { BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
+import {
+  MENU_ALLERGEN_VALUES,
+  MENU_BADGE_VALUES,
+  type MenuAllergenType,
+  type MenuBadgeType,
+} from '@shokujii/common/schemas/menuOption.js'
+import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
 
 const { requiredValidator, maxLengthValidator, betweenValidator } = useValidators()
 const { t: $t } = useI18n()
 
 const menu = defineModel<BokudeliPartnerMenu>({ required: true })
 
-defineProps<{ imageUrl: string }>()
+const props = defineProps<{
+  imageUrl: string
+  options: BokudeliPartnerOption[]
+}>()
 
 const emit = defineEmits<{
   save: [menu: BokudeliPartnerMenu, file: File | null]
@@ -94,6 +105,69 @@ const dateRangeRule = (): true | string => {
 }
 const dateRangeRules = [dateRangeRule]
 
+const attachedOptions = computed(() =>
+  (menu.value.option_ids ?? [])
+    .map((optionId) => props.options.find((option) => option.option_id === optionId))
+    .filter((option): option is BokudeliPartnerOption => option != null),
+)
+
+const minTotalValid = computed(() => isMenuMinTotalValid(menu.value.menu_price, attachedOptions.value))
+
+const minTotalRule = (): true | string => {
+  if (!minTotalValid.value) {
+    return $t('menu_edit_card.error_min_total')
+  }
+  return true
+}
+
+const toggleOptionId = (optionId: string, attached: boolean) => {
+  const current = menu.value.option_ids ?? []
+  if (attached) {
+    if (current.includes(optionId) || current.length >= 10) {
+      return
+    }
+    menu.value.option_ids = [...current, optionId]
+    return
+  }
+  menu.value.option_ids = current.filter((id) => id !== optionId)
+}
+
+const moveOption = (optionId: string, direction: -1 | 1) => {
+  const current = [...(menu.value.option_ids ?? [])]
+  const index = current.indexOf(optionId)
+  const next = index + direction
+  if (index < 0 || next < 0 || next >= current.length) {
+    return
+  }
+  const [moved] = current.splice(index, 1)
+  current.splice(next, 0, moved)
+  menu.value.option_ids = current
+}
+
+const allergenItems = MENU_ALLERGEN_VALUES.map((value) => ({
+  title: $t(`menu_allergen.${value}`),
+  value,
+}))
+
+const badgeItems = MENU_BADGE_VALUES.map((value) => ({
+  title: $t(`menu_badge.${value}`),
+  value,
+}))
+
+const allergensModel = computed({
+  get: () => menu.value.allergens ?? [],
+  set: (value: MenuAllergenType[]) => {
+    menu.value.allergens = value
+  },
+})
+
+const badgesModel = computed({
+  get: () => menu.value.badges ?? [],
+  set: (value: MenuBadgeType[]) => {
+    menu.value.badges = value
+  },
+})
+
 // 販売期間のバリデーションを入力欄に紐付けて、変更を監視する
 watch(
   () => [menu.value.menu_date_start, menu.value.menu_date_end],
@@ -104,7 +178,7 @@ watch(
 )
 
 const handleSubmit = () => {
-  if (!isValid.value) {
+  if (!isValid.value || !minTotalValid.value) {
     return
   }
   emit('save', menu.value, imageFile.value)
@@ -203,6 +277,56 @@ const handleSubmit = () => {
             {{ $t('menu_edit_card.limit_per_event_hint') }}
           </p>
         </div>
+        <div class="menu-edit-card__section">
+          <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.options') }}</div>
+          <div v-if="options.length === 0" class="menu-edit-card__hint">{{ $t('menu_edit_card.options_empty') }}</div>
+          <div v-for="optionId in menu.option_ids ?? []" :key="optionId" class="d-flex align-center ga-2 mb-1">
+            <v-checkbox
+              :model-value="true"
+              :label="options.find((option) => option.option_id === optionId)?.option_name ?? optionId"
+              hide-details
+              density="compact"
+              @update:model-value="toggleOptionId(optionId, false)"
+            />
+            <v-btn size="x-small" variant="text" @click="moveOption(optionId, -1)">↑</v-btn>
+            <v-btn size="x-small" variant="text" @click="moveOption(optionId, 1)">↓</v-btn>
+          </div>
+          <v-checkbox
+            v-for="option in options.filter((item) => !(menu.option_ids ?? []).includes(item.option_id))"
+            :key="option.option_id"
+            :model-value="false"
+            :label="option.option_name"
+            :disabled="(menu.option_ids ?? []).length >= 10"
+            hide-details
+            density="compact"
+            @update:model-value="toggleOptionId(option.option_id, true)"
+          />
+          <p class="menu-edit-card__hint text-error">{{ minTotalRule() === true ? '' : minTotalRule() }}</p>
+        </div>
+        <div class="menu-edit-card__section">
+          <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.allergens') }}</div>
+          <v-select
+            v-model="allergensModel"
+            :items="allergenItems"
+            multiple
+            chips
+            closable-chips
+            :label="$t('menu_edit_card.allergens')"
+          />
+          <v-switch v-model="menu.is_vegan" :label="$t('menu_attribute.vegan')" color="success" hide-details />
+          <v-switch v-model="menu.is_halal" :label="$t('menu_attribute.halal')" color="success" hide-details />
+        </div>
+        <div class="menu-edit-card__section">
+          <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.badges') }}</div>
+          <v-select
+            v-model="badgesModel"
+            :items="badgeItems"
+            multiple
+            chips
+            closable-chips
+            :label="$t('menu_edit_card.badges')"
+          />
+        </div>
         <div class="menu-edit-card__switch">
           <v-switch
             v-model="menu.is_sold_out"
@@ -220,7 +344,7 @@ const handleSubmit = () => {
         <v-btn variant="plain" @click="$emit('cancel')">
           {{ $t('menu_edit_card.close') }}
         </v-btn>
-        <v-btn type="submit" :disabled="!isValid" variant="tonal">
+        <v-btn type="submit" :disabled="!isValid || !minTotalValid" variant="tonal">
           {{ $t('menu_edit_card.submit') }}
         </v-btn>
       </template>

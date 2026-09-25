@@ -31,6 +31,7 @@ import {
   writeEnterpriseSubsidyRecalculatedAudit,
 } from './utils/enterpriseSubsidyOrders.js'
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 
 const logger = createModuleLogger('stripe')
@@ -238,7 +239,7 @@ export const createStripeCheckoutSession = onCall<
         existing.quantity++
       } else {
         grouped.set(groupKey, {
-          menuName: order.menu_name,
+          menuName: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
           unitAmount,
           quantity: 1,
           imageUrl: menuImageMap.get(order.menu_id) ?? '',

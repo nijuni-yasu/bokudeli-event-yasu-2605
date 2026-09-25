@@ -190,7 +190,29 @@ export default {
   cart_dialog: {
     add: 'カートに追加',
     close: '閉じる',
+    required: '必須',
+    no_selection: '選ばない',
+    price_delta_zero: '差額なし',
     login: 'ご注文にはログインが必要です。\nログイン完了後、再度この画面からメニューを選んでカートに追加してください。',
+  },
+  menu_allergen: {
+    ebi: 'えび',
+    kani: 'かに',
+    kurumi: 'くるみ',
+    komugi: '小麦',
+    soba: 'そば',
+    tamago: '卵',
+    milk: '乳',
+    peanuts: '落花生',
+  },
+  menu_badge: {
+    recommended: 'おすすめ',
+    new: '新メニュー',
+    limited: '期間限定',
+  },
+  menu_attribute: {
+    vegan: 'ヴィーガン',
+    halal: 'ハラル',
   },
   event_create_modal: {
     title: 'イベント開催のステップ',
@@ -960,6 +982,7 @@ export default {
       canceled: 'キャンセル',
       name: '名前',
       order: '注文内容',
+      option: 'オプション',
       menu_price: 'メニュー金額',
       community_bill_off_amount: 'おごり金額',
       csv_download: 'CSV ダウンロード',

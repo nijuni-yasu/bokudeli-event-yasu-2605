@@ -1,4 +1,5 @@
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 
 export {
   compareEventMemberOrdersForPartnerDetail,
@@ -20,13 +21,14 @@ export interface SubtotalMenu {
 export const getSubtotalsOfOrders = (orders: EventMemberOrder[]): SubtotalMenu[] => {
   const map = new Map<string, SubtotalMenu>()
   for (const o of orders) {
-    const existing = map.get(o.menu_id)
+    const key = getOrderMenuGroupKey(o)
+    const existing = map.get(key)
     if (existing) {
       existing.count++
     } else {
-      map.set(o.menu_id, {
+      map.set(key, {
         menu_id: o.menu_id,
-        name: o.menu_name,
+        name: formatOrderMenuDisplayName(o.menu_name, o.selected_options),
         price: o.menu_price,
         count: 1,
       })

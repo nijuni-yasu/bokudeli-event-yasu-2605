@@ -15,6 +15,7 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
@@ -154,10 +155,19 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         throw new HttpsError('failed-precondition', `メニューが見つかりません: ${menu.menu_id}`)
       }
 
+      const resolved = resolveEventMenuCartOrder({
+        eventMenu: masterMenu,
+        selectedItems: menu.selected_items,
+        presentedMenuPrice: menu.presented_menu_price,
+      })
+      if (!resolved.ok) {
+        throw new HttpsError(resolved.httpsCode, resolved.reason)
+      }
+
       const discount = computePaymentCommunityBillOffAmount(
         eventData.event_payment,
         eventData.community_bill_settings,
-        masterMenu.menu_price,
+        resolved.menu_price,
       )
       for (let i = 0; i < menu.count; i++) {
         await createOrder(
@@ -171,8 +181,9 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
             status: 'in_cart',
             menu_id: masterMenu.id,
             menu_name: masterMenu.menu_name,
-            menu_price: masterMenu.menu_price,
+            menu_price: resolved.menu_price,
             enterprise_id: enterpriseId ?? null,
+            ...(resolved.selected_options.length > 0 ? { selected_options: resolved.selected_options } : {}),
             ...(discount !== undefined ? { pay_community_bill_off_amount: discount } : {}),
           },
           transaction,

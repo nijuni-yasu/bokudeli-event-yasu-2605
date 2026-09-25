@@ -4,6 +4,7 @@ import { getStorage } from 'firebase-admin/storage'
 import sharp from 'sharp'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { sortEventMemberOrdersForPartnerDetail } from '@shokujii/common/utils/eventMemberOrderSort.js'
+import { formatNamesPrintMenuLabel } from '@shokujii/common/utils/menuOption.js'
 import { createModuleLogger } from './logger.js'
 import type { ShokujiiUser } from '../stores/user.js'
 
@@ -11,8 +12,6 @@ import type { ShokujiiUser } from '../stores/user.js'
 const NAMES_PRINT_PHOTO_SIZE_PX = 300
 /** 名札に載せるユーザー名の最大文字数 */
 const NAMES_PRINT_MAX_USER_NAME_LENGTH = 14
-/** 名札に載せるメニュー名の最大文字数（超過時は … を付与） */
-const NAMES_PRINT_MAX_MENU_NAME_LENGTH = 28
 /** テンプレート 1 行あたりの列数 */
 const NAMES_PRINT_COLUMNS_PER_ROW = 4
 
@@ -143,7 +142,7 @@ export const buildSortedMenuRows = (orders: EventMemberOrder[]): NamesPrintMenuR
   const sorted = sortEventMemberOrdersForPartnerDetail(orders)
   return sorted.map((o) => ({
     userId: o.user_id,
-    menuName: o.menu_name.normalize('NFKC'),
+    menuName: formatNamesPrintMenuLabel(o.menu_name, o.selected_options),
   }))
 }
 
@@ -163,10 +162,7 @@ export const buildValidNameRows = async (
       const rawName = user?.user_name ?? ''
       const name =
         rawName.length > NAMES_PRINT_MAX_USER_NAME_LENGTH ? rawName.slice(0, NAMES_PRINT_MAX_USER_NAME_LENGTH) : rawName
-      const menu =
-        row.menuName.length > NAMES_PRINT_MAX_MENU_NAME_LENGTH
-          ? `${row.menuName.slice(0, NAMES_PRINT_MAX_MENU_NAME_LENGTH)}…`
-          : row.menuName
+      const menu = row.menuName
       const photoUrl = user?.user_image_url
       const photo = await resolvePhotoUrl(photoUrl !== '' ? photoUrl : undefined)
       return { name, menu, photo }

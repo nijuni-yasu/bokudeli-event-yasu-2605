@@ -715,6 +715,7 @@ export default {
       canceled: 'キャンセル',
       name: '名前',
       order: '注文内容',
+      option: 'オプション',
       menu_price: 'メニュー金額',
       community_bill_off_amount: 'おごり金額',
       csv_download: 'CSV ダウンロード',

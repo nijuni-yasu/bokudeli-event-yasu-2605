@@ -44,6 +44,7 @@ const eventHeaders: BuildEventMemberCsvHeadersOptions = {
   statusLabel: 'ステータス',
   nameLabel: '名前',
   orderLabel: '注文内容',
+  optionLabel: 'オプション',
   menuPriceLabel: 'メニュー金額',
   communityBillOffLabel: 'おごり金額',
   dateOrderedLabel: '注文日時',
@@ -90,12 +91,28 @@ describe('buildCommunityMemberCsv', () => {
 describe('buildEventMemberCsv', () => {
   it('注文情報の後にSNS・プロフィール・タグを出力し、更新日時ではなく注文日時を使う', () => {
     const csv = buildEventMemberCsv(
-      [{ order: sampleOrder(), member: sampleUser(), statusLabel: '注文済' }],
+      [
+        {
+          order: sampleOrder({
+            selected_options: [
+              {
+                option_id: 'opt1',
+                option_name: 'サイズ',
+                item_id: 'item1',
+                item_name: '大盛',
+                price_delta: 100,
+              },
+            ],
+          }),
+          member: sampleUser(),
+          statusLabel: '注文済',
+        },
+      ],
       eventHeaders,
     )
     expect(csv).toBe(
-      '"ステータス","名前","注文内容","メニュー金額","おごり金額","注文日時","X","Facebook","Instagram","プロフィール","タグ"\n' +
-        '"注文済","Alice ""Test""","ランチ","¥1,000","¥200","2023/11/15 7:13","https://twitter.com/alice","","","bio","ランチ / 交流"\n',
+      '"ステータス","名前","注文内容","オプション","メニュー金額","おごり金額","注文日時","X","Facebook","Instagram","プロフィール","タグ"\n' +
+        '"注文済","Alice ""Test""","ランチ","大盛","¥1,000","¥200","2023/11/15 7:13","https://twitter.com/alice","","","bio","ランチ / 交流"\n',
     )
   })
 
@@ -107,8 +124,8 @@ describe('buildEventMemberCsv', () => {
     }
     const csv = buildEventMemberCsv([{ order: sampleOrder(), member: sampleUser(), statusLabel: '注文済' }], options)
     expect(csv).toBe(
-      '"ステータス","名前","注文内容","メニュー金額","注文日時","プロフィール","タグ"\n' +
-        '"注文済","Alice ""Test""","ランチ","¥1,000","2023/11/15 7:13","bio","ランチ / 交流"\n',
+      '"ステータス","名前","注文内容","オプション","メニュー金額","注文日時","プロフィール","タグ"\n' +
+        '"注文済","Alice ""Test""","ランチ","","¥1,000","2023/11/15 7:13","bio","ランチ / 交流"\n',
     )
   })
 
@@ -119,7 +136,7 @@ describe('buildEventMemberCsv', () => {
         [{ order: sampleOrder({ status }), member: sampleUser(), statusLabel: status }],
         { includeCommunityBill: false, includeSnsColumns: false, emptyDateLabel: 'ー' },
       )
-      expect(rows).toEqual([[status, 'Alice "Test"', 'ランチ', '¥1,000', 'ー', 'bio', 'ランチ / 交流']])
+      expect(rows).toEqual([[status, 'Alice "Test"', 'ランチ', '', '¥1,000', 'ー', 'bio', 'ランチ / 交流']])
     },
   )
 
@@ -134,7 +151,7 @@ describe('buildEventMemberCsv', () => {
       ],
       { includeCommunityBill: false, includeSnsColumns: false, emptyDateLabel: 'ー' },
     )
-    expect(rows).toEqual([['注文済', 'Alice', 'ランチ', '¥1,000', 'ー', '', '']])
+    expect(rows).toEqual([['注文済', 'Alice', 'ランチ', '', '¥1,000', 'ー', '', '']])
   })
 
   it.each([

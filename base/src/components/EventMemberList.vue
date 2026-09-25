@@ -10,6 +10,7 @@ import { getUserPath } from '@/router/utils'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
 import { orderTagsWithHighlightFirst } from '@shokujii/base/utils/tagDisplayOrder.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 
 const { t: $t } = useI18n()
 
@@ -43,8 +44,9 @@ function groupOrderedMenus(orders: EventMemberOrder[]): [string, { name: string;
   const map: Record<string, { name: string; count: number }> = {}
   for (const o of orders) {
     if (o.status !== 'ordered') continue
-    if (!map[o.menu_id]) map[o.menu_id] = { name: o.menu_name, count: 0 }
-    map[o.menu_id].count++
+    const key = getOrderMenuGroupKey(o)
+    if (!map[key]) map[key] = { name: formatOrderMenuDisplayName(o.menu_name, o.selected_options), count: 0 }
+    map[key].count++
   }
   return Object.entries(map)
 }

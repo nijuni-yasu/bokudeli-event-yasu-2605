@@ -21,6 +21,7 @@ import { getPartner } from './stores/partner.js'
 import { getUser } from './stores/user.js'
 import { convertReferenceToEvent, ShokujiiEvent } from './stores/event.js'
 import { createModuleLogger } from './utils/logger.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 const logger = createModuleLogger('eventStatusChangeMail')
 
@@ -49,7 +50,7 @@ export async function createTemplateDataForOrderDeadline(event: ShokujiiEvent) {
 
     orderList.push({
       name: user.user_name,
-      order: order.menu_name,
+      order: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
       price: `¥${order.menu_price}`,
       number: 0,
     })

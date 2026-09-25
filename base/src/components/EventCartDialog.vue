@@ -10,6 +10,9 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
+import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import type { CartSelectedItemType } from '@shokujii/common/schemas/menuOption.js'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -28,6 +31,7 @@ const emit = defineEmits<{
 
 const selectedCount = ref(1)
 const addErrorMessage = ref('')
+const selectedByOption = ref<Record<string, string[]>>({})
 
 const currentMenu = computed(() => {
   const menus = eventStore.menus
@@ -65,14 +69,76 @@ const countOptions = computed(() => {
   return Array.from({ length: max }, (_, i) => i + 1)
 })
 
-const isAddDisabled = computed(
-  () => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value) || countOptions.value.length === 0,
+const menuOptions = computed(() => currentMenu.value.options ?? [])
+
+const resetOptionSelection = () => {
+  const initial: Record<string, string[]> = {}
+  for (const option of menuOptions.value) {
+    initial[option.option_id] =
+      option.required && option.selection === 'single' && option.option_items[0] != null
+        ? [option.option_items[0].item_id]
+        : []
+  }
+  selectedByOption.value = initial
+}
+
+const selectedItems = computed((): CartSelectedItemType[] =>
+  Object.entries(selectedByOption.value).flatMap(([option_id, itemIds]) =>
+    itemIds.map((item_id) => ({ option_id, item_id })),
+  ),
 )
+
+const resolvedSelection = computed(() =>
+  resolveEventMenuCartOrder({
+    eventMenu: currentMenu.value,
+    selectedItems: selectedItems.value,
+  }),
+)
+
+const displayedPrice = computed(() =>
+  resolvedSelection.value.ok ? resolvedSelection.value.menu_price : currentMenu.value.menu_price,
+)
+
+const isAddDisabled = computed(
+  () =>
+    currentMenu.value.is_sold_out ||
+    isMenuLimitSoldOut(currentMenu.value) ||
+    countOptions.value.length === 0 ||
+    !resolvedSelection.value.ok,
+)
+
+const getSingleValue = (optionId: string): string | null => selectedByOption.value[optionId]?.[0] ?? null
+
+const setSingleValue = (optionId: string, itemId: string | null) => {
+  selectedByOption.value = { ...selectedByOption.value, [optionId]: itemId == null || itemId === '' ? [] : [itemId] }
+}
+
+const isMultipleChecked = (optionId: string, itemId: string): boolean =>
+  selectedByOption.value[optionId]?.includes(itemId) === true
+
+const toggleMultiple = (optionId: string, itemId: string, checked: boolean) => {
+  const current = new Set(selectedByOption.value[optionId] ?? [])
+  if (checked) {
+    current.add(itemId)
+  } else {
+    current.delete(itemId)
+  }
+  selectedByOption.value = { ...selectedByOption.value, [optionId]: [...current] }
+}
+
+const formatDelta = (delta: number): string => {
+  if (delta === 0) {
+    return $t('cart_dialog.price_delta_zero')
+  }
+  const sign = delta > 0 ? '+' : ''
+  return `${sign}${priceString(delta)}`
+}
 
 watch(isOpen, (open) => {
   if (open) {
     addErrorMessage.value = ''
     selectedCount.value = countOptions.value[0] ?? 1
+    resetOptionSelection()
   }
 })
 
@@ -95,7 +161,10 @@ const closeDialog = () => {
 }
 
 const getAddToCartErrorMessage = (error: unknown): string | null => {
-  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
+  if (
+    error instanceof FirebaseError &&
+    (error.code === 'functions/failed-precondition' || error.code === 'functions/invalid-argument')
+  ) {
     return getUserFacingFailedPreconditionMessage(error.message)
   }
   if (error instanceof Error) {
@@ -128,6 +197,8 @@ const addCart = async () => {
         {
           menu_id,
           count: selectedCount.value,
+          selected_items: selectedItems.value,
+          presented_menu_price: displayedPrice.value,
         },
       ],
     })
@@ -157,6 +228,54 @@ const addCart = async () => {
       <v-card-text class="text-left py-2">
         {{ currentMenu.menu_description }}
       </v-card-text>
+      <v-card-text class="py-1">
+        <MenuAttributeChips
+          :allergens="currentMenu.allergens"
+          :badges="currentMenu.badges"
+          :is-vegan="currentMenu.is_vegan"
+          :is-halal="currentMenu.is_halal"
+        />
+      </v-card-text>
+      <v-card-text v-if="menuOptions.length > 0" class="text-left py-2">
+        <div v-for="option in menuOptions" :key="option.option_id" class="mb-4">
+          <div class="text-subtitle-2 mb-1">
+            {{ option.option_name }}
+            <span v-if="option.required" class="text-error">{{ $t('cart_dialog.required') }}</span>
+          </div>
+          <p
+            v-if="option.option_description != null && option.option_description !== ''"
+            class="text-caption text-medium-emphasis mb-2"
+          >
+            {{ option.option_description }}
+          </p>
+          <v-radio-group
+            v-if="option.selection === 'single'"
+            :model-value="getSingleValue(option.option_id)"
+            :mandatory="option.required"
+            hide-details
+            @update:model-value="(value) => setSingleValue(option.option_id, typeof value === 'string' ? value : null)"
+          >
+            <v-radio v-if="!option.required" :label="$t('cart_dialog.no_selection')" :value="''" />
+            <v-radio
+              v-for="item in option.option_items"
+              :key="item.item_id"
+              :value="item.item_id"
+              :label="`${item.name}（${formatDelta(item.price_delta)}）`"
+            />
+          </v-radio-group>
+          <div v-else>
+            <v-checkbox
+              v-for="item in option.option_items"
+              :key="item.item_id"
+              :model-value="isMultipleChecked(option.option_id, item.item_id)"
+              :label="`${item.name}（${formatDelta(item.price_delta)}）`"
+              hide-details
+              density="compact"
+              @update:model-value="(value) => toggleMultiple(option.option_id, item.item_id, value === true)"
+            />
+          </div>
+        </div>
+      </v-card-text>
       <v-card-text class="d-flex align-center pb-8">
         <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
         <MenuStatusChips
@@ -167,7 +286,7 @@ const addCart = async () => {
         />
         <v-spacer />
         <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
+        <span class="text-h4">{{ priceString(displayedPrice) }}</span>
       </v-card-text>
       <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
