@@ -6,9 +6,11 @@ vi.mock('firebase-functions/v2/scheduler', () => ({
 
 const sgMailSendMock = vi.fn()
 const listActiveUnreadChatMembershipsMock = vi.fn()
-const getChatUnreadMailStateMock = vi.fn()
-const saveChatUnreadMailStateMock = vi.fn()
+const claimChatUnreadMailSendSlotMock = vi.fn()
+const releaseChatUnreadMailSendSlotMock = vi.fn()
 const getUserMock = vi.fn()
+const getEnterpriseByIdMock = vi.fn()
+const getEnterpriseMemberMock = vi.fn()
 const getChatRoomMock = vi.fn()
 const getCommunityMock = vi.fn()
 const getEventInCommunityMock = vi.fn()
@@ -23,8 +25,13 @@ vi.mock('./stores/chatMembership.js', () => ({
 }))
 
 vi.mock('./stores/chatUnreadMailState.js', () => ({
-  getChatUnreadMailState: (...args: unknown[]) => getChatUnreadMailStateMock(...args),
-  saveChatUnreadMailState: (...args: unknown[]) => saveChatUnreadMailStateMock(...args),
+  claimChatUnreadMailSendSlot: (...args: unknown[]) => claimChatUnreadMailSendSlotMock(...args),
+  releaseChatUnreadMailSendSlot: (...args: unknown[]) => releaseChatUnreadMailSendSlotMock(...args),
+}))
+
+vi.mock('./stores/enterprise.js', () => ({
+  getEnterpriseById: (...args: unknown[]) => getEnterpriseByIdMock(...args),
+  getEnterpriseMember: (...args: unknown[]) => getEnterpriseMemberMock(...args),
 }))
 
 vi.mock('./stores/user.js', () => ({
@@ -76,11 +83,11 @@ describe('sendChatUnreadMails', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     listActiveUnreadChatMembershipsMock.mockResolvedValue([unreadRow])
-    getChatUnreadMailStateMock.mockResolvedValue(undefined)
+    claimChatUnreadMailSendSlotMock.mockResolvedValue({ claimed: true, previousLastSentAt: undefined })
     getChatUrlForUserMock.mockResolvedValue('https://pf.example.com/chat/room-1')
     getChatRoomMock.mockResolvedValue({ title: '春の食事会' })
     sgMailSendMock.mockResolvedValue(undefined)
-    saveChatUnreadMailStateMock.mockResolvedValue(undefined)
+    releaseChatUnreadMailSendSlotMock.mockResolvedValue(undefined)
   })
 
   it('does not query outside the send slot', async () => {
@@ -97,22 +104,39 @@ describe('sendChatUnreadMails', () => {
     getUserMock.mockResolvedValueOnce({ is_deleted: false, user_email: '  ', user_name: 'A' })
     await sendChatUnreadMails(morning)
     expect(sgMailSendMock).not.toHaveBeenCalled()
-    expect(saveChatUnreadMailStateMock).not.toHaveBeenCalled()
+    expect(claimChatUnreadMailSendSlotMock).not.toHaveBeenCalled()
   })
 
-  it('sends and writes last_sent_at only after success', async () => {
+  it('claims the send slot before SendGrid and keeps it after success', async () => {
     getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
     await sendChatUnreadMails(morning)
+    expect(claimChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', morning, [unreadRow.membership])
     expect(sgMailSendMock).toHaveBeenCalledTimes(1)
-    expect(saveChatUnreadMailStateMock).toHaveBeenCalledTimes(1)
-    const savedState = saveChatUnreadMailStateMock.mock.calls[0]?.[1]
-    expect(savedState).toMatchObject({ last_sent_at: morning })
+    expect(releaseChatUnreadMailSendSlotMock).not.toHaveBeenCalled()
+    const claimOrder = claimChatUnreadMailSendSlotMock.mock.invocationCallOrder[0] ?? 0
+    const sendOrder = sgMailSendMock.mock.invocationCallOrder[0] ?? 0
+    expect(claimOrder).toBeLessThan(sendOrder)
   })
 
-  it('does not write last_sent_at when SendGrid fails', async () => {
+  it('releases the claim when SendGrid fails', async () => {
     getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
+    claimChatUnreadMailSendSlotMock.mockResolvedValue({ claimed: true, previousLastSentAt: unreadAt })
     sgMailSendMock.mockRejectedValue(new Error('sendgrid down'))
     await sendChatUnreadMails(morning)
-    expect(saveChatUnreadMailStateMock).not.toHaveBeenCalled()
+    expect(releaseChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', unreadAt)
+  })
+
+  it('skips inactive enterprise members before claiming a slot', async () => {
+    getUserMock.mockResolvedValue({
+      is_deleted: false,
+      user_email: 'user@example.com',
+      user_name: '太郎',
+      enterprise_id: 'ent-1',
+    })
+    getEnterpriseByIdMock.mockResolvedValue({ is_active: true })
+    getEnterpriseMemberMock.mockResolvedValue({ is_active: false })
+    await sendChatUnreadMails(morning)
+    expect(claimChatUnreadMailSendSlotMock).not.toHaveBeenCalled()
+    expect(sgMailSendMock).not.toHaveBeenCalled()
   })
 })
