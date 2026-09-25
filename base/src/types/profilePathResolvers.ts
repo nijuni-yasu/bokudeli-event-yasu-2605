@@ -7,6 +7,11 @@ export type ResolveCommunityPathFn = (communityAccount: string) => RouteLocation
 /** 注文確定後に注文履歴へ遷移する際の URL（成功ダイアログ用 query 付き） */
 export type ResolveOrdersPathFn = (params: { eventId: string; communityAccount: string }) => RouteLocationRaw
 export type ResolveChatRoomPathFn = (roomId?: string) => RouteLocationRaw
-export type NavigateToEventChatFn = (params: { communityId: string; eventId: string }) => Promise<boolean>
+export type NavigateToEventChatFn = (params: {
+  communityId: string
+  eventId: string
+  /** 注文完了ダイアログからの遷移。未投稿なら挨拶案内を出す */
+  promptGreeting?: boolean
+}) => Promise<boolean>
 
 export type ProfileLinkPolicyFn = (isPublic: boolean, isLinkable?: boolean) => boolean
