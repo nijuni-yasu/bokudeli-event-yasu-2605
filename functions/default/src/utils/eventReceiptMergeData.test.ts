@@ -4,6 +4,7 @@ import {
   NIJUNI_COMPANY_NAME,
   NIJUNI_INVOICE_REGISTRATION_NUMBER,
   RECEIPT_PAYMENT_METHOD_FALLBACK,
+  buildEventReceiptMenuLines,
   buildEventReceiptMergeData,
   computeEventReceiptAmounts,
 } from './eventReceiptMergeData.js'
@@ -48,7 +49,7 @@ describe('buildEventReceiptMergeData', () => {
     payAmount: 1110,
     payUserFeeAmount: 110,
     refundedTotal: 0,
-    menus: [{ menu_name: 'カレー', menu_price: 1000, count: 1 }],
+    orders: [{ menu_name: 'カレー', menu_price: 1000, status: 'ordered' }],
   }
 
   it('出前館型 2 ブロックの税内訳', () => {
@@ -83,5 +84,58 @@ describe('buildEventReceiptMergeData', () => {
     expect(data.hasFee).toBe(false)
     expect(data.fee).toBe(convertNumberToYen(0))
     expect(data.grandTotal).toBe(convertNumberToYen(1000))
+  })
+
+  it('補助・主催者負担がある行は自己負担単価を出し小計と一致する', () => {
+    const data = buildEventReceiptMergeData({
+      ...base,
+      payAmount: 810,
+      payUserFeeAmount: 110,
+      orders: [
+        {
+          menu_name: 'カレー',
+          menu_price: 1000,
+          status: 'ordered',
+          pay_community_bill_off_amount: 300,
+        },
+      ],
+    })
+    expect(data.menus).toEqual([{ menu_name: 'カレー', count: 1, price: convertNumberToYen(700) }])
+    expect(data.shopSubtotal).toBe(convertNumberToYen(700))
+    expect(data.grandTotal).toBe(convertNumberToYen(810))
+  })
+
+  it('部分キャンセル後は残注文の自己負担だけを内訳にする', () => {
+    const data = buildEventReceiptMergeData({
+      ...base,
+      payAmount: 2110,
+      payUserFeeAmount: 110,
+      refundedTotal: 1000,
+      orders: [
+        { menu_name: 'カレー', menu_price: 1000, status: 'ordered' },
+        { menu_name: 'カレー', menu_price: 1000, status: 'canceled' },
+      ],
+    })
+    expect(data.menus).toEqual([{ menu_name: 'カレー', count: 1, price: convertNumberToYen(1000) }])
+    expect(data.shopSubtotal).toBe(convertNumberToYen(1000))
+    expect(data.grandTotal).toBe(convertNumberToYen(1110))
+  })
+})
+
+describe('buildEventReceiptMenuLines', () => {
+  it('同じ自己負担単価の行を集約し、自己負担0は出さない', () => {
+    expect(
+      buildEventReceiptMenuLines([
+        { menu_name: 'カレー', menu_price: 1000, status: 'ordered' },
+        { menu_name: 'カレー', menu_price: 1000, status: 'ordered' },
+        {
+          menu_name: 'サラダ',
+          menu_price: 500,
+          status: 'ordered',
+          pay_enterprise_subsidy_amount: 500,
+        },
+        { menu_name: 'うどん', menu_price: 800, status: 'canceled' },
+      ]),
+    ).toEqual([{ menu_name: 'カレー', count: 2, price: convertNumberToYen(1000) }])
   })
 })

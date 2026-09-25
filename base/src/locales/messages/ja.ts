@@ -130,7 +130,7 @@ export default {
     company_subsidy_total: '会社負担合計',
     your_payment: 'お支払い額',
     payment_fee: '決済手数料',
-    payment_fee_note: 'クレジットカード決済時の手数料です。最低110円・最大330円。キャンセルしても返金されません。',
+    payment_fee_note: 'オンライン決済時の手数料です。最低110円・最大330円。キャンセルしても返金されません。',
     grand_total: '合計',
     enterprise_subsidy_month: '{0}分の福利厚生割引として適用されます',
     enterprise_subsidy_partial: '⚠ {0}分の割引上限に達するため、一部は全額自己負担となります',

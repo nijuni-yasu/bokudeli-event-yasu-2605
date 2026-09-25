@@ -7,7 +7,7 @@ import { convertDateToId } from '@shokujii/common/utils/datetime.js'
 import { createModuleLogger } from './utils/logger.js'
 import { getEvent } from './stores/event.js'
 import { getPartner } from './stores/partner.js'
-import { getStripe, saveStripe } from './stores/memberOrder.js'
+import { getOrdersByIds, getStripe, saveStripe } from './stores/memberOrder.js'
 import { buildEventReceiptMergeData } from './utils/eventReceiptMergeData.js'
 import { PdfGenerator } from './utils/PdfGenerator.js'
 
@@ -42,7 +42,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     }
 
     const db = getFirestore()
-    const { receiptNumber, reissue, stripe } = await db.runTransaction(async (transaction) => {
+    const { receiptNumber, reissue, stripe, orders } = await db.runTransaction(async (transaction) => {
       const stripeRow = await getStripe(event.community_id, eventId, stripeId, transaction)
       if (stripeRow === undefined) {
         throw new HttpsError('not-found', 'Stripe not found')
@@ -55,17 +55,20 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
         throw new HttpsError('failed-precondition', '支払額 ¥0 の注文には領収書を発行できません')
       }
 
+      const sessionOrders = await getOrdersByIds(event.community_id, eventId, uid, stripeRow.order_ids, transaction)
+
       if (stripeRow.receipt_number != null) {
         return {
           receiptNumber: stripeRow.receipt_number,
           reissue: true,
           stripe: stripeRow,
+          orders: sessionOrders,
         }
       }
       const num = convertDateToId(stripeRow.created_at)
       stripeRow.receipt_number = num
       await saveStripe(event.community_id, eventId, stripeRow, transaction)
-      return { receiptNumber: num, reissue: false, stripe: stripeRow }
+      return { receiptNumber: num, reissue: false, stripe: stripeRow, orders: sessionOrders }
     })
 
     const refundedTotal = stripe.refunds.reduce((sum, r) => sum + r.amount, 0)
@@ -83,7 +86,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
       payAmount: stripe.pay_amount,
       payUserFeeAmount: stripe.pay_user_fee_amount,
       refundedTotal,
-      menus: stripe.menus,
+      orders,
     })
 
     const pdfGenerator = new PdfGenerator()

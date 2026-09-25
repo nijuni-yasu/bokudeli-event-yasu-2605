@@ -131,7 +131,9 @@ export function computeEnterpriseSubsidyTotalPayment(orders: EventMemberOrder[])
 }
 
 /** community_bill / enterprise_subsidy いずれかの割引額（表示・合計用） */
-export function getMemberOrderDiscountAmount(order: EventMemberOrder): number {
+export function getMemberOrderDiscountAmount(
+  order: Pick<EventMemberOrder, 'pay_enterprise_subsidy_amount' | 'pay_community_bill_off_amount'>,
+): number {
   return order.pay_enterprise_subsidy_amount ?? order.pay_community_bill_off_amount ?? 0
 }
 

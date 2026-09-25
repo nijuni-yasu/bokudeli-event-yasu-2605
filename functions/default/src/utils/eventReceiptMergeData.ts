@@ -1,7 +1,8 @@
+import type { EventMemberOrderStatusType } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
 import { convertToDate, convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { computeInclusive8ExTaxAndTax, computeInclusive10ExTaxAndTax } from '@shokujii/common/utils/invoice.js'
-import type { StripeMenuType } from '@shokujii/common/schemas/EventStripe.js'
+import { getMemberOrderDiscountAmount } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 
 /** ニジュウニ株式会社の適格請求書発行事業者登録番号（店舗マスタに持たない） */
 export const NIJUNI_INVOICE_REGISTRATION_NUMBER = 'T8010001198825'
@@ -22,8 +23,17 @@ export type EventReceiptMergeInput = {
   payAmount: number
   payUserFeeAmount: number | undefined
   refundedTotal: number
-  menus: StripeMenuType[]
+  orders: EventReceiptMenuSource[]
   paymentMethod?: string
+}
+
+/** 領収書内訳の元データ。確定済み注文の自己負担単価を集約する */
+export type EventReceiptMenuSource = {
+  menu_name: string
+  menu_price: number
+  status: EventMemberOrderStatusType
+  pay_community_bill_off_amount?: number
+  pay_enterprise_subsidy_amount?: number
 }
 
 export type EventReceiptMergeData = {
@@ -74,6 +84,34 @@ export function computeEventReceiptAmounts(input: {
   return { fee, shopSubtotal, grandTotal: shopSubtotal + fee }
 }
 
+function computeReceiptMenuSelfPay(order: EventReceiptMenuSource): number {
+  return order.menu_price - getMemberOrderDiscountAmount(order)
+}
+
+/** `ordered` の自己負担単価を menu_name + 単価で集約する。キャンセル行は出さない */
+export function buildEventReceiptMenuLines(
+  orders: EventReceiptMenuSource[],
+): { menu_name: string; count: number; price: string }[] {
+  const groups = new Map<string, { menu_name: string; unitAmount: number; count: number }>()
+  for (const order of orders) {
+    if (order.status !== 'ordered') continue
+    const unitAmount = computeReceiptMenuSelfPay(order)
+    if (unitAmount <= 0) continue
+    const key = `${order.menu_name}\u0000${String(unitAmount)}`
+    const existing = groups.get(key)
+    if (existing != null) {
+      existing.count += 1
+    } else {
+      groups.set(key, { menu_name: order.menu_name, unitAmount, count: 1 })
+    }
+  }
+  return [...groups.values()].map((group) => ({
+    menu_name: group.menu_name,
+    count: group.count,
+    price: convertNumberToYen(group.unitAmount),
+  }))
+}
+
 export function buildEventReceiptMergeData(input: EventReceiptMergeInput): EventReceiptMergeData {
   const { fee, shopSubtotal, grandTotal } = computeEventReceiptAmounts(input)
   const shopTax = computeInclusive8ExTaxAndTax(shopSubtotal)
@@ -98,11 +136,7 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     invoiceId: input.shopInvoiceNumber ?? 'なし',
     address: input.shopAddress,
     paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
-    menus: input.menus.map((menu) => ({
-      menu_name: menu.menu_name,
-      count: menu.count,
-      price: convertNumberToYen(menu.menu_price),
-    })),
+    menus: buildEventReceiptMenuLines(input.orders),
     shopSubtotal: shopSubtotalYen,
     shop8: shopSubtotalYen,
     shop8Tax: shop8TaxYen,

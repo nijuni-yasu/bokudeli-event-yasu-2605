@@ -95,7 +95,7 @@ export function computeInclusive8ExTaxAndTax(taxInclusive: number): { exTaxPrice
 
 /**
  * 10% 税込合計から税抜・税額を求める（領収書の決済手数料）。
- * `Math.floor(税込 / 1.1)` と同意。整数演算にして 110 / 1.1 の浮動小数誤差を避ける。
+ * 税抜は `Math.floor((税込 * 10) / 11)`。`Math.floor(税込 / 1.1)` は 110 円で 99 になるため使わない。
  */
 export function computeInclusive10ExTaxAndTax(taxInclusive: number): { exTaxPrice: number; taxPrice: number } {
   const exTaxPrice = Math.floor((taxInclusive * 10) / 11)
