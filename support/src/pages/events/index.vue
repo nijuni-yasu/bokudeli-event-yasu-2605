@@ -3,6 +3,7 @@ import { orderBy, where, type QueryConstraint } from 'firebase/firestore'
 import { useEventListStore, type EventListStore } from '@shokujii/base/stores/eventList.js'
 import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { countOrderedByEventId } from '@shokujii/base/stores/supportCounts.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { getEventUrl, getCommunityUrl } from '@/utils/urls'
 import { eventStatusTicketTone } from '@/utils/statusColors'
@@ -57,11 +58,15 @@ const eventListStore = shallowRef<EventListStore>(
 
 /** イベントごとの注文済み件数。表示中の行だけ遅延ロードする。 */
 const orderedCounts = ref<Map<string, number>>(new Map())
+const orderedCountLoadErrors = ref(new Set<string>())
+let orderedCountLoadGeneration = 0
 
 watch(
   () => route.query.status,
   () => {
+    orderedCountLoadGeneration += 1
     orderedCounts.value = new Map()
+    orderedCountLoadErrors.value = new Set()
     eventListStore.value = useEventListStore(buildFilters(), PAGE_SIZE, {
       autoContinue: false,
       storeKey: eventListStoreKey(),
@@ -101,36 +106,68 @@ const showingCount = computed(() => {
   return filteredEvents.value.length
 })
 
+const loadOrderedCounts = async (targets: BokudeliEvent[]): Promise<void> => {
+  if (targets.length === 0) {
+    return
+  }
+  const generation = orderedCountLoadGeneration
+  const results = await Promise.all(
+    targets.map(async (event) => {
+      try {
+        return { eventId: event.event_id, count: await countOrderedByEventId(event.event_id), error: false }
+      } catch (error) {
+        console.warn(error)
+        reportClientError(error, {
+          componentInfo: 'events.index.loadOrderedCount',
+          documentPath: `communities/${event.community_id}/events/${event.event_id}`,
+          severity: 'warn',
+        })
+        return { eventId: event.event_id, count: null, error: true }
+      }
+    }),
+  )
+  if (generation !== orderedCountLoadGeneration) {
+    return
+  }
+  const next = new Map(orderedCounts.value)
+  const nextErrors = new Set(orderedCountLoadErrors.value)
+  for (const result of results) {
+    if (result.error) {
+      nextErrors.add(result.eventId)
+      next.delete(result.eventId)
+      continue
+    }
+    nextErrors.delete(result.eventId)
+    next.set(result.eventId, result.count ?? 0)
+  }
+  orderedCountLoadErrors.value = nextErrors
+  orderedCounts.value = next
+}
+
 watch(
   events,
-  async (list) => {
+  (list) => {
     if (list == null) {
       return
     }
-    const unresolved = list.filter((event) => !orderedCounts.value.has(event.event_id))
-    if (unresolved.length === 0) {
-      return
-    }
-    const results = await Promise.all(
-      unresolved.map(async (event) => {
-        try {
-          return [event.event_id, await countOrderedByEventId(event.event_id)] as const
-        } catch (error) {
-          console.warn(error)
-          return null
-        }
-      }),
+    void loadOrderedCounts(
+      list.filter(
+        (event) => !orderedCounts.value.has(event.event_id) && !orderedCountLoadErrors.value.has(event.event_id),
+      ),
     )
-    const next = new Map(orderedCounts.value)
-    for (const result of results) {
-      if (result != null) {
-        next.set(result[0], result[1])
-      }
-    }
-    orderedCounts.value = next
   },
   { immediate: true },
 )
+
+const retryOrderedCountLoad = (event: BokudeliEvent): void => {
+  const next = new Map(orderedCounts.value)
+  next.delete(event.event_id)
+  orderedCounts.value = next
+  const nextErrors = new Set(orderedCountLoadErrors.value)
+  nextErrors.delete(event.event_id)
+  orderedCountLoadErrors.value = nextErrors
+  void loadOrderedCounts([event])
+}
 
 const hasMore = computed(
   () => eventListStore.value.totalCount != null && (events.value?.length ?? 0) < eventListStore.value.totalCount,
@@ -210,7 +247,13 @@ const setStatusFilter = (status: EventStatusFilter, active: boolean): void => {
                 />
               </td>
               <td>
-                <template v-if="orderedCounts.get(event.event_id) != null">
+                <SupportStatusTicket
+                  v-if="orderedCountLoadErrors.has(event.event_id)"
+                  :label="$t('common.load_failed')"
+                  tone="danger"
+                  @click.stop="retryOrderedCountLoad(event)"
+                />
+                <template v-else-if="orderedCounts.get(event.event_id) != null">
                   <span
                     :class="{
                       'order-status-over': isOrderOverCapacity(event.event_id, event.event_max_people),
