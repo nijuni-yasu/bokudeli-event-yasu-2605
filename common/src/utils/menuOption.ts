@@ -238,11 +238,19 @@ export function resolveEventMenuCartOrder(input: ResolveEventMenuCartOrderInput)
   return { ok: true, selected_options: validation.selected_options, menu_price }
 }
 
+export function findMissingOptionIds(optionIds: readonly string[], options: readonly MenuOptionDefinition[]): string[] {
+  const optionIdSet = new Set(options.map((option) => option.option_id))
+  return optionIds.filter((optionId) => !optionIdSet.has(optionId))
+}
+
 export function snapshotPartnerOptionsForMenu(
   optionIds: readonly string[],
   options: readonly MenuOptionDefinition[],
-): EventMenuOptionType[] {
+): EventMenuOptionType[] | null {
   const optionById = new Map(options.map((option) => [option.option_id, option]))
+  if (findMissingOptionIds(optionIds, options).length > 0) {
+    return null
+  }
   return optionIds.flatMap((optionId) => {
     const option = optionById.get(optionId)
     if (option == null) {

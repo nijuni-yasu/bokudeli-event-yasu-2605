@@ -4,6 +4,7 @@ import type { MenuOptionDefinition } from './menuOption.js'
 import {
   computeMenuMinTotal,
   computeOptionMinDelta,
+  findMissingOptionIds,
   formatNamesPrintMenuLabel,
   formatOrderMenuDisplayName,
   getOrderMenuGroupKey,
@@ -232,6 +233,19 @@ describe('formatNamesPrintMenuLabel', () => {
 describe('snapshotPartnerOptionsForMenu', () => {
   it('option_ids の順で定義をコピーする', () => {
     const snapped = snapshotPartnerOptionsForMenu(['opt-topping', 'opt-size'], [sizeOption, toppingOption])
-    expect(snapped.map((option) => option.option_id)).toEqual(['opt-topping', 'opt-size'])
+    expect(snapped?.map((option) => option.option_id)).toEqual(['opt-topping', 'opt-size'])
+  })
+
+  it('存在しない option_id があれば null を返す', () => {
+    expect(snapshotPartnerOptionsForMenu(['opt-size', 'opt-missing'], [sizeOption])).toBeNull()
+  })
+})
+
+describe('findMissingOptionIds', () => {
+  it('定義に存在しない option_id だけを返す', () => {
+    expect(findMissingOptionIds(['opt-size', 'opt-missing', 'opt-missing-2'], [sizeOption])).toEqual([
+      'opt-missing',
+      'opt-missing-2',
+    ])
   })
 })

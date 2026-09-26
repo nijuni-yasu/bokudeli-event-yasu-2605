@@ -68,6 +68,9 @@ export function convertFromPartnerMenuToEventMenu(
   }
 
   const options = snapshotPartnerOptionsForMenu(partnerMenu.option_ids ?? [], partnerOptions)
+  if (options == null) {
+    return null
+  }
   if (!isMenuMinTotalValid(partnerMenu.menu_price, options)) {
     return null
   }
@@ -97,6 +100,9 @@ export function isPartnerMenuSkippedForMinTotal(
     return false
   }
   const options = snapshotPartnerOptionsForMenu(partnerMenu.option_ids ?? [], partnerOptions)
+  if (options == null) {
+    return false
+  }
   return !isMenuMinTotalValid(partnerMenu.menu_price, options)
 }
 

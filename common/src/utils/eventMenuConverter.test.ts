@@ -103,6 +103,29 @@ describe('convertFromPartnerMenuToEventMenu', () => {
 
     expect(result).toBeNull()
   })
+
+  it('参照オプションが欠落しているメニューはコピーしない', () => {
+    const partnerMenu = makePartnerMenu('menu1', {
+      option_ids: ['opt-size', 'opt-missing'],
+    })
+    const result = convertFromPartnerMenuToEventMenu(
+      partnerMenu,
+      EVENT_ID,
+      EVENT_START,
+      ['menu1'],
+      [
+        {
+          option_id: 'opt-size',
+          option_name: 'サイズ',
+          selection: 'single',
+          required: true,
+          option_items: [{ item_id: 'large', name: '大盛', price_delta: 100 }],
+        },
+      ],
+    )
+
+    expect(result).toBeNull()
+  })
 })
 
 describe('convertPartnerMenusToEventMenus', () => {

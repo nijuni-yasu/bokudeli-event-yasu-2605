@@ -8,7 +8,7 @@ import {
   convertPartnerMenusToEventMenus,
   isPartnerMenuSkippedForMinTotal,
 } from '@shokujii/common/utils/eventMenuConverter.js'
-import { MENU_MIN_TOTAL_INVALID_MESSAGE } from '@shokujii/common/utils/menuOption.js'
+import { findMissingOptionIds, MENU_MIN_TOTAL_INVALID_MESSAGE } from '@shokujii/common/utils/menuOption.js'
 import {
   getMenuImageStoragePath,
   getEventMenuImageStoragePath,
@@ -56,6 +56,15 @@ export const savePartnerMenusToEventMenus = async (
     partnerOptions,
   )
   for (const menu of partnerMenus) {
+    const missingOptionIds = findMissingOptionIds(menu.option_ids ?? [], partnerOptions)
+    if (missingOptionIds.length > 0) {
+      logger.error('PartnerMenu references missing options; skipping snapshot', {
+        partnerId,
+        eventId,
+        menuId: menu.menu_id,
+        missingOptionIds,
+      })
+    }
     if (isPartnerMenuSkippedForMinTotal(menu, partnerOptions)) {
       logger.error(MENU_MIN_TOTAL_INVALID_MESSAGE, {
         partnerId,

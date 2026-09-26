@@ -33,6 +33,7 @@ import {
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
+import { assertStripeCheckoutLineItemLimit } from './utils/stripeCheckoutLineItems.js'
 
 const logger = createModuleLogger('stripe')
 const db = getFirestore()
@@ -272,6 +273,7 @@ export const createStripeCheckoutSession = onCall<
       })
       throw new HttpsError('internal', '決済明細の生成に失敗しました')
     }
+    assertStripeCheckoutLineItemLimit(lineItems.length)
 
     const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
     const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
