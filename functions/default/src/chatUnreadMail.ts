@@ -25,8 +25,7 @@ import { getUser } from './stores/user.js'
 
 const logger = createModuleLogger('chatUnreadMail')
 
-/** SendGrid 採番前のプレースホルダ。実送信前に差し替える */
-export const CHAT_UNREAD_MAIL_TEMPLATE_ID = 'd-pending-chat-unread'
+export const CHAT_UNREAD_MAIL_TEMPLATE_ID = 'd-8d54dcbff9bd45e8b2f0355efb92d42f'
 
 /** コンソールでグループ作成後に差し替える。0 のあいだは送らない */
 export const CHAT_UNREAD_MAIL_ASM_GROUP_ID = 0
