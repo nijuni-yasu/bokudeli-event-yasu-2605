@@ -15,10 +15,14 @@
 | [x] | RC-10 | 4079879666 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 手数料説明をオンライン決済時に統一 |
 | [x] | RC-11 | 4079879724 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | 利用規約第13条2項の文言を明確化 |
 | [x] | RC-12 | 4079887341 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | キャンセルポリシー desc_after の br 表示 |
-| [ ] | RC-13 | 4101673881 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 無料の主催者負担キャンセルに手数料非返金<br>差額なしでは決済手数料が発生しない |
+| [ ] | RC-13 | 4101673881, 4103877591 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 無料の主催者負担キャンセルに手数料非返金<br>差額なしでは決済手数料が発生しない |
 | [x] | RC-14 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 10%税抜コメントが floor(税込/1.1) と同値と誤記<br>110円で 99 になる旨へ修正済み |
-| [ ] | RC-15 | 4101673867 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
-| [ ] | RC-16 | 4101673874 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行追加で Stripe 100明細上限を超え得る<br>呼び出し前の予約チェック方針が一意でない |
+| [ ] | RC-15 | 4101673867, 4103877559 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
+| [ ] | RC-16 | 4101673874, 4103877510 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行追加で Stripe 100明細上限を超え得る<br>呼び出し前の予約チェック方針が一意でない |
+| [ ] | RC-17 | 5831254045 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | M | 注文履歴のキーが event_id のみ<br>別コミュニティで同じ event_id だと読み飛ばす |
+| [ ] | RC-18 | 4103877536 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 金額不一致の client_error でも補助の Transaction が commit される<br>検証を副作用の前へ移すか throw するかは未決 |
+| [ ] | RC-19 | 4103877474 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止める |
+| [ ] | RC-20 | 4103870867, 4103877387, 4103877425 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者と件名が同じだけで force-with-lease を許可する<br>同等パッチ以外は確認に戻す案。依頼した判定と両立しない |
 
 ---
 
@@ -405,7 +409,7 @@
 
 ---
 
-**識別子**: RC-13（GitHub id: なし・エージェントレビュー）
+**識別子**: RC-13（GitHub id: 4101673881, 4103877591）
 
 **レビュワー**: Cursor Agent（shokujii-code-review）
 
@@ -503,7 +507,7 @@
 
 ---
 
-**識別子**: RC-15（GitHub id: 4101673867）
+**識別子**: RC-15（GitHub id: 4101673867, 4103877559）
 
 **レビュワー**: chatgpt-codex-connector[bot]
 
@@ -547,7 +551,7 @@ Useful? React with 👍 / 👎.
 
 ---
 
-**識別子**: RC-16（GitHub id: 4101673874）
+**識別子**: RC-16（GitHub id: 4101673874, 4103877510）
 
 **レビュワー**: chatgpt-codex-connector[bot]
 
@@ -585,6 +589,193 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: Stripe Checkout payment の line_items 上限 100 は公式どおり。手数料 1 行追加で 101 になり得る指摘は正しい。ただし 100 種類の自己負担単価グループは実運用ではほぼ起きない。チェック追加・先にエラーにする等、方針が複数あるため自動修正しない。
+
+---
+
+## 評価セッション（2026-09-25 20:05・review-comments-evaluate）
+
+- **評価日時**: 2026-09-25 20:05 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **REVIEW_REQUEST_SINCE**: 2026-09-25T10:54:44Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（id:5831225448 手順12定型文）
+- **重複スキップ**: 概要 id:5831254045 の 2 は RC-3、3 は RC-4。id:4103877591 は RC-13。id:4103877559 は RC-15。id:4103877510 は RC-16。いずれも再採番せず GitHub id を既存 RC に追記
+- **手順 4a 自動修正**: なし（RC-18 は throw と検証移動の二案で仕様判断。RC-17 は M。RC-19 は 💰。RC-20 はユーザー依頼の判定を戻す仕様判断）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-17 | 5831254045 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | M | 注文履歴のキーが event_id のみ<br>別コミュニティで同じ event_id だと読み飛ばす |
+| [ ] | RC-18 | 4103877536 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 金額不一致の client_error でも補助の Transaction が commit される<br>検証を副作用の前へ移すか throw するかは未決 |
+| [ ] | RC-19 | 4103877474 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止める |
+| [ ] | RC-20 | 4103870867, 4103877387, 4103877425 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者と件名が同じだけで force-with-lease を許可する<br>同等パッチ以外は確認に戻す案。依頼した判定と両立しない |
+
+---
+
+**識別子**: RC-17（GitHub id: 5831254045）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/userOrderHistoryList.ts:57`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし。概要コメント）
+```
+
+**レビュワーのコメント（原文）**:
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+レビューしました。注文履歴の `pay_user_fee_amount` 合算表示は確認でき、前回のその指摘は解消されています。
+
+現時点の [must] は 3 点です。
+
+1. `base/src/stores/userOrderHistoryList.ts:57`（あわせて `base/src/components/pages/orders.vue:155`）
+`collectionGroup('member_orders')` で複数コミュニティのイベントを横断しているのに、`orderStateByEventId` / `loadedEventIds` / `v-for` の key が `event_id` 単体です。同じ `event_id` を持つ別コミュニティのイベントがあると、後続イベントが読み飛ばされるか状態が上書きされます。`community_id + event_id` の複合キーにしてください。
+
+2. `functions/default/src/stripeWebhook.ts:406`
+旧 Checkout Session（`amount_total = selfPayAmount`）をまだ fee=0 のレガシーとして受けていないため、ロールアウト窓で 400 になります。
+
+3. `functions/default/src/utils/refundMemberOrdersStripe.ts:105`（および `:140`）
+返金上限チェックがまだ `pay_amount` 基準です。非返金の `pay_user_fee_amount` を控除した `pay_amount - (pay_user_fee_amount ?? 0)` を上限にしてください。
+
+**コメント要約**: 注文履歴のキーが event_id のみ<br>別コミュニティで同じ event_id だと読み飛ばす
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: `collectionGroup` なのに `event_id` だけで重複排除している指摘は構造として正しい。Firestore の自動 ID がコミュニティをまたいで衝突する実害はほぼ無いため 🚨 にはしない。store と一覧 key の変更は M。概要の 2 は RC-3、3 は RC-4 と同じなので再採番しない。
+
+---
+
+**識別子**: RC-18（GitHub id: 4103877536）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/stripeWebhook.ts:406`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+     const orderedAt = Timestamp.now().toMillis()
+-    const payAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
++    const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
++    const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(selfPayAmount)
++    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount)) {
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `enterprise_subsidy` では、この検証より前の `processEnterpriseSubsidyOrdersForWebhook` が同じ Transaction 内で月次利用量を更新します。ここで `{ kind: 'client_error' }` を返すだけでは Transaction は commit されるため、金額不一致時に利用量だけが加算され、Webhook の再送で二重加算されます。金額検証を副作用より前に移すか、不一致時は例外を throw して Transaction 全体を rollback してください。
+
+**コメント要約**: 金額不一致の client_error でも補助の Transaction が commit される<br>検証を副作用の前へ移すか throw するかは未決
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `handleOrderConfirmation` は `runTransaction` の戻り値で `client_error` を返しており、その前の `processEnterpriseSubsidyOrdersForWebhook` の書き込みは commit される。金額不一致で補助だけ残る経路は今回の検証追加で起きうる。検証の前倒しと throw では再送時の挙動が違うため自動修正しない。
+
+---
+
+**識別子**: RC-19（GitHub id: 4103877474）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/eventReceipt.ts:60`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      const sessionOrders = await getOrdersByIds(event.community_id, eventId, uid, stripeRow.order_ids, transaction)
+```
+
+**レビュワーのコメント（原文）**:
+
+[bug] ここで取得した注文は存在しないドキュメントを `getOrdersByIds` 内で黙って除外します。領収書の小計は `EventStripe.pay_amount` と返金累計から計算されるため、1件でも欠落すると明細だけが不足した不正確な領収書を発行できます。`sessionOrders.length` と `stripeRow.order_ids.length` を検証し、不一致なら発行を中止してください。
+
+**コメント要約**: 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止める
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `getOrdersByIds` は `exists` でないドキュメントを捨てる。小計は Stripe の確定額なので、欠落があると明細だけ短い領収書になる。発行中止は妥当だが金銭表示の変更なので自動修正しない。
+
+---
+
+**識別子**: RC-20（GitHub id: 4103870867, 4103877387, 4103877425）
+
+**レビュワー**: chatgpt-codex-connector[bot] / Copilot
+
+**指摘箇所**: `.agents/skills/git-create-pull-request/SKILL.md:111`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      - または `+` でも、`origin/$ref..HEAD` に **同じ作者かつ同じ件名** のコミットがある（amend で差分が変わった rebase / fixup / squash）
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  作者と件名だけで書き換え済みと判定しない**
+
+リモート専用コミットとローカルコミットが偶然同じ作者・件名を持つ場合（定型的なコミット名を再利用した場合など）、パッチが異なって `git cherry` が `+` でも履歴書き換え済みと誤判定され、そのまま `--force-with-lease` で共同作業者のコミットを削除します。`--force-with-lease` は取得後の更新しか防がず、判定時点で観測済みのリモート先端の上書きは許可するため、同等 patch-id で確認できないコミットはユーザー確認へ戻してください。
+
+Useful? React with 👍 / 👎.
+
+同じ作者・件名の `+` コミットを「ローカルの書き換え」とみなすだけでは、別内容の独立コミットでも force-with-lease を許可してしまい、リモートの変更を消す危険があります。自動許可は `git cherry` が `-`（同等パッチ）と判定した場合に限定し、それ以外はユーザー確認にしてください。
+
+同じ作者・件名の `+` コミットを履歴書き換えと判定するため、別内容の独立コミットでも `--force-with-lease` を自動実行できます。これは lease が検知できる範囲の前提を誤り、リモート専用の変更を失わせる可能性があるため、同等パッチ（`git cherry` の `-`）以外は確認に留めてください。
+
+**コメント要約**: 作者と件名が同じだけで force-with-lease を許可する<br>同等パッチ以外は確認に戻す案。依頼した判定と両立しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同名の別コミットを書き換えと誤るリスクは正しい。一方、amend でパッチが変わると `git cherry` は `+` になり、作者と件名の一致がないと依頼どおりの force-with-lease ができない。同等パッチだけに戻すか残すかは仕様判断のため自動修正しない。同じ指摘の id:4103877387 と id:4103877425 は本 RC にまとめた。
 
 ---
 
