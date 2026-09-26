@@ -11,6 +11,8 @@ const props = defineProps<{
 const hasLimitedPeriod = computed(() => props.menu.menu_date_start != null && props.menu.menu_date_end != null)
 
 const hasPriceRowChips = computed(() => props.menu.is_sold_out || props.menu.limit_per_event != null)
+
+const showDescription = computed(() => props.menu.menu_description.trim() !== '')
 </script>
 
 <template>
@@ -22,8 +24,11 @@ const hasPriceRowChips = computed(() => props.menu.is_sold_out || props.menu.lim
     <v-card-title class="text-h5 py-3 text-wrap">
       {{ menu.menu_name }}
     </v-card-title>
-    <v-card-text class="py-2">
+    <v-card-text v-if="showDescription" class="menu-description py-1 text-body-2 text-medium-emphasis">
       {{ menu.menu_description }}
+    </v-card-text>
+    <v-card-text v-if="$slots.meta" class="py-1">
+      <slot name="meta" />
     </v-card-text>
     <v-card-text v-if="hasLimitedPeriod" class="py-1">
       <MenuStatusChips
@@ -64,5 +69,11 @@ const hasPriceRowChips = computed(() => props.menu.is_sold_out || props.menu.lim
 }
 .image-wrapper {
   position: relative;
+}
+.menu-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 </style>

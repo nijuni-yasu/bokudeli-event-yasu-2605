@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import OptionEditCard from '@/components/OptionEditCard.vue'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
-import { mdiPlus } from '@mdi/js'
+import { mdiPlus, mdiDelete } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 
 const notification = useNotification()
@@ -15,6 +15,26 @@ const partnerStore = usePartnerStore(partnerId)
 
 const menus = computed<BokudeliPartnerMenu[]>(() => partnerStore.menus ?? [])
 const options = computed<BokudeliPartnerOption[]>(() => partnerStore.options ?? [])
+
+const menuCountByOptionId = computed(() => {
+  const counts = new Map<string, number>()
+  for (const menu of menus.value) {
+    for (const optionId of menu.option_ids ?? []) {
+      counts.set(optionId, (counts.get(optionId) ?? 0) + 1)
+    }
+  }
+  return counts
+})
+
+const namedItems = (option: BokudeliPartnerOption): BokudeliPartnerOption['option_items'] =>
+  option.option_items.filter((item) => item.name.trim() !== '')
+
+const formatPriceDelta = (priceDelta: number): string => {
+  if (priceDelta > 0) {
+    return `+${priceDelta}`
+  }
+  return String(priceDelta)
+}
 
 const targetOption: Ref<BokudeliPartnerOption | null> = ref(null)
 const optionDialog = computed({
@@ -111,25 +131,64 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
       </div>
       <div class="ma-4">
         <p v-if="options.length === 0" class="text-medium-emphasis">{{ $t('options.empty') }}</p>
-        <v-list v-else>
-          <v-list-item v-for="option in options" :key="option.option_id" @click="openOptionDialog(option)">
-            <v-list-item-title>{{ option.option_name }}</v-list-item-title>
-            <v-list-item-subtitle>
-              {{
-                option.selection === 'single'
-                  ? $t('option_edit_card.selection_single')
-                  : $t('option_edit_card.selection_multiple')
-              }}
-              <template v-if="option.required"> / {{ $t('option_edit_card.required') }}</template>
-              / {{ $t('option_edit_card.items') }} {{ option.option_items.length }}
-            </v-list-item-subtitle>
-            <template #append>
-              <v-btn variant="text" size="small" @click.stop="onDeleteOption(option)">
-                {{ $t('options.delete') }}
-              </v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
+        <div v-else class="d-flex flex-column ga-3">
+          <v-card
+            v-for="option in options"
+            :key="option.option_id"
+            class="option-row"
+            tabindex="0"
+            role="button"
+            @click="openOptionDialog(option)"
+            @keydown.enter="openOptionDialog(option)"
+          >
+            <div class="d-flex align-start ga-2 pa-4">
+              <div class="option-row__body">
+                <div class="text-h6">{{ option.option_name }}</div>
+                <div
+                  v-if="(option.option_description ?? '').trim() !== ''"
+                  class="text-body-2 text-medium-emphasis text-truncate"
+                >
+                  {{ option.option_description }}
+                </div>
+                <div class="d-flex flex-wrap ga-1 mt-2">
+                  <v-chip size="small" label variant="tonal">
+                    {{
+                      option.selection === 'single'
+                        ? $t('option_edit_card.selection_single')
+                        : $t('option_edit_card.selection_multiple')
+                    }}
+                  </v-chip>
+                  <v-chip v-if="option.required" size="small" label color="primary" variant="tonal">
+                    {{ $t('option_edit_card.required') }}
+                  </v-chip>
+                  <v-chip size="small" label variant="outlined">
+                    {{ $t('options.item_count', [option.option_items.length]) }}
+                  </v-chip>
+                  <v-chip size="small" label variant="tonal">
+                    {{
+                      (menuCountByOptionId.get(option.option_id) ?? 0) > 0
+                        ? $t('options.menu_count', [menuCountByOptionId.get(option.option_id) ?? 0])
+                        : $t('options.unused')
+                    }}
+                  </v-chip>
+                </div>
+                <div v-if="namedItems(option).length > 0" class="d-flex flex-wrap align-center ga-1 mt-2">
+                  <v-chip v-for="item in namedItems(option)" :key="item.item_id" size="small" label variant="outlined">
+                    {{ item.name }} {{ formatPriceDelta(item.price_delta) }}
+                  </v-chip>
+                </div>
+              </div>
+              <v-btn
+                :icon="mdiDelete"
+                :aria-label="$t('options.delete')"
+                variant="text"
+                size="small"
+                @click.stop="onDeleteOption(option)"
+                @keydown.enter.stop
+              />
+            </div>
+          </v-card>
+        </div>
       </div>
     </v-col>
   </v-row>
@@ -141,3 +200,14 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
     </OptionEditCard>
   </v-dialog>
 </template>
+
+<style scoped lang="scss">
+.option-row {
+  cursor: pointer;
+}
+
+.option-row__body {
+  flex-grow: 1;
+  min-width: 0;
+}
+</style>

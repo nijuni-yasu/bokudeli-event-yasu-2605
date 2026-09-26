@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import MenuEditCard from '@/components/MenuEditCard.vue'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
+import type { MenuBadgeType } from '@shokujii/common/schemas/menuOption.js'
 import MenuCard from '@shokujii/base/components/MenuCard.vue'
+import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
 import { mdiPlus, mdiClose } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { VueDraggableNext as draggable } from 'vue-draggable-next'
@@ -116,6 +118,38 @@ const onDelete = (menu: BokudeliPartnerMenu) => {
   }
 }
 
+const optionNameById = computed(() => {
+  const names = new Map<string, string>()
+  for (const option of options.value) {
+    if (option.option_name !== '') {
+      names.set(option.option_id, option.option_name)
+    }
+  }
+  return names
+})
+
+const attachedOptions = (menu: BokudeliPartnerMenu): { id: string; name: string }[] => {
+  return (menu.option_ids ?? []).flatMap((id) => {
+    const name = optionNameById.value.get(id)
+    return name == null ? [] : [{ id, name }]
+  })
+}
+
+const visibleBadges = (menu: BokudeliPartnerMenu): MenuBadgeType[] => {
+  const hasPeriod = menu.menu_date_start != null && menu.menu_date_end != null
+  return menu.badges.filter((badge) => !(hasPeriod && badge === 'limited'))
+}
+
+const hasMenuMeta = (menu: BokudeliPartnerMenu): boolean => {
+  return (
+    attachedOptions(menu).length > 0 ||
+    menu.allergens.length > 0 ||
+    visibleBadges(menu).length > 0 ||
+    menu.is_vegan ||
+    menu.is_halal
+  )
+}
+
 const example = new BokudeliPartnerMenu(partnerId, null, {
   menu_name: $t('menu.example.name'),
   menu_description: $t('menu.example.description'),
@@ -156,7 +190,7 @@ const saveSortOrder = async () => {
           {{ $t('menu.add') }}
         </v-btn>
       </div>
-      <draggable v-model="sortedMenus" class="d-flex flex-wrap" @end="saveSortOrder">
+      <draggable v-model="sortedMenus" class="menu-list d-flex flex-wrap" @end="saveSortOrder">
         <div v-for="menu in sortedMenus" :key="menu.menu_id" class="menu-item-wrapper">
           <MenuCard
             class="menu-card clickable draggable-item"
@@ -164,6 +198,30 @@ const saveSortOrder = async () => {
             :image-url="partnerStore.menuImageUrls.get(menu.menu_id) ?? ''"
             @click="openDialog(menu)"
           >
+            <template v-if="hasMenuMeta(menu)" #meta>
+              <div class="d-flex flex-column ga-1">
+                <div v-if="attachedOptions(menu).length > 0" class="d-flex flex-wrap ga-1">
+                  <v-chip
+                    v-for="option in attachedOptions(menu)"
+                    :key="option.id"
+                    size="small"
+                    color="primary"
+                    variant="tonal"
+                    label
+                  >
+                    {{ option.name }}
+                  </v-chip>
+                </div>
+                <MenuAttributeChips
+                  :allergens="menu.allergens"
+                  :badges="visibleBadges(menu)"
+                  :is-vegan="menu.is_vegan"
+                  :is-halal="menu.is_halal"
+                  size="small"
+                  label
+                />
+              </div>
+            </template>
             <v-btn
               :icon="mdiClose"
               class="close-button"
@@ -181,7 +239,7 @@ const saveSortOrder = async () => {
       </v-row>
     </v-col>
   </v-row>
-  <v-dialog v-if="targetMenu != null" v-model="dialog" max-width="600px">
+  <v-dialog v-if="targetMenu != null" v-model="dialog" max-width="600px" scrollable>
     <MenuEditCard
       v-model="targetMenu"
       :image-url="partnerStore.menuImageUrls.get(targetMenu.menu_id) ?? ''"
@@ -202,17 +260,36 @@ const saveSortOrder = async () => {
 </template>
 
 <style scoped lang="scss">
+.menu-list {
+  align-items: stretch;
+}
+
 .menu-card {
-  height: 100%;
+  flex: 1 1 auto;
   width: 100%;
   min-height: 300px;
-  margin: 16px;
+  margin: 8px;
 
   .close-button {
     position: absolute;
     top: 10px;
     right: 10px;
     color: black;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.menu-item-wrapper:hover .close-button,
+.menu-item-wrapper:focus-within .close-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .menu-card .close-button {
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 
@@ -230,7 +307,9 @@ const saveSortOrder = async () => {
 
 .menu-item-wrapper {
   position: relative;
-  height: 100%;
+  display: flex;
+  height: auto;
+  align-self: stretch;
   flex: 0 0 calc(100% - 16px);
   margin: 8px;
 

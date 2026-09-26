@@ -188,6 +188,9 @@ export default {
     delete_error: 'オプションを削除できませんでした',
     delete_confirm: 'このオプションを削除しますか？メニューから外されます。',
     delete: '削除',
+    item_count: '項目 {0}',
+    menu_count: 'メニュー {0}件',
+    unused: '未使用',
   },
   orders: {
     title: '注文一覧',
@@ -303,7 +306,7 @@ export default {
     submit: '保存する',
     error_duplicate_item_name: '項目名が重複しています',
     error_item_count: '項目は1〜20件にしてください',
-    error_price_delta: '金額差分は -100000〜100000 の整数にしてください',
+    error_price_delta: '金額差分は -10000〜10000 の整数にしてください',
   },
   community: {
     submit: '設定',

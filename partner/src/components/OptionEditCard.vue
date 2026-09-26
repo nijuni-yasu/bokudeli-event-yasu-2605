@@ -84,15 +84,21 @@ const handleSubmit = () => {
         <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
         <div>
           <div class="text-subtitle-2 mb-2">{{ $t('option_edit_card.items') }}</div>
-          <div v-for="item in option.option_items" :key="item.item_id" class="d-flex ga-2 mb-2">
+          <div
+            v-for="item in option.option_items"
+            :key="item.item_id"
+            class="option-edit-card__item d-flex align-start ga-2 mb-2"
+          >
             <v-text-field
               v-model="item.name"
+              class="option-edit-card__item-name"
               :label="$t('option_edit_card.item_name')"
               :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40), uniqueItemNameRule]"
               density="compact"
             />
             <v-text-field
               v-model.number="item.price_delta"
+              class="option-edit-card__price-delta"
               type="number"
               :label="$t('option_edit_card.price_delta')"
               :min="PRICE_DELTA_MIN"
@@ -100,7 +106,9 @@ const handleSubmit = () => {
               :rules="[priceDeltaRule]"
               density="compact"
             />
-            <v-btn variant="text" @click="removeItem(item.item_id)">{{ $t('option_edit_card.remove_item') }}</v-btn>
+            <v-btn class="flex-shrink-0" variant="text" @click="removeItem(item.item_id)">
+              {{ $t('option_edit_card.remove_item') }}
+            </v-btn>
           </div>
           <v-btn variant="tonal" :disabled="option.option_items.length >= 20" @click="addItem">
             {{ $t('option_edit_card.add_item') }}
@@ -118,3 +126,20 @@ const handleSubmit = () => {
     </v-card>
   </v-form>
 </template>
+
+<style scoped lang="scss">
+.option-edit-card__item-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.option-edit-card__price-delta {
+  flex: 0 0 10rem;
+  width: 10rem;
+  max-width: 10rem;
+}
+
+.option-edit-card__price-delta :deep(input) {
+  min-width: 0;
+}
+</style>
