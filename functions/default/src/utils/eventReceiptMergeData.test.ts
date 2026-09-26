@@ -77,7 +77,7 @@ describe('buildEventReceiptMergeData', () => {
     expect(data.event).toBe('カレー会 / お食事代および決済手数料として')
   })
 
-  it('店番号が無いときは番号欄を出さず、手数料 0 はお食事代のみ', () => {
+  it('店番号が無いときは登録なしと書き、手数料 0 はお食事代のみ', () => {
     const data = buildEventReceiptMergeData({
       ...base,
       shopInvoiceNumber: '  ',
@@ -85,7 +85,7 @@ describe('buildEventReceiptMergeData', () => {
       payUserFeeAmount: undefined,
     })
     expect(data.hasShopInvoice).toBe(false)
-    expect(data.invoiceId).toBe('')
+    expect(data.invoiceId).toBe('登録なし')
     expect(data.hasFee).toBe(false)
     expect(data.fee).toBe(convertNumberToYen(0))
     expect(data.event).toBe('カレー会 / お食事代として')

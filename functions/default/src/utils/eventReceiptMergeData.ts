@@ -12,6 +12,7 @@ export const NIJUNI_ADDRESS = '東京都千代田区神田猿楽町２丁目８�
 export const NIJUNI_EMAIL = 'support@nijuni.jp'
 export const RECEIPT_PAYMENT_METHOD_FALLBACK = 'オンライン決済'
 export const RECEIPT_SHOP_FOOTER = 'このお食事代の領収書はイベント開催店舗により発行するものです。'
+export const RECEIPT_SHOP_INVOICE_ABSENT_LABEL = '登録なし'
 
 export type EventReceiptMergeInput = {
   eventName: string
@@ -141,7 +142,7 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     event: `${input.eventName} / ${proviso}`,
     shop: input.shopName,
     hasShopInvoice: shopInvoiceNumber !== '',
-    invoiceId: shopInvoiceNumber,
+    invoiceId: shopInvoiceNumber !== '' ? shopInvoiceNumber : RECEIPT_SHOP_INVOICE_ABSENT_LABEL,
     address: input.shopAddress,
     paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
     menus: buildEventReceiptMenuLines(input.orders),
