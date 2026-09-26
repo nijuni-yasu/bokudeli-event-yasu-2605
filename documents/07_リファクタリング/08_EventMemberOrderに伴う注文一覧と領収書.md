@@ -341,14 +341,14 @@ export const getReceiptPath = (eventId: string, stripeId: string) =>
 
 | フィールド | 現行のデータソース | EventMemberOrder 移行時のデータソース |
 |:--|:--|:--|
-| event（但し書き） | `event.event_name + ' / お食事代として'` | 変更なし（#971 ではメニュー行＋ブロック見出しに置換） |
+| event（但し書き） | `event.event_name + ' / お食事代として'` | 手数料があるときは `お食事代および決済手数料として`。金額の帯の直後（§4.2.7） |
 | number（領収書番号） | `order.receipt_number` | `stripes.receipt_number` |
 | orderDate（注文日） | `order.ordered_at` | `stripes.created_at` |
 | price（金額） | `order.totalPrice`（menus 合計） | レガシー: `stripes.pay_amount`。#971: 食事残 ＋ 手数料（§4.2.7.4） |
 | date（発行日） | `Date.now()` | 変更なし |
 | shop（店舗名） | `shop.shop_name` | 変更なし |
 | invoiceId（適格番号） | `shop.shop_invoice_number` | 店舗ブロックのみ。手数料ブロックは `T8010001198825`（ニジュウニ株式会社） |
-| address（住所） | `shop.shop_address` | 変更なし（#971 の出前館型では必須としない） |
+| address（住所） | `shop.shop_address` | 店舗ブロックの販売元住所。ニジュウニの住所は手数料ブロック（§4.2.7） |
 | rawPrice（税抜金額） | `order.ExTaxPrice` | レガシー: `Math.floor(pay_amount / 1.08)`。#971: ブロックごとに 8% / 10% |
 | tax（消費税） | `order.TaxPrice` | レガシー: `pay_amount - rawPrice`。#971: ブロックごとに内税 |
 | reissue（再発行） | `receipt_number` の有無で判定 | 変更なし（`stripes.receipt_number` の有無で判定） |

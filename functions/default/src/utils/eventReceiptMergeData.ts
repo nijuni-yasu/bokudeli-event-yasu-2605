@@ -7,6 +7,9 @@ import { getMemberOrderDiscountAmount } from '@shokujii/common/utils/paymentEnte
 /** ニジュウニ株式会社の適格請求書発行事業者登録番号（店舗マスタに持たない） */
 export const NIJUNI_INVOICE_REGISTRATION_NUMBER = 'T8010001198825'
 export const NIJUNI_COMPANY_NAME = 'ニジュウニ株式会社'
+export const NIJUNI_POSTAL_CODE = '〒101-0064'
+export const NIJUNI_ADDRESS = '東京都千代田区神田猿楽町２丁目８−１１ Vort水道橋III 9階'
+export const NIJUNI_EMAIL = 'support@nijuni.jp'
 export const RECEIPT_PAYMENT_METHOD_FALLBACK = 'オンライン決済'
 export const RECEIPT_SHOP_FOOTER = 'このお食事代の領収書はイベント開催店舗により発行するものです。'
 
@@ -46,6 +49,7 @@ export type EventReceiptMergeData = {
   eventDate: string
   event: string
   shop: string
+  hasShopInvoice: boolean
   invoiceId: string
   address: string
   paymentMethod: string
@@ -53,17 +57,18 @@ export type EventReceiptMergeData = {
   shopSubtotal: string
   shop8: string
   shop8Tax: string
-  shop10: string
-  shop10Tax: string
+  shopExTax: string
   rawPrice: string
   tax: string
   fee: string
-  fee8: string
-  fee8Tax: string
   fee10: string
   fee10Tax: string
+  feeExTax: string
   nijuniName: string
   nijuniInvoiceId: string
+  nijuniPostalCode: string
+  nijuniAddress: string
+  nijuniEmail: string
   grandTotal: string
   price: string
   footer: string
@@ -117,11 +122,13 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
   const shopTax = computeInclusive8ExTaxAndTax(shopSubtotal)
   const feeTax = computeInclusive10ExTaxAndTax(fee)
   const hasFee = fee > 0
+  const shopInvoiceNumber = input.shopInvoiceNumber?.trim() ?? ''
   const issuedAt = convertToDatetime(input.issuedAt)
   const shopSubtotalYen = convertNumberToYen(shopSubtotal)
   const shop8TaxYen = convertNumberToYen(shopTax.taxPrice)
+  const shopExTaxYen = convertNumberToYen(shopTax.exTaxPrice)
   const grandTotalYen = convertNumberToYen(grandTotal)
-  const zeroYen = convertNumberToYen(0)
+  const proviso = hasFee ? 'お食事代および決済手数料として' : 'お食事代として'
 
   return {
     reissue: input.reissue,
@@ -131,26 +138,28 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     issuedAt,
     orderDate: convertToDatetime(input.orderCreatedAt),
     eventDate: convertToDate(input.eventStartDatetime),
-    event: `${input.eventName} / お食事代として`,
+    event: `${input.eventName} / ${proviso}`,
     shop: input.shopName,
-    invoiceId: input.shopInvoiceNumber ?? 'なし',
+    hasShopInvoice: shopInvoiceNumber !== '',
+    invoiceId: shopInvoiceNumber,
     address: input.shopAddress,
     paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
     menus: buildEventReceiptMenuLines(input.orders),
     shopSubtotal: shopSubtotalYen,
     shop8: shopSubtotalYen,
     shop8Tax: shop8TaxYen,
-    shop10: zeroYen,
-    shop10Tax: zeroYen,
-    rawPrice: convertNumberToYen(shopTax.exTaxPrice),
+    shopExTax: shopExTaxYen,
+    rawPrice: shopExTaxYen,
     tax: shop8TaxYen,
     fee: convertNumberToYen(fee),
-    fee8: zeroYen,
-    fee8Tax: zeroYen,
     fee10: convertNumberToYen(fee),
     fee10Tax: convertNumberToYen(feeTax.taxPrice),
+    feeExTax: convertNumberToYen(feeTax.exTaxPrice),
     nijuniName: NIJUNI_COMPANY_NAME,
     nijuniInvoiceId: NIJUNI_INVOICE_REGISTRATION_NUMBER,
+    nijuniPostalCode: NIJUNI_POSTAL_CODE,
+    nijuniAddress: NIJUNI_ADDRESS,
+    nijuniEmail: NIJUNI_EMAIL,
     grandTotal: grandTotalYen,
     price: grandTotalYen,
     footer: RECEIPT_SHOP_FOOTER,

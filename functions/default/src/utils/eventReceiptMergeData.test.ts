@@ -60,29 +60,35 @@ describe('buildEventReceiptMergeData', () => {
     expect(data.nijuniName).toBe(NIJUNI_COMPANY_NAME)
     expect(data.nijuniInvoiceId).toBe(NIJUNI_INVOICE_REGISTRATION_NUMBER)
     expect(data.shopSubtotal).toBe(convertNumberToYen(1000))
+    expect(data.hasShopInvoice).toBe(true)
     expect(data.shop8).toBe(convertNumberToYen(1000))
     expect(data.shop8Tax).toBe(convertNumberToYen(75))
-    expect(data.shop10).toBe(convertNumberToYen(0))
+    expect(data.shopExTax).toBe(convertNumberToYen(925))
     expect(data.fee).toBe(convertNumberToYen(110))
     expect(data.fee10).toBe(convertNumberToYen(110))
     expect(data.fee10Tax).toBe(convertNumberToYen(10))
+    expect(data.feeExTax).toBe(convertNumberToYen(100))
+    expect(data.nijuniPostalCode).toBe('〒101-0064')
+    expect(data.nijuniEmail).toBe('support@nijuni.jp')
     expect(data.grandTotal).toBe(convertNumberToYen(1110))
     expect(data.price).toBe(data.grandTotal)
     expect(data.menus).toEqual([{ menu_name: 'カレー', count: 1, price: convertNumberToYen(1000) }])
     expect(data.paymentMethod).toBe(RECEIPT_PAYMENT_METHOD_FALLBACK)
-    expect(data.event).toContain('お食事代として')
+    expect(data.event).toBe('カレー会 / お食事代および決済手数料として')
   })
 
-  it('店番号なしは「なし」。手数料 0 はニジュウニブロック非表示', () => {
+  it('店番号が無いときは番号欄を出さず、手数料 0 はお食事代のみ', () => {
     const data = buildEventReceiptMergeData({
       ...base,
-      shopInvoiceNumber: undefined,
+      shopInvoiceNumber: '  ',
       payAmount: 1000,
       payUserFeeAmount: undefined,
     })
-    expect(data.invoiceId).toBe('なし')
+    expect(data.hasShopInvoice).toBe(false)
+    expect(data.invoiceId).toBe('')
     expect(data.hasFee).toBe(false)
     expect(data.fee).toBe(convertNumberToYen(0))
+    expect(data.event).toBe('カレー会 / お食事代として')
     expect(data.grandTotal).toBe(convertNumberToYen(1000))
   })
 
