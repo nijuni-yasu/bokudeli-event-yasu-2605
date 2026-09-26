@@ -279,7 +279,10 @@ const handleSubmit = () => {
         </div>
         <div class="menu-edit-card__section">
           <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.options') }}</div>
-          <div v-if="options.length === 0" class="menu-edit-card__hint">{{ $t('menu_edit_card.options_empty') }}</div>
+          <div v-if="options.length === 0" class="menu-edit-card__hint">
+            {{ $t('menu_edit_card.options_empty') }}
+            <RouterLink class="ms-1" to="/options">{{ $t('navigation.option') }}</RouterLink>
+          </div>
           <div v-for="optionId in menu.option_ids ?? []" :key="optionId" class="d-flex align-center ga-2 mb-1">
             <v-checkbox
               :model-value="true"

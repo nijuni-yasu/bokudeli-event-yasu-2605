@@ -27,6 +27,7 @@ declare module 'vue-router/auto-routes' {
     '/maintenance': RouteRecordInfo<'/maintenance', '/maintenance', Record<never, never>, Record<never, never>>,
     '/menu': RouteRecordInfo<'/menu', '/menu', Record<never, never>, Record<never, never>>,
     '/namesprint': RouteRecordInfo<'/namesprint', '/namesprint', Record<never, never>, Record<never, never>>,
+    '/options': RouteRecordInfo<'/options', '/options', Record<never, never>, Record<never, never>>,
     '/order/': RouteRecordInfo<'/order/', '/order', Record<never, never>, Record<never, never>>,
     '/order/[eventId]': RouteRecordInfo<'/order/[eventId]', '/order/:eventId', { eventId: ParamValue<true> }, { eventId: ParamValue<false> }>,
     '/shop': RouteRecordInfo<'/shop', '/shop', Record<never, never>, Record<never, never>>,
