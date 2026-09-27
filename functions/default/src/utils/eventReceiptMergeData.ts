@@ -11,8 +11,9 @@ export const NIJUNI_POSTAL_CODE = '〒101-0064'
 export const NIJUNI_ADDRESS = '東京都千代田区神田猿楽町２丁目８−１１ Vort水道橋III 9階'
 export const NIJUNI_EMAIL = 'support@nijuni.jp'
 export const RECEIPT_PAYMENT_METHOD_FALLBACK = 'オンライン決済'
-export const RECEIPT_SHOP_FOOTER = 'このお食事代の領収書はイベント開催店舗により発行するものです。'
-export const RECEIPT_SHOP_INVOICE_ABSENT_LABEL = '登録なし'
+export const RECEIPT_SHOP_FOOTER =
+  'お食事代に係る領収書は、販売元の委託に基づき、ニジュウニ株式会社が代理発行しています。'
+export const RECEIPT_SHOP_NOT_QUALIFIED_INVOICE = 'お食事代部分は適格請求書ではありません'
 
 export type EventReceiptMergeInput = {
   eventName: string
@@ -52,6 +53,7 @@ export type EventReceiptMergeData = {
   shop: string
   hasShopInvoice: boolean
   invoiceId: string
+  shopInvoiceLine: string
   address: string
   paymentMethod: string
   menus: { menu_name: string; count: number; price: string }[]
@@ -142,7 +144,9 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     event: `${input.eventName} / ${proviso}`,
     shop: input.shopName,
     hasShopInvoice: shopInvoiceNumber !== '',
-    invoiceId: shopInvoiceNumber !== '' ? shopInvoiceNumber : RECEIPT_SHOP_INVOICE_ABSENT_LABEL,
+    invoiceId: shopInvoiceNumber,
+    shopInvoiceLine:
+      shopInvoiceNumber !== '' ? `適格請求書登録番号：${shopInvoiceNumber}` : RECEIPT_SHOP_NOT_QUALIFIED_INVOICE,
     address: input.shopAddress,
     paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
     menus: buildEventReceiptMenuLines(input.orders),
