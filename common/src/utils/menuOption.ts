@@ -78,6 +78,41 @@ export function sumSelectedPriceDelta(selectedOptions: readonly SelectedOptionTy
   return selectedOptions.reduce((sum, item) => sum + item.price_delta, 0)
 }
 
+export type MenuPriceSplit = {
+  basePrice: number
+  optionPrice: number
+}
+
+/** 注文に保存された込み単価を、当時の本体とオプション差額合計に分ける。選択が無いときはオプション 0。 */
+export function splitMenuPrice(
+  menuPrice: number,
+  selectedOptions?: readonly SelectedOptionType[] | null,
+): MenuPriceSplit {
+  const optionPrice = sumSelectedPriceDelta(selectedOptions ?? [])
+  return { basePrice: menuPrice - optionPrice, optionPrice }
+}
+
+export type MenuPriceLine = {
+  name: string
+  amount: number
+}
+
+/** 選択があるとき、メニュー本体と各項目の金額行を定義順で返す。選択が無いときは空。 */
+export function buildMenuPriceLines(
+  menuName: string,
+  menuPrice: number,
+  selectedOptions?: readonly SelectedOptionType[] | null,
+): MenuPriceLine[] {
+  if (selectedOptions == null || selectedOptions.length === 0) {
+    return []
+  }
+  const split = splitMenuPrice(menuPrice, selectedOptions)
+  return [
+    { name: menuName, amount: split.basePrice },
+    ...selectedOptions.map((item) => ({ name: item.item_name, amount: item.price_delta })),
+  ]
+}
+
 export function buildSelectedOptionsInDefinitionOrder(
   optionDefs: readonly MenuOptionDefinition[],
   selectedItems: readonly CartSelectedItemType[],

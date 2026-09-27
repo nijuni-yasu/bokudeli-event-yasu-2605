@@ -7,10 +7,16 @@ import { type EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder
 import { orderCanceledLabelI18nKey } from '@shokujii/common/utils/orderCancelSource.js'
 import { computeOrderLineNet } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { convertToDate, convertToDatetimeWeekdayShort } from '@shokujii/common/utils/datetime.js'
-import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
+import {
+  buildMenuPriceLines,
+  formatOrderMenuDisplayName,
+  getOrderMenuGroupKey,
+  type MenuPriceLine,
+} from '@shokujii/common/utils/menuOption.js'
 import EventStatusChip from '@shokujii/base/components/EventStatusChip.vue'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
 import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
+import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
 import { convertStoragePathToURL } from '../utils/storage'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import { getUserOrderHistoryEventKey } from '@shokujii/base/stores/userOrderHistoryList.js'
@@ -62,22 +68,30 @@ const cancelDialogOpen = computed({
 const orderLineNet = (o: EventMemberOrder) =>
   computeOrderLineNet(o, props.event.event_payment, props.event.community_bill_settings)
 
+const historyPriceLines = (order: EventMemberOrder): MenuPriceLine[] => {
+  const lines = buildMenuPriceLines(order.menu_name, order.menu_price, order.selected_options)
+  if (lines.length > 0) {
+    return lines
+  }
+  return [{ name: order.menu_name, amount: order.menu_price }]
+}
+
 const groupedMenus = computed(() => {
-  const map = new Map<string, { menu_name: string; count: number }>()
+  const map = new Map<string, { count: number; priceLines: MenuPriceLine[] }>()
   for (const o of props.orders.filter((o) => o.status !== 'canceled')) {
     const key = getOrderMenuGroupKey(o)
     const existing = map.get(key)
     if (existing) {
       existing.count++
     } else {
-      map.set(key, { menu_name: formatOrderMenuDisplayName(o.menu_name, o.selected_options), count: 1 })
+      map.set(key, {
+        count: 1,
+        priceLines: historyPriceLines(o),
+      })
     }
   }
   return Array.from(map.entries()).map(([menu_id, v]) => ({ menu_id, ...v }))
 })
-
-const formatOrderMenuLine = (menu: { menu_name: string; count: number }): string =>
-  menu.count === 1 ? menu.menu_name : t('user_event_card.menu_item', [menu.menu_name, menu.count])
 
 const totalPrice = computed(() =>
   props.orders.filter((o) => o.status !== 'canceled').reduce((sum, o) => sum + orderLineNet(o), 0),
@@ -196,6 +210,7 @@ type CancelDialogOrderedRow = {
   menu_price: number
   /** 参加者支払額（自己負担額 = menu_price - 割引・補助相当） */
   line_net: number
+  priceLines: MenuPriceLine[]
   checked: boolean
 }
 
@@ -204,6 +219,7 @@ type CancelDialogCanceledRow = {
   menu_name: string
   orderDateMillis: number | null
   menu_price: number
+  priceLines: MenuPriceLine[]
   canceledLabelKey: ReturnType<typeof orderCanceledLabelI18nKey>
 }
 
@@ -222,6 +238,7 @@ const initCancelDialogRows = () => {
       orderDateMillis: ts > 0 ? ts : null,
       menu_price: o.menu_price,
       line_net: orderLineNet(o),
+      priceLines: buildMenuPriceLines(o.menu_name, o.menu_price, o.selected_options),
       checked: false,
     }
   })
@@ -235,6 +252,7 @@ const initCancelDialogRows = () => {
       menu_name: formatOrderMenuDisplayName(o.menu_name, o.selected_options),
       orderDateMillis: ts > 0 ? ts : null,
       menu_price: o.menu_price,
+      priceLines: buildMenuPriceLines(o.menu_name, o.menu_price, o.selected_options),
       canceledLabelKey: orderCanceledLabelKey(o),
     }
   })
@@ -355,7 +373,10 @@ const submitCancel = () => {
       <v-card-text v-if="showOrderSummary" class="py-1 px-2 event-card" :class="{ 'pb-4': !isOwner }">
         {{ $t('user_event_card.menu') }}
         <div class="ml-3">
-          <div v-for="menu in groupedMenus" :key="menu.menu_id">{{ formatOrderMenuLine(menu) }}</div>
+          <div v-for="menu in groupedMenus" :key="menu.menu_id">
+            <MenuPriceBreakdown :lines="menu.priceLines" :per-meal="menu.count > 1" />
+            <div v-if="menu.count > 1">{{ $t('user_event_card.menu_count', [menu.count]) }}</div>
+          </div>
         </div>
       </v-card-text>
       <v-card-text v-if="showOrderSummary && isOwner" class="px-2 pt-1 pb-4 event-card">
@@ -466,7 +487,10 @@ const submitCancel = () => {
               class="cancel-dialog-table__check"
               :disabled="cancelLoading"
             />
-            <span class="cancel-dialog-table__menu">{{ row.menu_name }}</span>
+            <span class="cancel-dialog-table__menu">
+              <template v-if="row.priceLines.length === 0">{{ row.menu_name }}</template>
+              <MenuPriceBreakdown v-else :lines="row.priceLines" />
+            </span>
             <div class="cancel-dialog-table__details">
               <span class="cancel-dialog-table__col-date">
                 <span class="cancel-dialog-table__mobile-label d-sm-none">{{
@@ -492,7 +516,10 @@ const submitCancel = () => {
             class="cancel-dialog-table__row cancel-dialog-table__row--canceled text-disabled"
           >
             <span class="cancel-dialog-table__check-spacer" aria-hidden="true" />
-            <span class="cancel-dialog-table__menu">{{ row.menu_name }}</span>
+            <span class="cancel-dialog-table__menu">
+              <template v-if="row.priceLines.length === 0">{{ row.menu_name }}</template>
+              <MenuPriceBreakdown v-else :lines="row.priceLines" />
+            </span>
             <div class="cancel-dialog-table__details">
               <span class="cancel-dialog-table__col-date">
                 <span class="cancel-dialog-table__mobile-label d-sm-none">{{
@@ -599,6 +626,10 @@ const submitCancel = () => {
 
 .cancel-dialog-table__row--canceled {
   font-size: 0.8125rem;
+}
+
+.cancel-dialog-table__row--canceled :deep(.menu-price-breakdown) {
+  color: inherit;
 }
 
 .cancel-dialog-table__mobile-label {

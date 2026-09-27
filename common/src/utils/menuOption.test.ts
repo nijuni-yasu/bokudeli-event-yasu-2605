@@ -11,7 +11,9 @@ import {
   getStripeLineItemGroupKey,
   isMenuMinTotalValid,
   resolveEventMenuCartOrder,
+  buildMenuPriceLines,
   snapshotPartnerOptionsForMenu,
+  splitMenuPrice,
   validateCartOptionSelection,
 } from './menuOption.js'
 
@@ -146,6 +148,65 @@ describe('getOrderMenuGroupKey / getStripeLineItemGroupKey', () => {
     const order = { menu_id: 'm1', menu_price: 1150, selected_options: selectedLargeCheese }
     expect(getStripeLineItemGroupKey(order, 650)).not.toBe(getStripeLineItemGroupKey(order, 1150))
     expect(getStripeLineItemGroupKey(order, 650)).toBe(`${getOrderMenuGroupKey(order)}\u0000${650}`)
+  })
+})
+
+describe('splitMenuPrice', () => {
+  it('込み単価から本体とオプション合計を分ける', () => {
+    expect(splitMenuPrice(1150, selectedLargeCheese)).toEqual({ basePrice: 1000, optionPrice: 150 })
+  })
+
+  it('差額 0 の選択はオプション合計 0 で本体は menu_price', () => {
+    expect(
+      splitMenuPrice(1000, [
+        { option_id: 'opt-size', option_name: 'サイズ', item_id: 'regular', item_name: '並', price_delta: 0 },
+      ]),
+    ).toEqual({ basePrice: 1000, optionPrice: 0 })
+  })
+
+  it('値引きは本体が menu_price より大きくなる', () => {
+    expect(
+      splitMenuPrice(970, [
+        {
+          option_id: 'opt-topping',
+          option_name: 'トッピング',
+          item_id: 'minus',
+          item_name: '少なめ',
+          price_delta: -30,
+        },
+      ]),
+    ).toEqual({ basePrice: 1000, optionPrice: -30 })
+  })
+
+  it('selected_options が無い注文はオプション 0', () => {
+    expect(splitMenuPrice(1000)).toEqual({ basePrice: 1000, optionPrice: 0 })
+    expect(splitMenuPrice(1000, [])).toEqual({ basePrice: 1000, optionPrice: 0 })
+  })
+})
+
+describe('buildMenuPriceLines', () => {
+  it('メニュー名と各項目の金額を定義順で返す', () => {
+    expect(
+      buildMenuPriceLines('メニュー1000', 1200, [
+        {
+          option_id: 'opt-topping',
+          option_name: 'トッピング',
+          item_id: 'spinach',
+          item_name: 'ほうれん草',
+          price_delta: 200,
+        },
+        { option_id: 'opt-size', option_name: 'サイズ', item_id: 'small', item_name: '小盛り', price_delta: 0 },
+      ]),
+    ).toEqual([
+      { name: 'メニュー1000', amount: 1000 },
+      { name: 'ほうれん草', amount: 200 },
+      { name: '小盛り', amount: 0 },
+    ])
+  })
+
+  it('選択が無いときは空', () => {
+    expect(buildMenuPriceLines('メニュー1000', 1000)).toEqual([])
+    expect(buildMenuPriceLines('メニュー1000', 1000, [])).toEqual([])
   })
 })
 

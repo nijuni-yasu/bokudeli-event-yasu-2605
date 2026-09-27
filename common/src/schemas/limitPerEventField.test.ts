@@ -46,4 +46,17 @@ describe('EventMenu limit_per_event 読み込み正規化', () => {
     })
     expect(menu.limit_per_event).toBeNull()
   })
+
+  it('0円の注文なし参加メニューを読み取れる', () => {
+    const menu = new EventMenu('event1', 'no_order_participation', {
+      menu_name: '注文なしで参加',
+      menu_description: '食事の注文なしでイベントに参加します。',
+      menu_price: 0,
+      menu_sort_number: 999999,
+      is_selected: true,
+      is_sold_out: false,
+    })
+    expect(menu.menu_price).toBe(0)
+    expect(menu.isValidForDatabase()).toBe(true)
+  })
 })

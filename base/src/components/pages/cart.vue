@@ -8,7 +8,12 @@ import { getCommunityPath, getEventPath, getProfile } from '@/router/utils'
 import { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
-import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
+import {
+  buildMenuPriceLines,
+  formatOrderMenuDisplayName,
+  getOrderMenuGroupKey,
+  type MenuPriceLine,
+} from '@shokujii/common/utils/menuOption.js'
 import { CartItem, useCurrentUserStore } from '@shokujii/base/stores/currentUser'
 import { useEventStore, buildEventStoreOptions, type EventStoreOptions } from '@shokujii/base/stores/event'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
@@ -29,6 +34,7 @@ import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import MinimumParticipantsDialog from '@shokujii/base/components/MinimumParticipantsDialog.vue'
+import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
 import type { MinimumParticipantsType } from '@shokujii/common/schemas/Event.js'
 import { convertStoragePathToURL } from '@shokujii/base/utils/storage.js'
 import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl.js'
@@ -106,6 +112,7 @@ type GroupedMenu = {
   menu_id: string
   menu_name: string
   menu_price: number
+  price_lines: MenuPriceLine[]
   count: number
   order_ids: string[]
   totalPrice: number
@@ -138,6 +145,7 @@ const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
           item_id: item.item_id,
         })),
         menu_price: order.menu_price,
+        price_lines: buildMenuPriceLines(order.menu_name, order.menu_price, order.selected_options),
         count: 1,
         order_ids: [order.order_id],
         totalPrice: order.menu_price,
@@ -938,7 +946,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
               <v-table>
                 <thead>
                   <tr>
-                    <th class="text-center" style="padding: 2px">{{ $t('cart.menu') }}</th>
+                    <th class="text-start cart-order-menu">{{ $t('cart.menu') }}</th>
                     <th class="text-center" style="padding: 1px">{{ $t('cart.count') }}</th>
                     <th class="text-center" style="padding: 1px">{{ $t('cart.unit_price') }}</th>
                     <th v-if="hasCartCommunityBill(cartItem.event)" class="text-center" style="padding: 1px">
@@ -948,8 +956,14 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                 </thead>
                 <tbody>
                   <tr v-for="menu in cartItem.groupedMenus" :key="menu.group_key">
-                    <td style="padding: 1px">
-                      {{ menu.menu_name }}
+                    <td class="text-start cart-order-menu">
+                      <MenuPriceBreakdown
+                        v-if="menu.price_lines.length > 0"
+                        class="text-body-1"
+                        :lines="menu.price_lines"
+                        :per-meal="menu.count > 1"
+                      />
+                      <template v-else>{{ menu.menu_name }}</template>
                       <span
                         v-if="isMenuSoldOutInCart(cartItem.event.event_id, menu.menu_id)"
                         class="sold-out-label d-block text-caption"
@@ -1312,5 +1326,11 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
 
 .menu-limit-label {
   color: rgb(var(--v-theme-primary));
+}
+
+.cart-order-menu {
+  text-align: start !important;
+  padding: 10px 12px !important;
+  vertical-align: middle;
 }
 </style>

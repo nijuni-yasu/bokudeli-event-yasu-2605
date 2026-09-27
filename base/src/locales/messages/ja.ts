@@ -187,6 +187,9 @@ export default {
       default_comment: '{eventName} に参加します✋\n{eventUrl}\n{hashtag}#shokujii',
     },
   },
+  menu_price_breakdown: {
+    per_meal: '1食あたり',
+  },
   cart_dialog: {
     add: 'カートに追加',
     close: '閉じる',
@@ -561,6 +564,7 @@ export default {
     shop_name: '【食事】{0}',
     menu: '【注文内容】',
     menu_item: '{0} ({1}個)',
+    menu_count: '({0}個)',
     total_price: '【支払い金額】{0}',
     total_self_pay: '【自己負担額】{0}',
     payment_fee: '【システム利用料】{0}',

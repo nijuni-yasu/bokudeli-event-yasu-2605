@@ -28,6 +28,29 @@ describe('EventMemberOrder enterprise_id', () => {
   })
 })
 
+describe('EventMemberOrder menu_price', () => {
+  it('0円の注文なし参加を読み取れる', () => {
+    const order = new EventMemberOrder('order-free', {
+      ...minimalMemberOrderFields,
+      menu_id: 'no_order_participation',
+      menu_name: '注文なしで参加',
+      menu_price: 0,
+    })
+    expect(order.menu_price).toBe(0)
+    expect(order.isValidForDatabase()).toBe(true)
+  })
+
+  it('負の金額は拒否する', () => {
+    expect(
+      () =>
+        new EventMemberOrder('order-negative', {
+          ...minimalMemberOrderFields,
+          menu_price: -1,
+        }),
+    ).toThrow()
+  })
+})
+
 describe('EventMember enterprise_id', () => {
   it('toFirestore で enterprise_id 未設定時は null を明示保存する', () => {
     const member = new EventMember('user-pf', {

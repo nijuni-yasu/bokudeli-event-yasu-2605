@@ -11,8 +11,9 @@ import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
 import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
-import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import { buildMenuPriceLines, resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import type { CartSelectedItemType } from '@shokujii/common/schemas/menuOption.js'
+import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -98,6 +99,14 @@ const resolvedSelection = computed(() =>
 const displayedPrice = computed(() =>
   resolvedSelection.value.ok ? resolvedSelection.value.menu_price : currentMenu.value.menu_price,
 )
+
+const priceBreakdownLines = computed(() => {
+  const resolved = resolvedSelection.value
+  if (!resolved.ok) {
+    return []
+  }
+  return buildMenuPriceLines(currentMenu.value.menu_name, resolved.menu_price, resolved.selected_options)
+})
 
 const isAddDisabled = computed(
   () =>
@@ -276,17 +285,28 @@ const addCart = async () => {
           </div>
         </div>
       </v-card-text>
-      <v-card-text class="d-flex align-center pb-8">
-        <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
-        <MenuStatusChips
-          v-else-if="showSoldOutStatusChip"
-          :is-sold-out="currentMenu.is_sold_out"
-          :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
-          align="start"
-        />
-        <v-spacer />
-        <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(displayedPrice) }}</span>
+      <v-card-text class="pb-8">
+        <div class="d-flex align-center ga-3">
+          <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
+          <MenuStatusChips
+            v-else-if="showSoldOutStatusChip"
+            :is-sold-out="currentMenu.is_sold_out"
+            :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
+            align="start"
+          />
+          <v-spacer />
+          <div v-if="priceBreakdownLines.length === 0" class="text-no-wrap">
+            <span class="text-h5">¥ </span>
+            <span class="text-h4">{{ priceString(displayedPrice) }}</span>
+          </div>
+        </div>
+        <div v-if="priceBreakdownLines.length > 0" class="cart-dialog-price mt-4">
+          <MenuPriceBreakdown class="text-body-1" :lines="priceBreakdownLines" />
+          <div class="cart-dialog-price__total text-no-wrap">
+            <span class="text-h5">¥ </span>
+            <span class="text-h4">{{ priceString(displayedPrice) }}</span>
+          </div>
+        </div>
       </v-card-text>
       <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
         <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
@@ -320,3 +340,20 @@ const addCart = async () => {
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.cart-dialog-price {
+  width: max-content;
+  max-width: 100%;
+}
+
+.cart-dialog-price :deep(.menu-price-breakdown) {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) max-content;
+}
+
+.cart-dialog-price__total {
+  margin-top: 0.75rem;
+  text-align: right;
+}
+</style>

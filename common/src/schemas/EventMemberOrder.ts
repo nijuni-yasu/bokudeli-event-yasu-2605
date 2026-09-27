@@ -80,7 +80,8 @@ const EventMemberOrderDbSchema = z.object({
   status: z.enum(EVENT_MEMBER_ORDER_STATUS_VALUES),
   menu_id: z.string().nonempty(),
   menu_name: z.string().nonempty(),
-  menu_price: z.number().int().positive(),
+  // 0 は「注文なしで参加」。負数は拒否する。
+  menu_price: z.number().int().nonnegative(),
   created_at: TimestampSchema,
   updated_at: TimestampSchema,
   carted_at: TimestampSchema,
@@ -110,7 +111,7 @@ const EventMemberOrderAppSchema = z.object({
   status: z.enum(EVENT_MEMBER_ORDER_STATUS_VALUES).default('in_cart'),
   menu_id: z.string().nonempty(),
   menu_name: z.string().nonempty(),
-  menu_price: z.number().int().positive(),
+  menu_price: z.number().int().nonnegative(),
   stripe_id: z.string().optional(),
   carted_at: EpochMillisSchema.optional(),
   ordered_at: EpochMillisSchema.optional(),
