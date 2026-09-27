@@ -52,6 +52,7 @@ vi.mock('./stores/event.js', () => ({
 
 vi.mock('./utils/urls.js', () => ({
   getChatUrlForUser: (...args: unknown[]) => getChatUrlForUserMock(...args),
+  convertStoragePathToURL: (path: string) => `https://storage.example/${path}`,
 }))
 
 vi.mock('./utils/mail.js', () => ({
@@ -112,6 +113,17 @@ describe('sendChatUnreadMails', () => {
     await sendChatUnreadMails(morning)
     expect(claimChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', morning, [unreadRow.membership])
     expect(sgMailSendMock).toHaveBeenCalledTimes(1)
+    expect(sgMailSendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dynamicTemplateData: expect.objectContaining({
+          rooms: [
+            expect.objectContaining({
+              cover_url: 'https://storage.example/communities/comm-1/events/evt-1/cover',
+            }),
+          ],
+        }),
+      }),
+    )
     expect(releaseChatUnreadMailSendSlotMock).not.toHaveBeenCalled()
     const claimOrder = claimChatUnreadMailSendSlotMock.mock.invocationCallOrder[0] ?? 0
     const sendOrder = sgMailSendMock.mock.invocationCallOrder[0] ?? 0
