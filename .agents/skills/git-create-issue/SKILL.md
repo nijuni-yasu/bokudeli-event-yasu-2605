@@ -10,9 +10,8 @@ Shokujii プロジェクトのイシューを、projects・Status・milestone �
 ## 委譲元
 
 - ユーザーがイシュー作成を明示依頼したとき
-- [git-commit-message](../git-commit-message/SKILL.md) の [issue-resolution full](../git-commit-message/references/issue-resolution.md#full-フロー) で該当 Issue が見つからず、ユーザーが作成に同意したとき
 
-委譲時は commit-message 側で diff から下書き済みのタイトル・本文があればそれを流用する。
+コミット時に一致する Issue が無い場合は、番号なしでコミットする。コミット手順から本スキルへは委譲しない。
 
 ## 前提
 
@@ -36,7 +35,6 @@ Shokujii プロジェクトのイシューを、projects・Status・milestone �
 
 1. **イシューのタイトル・本文を用意する**
    - 会話の文脈や対応中の作業から AI が下書きする
-   - git-commit-message から委譲された場合は、issue-resolution で提示済みの下書きを優先する
    - タイトルは [/git-commit-message](../git-commit-message/SKILL.md) のタグ運用に揃える（例: `[functions] stripeWebhook の 504 対策`）
      - 使用可能なタグ: `[user]` `[partner]` `[base]` `[common]` `[functions]` `[doc]` `[ci]` `[terraform]` `[firebase]` `[ai]`
      - ルートの package.json 等、タグに該当しないモノレポ横断設定は接頭辞なし（commit-message スキル参照）

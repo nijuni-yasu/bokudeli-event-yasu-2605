@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateInvoiceTaxBreakdown, computeInclusive8ExTaxAndTax } from './invoice.js'
+import { calculateInvoiceTaxBreakdown, computeInclusive8ExTaxAndTax, computeInclusive10ExTaxAndTax } from './invoice.js'
 
 describe('computeInclusive8ExTaxAndTax', () => {
   it('1100 円税込: 税抜は floor と税額の和が税込', () => {
@@ -38,5 +38,19 @@ describe('computeInclusive8ExTaxAndTax', () => {
     const receipt = computeInclusive8ExTaxAndTax(tax08Inclusive)
     expect(receipt.exTaxPrice).toBe(breakdown.tax8SubTotal)
     expect(receipt.taxPrice).toBe(breakdown.tax8)
+  })
+})
+
+describe('computeInclusive10ExTaxAndTax', () => {
+  it('110 円税込: 税抜 100・税 10', () => {
+    expect(computeInclusive10ExTaxAndTax(110)).toEqual({ exTaxPrice: 100, taxPrice: 10 })
+  })
+
+  it('240 円税込: 税抜 218・税 22', () => {
+    expect(computeInclusive10ExTaxAndTax(240)).toEqual({ exTaxPrice: 218, taxPrice: 22 })
+  })
+
+  it('0 円', () => {
+    expect(computeInclusive10ExTaxAndTax(0)).toEqual({ exTaxPrice: 0, taxPrice: 0 })
   })
 })

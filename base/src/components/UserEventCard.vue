@@ -9,8 +9,10 @@ import { computeOrderLineNet } from '@shokujii/common/utils/paymentCommunityBill
 import { convertToDate, convertToDatetimeWeekdayShort } from '@shokujii/common/utils/datetime.js'
 import EventStatusChip from '@shokujii/base/components/EventStatusChip.vue'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
+import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
 import { convertStoragePathToURL } from '../utils/storage'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
+import { getUserOrderHistoryEventKey } from '@shokujii/base/stores/userOrderHistoryList.js'
 
 const props = defineProps<{
   event: BokudeliEvent
@@ -25,6 +27,11 @@ const props = defineProps<{
   ordersError?: boolean
   /** 指定時はカバー・タイトルをイベント詳細へリンク（操作ボタンはリンク外） */
   eventDetailPath?: RouteLocationRaw
+  /**
+   * 確定済みのシステム利用料（円）。EventStripe.pay_user_fee_amount の合計。
+   * null は未取得。0 または null のときは手数料行を出さない。
+   */
+  chargedPaymentFee: number | null
 }>()
 
 const { t } = useI18n()
@@ -35,15 +42,16 @@ const emit = defineEmits<{
   retryOrders: [eventId: string]
 }>()
 
-/** キャンセルダイアログを開いているイベント ID（閉じているときは null）。親が v-model で保持し、成功後に閉じる。 */
+/** キャンセルダイアログを開いている注文履歴キー（community_id と event_id。閉じているときは null）。親が v-model で保持し、成功後に閉じる。 */
 const cancelDialogEventId = defineModel<string | null>('cancelDialogEventId', { default: null })
+const orderHistoryEventKey = computed(() => getUserOrderHistoryEventKey(props.event.community_id, props.event.event_id))
 
 const cancelDialogOpen = computed({
-  get: () => cancelDialogEventId.value === props.event.event_id,
+  get: () => cancelDialogEventId.value === orderHistoryEventKey.value,
   set: (open: boolean) => {
     if (open) {
-      cancelDialogEventId.value = props.event.event_id
-    } else if (cancelDialogEventId.value === props.event.event_id) {
+      cancelDialogEventId.value = orderHistoryEventKey.value
+    } else if (cancelDialogEventId.value === orderHistoryEventKey.value) {
       cancelDialogEventId.value = null
     }
   },
@@ -72,6 +80,10 @@ const formatOrderMenuLine = (menu: { menu_name: string; count: number }): string
 const totalPrice = computed(() =>
   props.orders.filter((o) => o.status !== 'canceled').reduce((sum, o) => sum + orderLineNet(o), 0),
 )
+
+const paymentFee = computed(() => props.chargedPaymentFee ?? 0)
+
+const grandTotal = computed(() => totalPrice.value + paymentFee.value)
 
 const isShowCancelButton = computed(
   () =>
@@ -345,7 +357,14 @@ const submitCancel = () => {
         </div>
       </v-card-text>
       <v-card-text v-if="showOrderSummary && isOwner" class="px-2 pt-1 pb-4 event-card">
-        {{ $t(totalPriceLabelKey, [$n(totalPrice, 'currency')]) }}
+        <div>{{ $t(totalPriceLabelKey, [$n(totalPrice, 'currency')]) }}</div>
+        <template v-if="paymentFee > 0">
+          <div class="d-inline-flex align-center ga-1">
+            {{ $t('user_event_card.payment_fee', [$n(paymentFee, 'currency')]) }}
+            <PaymentFeeNoteButton :note="$t('user_event_card.payment_fee_note')" />
+          </div>
+          <div>{{ $t('user_event_card.grand_total', [$n(grandTotal, 'currency')]) }}</div>
+        </template>
       </v-card-text>
     </template>
     <v-card-text>

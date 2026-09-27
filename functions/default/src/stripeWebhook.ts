@@ -17,6 +17,10 @@ import { getEventInCommunity } from './stores/event.js'
 import { applyOrderConfirmedSideEffects } from './orderConfirmedSideEffects.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
+  computeEventStripePayFields,
+  isCheckoutAmountTotalMatchingPayAmount,
+} from '@shokujii/common/utils/paymentUserFee.js'
+import {
   computeOrderSelfPayUnitAmount,
   getEventEnterpriseId,
   processEnterpriseSubsidyOrdersForWebhook,
@@ -352,30 +356,6 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
         }
       | undefined
 
-    if (eventData.event_payment === 'enterprise_subsidy') {
-      if (enterpriseId == null) {
-        return { kind: 'client_error', message: 'enterprise_id is required for enterprise_subsidy' }
-      }
-      const subsidyResult = await processEnterpriseSubsidyOrdersForWebhook({
-        enterpriseId,
-        userId,
-        event: eventData,
-        orders,
-        transaction,
-      })
-      if (!subsidyResult.ok) {
-        return { kind: 'client_error', message: subsidyResult.message }
-      }
-      subsidyTotal = subsidyResult.subsidyTotal
-      if (subsidyResult.enterpriseOrderCreateLog != null) {
-        enterpriseOrderCreateLog = {
-          ...subsidyResult.enterpriseOrderCreateLog,
-          totalPayment: 0,
-          stripeDocId,
-        }
-      }
-    }
-
     const allAlreadyOrdered = orders.every((o) => o.status === 'ordered')
     if (allAlreadyOrdered) {
       logger.info('All orders already ordered', { paymentIntent })
@@ -396,11 +376,53 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
       }
     }
 
-    const orderedAt = Timestamp.now().toMillis()
-    const payAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
-    if (enterpriseOrderCreateLog != null) {
-      enterpriseOrderCreateLog.totalPayment = payAmount
+    const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
+    const computedPayFields = computeEventStripePayFields(selfPayAmount)
+    const isLegacyCheckoutWithoutUserFee =
+      session.amount_total != null &&
+      session.amount_total === selfPayAmount &&
+      session.amount_total !== computedPayFields.pay_amount
+    const payAmount = isLegacyCheckoutWithoutUserFee ? selfPayAmount : computedPayFields.pay_amount
+    const userFeeAmount = isLegacyCheckoutWithoutUserFee ? undefined : computedPayFields.pay_user_fee_amount
+    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount, selfPayAmount)) {
+      logger.error('Checkout amount_total does not match recomputed pay_amount', {
+        paymentIntent,
+        amountTotal: session.amount_total,
+        selfPayAmount,
+        userFeeAmount,
+        payAmount,
+      })
+      return {
+        kind: 'client_error',
+        message: `amount_total mismatch: session=${session.amount_total} pay_amount=${payAmount}`,
+      }
     }
+
+    if (eventData.event_payment === 'enterprise_subsidy') {
+      if (enterpriseId == null) {
+        return { kind: 'client_error', message: 'enterprise_id is required for enterprise_subsidy' }
+      }
+      const subsidyResult = await processEnterpriseSubsidyOrdersForWebhook({
+        enterpriseId,
+        userId,
+        event: eventData,
+        orders,
+        transaction,
+      })
+      if (!subsidyResult.ok) {
+        return { kind: 'client_error', message: subsidyResult.message }
+      }
+      subsidyTotal = subsidyResult.subsidyTotal
+      if (subsidyResult.enterpriseOrderCreateLog != null) {
+        enterpriseOrderCreateLog = {
+          ...subsidyResult.enterpriseOrderCreateLog,
+          totalPayment: selfPayAmount,
+          stripeDocId,
+        }
+      }
+    }
+
+    const orderedAt = Timestamp.now().toMillis()
     const sessionPayCommunityBillOffAmount = orders.reduce((sum, o) => sum + (o.pay_community_bill_off_amount ?? 0), 0)
 
     const menusMap = new Map<string, StripeMenuType>()
@@ -442,6 +464,7 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
       ...(sessionPayCommunityBillOffAmount > 0
         ? { pay_community_bill_off_amount: sessionPayCommunityBillOffAmount }
         : {}),
+      ...(userFeeAmount != null ? { pay_user_fee_amount: userFeeAmount } : {}),
       menus: Array.from(menusMap.values()),
       refunds: [],
     })

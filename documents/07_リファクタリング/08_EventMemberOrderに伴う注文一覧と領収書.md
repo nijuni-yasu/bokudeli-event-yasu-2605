@@ -335,24 +335,28 @@ export const getReceiptPath = (eventId: string, stripeId: string) =>
 
 ### PDF テンプレートのデータ
 
-| フィールド | 現行のデータソース | 新設計のデータソース |
+`stripe_id` 単位・`EventStripe` をデータソースとする点は維持する。
+
+**#971 以降のレイアウト正本**は [02_ユーザー決済手数料.md §4.2.7](../01_マネタイズと決済/02_ユーザー決済手数料.md)（出前館型・1 PDF / 2 発行者）。店 1 発行者・8% 一式の下表は **手数料 0 のレガシー決済**にだけ使う。
+
+| フィールド | 現行のデータソース | EventMemberOrder 移行時のデータソース |
 |:--|:--|:--|
-| event（但し書き） | `event.event_name + ' / お食事代として'` | 変更なし |
+| event（但し書き） | `event.event_name + ' / お食事代として'` | 手数料があるときは `お食事代およびシステム利用料として`。金額の帯の直後（§4.2.7） |
 | number（領収書番号） | `order.receipt_number` | `stripes.receipt_number` |
 | orderDate（注文日） | `order.ordered_at` | `stripes.created_at` |
-| price（金額） | `order.totalPrice`（menus 合計） | `stripes.pay_amount` |
+| price（金額） | `order.totalPrice`（menus 合計） | レガシー: `stripes.pay_amount`。#971: 食事残 ＋ 手数料（§4.2.7.4） |
 | date（発行日） | `Date.now()` | 変更なし |
 | shop（店舗名） | `shop.shop_name` | 変更なし |
-| invoiceId（適格番号） | `shop.shop_invoice_number` | 変更なし |
-| address（住所） | `shop.shop_address` | 変更なし |
-| rawPrice（税抜金額） | `order.ExTaxPrice` | `Math.ceil(pay_amount / 1.08)` |
-| tax（消費税） | `order.TaxPrice` | `pay_amount - rawPrice` |
+| invoiceId（適格番号） | `shop.shop_invoice_number` | 店舗ブロックのみ。未設定は「適格請求書登録番号：なし」と「お食事代部分は適格請求書ではありません」の 2 行。手数料ブロックは `T8010001198825`（ニジュウニ株式会社） |
+| address（住所） | `shop.shop_address` | 店舗ブロックの販売元住所。ニジュウニの住所は手数料ブロック（§4.2.7） |
+| rawPrice（税抜金額） | `order.ExTaxPrice` | レガシー: `Math.floor(pay_amount / 1.08)`。#971: ブロックごとに 8% / 10% |
+| tax（消費税） | `order.TaxPrice` | レガシー: `pay_amount - rawPrice`。#971: ブロックごとに内税 |
 | reissue（再発行） | `receipt_number` の有無で判定 | 変更なし（`stripes.receipt_number` の有無で判定） |
 
 ### 一部キャンセル時の領収書
 
-- 領収書に記載する金額は**元の決済金額（`pay_amount`）のまま**。一部返金後の差引金額は記載しない
-- 返金の証跡は Stripe 側が管理する（Stripe の返金レシートが別途発行される）
+- **実装（現行 `eventReceipt`）**: 記載金額は `pay_amount - 返金累計`（残額。番号は初回採番のまま）。
+- **#971**: 食事ブロックは返金後の残額、手数料ブロックは満額（返金しない）。詳細は [02_ユーザー決済手数料.md §4.2.7.4](../01_マネタイズと決済/02_ユーザー決済手数料.md)。
 - **全キャンセルの場合は領収書ボタンを表示しない**（`isShowInvoiceButton` が `orders.some(o => o.status === 'ordered')` で判定するため、全キャンセルだと false になる）
 
 
@@ -370,11 +374,11 @@ export const getReceiptPath = (eventId: string, stripeId: string) =>
 | `user/src/router/utils.ts` | `getReceiptPath` の引数を `orderId` → `stripeId` に変更 |
 | `user/src/pages/receipt.vue` | クエリパラメータを `orderId` → `stripeId` に変更 |
 | `common/src/apis/eventReceipt.ts` | `EventReceiptRequest` の `orderId` → `stripeId` に変更 |
-| `functions/default/src/eventReceipt.ts` | `event.getOrder(orderId)` → stripes ドキュメントを取得。`receipt_number` を stripes に保存。`pay_amount` を領収書金額に使用。税計算ロジックの変更 |
+| `functions/default/src/eventReceipt.ts` | `event.getOrder(orderId)` → stripes ドキュメントを取得。`receipt_number` を stripes に保存。`pay_amount` を領収書金額に使用。#971 では §4.2.7 の 2 ブロック・税率区分に拡張 |
 
 ### 変更不要なファイル
 
 | ファイル | 理由 |
 |:--|:--|
 | `functions/default/src/utils/PdfGenerator.ts` | PDF 生成エンジンはデータソースに依存しない |
-| `templates/receipt.docx` | テンプレートのフィールド名は同じ（`price`、`number` 等）。データソースが変わるだけ |
+| `templates/receipt.docx` | EventMemberOrder 移行時点ではフィールド名は同じ。**#971 で出前館型 2 ブロックに差し替え**（[02_ユーザー決済手数料.md §4.2.7](../01_マネタイズと決済/02_ユーザー決済手数料.md)） |

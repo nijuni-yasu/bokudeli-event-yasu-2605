@@ -11,6 +11,7 @@ import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { CartItem, useCurrentUserStore } from '@shokujii/base/stores/currentUser'
 import { useEventStore, buildEventStoreOptions, type EventStoreOptions } from '@shokujii/base/stores/event'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
+import { previewUserPaymentFee } from '@shokujii/common/utils/paymentUserFee.js'
 import {
   computeMemberOrdersTotalPayment,
   getMemberOrderDiscountAmount,
@@ -33,6 +34,7 @@ import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl
 import { buildTwitterHashTagSearchUrl } from '@shokujii/base/utils/hashTag.js'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
+import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
 import {
   mdiTrashCan,
   mdiHelpCircleOutline,
@@ -432,6 +434,11 @@ const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   if (event.event_payment === 'enterprise_subsidy') return item.totalPrice > 0
   return false
 }
+
+const userPaymentFeeForItem = (item: EnrichedCartItem): number =>
+  previewUserPaymentFee(item.event.event_payment, item.totalPrice, item.event.community_bill_settings)
+
+const checkoutTotalForItem = (item: EnrichedCartItem): number => item.totalPrice + userPaymentFeeForItem(item)
 
 const checkCart = async (
   cartItem: CartItem,
@@ -1031,6 +1038,21 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                   ¥{{ priceString(cartItem.totalPrice) }}
                 </span>
               </div>
+              <template v-if="userPaymentFeeForItem(cartItem) > 0">
+                <div class="d-flex justify-space-between text-body-2 text-medium-emphasis mt-2">
+                  <span class="d-inline-flex align-center ga-1">
+                    {{ $t('cart.payment_fee') }}
+                    <PaymentFeeNoteButton :note="$t('cart.payment_fee_note')" />
+                  </span>
+                  <span class="cart-subsidy-amount">¥{{ priceString(userPaymentFeeForItem(cartItem)) }}</span>
+                </div>
+                <div class="d-flex justify-space-between align-end mt-2">
+                  <span class="text-body-1 font-weight-medium">{{ $t('cart.grand_total') }}</span>
+                  <span class="text-h5 text-md-h4 font-weight-bold cart-subsidy-amount">
+                    ¥{{ priceString(checkoutTotalForItem(cartItem)) }}
+                  </span>
+                </div>
+              </template>
               <div v-if="cartItem.totalPrice === 0" class="mt-3">
                 <v-alert variant="tonal" color="success" density="compact" class="mb-0 cart-subsidy-summary-alert">
                   {{ $t('cart.enterprise_subsidy_zero_payment') }}
@@ -1060,11 +1082,35 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
           </v-col>
         </v-row>
         <v-card-text v-else class="text-right">
-          <span class="text-right ma-2 text-h6">{{ $t('cart.total') }}</span>
-          <span class="text-right my-2 ml-2 text-h6">¥</span>
-          <span class="text-right ma-2 text-h3 text-md-h2 font-weight-bold">{{
-            priceString(cartItem.totalPrice)
-          }}</span>
+          <template v-if="userPaymentFeeForItem(cartItem) > 0">
+            <div class="d-flex justify-end align-center">
+              <span class="text-right ma-2 text-body-1">{{ $t('cart.subtotal') }}</span>
+              <span class="text-right my-2 ml-2 text-body-1">¥</span>
+              <span class="text-right ma-2 text-h6">{{ priceString(cartItem.totalPrice) }}</span>
+            </div>
+            <div class="d-flex justify-end align-center">
+              <span class="text-right ma-2 text-body-1 d-inline-flex align-center ga-1">
+                {{ $t('cart.payment_fee') }}
+                <PaymentFeeNoteButton :note="$t('cart.payment_fee_note')" />
+              </span>
+              <span class="text-right my-2 ml-2 text-body-1">¥</span>
+              <span class="text-right ma-2 text-h6">{{ priceString(userPaymentFeeForItem(cartItem)) }}</span>
+            </div>
+            <div class="d-flex justify-end align-center">
+              <span class="text-right ma-2 text-h6">{{ $t('cart.grand_total') }}</span>
+              <span class="text-right my-2 ml-2 text-h6">¥</span>
+              <span class="text-right ma-2 text-h3 text-md-h2 font-weight-bold">{{
+                priceString(checkoutTotalForItem(cartItem))
+              }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <span class="text-right ma-2 text-h6">{{ $t('cart.total') }}</span>
+            <span class="text-right my-2 ml-2 text-h6">¥</span>
+            <span class="text-right ma-2 text-h3 text-md-h2 font-weight-bold">{{
+              priceString(cartItem.totalPrice)
+            }}</span>
+          </template>
         </v-card-text>
 
         <v-row class="justify-center">

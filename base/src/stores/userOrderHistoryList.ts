@@ -23,6 +23,7 @@ import {
   type UserEventListOrderEntry,
 } from './userEventOrdersShared.js'
 import { profileListFilterKey, profileListFilterToConstraints, type ProfileListFilter } from './profileListFilter.js'
+import { fetchChargedUserPaymentFee } from './eventStripe.js'
 
 export type UserOrderHistoryListStore = ReturnType<typeof useUserOrderHistoryByUserId>
 
@@ -30,6 +31,9 @@ export type UserOrderHistoryListStoreOptions = {
   /** PF 露出 / エンプラテナント等。`collectionGroup('member_orders')` の base 条件に追加する */
   profileFilter?: ProfileListFilter
 }
+
+export const getUserOrderHistoryEventKey = (communityId: string, eventId: string): string =>
+  JSON.stringify([communityId, eventId])
 
 const ORDERS_SCAN_BATCH = 24
 const MAX_SCAN_BATCHES_PER_NEXT = 50
@@ -60,31 +64,34 @@ export const useUserOrderHistoryByUserId = (
     /** reload 後に完了した古い next の結果を反映しない（本人判定 watch 等の連続 reload 対策） */
     let loadGeneration = 0
 
-    const patchOrderState = (eventId: string, patch: Partial<UserEventListOrderEntry>) => {
-      const prev = orderStateByEventId.value[eventId] ?? {
+    const patchOrderState = (eventKey: string, patch: Partial<UserEventListOrderEntry>) => {
+      const prev = orderStateByEventId.value[eventKey] ?? {
         orders: null,
         loading: false,
         error: null,
+        chargedPaymentFee: null,
       }
       orderStateByEventId.value = {
         ...orderStateByEventId.value,
-        [eventId]: { ...prev, ...patch },
+        [eventKey]: { ...prev, ...patch },
       }
     }
 
     const loadOrdersForEvent = async (event: BokudeliEvent, generation: number) => {
-      const id = event.event_id
+      const eventKey = getUserOrderHistoryEventKey(event.community_id, event.event_id)
       if (userId === '') return
       if (generation !== loadGeneration) return
       try {
-        patchOrderState(id, { loading: true, error: null })
+        patchOrderState(eventKey, { loading: true, error: null })
         const list = await fetchMemberOrdersForUser(event.community_id, event.event_id, userId)
         if (generation !== loadGeneration) return
-        patchOrderState(id, { orders: list, loading: false, error: null })
+        const chargedPaymentFee = await fetchChargedUserPaymentFee(event.community_id, event.event_id, list)
+        if (generation !== loadGeneration) return
+        patchOrderState(eventKey, { orders: list, loading: false, error: null, chargedPaymentFee })
       } catch (e) {
         if (generation !== loadGeneration) return
         console.error('Failed to fetch member_orders:', e)
-        patchOrderState(id, { orders: null, loading: false, error: e })
+        patchOrderState(eventKey, { orders: null, loading: false, error: e, chargedPaymentFee: null })
       }
     }
 
@@ -144,19 +151,20 @@ export const useUserOrderHistoryByUserId = (
         if (eventId === '' || order.community_id === '') {
           continue
         }
+        const eventKey = getUserOrderHistoryEventKey(order.community_id, eventId)
 
-        if (loadedEventIds.has(eventId) || seenInBatch.has(eventId)) {
+        if (loadedEventIds.has(eventKey) || seenInBatch.has(eventKey)) {
           continue
         }
 
-        seenInBatch.add(eventId)
+        seenInBatch.add(eventKey)
 
         const event = await fetchEvent(order.community_id, eventId)
         if (event == null) {
           continue
         }
 
-        loadedEventIds.add(eventId)
+        loadedEventIds.add(eventKey)
         newEvents.push(event)
 
         if (newEvents.length >= maxNewEvents) {
@@ -201,7 +209,12 @@ export const useUserOrderHistoryByUserId = (
           if (collectedNewEvents.length > 0) {
             events.value = sortEventsByStartDatetime([...events.value, ...collectedNewEvents])
             for (const ev of collectedNewEvents) {
-              patchOrderState(ev.event_id, { orders: null, loading: true, error: null })
+              patchOrderState(getUserOrderHistoryEventKey(ev.community_id, ev.event_id), {
+                orders: null,
+                loading: true,
+                error: null,
+                chargedPaymentFee: null,
+              })
             }
             await loadOrdersForEventsParallel(collectedNewEvents, generation)
             if (generation !== loadGeneration) return
@@ -236,8 +249,8 @@ export const useUserOrderHistoryByUserId = (
       }
     }
 
-    const reloadOrdersForEvent = async (eventId: string) => {
-      const event = events.value.find((e) => e.event_id === eventId)
+    const reloadOrdersForEvent = async (communityId: string, eventId: string) => {
+      const event = events.value.find((e) => e.community_id === communityId && e.event_id === eventId)
       if (event == null || userId === '') {
         return
       }

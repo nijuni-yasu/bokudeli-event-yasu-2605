@@ -94,6 +94,15 @@ export function computeInclusive8ExTaxAndTax(taxInclusive: number): { exTaxPrice
 }
 
 /**
+ * 10% 税込合計から税抜・税額を求める（領収書のシステム利用料）。
+ * 税抜は `Math.floor((税込 * 10) / 11)`。`Math.floor(税込 / 1.1)` は 110 円で 99 になるため使わない。
+ */
+export function computeInclusive10ExTaxAndTax(taxInclusive: number): { exTaxPrice: number; taxPrice: number } {
+  const exTaxPrice = Math.floor((taxInclusive * 10) / 11)
+  return { exTaxPrice, taxPrice: taxInclusive - exTaxPrice }
+}
+
+/**
  * 請求書の税内訳（8% / 10%）を計算する
  * @param tax08Inclusive 8%税込合計（注文合計）
  * @param eventStartDatetime イベント開始日時（Unix time in milliseconds）

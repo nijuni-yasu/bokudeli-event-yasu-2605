@@ -27,7 +27,7 @@ const closeDialog = () => {
         <router-link :to="ordersTabTo" class="text-primary text-decoration-none" @click="closeDialog">
           {{ $t('cancelpolicy_modal.orders_link') }}
         </router-link>
-        {{ $t('cancelpolicy_modal.desc_after') }}
+        <span v-html="$t('cancelpolicy_modal.desc_after')" />
       </div>
     </v-card-text>
   </confirm-dialog>

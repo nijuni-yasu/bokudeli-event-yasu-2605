@@ -47,23 +47,25 @@ B は `github-actions-deploy` に委譲し、同スキル内で本番ブロッ�
   - **許可**: 上記以外の作業ブランチ（feature / `release/*` / `sync/*` / `hotfix/*` 等）。ブランチ名への部分一致では判定しない（`sync/main-to-development` は許可）
   - 拒否条件に該当する場合は **push せず中断**し、保護 ref への直 push は人間のリリース手順に従う旨をユーザーに伝える
 - **push の方法**（`ref` はリモート上のブランチ名。通常は現在ブランチ名）:
-  - **履歴書き換え時**（git-commit-workflow / git-fixup / git-squash の直後、または会話文脈で rebase 済みと分かる場合）:
+  - **履歴書き換え時**（会話内の fixup / squash / amend / rebase に限らない。判定は [`git-create-pull-request` 手順 9](../git-create-pull-request/SKILL.md) と同一。diverge でも、`origin/$ref` 専用コミットがすべて HEAD 上の書き換えなら可）:
 
     ```bash
     git push --force-with-lease origin HEAD:<ref>
     ```
 
-  - **通常**（新規コミット・分割コミット等）:
+    書き換え判定: `git cherry -v HEAD origin/$ref` が `-`、または `+` でも `origin/$ref..HEAD` に同じ作者かつ同じ件名のコミットがある。会話の外で rebase していてもこの判定を満たせば `--force-with-lease` してよい。
+
+  - **通常**（ahead のみ）:
 
     ```bash
     git push origin HEAD:<ref>
     ```
 
-    non-fast-forward で reject された場合、または diverge / behind で履歴書き換え未確認の場合は **push せず中断**し、リモート更新の可能性をユーザーに伝えて確認する。`--force-with-lease` の自動再試行はしない（`-f` も勝手に使わない）。
+    behind のみ、またはリモート専用に独自コミットがある diverge は **push せず中断**し、リモート更新の可能性をユーザーに伝えて確認する。通常 push が non-fast-forward で reject されたときも、上の書き換え判定を満たす場合だけ `--force-with-lease` で再試行してよい。満たさなければ再試行しない。`-f` は勝手に使わない。
 
-  - **`--force-with-lease` を実行してよい条件**（いずれか）:
+  - **`--force-with-lease` を実行してよい条件**（いずれか。正本は create-pr 手順 9）:
 
-    1. git-commit-workflow / git-fixup / git-squash の直後など、当該会話内で履歴書き換えが完了している
+    1. diverge のリモート専用コミットがすべてローカルの書き換え（rebase / amend / fixup / squash。会話外でも可）
     2. ユーザーが force push / `--force-with-lease` を明示指示した
 
 - [`git-create-pull-request`](../git-create-pull-request/SKILL.md) スキルの**全手順**を実行する（手順 0 lint は本手順 3 済みのため create-pr 側でスキップ。**手順 11 reviewer 追加 + 手順 12 Copilot/Codex 依頼 + 手順 13 の wait 委譲**を含む）。
@@ -101,7 +103,7 @@ PR 用は **origin**（手順 4）、動作確認用は **`branch.<branch>.sandb
 
 - 委譲先（`git-create-pull-request` / `wait-ai-pr-review` / `github-actions-deploy` / `lint-and-format`）のルールを上書きしない。
 - AI レビュー wait は **create-pr 手順 13 のみ**から起動する（本スキルで wait を重複起動しない）。
-- origin への push の **`--force-with-lease`** は履歴書き換え確認またはユーザー明示承認時のみ。diverge 時の自動 force は禁止。
+- origin への push の **`--force-with-lease`** は、ローカル書き換えと判定できた diverge、またはユーザー明示承認時のみ。リモート専用の独自コミットがある diverge と behind のみは禁止。
   sandbox への push は **`github-actions-deploy` 手順 3** に委譲する。
 - 本番への **デプロイ発火**は行わない（origin への PR 用 push は許可）。
 - このスキルは Cursor / Claude エージェントがローカルで `git` と `gh` を実行する前提。

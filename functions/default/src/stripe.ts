@@ -17,6 +17,8 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
   computeTotalPayment,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
+import { computeUserPaymentFeeFromSelfPay } from '@shokujii/common/utils/paymentUserFee.js'
+import { buildUserPaymentFeeCheckoutLineItem } from './utils/paymentUserFeeStripe.js'
 import { computeEnterpriseSubsidyTotalPayment } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 import {
   assertActiveEnterpriseMember,
@@ -268,6 +270,25 @@ export const createStripeCheckoutSession = onCall<
         totalPayment,
       })
       throw new HttpsError('internal', '決済明細の生成に失敗しました')
+    }
+
+    const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
+    const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
+    if (feeLineItem != null) {
+      lineItems.push(feeLineItem)
+    }
+
+    if (lineItems.length > 100) {
+      logger.warn('Checkout line items exceed Stripe limit', {
+        eventId: event_id,
+        communityId: community_id,
+        userId: uid,
+        lineItemCount: lineItems.length,
+      })
+      throw new HttpsError(
+        'failed-precondition',
+        '注文数が多すぎるため決済を開始できません。注文を分けてお試しください',
+      )
     }
 
     const stripe = new Stripe(STRIPE_API_KEY.value(), {

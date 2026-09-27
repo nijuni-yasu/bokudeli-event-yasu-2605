@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase-admin/firestore'
 import path from 'path'
 import { DateTime } from 'luxon'
 import { EventReceiptRequest, EventReceiptResponse } from '@shokujii/common/apis/eventReceipt.js'
-import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
-import { convertToDate, convertDateToId } from '@shokujii/common/utils/datetime.js'
-import { computeInclusive8ExTaxAndTax } from '@shokujii/common/utils/invoice.js'
+import { convertDateToId } from '@shokujii/common/utils/datetime.js'
+import { getMemberOrderDiscountAmount } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 import { createModuleLogger } from './utils/logger.js'
 import { getEvent } from './stores/event.js'
 import { getPartner } from './stores/partner.js'
-import { getStripe, saveStripe } from './stores/memberOrder.js'
+import { getOrdersByIds, getStripe, saveStripe } from './stores/memberOrder.js'
+import { buildEventReceiptMergeData } from './utils/eventReceiptMergeData.js'
 import { PdfGenerator } from './utils/PdfGenerator.js'
 
 const logger = createModuleLogger('eventReceipt')
@@ -43,7 +43,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     }
 
     const db = getFirestore()
-    const { receiptNumber, reissue, stripe } = await db.runTransaction(async (transaction) => {
+    const { receiptNumber, reissue, stripe, orders } = await db.runTransaction(async (transaction) => {
       const stripeRow = await getStripe(event.community_id, eventId, stripeId, transaction)
       if (stripeRow === undefined) {
         throw new HttpsError('not-found', 'Stripe not found')
@@ -56,37 +56,61 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
         throw new HttpsError('failed-precondition', '支払額 ¥0 の注文には領収書を発行できません')
       }
 
+      const sessionOrders = await getOrdersByIds(event.community_id, eventId, uid, stripeRow.order_ids, transaction)
+      if (sessionOrders.length !== stripeRow.order_ids.length) {
+        throw new HttpsError('failed-precondition', '領収書対象の注文が不足しています')
+      }
+
       if (stripeRow.receipt_number != null) {
         return {
           receiptNumber: stripeRow.receipt_number,
           reissue: true,
           stripe: stripeRow,
+          orders: sessionOrders,
         }
       }
       const num = convertDateToId(stripeRow.created_at)
       stripeRow.receipt_number = num
       await saveStripe(event.community_id, eventId, stripeRow, transaction)
-      return { receiptNumber: num, reissue: false, stripe: stripeRow }
+      return { receiptNumber: num, reissue: false, stripe: stripeRow, orders: sessionOrders }
     })
 
     const refundedTotal = stripe.refunds.reduce((sum, r) => sum + r.amount, 0)
-    // 個別キャンセル後は返金分を差し引いた残額を領収書に記載（番号は初回採番のまま、再発行時は金額のみ更新）
-    const totalPrice = Math.max(0, stripe.pay_amount - refundedTotal)
-    const { exTaxPrice, taxPrice } = computeInclusive8ExTaxAndTax(totalPrice)
-
-    const jsonDataForMerge = {
-      event: event.event_name + ' / お食事代として',
-      number: receiptNumber,
-      orderDate: convertToDate(stripe.created_at),
-      price: convertNumberToYen(totalPrice),
-      date: convertToDate(DateTime.now().toMillis()),
-      shop: shop.shop_name,
-      invoiceId: shop.shop_invoice_number ?? 'なし',
-      address: shop.fullAddress,
-      rawPrice: convertNumberToYen(exTaxPrice),
-      tax: convertNumberToYen(taxPrice),
-      reissue,
+    const orderSelfPayById = new Map(
+      orders.map((order) => [order.id, order.menu_price - getMemberOrderDiscountAmount(order)]),
+    )
+    const fullyRefundedOrderIds = new Set<string>()
+    for (const refund of stripe.refunds) {
+      const refundableAmount = refund.order_ids.reduce((sum, orderId) => sum + (orderSelfPayById.get(orderId) ?? 0), 0)
+      if (refundableAmount > 0 && refund.amount === refundableAmount) {
+        refund.order_ids.forEach((orderId) => fullyRefundedOrderIds.add(orderId))
+      }
     }
+    const receiptOrders = orders
+      .filter((order) => !fullyRefundedOrderIds.has(order.id))
+      .map((order) => ({
+        menu_name: order.menu_name,
+        menu_price: order.menu_price,
+        status: order.status === 'canceled' ? 'ordered' : order.status,
+        pay_community_bill_off_amount: order.pay_community_bill_off_amount,
+        pay_enterprise_subsidy_amount: order.pay_enterprise_subsidy_amount,
+      }))
+    // 個別キャンセル後は食事の返金分だけ差し引く。システム利用料は満額のまま（番号は初回採番）
+    const jsonDataForMerge = buildEventReceiptMergeData({
+      eventName: event.event_name,
+      eventStartDatetime: event.event_start_datetime,
+      shopName: shop.shop_name ?? '',
+      shopInvoiceNumber: shop.shop_invoice_number,
+      shopAddress: shop.fullAddress,
+      receiptNumber,
+      reissue,
+      orderCreatedAt: stripe.created_at,
+      issuedAt: DateTime.now().toMillis(),
+      payAmount: stripe.pay_amount,
+      payUserFeeAmount: stripe.pay_user_fee_amount,
+      refundedTotal,
+      orders: receiptOrders,
+    })
 
     const pdfGenerator = new PdfGenerator()
     const url = await pdfGenerator.executeDocumentMergeForUrl(path.join('templates', 'receipt.docx'), jsonDataForMerge)
