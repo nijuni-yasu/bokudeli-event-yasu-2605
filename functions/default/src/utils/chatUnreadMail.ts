@@ -4,22 +4,23 @@ import { DEFAULT_TIME_ZONE } from '@shokujii/common/utils/datetime.js'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 
 export const CHAT_UNREAD_MAIL_TIME_ZONE = DEFAULT_TIME_ZONE
-export const CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS = 15 * 60 * 1000
-export const CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS = 4 * 60 * 60 * 1000
+export const CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS = 60 * 60 * 1000
+export const CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS = 72 * 60 * 60 * 1000
 export const CHAT_UNREAD_MAIL_MAX_ROOMS = 5
 export const CHAT_UNREAD_MAIL_FALLBACK_ROOM_NAME = 'グループチャット'
 
 export type ChatMailSlot = 'morning' | 'evening'
 
-export type ChatUnreadMailSkipReason =
-  | 'outside_slot'
-  | 'no_unread'
-  | 'debounce'
-  | 'same_slot'
-  | 'no_new_unread'
-  | 'min_interval'
+export type ChatUnreadMailSkipReason = 'outside_slot' | 'no_unread' | 'debounce' | 'awaiting_read' | 'min_interval'
 
-export type ShouldSendChatUnreadMailResult = { send: true } | { send: false; reason: ChatUnreadMailSkipReason }
+type ChatUnreadMailMembership = Pick<
+  ChatMembership,
+  'last_message_at' | 'unread_count' | 'is_active' | 'last_read_at' | 'last_unread_mail_sent_at'
+>
+
+export type ShouldSendChatUnreadMailResult<T extends ChatUnreadMailMembership> =
+  | { send: true; memberships: T[] }
+  | { send: false; reason: ChatUnreadMailSkipReason }
 
 export type ChatUnreadMailRoomPayload = {
   room_name: string
@@ -52,62 +53,48 @@ export const resolveChatMailSlot = (nowMillis: number): ChatMailSlot | null => {
   return null
 }
 
-export const isSameChatMailSlot = (lastSentAt: number, nowMillis: number): boolean => {
-  const lastSlot = resolveChatMailSlot(lastSentAt)
-  const nowSlot = resolveChatMailSlot(nowMillis)
-  if (lastSlot == null || nowSlot == null || lastSlot !== nowSlot) {
-    return false
-  }
-  return toJst(lastSentAt).toISODate() === toJst(nowMillis).toISODate()
-}
-
-export const shouldSendChatUnreadMail = (params: {
+export const shouldSendChatUnreadMail = <T extends ChatUnreadMailMembership>(params: {
   nowMillis: number
   lastSentAt: number | undefined
-  unreadMemberships: Pick<ChatMembership, 'last_message_at' | 'unread_count' | 'is_active'>[]
-}): ShouldSendChatUnreadMailResult => {
+  unreadMemberships: T[]
+}): ShouldSendChatUnreadMailResult<T> => {
   if (resolveChatMailSlot(params.nowMillis) == null) {
     return { send: false, reason: 'outside_slot' }
   }
 
-  const unread = params.unreadMemberships.filter((membership) => membership.is_active && membership.unread_count > 0)
+  const unread = params.unreadMemberships.filter(
+    (membership) =>
+      membership.is_active &&
+      membership.unread_count > 0 &&
+      membership.last_message_at != null &&
+      (membership.last_read_at == null || membership.last_message_at > membership.last_read_at),
+  )
   if (unread.length === 0) {
     return { send: false, reason: 'no_unread' }
   }
 
   const lastSentAt = params.lastSentAt
-  if (lastSentAt != null && isSameChatMailSlot(lastSentAt, params.nowMillis)) {
-    return { send: false, reason: 'same_slot' }
-  }
-
-  const debounceCutoff = params.nowMillis - CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS
-  const isDebounced = (lastMessageAt: number | undefined): boolean => {
-    return lastMessageAt != null && lastMessageAt <= debounceCutoff
-  }
-
-  if (lastSentAt == null) {
-    const hasDebouncedUnread = unread.some((membership) => isDebounced(membership.last_message_at))
-    if (!hasDebouncedUnread) {
-      return { send: false, reason: 'debounce' }
-    }
-    return { send: true }
-  }
-
-  const newUnread = unread.filter(
-    (membership) => membership.last_message_at != null && membership.last_message_at > lastSentAt,
-  )
-  if (newUnread.length === 0) {
-    return { send: false, reason: 'no_new_unread' }
-  }
-  if (!newUnread.some((membership) => isDebounced(membership.last_message_at))) {
-    return { send: false, reason: 'debounce' }
-  }
-
-  if (params.nowMillis - lastSentAt < CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS) {
+  if (lastSentAt != null && params.nowMillis - lastSentAt < CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS) {
     return { send: false, reason: 'min_interval' }
   }
 
-  return { send: true }
+  const notNotifiedSinceRead = unread.filter(
+    (membership) =>
+      membership.last_unread_mail_sent_at == null ||
+      (membership.last_read_at != null && membership.last_read_at > membership.last_unread_mail_sent_at),
+  )
+  if (notNotifiedSinceRead.length === 0) {
+    return { send: false, reason: 'awaiting_read' }
+  }
+  const debounceCutoff = params.nowMillis - CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS
+  const memberships = notNotifiedSinceRead.filter(
+    (membership) => membership.last_message_at != null && membership.last_message_at <= debounceCutoff,
+  )
+  if (memberships.length === 0) {
+    return { send: false, reason: 'debounce' }
+  }
+
+  return { send: true, memberships }
 }
 
 export const sortUnreadMembershipsForMail = (memberships: ChatMembership[]): ChatMembership[] => {

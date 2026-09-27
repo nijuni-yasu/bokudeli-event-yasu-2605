@@ -6,13 +6,11 @@ import * as sgMail from './utils/sendgrid.js'
 import { createModuleLogger } from './utils/logger.js'
 import {
   CHAT_UNREAD_MAIL_FALLBACK_ROOM_NAME,
-  CHAT_UNREAD_MAIL_MAX_ROOMS,
   CHAT_UNREAD_MAIL_TIME_ZONE,
   buildChatUnreadMailCoverUrl,
   buildChatUnreadMailSubject,
   buildChatUnreadMailTemplateData,
   resolveChatMailSlot,
-  sortUnreadMembershipsForMail,
   type ChatUnreadMailRoomPayload,
 } from './utils/chatUnreadMail.js'
 import { convertStoragePathToURL, getChatUrlForUser } from './utils/urls.js'
@@ -20,7 +18,11 @@ import { listActiveUnreadChatMemberships } from './stores/chatMembership.js'
 import { getChatRoom } from './stores/chatRoom.js'
 import { getCommunity } from './stores/community.js'
 import { getEventInCommunity } from './stores/event.js'
-import { claimChatUnreadMailSendSlot, releaseChatUnreadMailSendSlot } from './stores/chatUnreadMailState.js'
+import {
+  claimChatUnreadMailSendSlot,
+  releaseChatUnreadMailSendSlot,
+  type ChatUnreadMailSendReservation,
+} from './stores/chatUnreadMailState.js'
 import { getEnterpriseById, getEnterpriseMember } from './stores/enterprise.js'
 import { getUser } from './stores/user.js'
 
@@ -79,10 +81,10 @@ const resolveRoomName = async (membership: ChatMembership): Promise<string> => {
 
 const CLAIM_RELEASE_ATTEMPTS = 3
 
-const releaseClaim = async (userId: string, previousLastSentAt: number | undefined): Promise<void> => {
+const releaseClaim = async (userId: string, reservation: ChatUnreadMailSendReservation): Promise<void> => {
   for (let attempt = 1; attempt <= CLAIM_RELEASE_ATTEMPTS; attempt += 1) {
     try {
-      await releaseChatUnreadMailSendSlot(userId, previousLastSentAt)
+      await releaseChatUnreadMailSendSlot(userId, reservation)
       return
     } catch (error) {
       if (attempt === CLAIM_RELEASE_ATTEMPTS) {
@@ -131,20 +133,23 @@ const sendChatUnreadMailToUser = async (
     return 'skipped'
   }
 
-  const claim = await claimChatUnreadMailSendSlot(userId, nowMillis, memberships)
+  const claim = await claimChatUnreadMailSendSlot(
+    userId,
+    nowMillis,
+    memberships.map((membership) => membership.room_id),
+  )
   if (!claim.claimed) {
     logger.info('Skip chat unread mail', { userId, reason: claim.reason })
     return 'skipped'
   }
 
   try {
-    const sorted = sortUnreadMembershipsForMail(memberships)
-    const listed = sorted.slice(0, CHAT_UNREAD_MAIL_MAX_ROOMS)
-    const ctaRoomId = sorted.length === 1 ? sorted[0]?.room_id : undefined
+    const listed = claim.memberships
+    const ctaRoomId = listed.length === 1 ? listed[0]?.room_id : undefined
     const ctaUrl = await getChatUrlForUser(user, ctaRoomId)
     if (ctaUrl == null) {
       logger.warn('Skip chat unread mail', { userId, reason: 'host_unresolved' })
-      await releaseClaim(userId, claim.previousLastSentAt)
+      await releaseClaim(userId, claim)
       return 'skipped'
     }
 
@@ -153,7 +158,7 @@ const sendChatUnreadMailToUser = async (
       const chatUrl = await getChatUrlForUser(user, membership.room_id)
       if (chatUrl == null) {
         logger.warn('Skip chat unread mail', { userId, reason: 'host_unresolved' })
-        await releaseClaim(userId, claim.previousLastSentAt)
+        await releaseClaim(userId, claim)
         return 'skipped'
       }
       rooms.push({
@@ -169,7 +174,7 @@ const sendChatUnreadMailToUser = async (
     const dynamicTemplateData = buildChatUnreadMailTemplateData({
       userName: user.user_name,
       rooms,
-      unreadRoomCount: sorted.length,
+      unreadRoomCount: listed.length,
       ctaUrl,
     })
 
@@ -178,7 +183,7 @@ const sendChatUnreadMailToUser = async (
       from: DEFAULT_FROM,
       replyTo: SUPPORT_MAIL,
       templateId: CHAT_UNREAD_MAIL_TEMPLATE_ID,
-      subject: buildChatUnreadMailSubject(sorted.length, firstRoomName),
+      subject: buildChatUnreadMailSubject(listed.length, firstRoomName),
       dynamicTemplateData,
       ...(CHAT_UNREAD_MAIL_ASM_GROUP_ID > 0 ? { asm: { groupId: CHAT_UNREAD_MAIL_ASM_GROUP_ID } } : {}),
     })
@@ -188,7 +193,7 @@ const sendChatUnreadMailToUser = async (
       userId,
       error: error instanceof Error ? error.message : String(error),
     })
-    await releaseClaim(userId, claim.previousLastSentAt)
+    await releaseClaim(userId, claim)
     return 'failed'
   }
 }

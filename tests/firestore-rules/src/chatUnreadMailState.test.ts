@@ -3,10 +3,12 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   assertFails,
+  assertSucceeds,
   initializeTestEnvironment,
   type RulesTestContext,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
+import { deleteField, serverTimestamp } from 'firebase/firestore'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const PROJECT_ID = 'firestore-rules-chat-unread-mail'
@@ -23,6 +25,10 @@ function userAuth(userId: string) {
 
 function notificationStateRef(context: ReturnType<RulesTestEnvironment['authenticatedContext']>, userId: string) {
   return context.firestore().collection('users').doc(userId).collection('notification_states').doc('chat_unread_mail')
+}
+
+function membershipRef(context: RulesTestContext, userId: string) {
+  return context.firestore().collection('users').doc(userId).collection('chat_memberships').doc('room-1')
 }
 
 async function seedUser(context: RulesTestContext, userId: string): Promise<void> {
@@ -43,6 +49,13 @@ async function seedUser(context: RulesTestContext, userId: string): Promise<void
     .set({
       last_sent_at: new Date('2026-09-22T10:15:00+09:00'),
     })
+  await membershipRef(context, userId).set({
+    room_id: 'room-1',
+    room_type: 'event',
+    is_active: true,
+    unread_count: 1,
+    last_unread_mail_sent_at: new Date('2026-09-22T10:15:00+09:00'),
+  })
 }
 
 describe('notification_states firestore rules', () => {
@@ -86,5 +99,31 @@ describe('notification_states firestore rules', () => {
 
   it('unauthenticated clients cannot read chat unread mail state', async () => {
     await assertFails(notificationStateRef(testEnv.unauthenticatedContext(), USER_A).get())
+  })
+
+  it('owner can mark a notified room as read without changing its mail timestamp', async () => {
+    await assertSucceeds(
+      membershipRef(userAuth(USER_A), USER_A).update({
+        unread_count: 0,
+        last_read_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('owner cannot overwrite or delete the room mail timestamp even when marking as read', async () => {
+    const readPatch = { unread_count: 0, last_read_at: serverTimestamp(), updated_at: serverTimestamp() }
+    await assertFails(
+      membershipRef(userAuth(USER_A), USER_A).update({
+        ...readPatch,
+        last_unread_mail_sent_at: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      membershipRef(userAuth(USER_A), USER_A).update({
+        ...readPatch,
+        last_unread_mail_sent_at: deleteField(),
+      }),
+    )
   })
 })

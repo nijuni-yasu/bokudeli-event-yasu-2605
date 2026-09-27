@@ -24,8 +24,26 @@ describe('ChatMembership toFirestore', () => {
     expect(firestore.last_read_at).toBeUndefined()
     expect('last_message_preview' in firestore).toBe(false)
     expect('last_read_at' in firestore).toBe(false)
+    expect('last_unread_mail_sent_at' in firestore).toBe(false)
     expect('community_id' in firestore).toBe(false)
     expect('event_id' in firestore).toBe(false)
+  })
+
+  it('round-trips the mail notification timestamp through Firestore without clearing it on read', () => {
+    const sentAt = Date.parse('2026-09-25T10:00:00+09:00')
+    const membership = new ChatMembership('room-1', {
+      room_type: 'event',
+      last_unread_mail_sent_at: sentAt,
+      last_read_at: sentAt + 1,
+    })
+    const firestore = membership.toFirestore()
+    expect(firestore.last_unread_mail_sent_at.toMillis()).toBe(sentAt)
+    const restored = new ChatMembership('room-1', firestore)
+    expect(restored.last_unread_mail_sent_at).toBe(sentAt)
+    expect(restored.last_read_at).toBe(sentAt + 1)
+    const rolledBack = new ChatMembership('room-1', { ...restored, last_unread_mail_sent_at: undefined })
+    expect(rolledBack.toFirestore()).not.toHaveProperty('last_unread_mail_sent_at')
+    expect(rolledBack.last_read_at).toBe(sentAt + 1)
   })
 
   it('includes community_id and event_id when set', () => {

@@ -63,7 +63,7 @@ vi.mock('./utils/mail.js', () => ({
 import { sendChatUnreadMails } from './chatUnreadMail.js'
 
 const morning = Date.parse('2026-09-22T10:20:00+09:00')
-const unreadAt = Date.parse('2026-09-22T09:50:00+09:00')
+const unreadAt = Date.parse('2026-09-22T09:00:00+09:00')
 
 const unreadRow = {
   userId: 'user-1',
@@ -80,11 +80,18 @@ const unreadRow = {
   },
 }
 
+const reservation = {
+  claimed: true,
+  claimedAt: morning,
+  previousLastSentAt: undefined,
+  memberships: [unreadRow.membership],
+}
+
 describe('sendChatUnreadMails', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     listActiveUnreadChatMembershipsMock.mockResolvedValue([unreadRow])
-    claimChatUnreadMailSendSlotMock.mockResolvedValue({ claimed: true, previousLastSentAt: undefined })
+    claimChatUnreadMailSendSlotMock.mockResolvedValue(reservation)
     getChatUrlForUserMock.mockResolvedValue('https://pf.example.com/chat/room-1')
     getChatRoomMock.mockResolvedValue({ title: '春の食事会' })
     sgMailSendMock.mockResolvedValue(undefined)
@@ -111,7 +118,7 @@ describe('sendChatUnreadMails', () => {
   it('claims the send slot before SendGrid and keeps it after success', async () => {
     getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
     await sendChatUnreadMails(morning)
-    expect(claimChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', morning, [unreadRow.membership])
+    expect(claimChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', morning, ['room-1'])
     expect(sgMailSendMock).toHaveBeenCalledTimes(1)
     expect(sgMailSendMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -132,10 +139,49 @@ describe('sendChatUnreadMails', () => {
 
   it('releases the claim when SendGrid fails', async () => {
     getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
-    claimChatUnreadMailSendSlotMock.mockResolvedValue({ claimed: true, previousLastSentAt: unreadAt })
+    claimChatUnreadMailSendSlotMock.mockResolvedValue({ ...reservation, previousLastSentAt: unreadAt })
     sgMailSendMock.mockRejectedValue(new Error('sendgrid down'))
     await sendChatUnreadMails(morning)
-    expect(releaseChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', unreadAt)
+    expect(releaseChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', {
+      ...reservation,
+      previousLastSentAt: unreadAt,
+    })
+  })
+
+  it('only includes memberships confirmed by the reservation in the subject, body and links', async () => {
+    getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
+    listActiveUnreadChatMembershipsMock.mockResolvedValue([
+      unreadRow,
+      { userId: 'user-1', membership: { ...unreadRow.membership, room_id: 'paused-room', unread_count: 99 } },
+    ])
+    await sendChatUnreadMails(morning)
+    expect(sgMailSendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: '春の食事会に未読のチャットがあります',
+        dynamicTemplateData: expect.objectContaining({
+          unread_room_count: 1,
+          more_room_count: 0,
+          rooms: [expect.objectContaining({ unread_count: 2 })],
+        }),
+      }),
+    )
+    expect(getChatUrlForUserMock).not.toHaveBeenCalledWith(expect.anything(), 'paused-room')
+  })
+
+  it('does not send when the reservation declines', async () => {
+    getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
+    claimChatUnreadMailSendSlotMock.mockResolvedValue({ claimed: false, reason: 'awaiting_read' })
+    await sendChatUnreadMails(morning)
+    expect(sgMailSendMock).not.toHaveBeenCalled()
+    expect(releaseChatUnreadMailSendSlotMock).not.toHaveBeenCalled()
+  })
+
+  it('releases all notification state when a chat URL cannot be resolved', async () => {
+    getUserMock.mockResolvedValue({ is_deleted: false, user_email: 'user@example.com', user_name: '太郎' })
+    getChatUrlForUserMock.mockResolvedValue(undefined)
+    await sendChatUnreadMails(morning)
+    expect(sgMailSendMock).not.toHaveBeenCalled()
+    expect(releaseChatUnreadMailSendSlotMock).toHaveBeenCalledWith('user-1', reservation)
   })
 
   it('skips inactive enterprise members before claiming a slot', async () => {

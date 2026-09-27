@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS,
+  CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS,
   buildChatUnreadMailCoverUrl,
   buildChatUnreadMailSubject,
   buildChatUnreadMailTemplateData,
-  isSameChatMailSlot,
   resolveChatMailSlot,
   shouldSendChatUnreadMail,
 } from './chatUnreadMail.js'
@@ -28,100 +29,149 @@ describe('resolveChatMailSlot', () => {
   })
 })
 
-describe('isSameChatMailSlot', () => {
-  it('matches the same JST calendar slot', () => {
-    expect(isSameChatMailSlot(jst('2026-09-22T10:15:00+09:00'), jst('2026-09-22T11:40:00+09:00'))).toBe(true)
-  })
-
-  it('does not match across JST dates', () => {
-    expect(isSameChatMailSlot(jst('2026-09-22T10:15:00+09:00'), jst('2026-09-23T10:15:00+09:00'))).toBe(false)
-  })
-})
-
 describe('shouldSendChatUnreadMail', () => {
-  const unread = [{ is_active: true as const, unread_count: 1, last_message_at: jst('2026-09-22T09:50:00+09:00') }]
+  const now = jst('2026-09-25T10:00:00+09:00')
+  const firstSentAt = now - CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS
+  const unread = {
+    is_active: true,
+    unread_count: 1,
+    last_message_at: now - CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS,
+  }
 
-  it('sends the first mail after the 15 minute debounce', () => {
-    expect(
-      shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T10:10:00+09:00'),
-        lastSentAt: undefined,
-        unreadMemberships: unread,
-      }),
-    ).toEqual({ send: true })
+  it('sends the first notification exactly one hour after the last message', () => {
+    expect(shouldSendChatUnreadMail({ nowMillis: now, lastSentAt: undefined, unreadMemberships: [unread] })).toEqual({
+      send: true,
+      memberships: [unread],
+    })
+    expect(CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS).toBe(60 * 60 * 1000)
   })
 
-  it('skips when the latest unread is newer than 15 minutes', () => {
+  it('waits when the latest message is less than one hour old', () => {
     expect(
       shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T10:00:00+09:00'),
+        nowMillis: now,
         lastSentAt: undefined,
-        unreadMemberships: [{ is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T09:50:00+09:00') }],
+        unreadMemberships: [{ ...unread, last_message_at: unread.last_message_at + 1 }],
       }),
     ).toEqual({ send: false, reason: 'debounce' })
   })
 
-  it('skips read rooms', () => {
+  it.each([1, 24, 48])('does not send another room after %i hours', (hours) => {
     expect(
       shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T10:20:00+09:00'),
+        nowMillis: now,
+        lastSentAt: now - hours * 60 * 60 * 1000,
+        unreadMemberships: [unread],
+      }),
+    ).toEqual({ send: false, reason: 'min_interval' })
+  })
+
+  it('enforces 72 elapsed hours instead of calendar dates', () => {
+    expect(CHAT_UNREAD_MAIL_MIN_INTERVAL_MILLIS).toBe(72 * 60 * 60 * 1000)
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now - 1,
+        lastSentAt: firstSentAt,
+        unreadMemberships: [unread],
+      }),
+    ).toEqual({ send: false, reason: 'min_interval' })
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now,
+        lastSentAt: firstSentAt,
+        unreadMemberships: [unread],
+      }),
+    ).toEqual({ send: true, memberships: [unread] })
+  })
+
+  it.each([undefined, firstSentAt - 1, firstSentAt])(
+    'keeps an unread room paused when last_read_at is %s',
+    (lastReadAt) => {
+      expect(
+        shouldSendChatUnreadMail({
+          nowMillis: now,
+          lastSentAt: firstSentAt,
+          unreadMemberships: [{ ...unread, last_read_at: lastReadAt, last_unread_mail_sent_at: firstSentAt }],
+        }),
+      ).toEqual({ send: false, reason: 'awaiting_read' })
+    },
+  )
+
+  it('resumes only after the room was read and a new unread arrived', () => {
+    const membership = { ...unread, last_read_at: firstSentAt + 1, last_unread_mail_sent_at: firstSentAt }
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now,
+        lastSentAt: firstSentAt,
+        unreadMemberships: [membership],
+      }),
+    ).toEqual({ send: true, memberships: [membership] })
+  })
+
+  it('can notify a room whose message predates the last mail for a different room', () => {
+    const membership = { ...unread, last_message_at: firstSentAt - 1 }
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now,
+        lastSentAt: firstSentAt,
+        unreadMemberships: [membership],
+      }),
+    ).toEqual({ send: true, memberships: [membership] })
+  })
+
+  it('includes only eligible rooms, excluding paused rooms and rooms still waiting an hour', () => {
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now,
+        lastSentAt: firstSentAt,
+        unreadMemberships: [
+          { ...unread, last_unread_mail_sent_at: firstSentAt },
+          { ...unread, last_message_at: now - 1 },
+          unread,
+        ],
+      }),
+    ).toEqual({ send: true, memberships: [unread] })
+  })
+
+  it.each([
+    { ...unread, unread_count: 0 },
+    { ...unread, is_active: false },
+    { ...unread, last_message_at: undefined },
+    { ...unread, last_read_at: unread.last_message_at },
+    { ...unread, last_read_at: now + 1 },
+  ])('skips read, inactive, or inconsistent memberships', (membership) => {
+    expect(
+      shouldSendChatUnreadMail({
+        nowMillis: now,
         lastSentAt: undefined,
-        unreadMemberships: [{ is_active: true, unread_count: 0, last_message_at: jst('2026-09-22T09:50:00+09:00') }],
+        unreadMemberships: [membership],
       }),
     ).toEqual({ send: false, reason: 'no_unread' })
   })
 
-  it('skips when last_sent_at is already in the same slot', () => {
+  it('carries a late evening message over to the next morning', () => {
+    const membership = { ...unread, last_message_at: jst('2026-09-25T22:30:00+09:00') }
     expect(
       shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T11:10:00+09:00'),
-        lastSentAt: jst('2026-09-22T10:15:00+09:00'),
-        unreadMemberships: [{ is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T11:00:00+09:00') }],
-      }),
-    ).toEqual({ send: false, reason: 'same_slot' })
-  })
-
-  it('skips the evening slot when there is no unread newer than last_sent_at', () => {
-    expect(
-      shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T18:20:00+09:00'),
-        lastSentAt: jst('2026-09-22T10:15:00+09:00'),
-        unreadMemberships: unread,
-      }),
-    ).toEqual({ send: false, reason: 'no_new_unread' })
-  })
-
-  it('does not send a fresh unread just because an older room already waited 15 minutes', () => {
-    expect(
-      shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T18:05:00+09:00'),
-        lastSentAt: jst('2026-09-22T10:15:00+09:00'),
-        unreadMemberships: [
-          { is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T09:50:00+09:00') },
-          { is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T17:59:00+09:00') },
-        ],
+        nowMillis: jst('2026-09-25T22:55:00+09:00'),
+        lastSentAt: undefined,
+        unreadMemberships: [membership],
       }),
     ).toEqual({ send: false, reason: 'debounce' })
-  })
-
-  it('sends in the evening when there is a newer unread', () => {
     expect(
       shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T18:20:00+09:00'),
-        lastSentAt: jst('2026-09-22T10:15:00+09:00'),
-        unreadMemberships: [{ is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T17:50:00+09:00') }],
+        nowMillis: jst('2026-09-25T23:30:00+09:00'),
+        lastSentAt: undefined,
+        unreadMemberships: [membership],
       }),
-    ).toEqual({ send: true })
-  })
-
-  it('skips when the previous send is within 4 hours', () => {
+    ).toEqual({ send: false, reason: 'outside_slot' })
     expect(
       shouldSendChatUnreadMail({
-        nowMillis: jst('2026-09-22T18:20:00+09:00'),
-        lastSentAt: jst('2026-09-22T15:00:00+09:00'),
-        unreadMemberships: [{ is_active: true, unread_count: 1, last_message_at: jst('2026-09-22T17:50:00+09:00') }],
+        nowMillis: jst('2026-09-26T09:00:00+09:00'),
+        lastSentAt: undefined,
+        unreadMemberships: [membership],
       }),
-    ).toEqual({ send: false, reason: 'min_interval' })
+    ).toEqual({ send: true, memberships: [membership] })
   })
 })
 
