@@ -82,7 +82,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     const fullyRefundedOrderIds = new Set<string>()
     for (const refund of stripe.refunds) {
       const refundableAmount = refund.order_ids.reduce((sum, orderId) => sum + (orderSelfPayById.get(orderId) ?? 0), 0)
-      if (refundableAmount > 0 && refund.amount >= refundableAmount) {
+      if (refundableAmount > 0 && refund.amount === refundableAmount) {
         refund.order_ids.forEach((orderId) => fullyRefundedOrderIds.add(orderId))
       }
     }

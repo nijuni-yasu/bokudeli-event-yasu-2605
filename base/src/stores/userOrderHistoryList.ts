@@ -33,7 +33,7 @@ export type UserOrderHistoryListStoreOptions = {
 }
 
 export const getUserOrderHistoryEventKey = (communityId: string, eventId: string): string =>
-  `${communityId}::${eventId}`
+  JSON.stringify([communityId, eventId])
 
 const ORDERS_SCAN_BATCH = 24
 const MAX_SCAN_BATCHES_PER_NEXT = 50
