@@ -4,6 +4,7 @@ import path from 'path'
 import { DateTime } from 'luxon'
 import { EventReceiptRequest, EventReceiptResponse } from '@shokujii/common/apis/eventReceipt.js'
 import { convertDateToId } from '@shokujii/common/utils/datetime.js'
+import { getMemberOrderDiscountAmount } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 import { createModuleLogger } from './utils/logger.js'
 import { getEvent } from './stores/event.js'
 import { getPartner } from './stores/partner.js'
@@ -75,9 +76,18 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     })
 
     const refundedTotal = stripe.refunds.reduce((sum, r) => sum + r.amount, 0)
-    const refundedOrderIds = new Set(stripe.refunds.flatMap((r) => r.order_ids))
+    const orderSelfPayById = new Map(
+      orders.map((order) => [order.id, order.menu_price - getMemberOrderDiscountAmount(order)]),
+    )
+    const fullyRefundedOrderIds = new Set<string>()
+    for (const refund of stripe.refunds) {
+      const refundableAmount = refund.order_ids.reduce((sum, orderId) => sum + (orderSelfPayById.get(orderId) ?? 0), 0)
+      if (refundableAmount > 0 && refund.amount >= refundableAmount) {
+        refund.order_ids.forEach((orderId) => fullyRefundedOrderIds.add(orderId))
+      }
+    }
     const receiptOrders = orders
-      .filter((order) => !refundedOrderIds.has(order.id))
+      .filter((order) => !fullyRefundedOrderIds.has(order.id))
       .map((order) => ({
         menu_name: order.menu_name,
         menu_price: order.menu_price,
