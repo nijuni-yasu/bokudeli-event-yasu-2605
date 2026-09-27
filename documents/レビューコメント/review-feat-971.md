@@ -6,10 +6,10 @@
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | カート手数料プレビューが Checkout 判定と二重化<br>`previewUserPaymentFee` に統一済み |
 | [x] | RC-2 | 4079879628, 4079887328 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | マイページ手数料が残自己負担のプレビュー<br>部分キャンセル後に表示手数料が下がる |
-| [ ] | RC-3 | 4079879517, 4079887317, 5844074395, 5844370785, 4111556285 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout セッションが Webhook で 400 になる<br>amount_total === 自己負担のレガシー許容を検討 |
+| [x] | RC-3 | 4079879517, 4079887317, 5844074395, 5844370785, 4111556285 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout は実課金額を手数料なしで保存する対応済み<br>記録を更新し、実装を根拠に Resolve 可能 |
 | [x] | RC-4 | 4079879607, 4079887347, 5844074395, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にした |
 | [x] | RC-5 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | 仕様の10%税抜が floor(税込/1.1) のまま<br>実装の整数演算に合わせて更新済み |
-| [x] | RC-6 | 4079879564 | 👌 修正不要 | — | 📌 スコープ内 | — | — | — | receipt.docx 未同梱指摘<br>PR に binary 同梱済みで誤検知 |
+| [x] | RC-6 | 4079879564 | 👌 修正不要 | — | 📌 スコープ内 | — | — | — | 領収書テンプレートは同梱・更新済み<br>2 ブロックと条件付き利用料タグを XML で確認 |
 | [x] | RC-7 | 4079887335 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 領収書明細 menu_price と自己負担小計の不一致 |
 | [x] | RC-9 | 4079879701 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | invoice コメント「同意」→「同値」の誤記 |
 | [x] | RC-10 | 4079879666 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 手数料説明をオンライン決済時に統一 |
@@ -17,21 +17,22 @@
 | [x] | RC-12 | 4079887341 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | キャンセルポリシー desc_after の br 表示 |
 | [x] | RC-13 | 4101673881, 4103877591, 5844074395, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 無料の主催者負担キャンセルに手数料非返金<br>差額なしの確認文から非返金の一文を外した |
 | [x] | RC-14 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 10%税抜コメントが floor(税込/1.1) と同値と誤記<br>110円で 99 になる旨へ修正済み |
-| [ ] | RC-15 | 4101673867, 4103877559, 5844074395, 4110518985, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
+| [x] | RC-15 | 4101673867, 4103877559, 5844074395, 4110518985, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 未返金の canceled 行を領収書に残す対応済み<br>返金記録の order_ids と全額一致で除外する |
 | [ ] | RC-16 | 4101673874, 4103877510, 5844074395, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行追加で Stripe 100明細上限を超え得る<br>呼び出し前の予約チェック方針が一意でない |
 | [ ] | RC-17 | 5831254045, 5844074395, 4110518997, 5844370785, 4110614493 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | M | 注文履歴のキーが event_id のみ<br>別コミュニティで同じ event_id だと読み飛ばす |
 | [ ] | RC-18 | 4103877536, 5844074395, 4110522576, 5844370785 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 金額不一致の client_error でも補助の Transaction が commit される<br>検証を副作用の前へ移すか throw するかは未決 |
 | [x] | RC-19 | 4103877474, 5844074395, 4110522579, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止めた |
-| [ ] | RC-20 | 4103870867, 4103877387, 4103877425, 5844370785, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者と件名が同じだけで force-with-lease を許可する<br>同等パッチ以外は確認に戻す案。依頼した判定と両立しない |
-| [ ] | RC-21 | 4110522582, 4110614506, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 自動中止の案内が全額返金のまま<br>返金計算は手数料を残す |
+| [ ] | RC-20 | 4103870867, 4103877387, 4103877425, 5844370785, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者・件名一致による force push 自動許可は撤廃する案<br>2 コメントを同一方針で修正し、明示 SHA の lease を使う |
+| [ ] | RC-21 | 4110522582, 4110614506, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 自動中止の全額返金案内と利用料非返金が不一致<br>現仕様を維持し、食事代のみ返金と案内する案 |
 | [x] | RC-22 | 4110522584 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 領収書メニューが繰り返しセクションでない<br>表セルの menus タグで行を繰り返す |
-| [ ] | RC-23 | 4114228705, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 対象 stripe_id の抽出が common と二重実装<br>抽出関数を common から export して共用する |
-| [ ] | RC-24 | 4114228701, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | M | 手数料の取得失敗で注文一覧ごとエラーになる<br>手数料だけ非表示にするかエラーにするか未決 |
+| [ ] | RC-23 | 4114228705, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | Stripe ID 抽出条件の共通化は妥当な任意改善<br>現条件の差異はなく、RC-24 と併せて整理する案 |
+| [ ] | RC-24 | 4114228701, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | M | 手数料取得失敗で注文操作まで隠れる問題が残る<br>注文状態と手数料状態を分離し、失敗を 0 円にしない |
 | [x] | RC-25 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行の追加で空明細ガードが効かない<br>ガードを手数料行の追加より前に移した |
 | [x] | RC-26 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 領収書マージデータに未参照キーが残る<br>テンプレートにない 6 キーを削除した |
 | [ ] | RC-27 | 4114073792 | 🟡 修正提案 | 未着手 | ❓ 要確認 | 📏 規約 | 🔧 微修正 | S | 番号なしコミットが fixup の # 必須と矛盾する<br>A1 を番号なしのまま通すかはワークフロー方針 |
-| [ ] | RC-28 | 4114073794, 4114228685, 5853357251 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 💰 金銭 | 📋 仕様追加 | M | Functions とフロントのデプロイ順が独立<br>切替窓の機能フラグはリリース手順の判断 |
-| [x] | RC-29 | 4114336068, 4114336569 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | キャンセル状態が event_id 単体のまま<br>複合キーに揃えて両カードが開かないようにした |
+| [ ] | RC-28 | 4114073794, 4114228685, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 課金開始とフロント表示の互換性確保が必要<br>スコープ内に見直し、旧画面を含む段階切替を設計する案 |
+| [x] | RC-29 | 4114336068, 4114336569 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | キャンセル状態の複合キー化は対応済み<br>ダイアログと loading の代入・比較を両方確認 |
+| [ ] | RC-30 | 4114454601 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 👤 UX | 🔧 微修正 | M | EventStripe 欠落をレガシーと同じ 0 円にしている<br>フィールド未設定とドキュメント欠落の区別は表示方針が未決 |
 
 ---
 
@@ -104,7 +105,7 @@
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-2 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | マイページ手数料が残自己負担のプレビュー<br>部分キャンセル後に表示手数料が下がる |
-| [ ] | RC-3 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout セッションが Webhook で 400 になる<br>amount_total === 自己負担のレガシー許容を検討 |
+| [x] | RC-3 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout セッションが Webhook で 400 になる<br>amount_total === 自己負担のレガシー許容を検討 |
 | [ ] | RC-4 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にする |
 
 ---
@@ -182,7 +183,7 @@
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -322,7 +323,7 @@
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-2 | 4079879628, 4079887328 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | 確定手数料は pay_user_fee_amount 合算表示 |
-| [ ] | RC-3 | 4079879517, 4079887317 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 手数料導入前 Checkout の Webhook 400 |
+| [x] | RC-3 | 4079879517, 4079887317 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 手数料導入前 Checkout の Webhook 400 |
 | [ ] | RC-4 | 4079879607, 4079887347 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 返金上限から手数料を除外 |
 | [x] | RC-6 | 4079879564 | 👌 修正不要 | — | 📌 スコープ内 | — | — | — | receipt.docx は PR 同梱済み |
 | [x] | RC-7 | 4079887335 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 領収書明細と自己負担小計の整合 |
@@ -347,7 +348,7 @@
 
 **評価**: 🚨 必須修正（セルフレビュー時 🟡 から Copilot/Codex P1 で昇格）
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -511,7 +512,7 @@
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-15 | 4101673867 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
+| [x] | RC-15 | 4101673867 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
 | [ ] | RC-16 | 4101673874 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行追加で Stripe 100明細上限を超え得る<br>呼び出し前の予約チェック方針が一意でない |
 
 ---
@@ -546,7 +547,7 @@ Useful? React with 👍 / 👎.
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -1355,4 +1356,870 @@ Useful? React with 👍 / 👎.
 
 ---
 
+---
 
+## 評価セッション（2026-09-27 16:12・review-comments-evaluate）
+
+- **評価日時**: 2026-09-27 16:12 JST
+- **評価者**: Codex（指定 10 コメントの対応方針検討）
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **評価対象 HEAD**: `6b847ee1a0a4271bfab23008064b83cc522250c4`（ローカルと PR の一致を確認）
+- **対象範囲**: ユーザー指定の 10 コメント。RC-20 に 2 件が対応するため、既存 RC は 9 件。追加の RC は採番しない。
+- **新規 RC**: なし
+- **Outdated 除外件数**: 指定 10 件中 2 件（GraphQL 基準）。新規評価はせず、RC-3 / RC-6 の現在の対応状態だけ確認した。
+- **レビュー非該当スキップ件数**: 指定 10 件内は 0 件。PR 全体のトップレベル定型文・他の指摘は本セッションの対象外。
+- **手順 4a**: ユーザーの依頼は対応方針の検討であるため、ソース・スキル・仕様の実装変更は行わず、レビュー記録だけ更新。GitHub 返信・Resolve・push は実施していない。
+- **評価と進捗**: 既存の評価ラベルは維持。RC-3 / RC-15 は対応済みへ更新。RC-28 は課金導入の責務としてスコープ内へ見直した。下記が今回の判断理由・対応方針の正本で、過去セッションの未決案に優先する。
+- **結論**: 4 コメントは解消済み。5 コメントは対応を推奨（うち force push 2 件は同じ修正）。1 コメントは任意リファクタ。
+- **検証**: `npm -w common run test -- src/utils/paymentUserFee.test.ts`（16 件成功）、`npm -w functions/default run test -- src/utils/eventReceiptMergeData.test.ts src/utils/paymentUserFeeStripe.test.ts src/utils/refundMemberOrdersStripe.test.ts`（17 件成功）。テスト追加なし。Webhook 保存・領収書呼び出し側・UI 障害時・実 PDF 生成までを通した検証ではない。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-3 | 4079879517, 4079887317, 5844074395, 5844370785, 4111556285 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout は実課金額を手数料なしで保存する対応済み<br>記録を更新し、実装を根拠に Resolve 可能 |
+| [x] | RC-6 | 4079879564 | 👌 修正不要 | — | 📌 スコープ内 | — | — | — | 領収書テンプレートは同梱・更新済み<br>2 ブロックと条件付き利用料タグを XML で確認 |
+| [x] | RC-15 | 4101673867, 4103877559, 5844074395, 4110518985, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 未返金の canceled 行を領収書に残す対応済み<br>返金記録の order_ids と全額一致で除外する |
+| [ ] | RC-20 | 4103870867, 4103877387, 4103877425, 5844370785, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者・件名一致による force push 自動許可は撤廃する案<br>2 コメントを同一方針で修正し、明示 SHA の lease を使う |
+| [ ] | RC-21 | 4110522582, 4110614506, 5853008059 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 自動中止の全額返金案内と利用料非返金が不一致<br>現仕様を維持し、食事代のみ返金と案内する案 |
+| [ ] | RC-23 | 4114228705, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | Stripe ID 抽出条件の共通化は妥当な任意改善<br>現条件の差異はなく、RC-24 と併せて整理する案 |
+| [ ] | RC-24 | 4114228701, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | M | 手数料取得失敗で注文操作まで隠れる問題が残る<br>注文状態と手数料状態を分離し、失敗を 0 円にしない |
+| [ ] | RC-28 | 4114073794, 4114228685, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 課金開始とフロント表示の互換性確保が必要<br>スコープ内に見直し、旧画面を含む段階切替を設計する案 |
+| [x] | RC-29 | 4114336068, 4114336569 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | キャンセル状態の複合キー化は対応済み<br>ダイアログと loading の代入・比較を両方確認 |
+
+---
+
+**識別子**: RC-3（GitHub id: 4111556285・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `common/src/utils/paymentUserFee.ts:44`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4111556285
+
+```diff
+@@ -0,0 +1,96 @@
++/**
++ * Stripe 実課金の自己負担額に対するユーザー決済手数料。
++ * `MIN(220, MAX(110, FLOOR(自己負担 × 0.1, 100) × 1.1))` と同等。自己負担 0 以下は 0。
++ *
++ * @see documents/01_マネタイズと決済/02_ユーザー決済手数料.md
++ */
++import type { CommunityBillSettingsType, EventPaymentType } from '../schemas/Event.js'
++
++/** 1,000 円刻みの税込手数料単位（最低額でもある） */
++export const USER_PAYMENT_FEE_UNIT = 110
++/** 1 セッションあたりの手数料上限 */
++export const USER_PAYMENT_FEE_MAX = 220
++
++export function computeUserPaymentFeeFromSelfPay(selfPay: number): number {
++  if (selfPay <= 0) return 0
++  return Math.min(
++    USER_PAYMENT_FEE_MAX,
++    Math.max(USER_PAYMENT_FEE_UNIT, Math.floor(selfPay / 1000) * USER_PAYMENT_FEE_UNIT),
++  )
++}
++
++export function computeCheckoutTotalFromSelfPay(selfPay: number): { selfPay: number; fee: number; total: number } {
++  const fee = computeUserPaymentFeeFromSelfPay(selfPay)
++  return { selfPay, fee, total: selfPay + fee }
++}
++
++/** Webhook が EventStripe に書く pay_amount / pay_user_fee_amount。手数料 0 のレガシーは fee フィールドを省略。 */
++export function computeEventStripePayFields(selfPay: number): {
++  pay_amount: number
++  pay_user_fee_amount?: number
++} {
++  const fee = computeUserPaymentFeeFromSelfPay(selfPay)
++  return {
++    pay_amount: selfPay + fee,
++    ...(fee > 0 ? { pay_user_fee_amount: fee } : {}),
++  }
++}
++
++/** amount_total が無いセッションは検証スキップ。あるときは pay_amount と一致必須。 */
++export function isCheckoutAmountTotalMatchingPayAmount(
++  amountTotal: number | null | undefined,
++  payAmount: number,
++): boolean {
++  return amountTotal == null || amountTotal === payAmount
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4111556285](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4111556285)
+
+[must] 手数料導入前に作成された Checkout Session は `amount_total` が自己負担額だけですが、ここでは再計算した手数料込み `payAmount` との一致しか許可していません。そのためデプロイ直後の有効な旧セッションが 400 になり、決済済みでも注文が確定されません。旧セッションを fee 0 として受けるか、ロールアウト中の再決済方針を実装してください。
+
+**コメント要約**: 旧 Checkout は実課金額を手数料なしで保存する対応済み<br>記録を更新し、実装を根拠に Resolve 可能
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 現在の common/src/utils/paymentUserFee.ts:40–51 は旧自己負担額との一致を許容する。functions/default/src/stripeWebhook.ts:379–386 は amount_total が自己負担額だけのとき payAmount を自己負担額、userFeeAmount を undefined とし、同ファイル:461–466 で実課金額を保存して手数料フィールドを省略する。金額一致だけ許容して架空の手数料を保存する状態も d0447e9d3 で解消済み。GitHub 上は Outdated のため旧指摘の再評価はせず、既存 RC の対応状態を現 HEAD に同期する。
+
+対応方針・確認項目: 現実装を維持。旧セッションの決済額 1,000 円 → pay_amount 1,000 円・手数料フィールドなし・注文確定、新セッション 1,110 円 → fee 110 円、不一致額の拒否を Webhook 保存まで確認できる回帰テストを追加するとよい。今回実行した共通関数テストは保存処理そのものまでは検証しない。
+
+---
+
+**識別子**: RC-6（GitHub id: 4079879564・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `functions/default/src/utils/eventReceiptMergeData.ts:121`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4079879564
+
+```diff
+…（diff 先頭省略・43 行）
++  shopSubtotal: string
++  shop8: string
++  shop8Tax: string
++  shop10: string
++  shop10Tax: string
++  rawPrice: string
++  tax: string
++  fee: string
++  fee8: string
++  fee8Tax: string
++  fee10: string
++  fee10Tax: string
++  nijuniName: string
++  nijuniInvoiceId: string
++  grandTotal: string
++  price: string
++  footer: string
++}
++
++export function computeEventReceiptAmounts(input: {
++  payAmount: number
++  payUserFeeAmount: number | undefined
++  refundedTotal: number
++}): {
++  fee: number
++  shopSubtotal: number
++  grandTotal: number
++} {
++  const fee = input.payUserFeeAmount ?? 0
++  const foodCharged = Math.max(0, input.payAmount - fee)
++  const shopSubtotal = Math.max(0, foodCharged - input.refundedTotal)
++  return { fee, shopSubtotal, grandTotal: shopSubtotal + fee }
++}
++
++export function buildEventReceiptMergeData(input: EventReceiptMergeInput): EventReceiptMergeData {
++  const { fee, shopSubtotal, grandTotal } = computeEventReceiptAmounts(input)
++  const shopTax = computeInclusive8ExTaxAndTax(shopSubtotal)
++  const feeTax = computeInclusive10ExTaxAndTax(fee)
++  const hasFee = fee > 0
++  const issuedAt = convertToDatetime(input.issuedAt)
++  const shopSubtotalYen = convertNumberToYen(shopSubtotal)
++  const shop8TaxYen = convertNumberToYen(shopTax.taxPrice)
++  const grandTotalYen = convertNumberToYen(grandTotal)
++  const zeroYen = convertNumberToYen(0)
++
++  return {
++    reissue: input.reissue,
++    hasFee,
++    number: input.receiptNumber,
++    date: issuedAt,
++    issuedAt,
++    orderDate: convertToDatetime(input.orderCreatedAt),
++    eventDate: convertToDate(input.eventStartDatetime),
++    event: `${input.eventName} / お食事代として`,
++    shop: input.shopName,
++    invoiceId: input.shopInvoiceNumber ?? 'なし',
++    address: input.shopAddress,
++    paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
++    menus: input.menus.map((menu) => ({
++      menu_name: menu.menu_name,
++      count: menu.count,
++      price: convertNumberToYen(menu.menu_price),
++    })),
++    shopSubtotal: shopSubtotalYen,
++    shop8: shopSubtotalYen,
++    shop8Tax: shop8TaxYen,
++    shop10: zeroYen,
++    shop10Tax: zeroYen,
++    rawPrice: convertNumberToYen(shopTax.exTaxPrice),
++    tax: shop8TaxYen,
++    fee: convertNumberToYen(fee),
++    fee8: zeroYen,
++    fee8Tax: zeroYen,
++    fee10: convertNumberToYen(fee),
++    fee10Tax: convertNumberToYen(feeTax.taxPrice),
++    nijuniName: NIJUNI_COMPANY_NAME,
++    nijuniInvoiceId: NIJUNI_INVOICE_REGISTRATION_NUMBER,
++    grandTotal: grandTotalYen,
++    price: grandTotalYen,
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4079879564](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4079879564)
+
+[must] この PR の変更ファイルに `functions/default/templates/receipt.docx` が含まれておらず、既存テンプレートは旧1ブロック用のままです。ここで `shop8` / `fee10` / `hasFee` などを生成してもテンプレート側が参照しないため、実際のPDFは2ブロックにならず、`price=grandTotal` と食事だけの `rawPrice` / `tax` が混在します。新しいフィールドを参照するテンプレートも同じ変更に含めてください。
+
+**コメント要約**: 領収書テンプレートは同梱・更新済み<br>2 ブロックと条件付き利用料タグを XML で確認
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: —
+
+**想定工数**: —
+
+**判断理由**: origin/development...HEAD に functions/default/templates/receipt.docx のバイナリ差分がある。word/document.xml を抽出し、shop8 / fee10 / hasFee / grandTotal と 8%・10% の各ブロックを確認した。eventReceipt.ts:116 は同テンプレートを使用している。テンプレート未同梱という前提は現 HEAD には当てはまらない。GitHub 上は Outdated のため状態確認のみ。
+
+対応方針・確認項目: 追加修正不要として Resolve 可能。今回の確認は DOCX の内容とコード参照までで、Adobe による実 PDF 生成・描画の再確認は実施していない。
+
+---
+
+**識別子**: RC-15（GitHub id: 4103877559・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `functions/default/src/utils/eventReceiptMergeData.ts:100`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4103877559
+
+```diff
+…（diff 先頭省略・20 行）
++  reissue: boolean
++  orderCreatedAt: number
++  issuedAt: number
++  payAmount: number
++  payUserFeeAmount: number | undefined
++  refundedTotal: number
++  orders: EventReceiptMenuSource[]
++  paymentMethod?: string
++}
++
++/** 領収書内訳の元データ。確定済み注文の自己負担単価を集約する */
++export type EventReceiptMenuSource = {
++  menu_name: string
++  menu_price: number
++  status: EventMemberOrderStatusType
++  pay_community_bill_off_amount?: number
++  pay_enterprise_subsidy_amount?: number
++}
++
++export type EventReceiptMergeData = {
++  reissue: boolean
++  hasFee: boolean
++  number: string
++  date: string
++  issuedAt: string
++  orderDate: string
++  eventDate: string
++  event: string
++  shop: string
++  invoiceId: string
++  address: string
++  paymentMethod: string
++  menus: { menu_name: string; count: number; price: string }[]
++  shopSubtotal: string
++  shop8: string
++  shop8Tax: string
++  shop10: string
++  shop10Tax: string
++  rawPrice: string
++  tax: string
++  fee: string
++  fee8: string
++  fee8Tax: string
++  fee10: string
++  fee10Tax: string
++  nijuniName: string
++  nijuniInvoiceId: string
++  grandTotal: string
++  price: string
++  footer: string
++}
++
++export function computeEventReceiptAmounts(input: {
++  payAmount: number
++  payUserFeeAmount: number | undefined
++  refundedTotal: number
++}): {
++  fee: number
++  shopSubtotal: number
++  grandTotal: number
++} {
++  const fee = input.payUserFeeAmount ?? 0
++  const foodCharged = Math.max(0, input.payAmount - fee)
++  const shopSubtotal = Math.max(0, foodCharged - input.refundedTotal)
++  return { fee, shopSubtotal, grandTotal: shopSubtotal + fee }
++}
++
++function computeReceiptMenuSelfPay(order: EventReceiptMenuSource): number {
++  return order.menu_price - getMemberOrderDiscountAmount(order)
++}
++
++/** `ordered` の自己負担単価を menu_name + 単価で集約する。キャンセル行は出さない */
++export function buildEventReceiptMenuLines(
++  orders: EventReceiptMenuSource[],
++): { menu_name: string; count: number; price: string }[] {
++  const groups = new Map<string, { menu_name: string; unitAmount: number; count: number }>()
++  for (const order of orders) {
++    if (order.status !== 'ordered') continue
++    const unitAmount = computeReceiptMenuSelfPay(order)
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4103877559](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4103877559)
+
+[must] `canceled` は返金成功を意味しません。`cancelOrders` は先に注文を canceled と保存し、Stripe 返金失敗時は `refund_errors` だけを返すため、ここで未返金の行まで除外すると、成功返金だけを `refundedTotal` から控除する小計と明細合計が不一致になります。成功済み返金の `order_ids` に基づいて除外するか、未解決の返金がある場合は領収書発行を止めてください。
+
+**コメント要約**: 未返金の canceled 行を領収書に残す対応済み<br>返金記録の order_ids と全額一致で除外する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 指摘先の buildEventReceiptMenuLines は ordered のみを扱うが、呼び出し側 functions/default/src/eventReceipt.ts:78–97 が返金記録と当該注文の自己負担合計を突き合わせ、全額返金済み ID だけ除外する。残った canceled は領収書用データで ordered に正規化するため、返金 API の例外で refunds に記録がない注文を明細から消す不具合は解消済み。DB の注文状態自体は変更しない。
+
+対応方針・確認項目: 現実装を維持し Resolve 可能。1,000 円×2 食・利用料 220 円で、一方の返金失敗なら食事明細 2,000 円・総額 2,220 円、成功記録 1,000 円がある場合だけ 1,000 円・総額 1,220 円となることを、eventReceipt の返金判定とマージ処理を通して検証する。既存 8 テストはマージ関数中心で、この呼び出し側の正規化は直接カバーしない。仕様 §4.2.7.5 の「canceled は出さない」も、追記時には返金記録を基準にする説明へ揃える。
+
+---
+
+**識別子**: RC-20（GitHub id: 4103877387, 4103877425・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `.agents/skills/git-create-pull-request/SKILL.md:111` / `.agents/skills/git-reflect-after-commit/SKILL.md:56`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4103877387
+
+```diff
+@@ -89,16 +89,30 @@ python3 .agents/scripts/self_review_wake.py list \
+    | `origin/$ref` が無い | リモート未作成 | 通常 push |
+    | `HEAD` = `origin/$ref` | 同期済み | **スキップ** |
+    | `HEAD` が `origin/$ref` の子孫のみ（ahead） | 未 push のみ | 通常 push |
+-   | diverge / behind 混在（履歴書き換え未確認） | remote 更新の可能性 | **中断・ユーザー確認** |
+-   | 会話文脈で fixup/squash/amend/rebase 直後 | 履歴書き換え確認済み | **`--force-with-lease`** |
++   | behind のみ（ローカルに無いリモートコミットだけ） | リモートが進んでいる | **中断・ユーザー確認** |
++   | diverge かつリモート専用がすべてローカルの書き換え | rebase / amend / fixup / squash（会話外でも可） | **`--force-with-lease`** |
++   | diverge かつリモート専用に独自コミットがある | 他の push の可能性 | **中断・ユーザー確認** |
+    | ユーザーが force push / force-with-lease を明示指示 | ユーザー承認済み | **`--force-with-lease`** |
+ 
+-   判定例:
++   判定:
+ 
+    ```bash
+-   git rev-list --left-right --count "origin/$ref...HEAD" 2>/dev/null || echo "0 0"
++   git rev-list --left-right --count "origin/$ref...HEAD"
++   # 左が origin のみ、右が HEAD のみ。両方 0 より大きいときだけ diverge
++   git cherry -v HEAD "origin/$ref"
++   # 先頭が `-` のコミットは、同等パッチが HEAD にある（書き換え済み）
++   git log --format='%an%x09%s' "origin/$ref..HEAD"
+    ```
+ 
++   **diverge をローカルの履歴書き換えとみなす条件**（会話内で rebase していなくても可。すべて満たす）:
++
++   1. `origin/$ref` にだけある各コミットが、次のいずれか
++      - `git cherry -v HEAD origin/$ref` で `-`（同等パッチが HEAD にある）
++      - または `+` でも、`origin/$ref..HEAD` に **同じ作者かつ同じ件名** のコミットがある（amend で差分が変わった rebase / fixup / squash）
+```
+
+GitHub id: 4103877425
+
+```diff
+@@ -47,23 +47,25 @@ B は `github-actions-deploy` に委譲し、同スキル内で本番ブロッ
+   - **許可**: 上記以外の作業ブランチ（feature / `release/*` / `sync/*` / `hotfix/*` 等）。ブランチ名への部分一致では判定しない（`sync/main-to-development` は許可）
+   - 拒否条件に該当する場合は **push せず中断**し、保護 ref への直 push は人間のリリース手順に従う旨をユーザーに伝える
+ - **push の方法**（`ref` はリモート上のブランチ名。通常は現在ブランチ名）:
+-  - **履歴書き換え時**（git-commit-workflow / git-fixup / git-squash の直後、または会話文脈で rebase 済みと分かる場合）:
++  - **履歴書き換え時**（会話内の fixup / squash / amend / rebase に限らない。判定は [`git-create-pull-request` 手順 9](../git-create-pull-request/SKILL.md) と同一。diverge でも、`origin/$ref` 専用コミットがすべて HEAD 上の書き換えなら可）:
+ 
+     ```bash
+     git push --force-with-lease origin HEAD:<ref>
+     ```
+ 
+-  - **通常**（新規コミット・分割コミット等）:
++    書き換え判定: `git cherry -v HEAD origin/$ref` が `-`、または `+` でも `origin/$ref..HEAD` に同じ作者かつ同じ件名のコミットがある。会話の外で rebase していてもこの判定を満たせば `--force-with-lease` してよい。
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4103877387](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4103877387)
+
+同じ作者・件名の `+` コミットを「ローカルの書き換え」とみなすだけでは、別内容の独立コミットでも force-with-lease を許可してしまい、リモートの変更を消す危険があります。自動許可は `git cherry` が `-`（同等パッチ）と判定した場合に限定し、それ以外はユーザー確認にしてください。
+
+[GitHub id: 4103877425](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4103877425)
+
+同じ作者・件名の `+` コミットを履歴書き換えと判定するため、別内容の独立コミットでも `--force-with-lease` を自動実行できます。これは lease が検知できる範囲の前提を誤り、リモート専用の変更を失わせる可能性があるため、同等パッチ（`git cherry` の `-`）以外は確認に留めてください。
+
+**コメント要約**: 作者・件名一致による force push 自動許可は撤廃する案<br>2 コメントを同一方針で修正し、明示 SHA の lease を使う
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 両 SKILL.md に + でも作者・件名一致なら履歴書き換えと扱う条件が残っている。作者・件名は変更内容の同一性を保証しないため指摘は妥当。force-with-lease はリモート先端が期待 SHA と一致するかを検査し、既に取得した独立コミットの変更内容を保全する機能ではない。これは本 PR が変更した手順なのでスコープ内。既存評価 🟡 は履歴として維持するが、変更消失につながるため修正優先度は高い。
+
+対応方針・確認項目: 2 ファイルから作者・件名による許可を除き、正本 1 箇所を参照する。会話外の履歴については git cherry の - 等でリモート専用変更の取り込みを確認する。+ を許すのは、自分が実施した rewrite の前後 SHA と対象コミット対応を記録し、リモート専用変更を失わないと確認できる場合に限定する。根拠不明の + や未確認 merge commit は自動上書きせず差分確認へ戻す。実行時は確認済み先端を固定した --force-with-lease=refs/heads/<branch>:<expected-sha> を使う。これにより、追跡できる fixup/amend を毎回確認へ戻さず運用できる。
+
+根拠: [git-push](https://git-scm.com/docs/git-push)、[git-cherry](https://git-scm.com/docs/git-cherry)。確認例は「同じ作者・件名で異なる独立差分」「パッチ同等の rebase」「記録のある amend」「確認後の別 push」「merge commit を含む分岐」。
+
+---
+
+**識別子**: RC-21（GitHub id: 4110614506・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `functions/default/src/utils/refundMemberOrdersStripe.ts:82`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4110614506
+
+```diff
+@@ -65,7 +74,7 @@ export async function refundMemberOrdersStripe(params: {
+         throw new Error(`stripes ドキュメントが見つかりません: ${stripeId}`)
+       }
+ 
+-      const refundAmount = groupOrders.reduce((sum, o) => sum + o.menu_price - getMemberOrderDiscountAmount(o), 0)
++      const refundAmount = computeStripeRefundAmountForMemberOrders(groupOrders)
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4110614506](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4110614506)
+
+[must] この共通返金関数は `finishBulkEventCancelPostProcessing` の最小催行人数未達・主催者中止経路からも呼ばれるため、今回の変更後は食事代だけを返金します。一方、最小催行人数の案内は「事前決済された方には全額返金」と表示するため、手数料が残る実装と利用者向け案内が矛盾します。自動中止時の手数料返金方針を決め、案内または返金条件を合わせてください。
+
+**コメント要約**: 自動中止の全額返金案内と利用料非返金が不一致<br>現仕様を維持し、食事代のみ返金と案内する案
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: functions/default/src/utils/refundMemberOrdersStripe.ts:35–41 は食事自己負担だけを返金し、finishBulkEventCancelPostProcessing.ts:165 経由の主催者中止・最小催行人数未達でも同じ関数を使う。一方、base/src/locales/messages/ja.ts:454,458 は「全額返金」と案内している。仕様書は手数料非返金を基本にしており、この PR で生じる利用者向け案内の不整合を解消する必要がある。既存評価 🟡 は維持するが、案内と実課金の整合は課金開始前に対応する。
+
+対応方針・確認項目: 今回の推奨は非返金仕様を維持し、人数未達時の案内を「事前決済されたお食事代を返金します。システム利用料は返金対象外です」に合わせ、仕様に主催者中止・人数未達も含むことを明記する。メールなど関連案内も同じ方針で確認する。事業判断として利用者都合以外は利用料も返す方針なら、文言変更だけでは足りず、cancel_source 別の返金計算・利用料の返金済み額・領収書・重複返金防止を一緒に設計する。どちらの事業方針もこの検討では実装・確定しない。
+
+---
+
+**識別子**: RC-23（GitHub id: 4114228705・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `base/src/stores/eventStripe.ts:53`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4114228705
+
+```diff
+@@ -0,0 +1,64 @@
++import {
++  doc,
++  getDoc,
++  type DocumentData,
++  type DocumentReference,
++  type FirestoreDataConverter,
++  type QueryDocumentSnapshot,
++  type SnapshotOptions,
++} from 'firebase/firestore'
++import { db } from '@shokujii/base/firebase.js'
++import { EventStripe } from '@shokujii/common/schemas/EventStripe.js'
++import { sumChargedUserPaymentFee, type ChargedFeeOrderRef } from '@shokujii/common/utils/paymentUserFee.js'
++
++const eventStripeConverter: FirestoreDataConverter<EventStripe> = {
++  toFirestore(stripe: EventStripe): DocumentData {
++    return stripe.toFirestore()
++  },
++  fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EventStripe {
++    const data = snapshot.data(options)
++    return new EventStripe(snapshot.id, data)
++  },
++}
++
++/** communities/{communityId}/events/{eventId}/stripes/{stripeId} */
++export const getEventStripeRef = (
++  communityId: string,
++  eventId: string,
++  stripeId: string,
++): DocumentReference<EventStripe> => {
++  return doc(db, 'communities', communityId, 'events', eventId, 'stripes', stripeId).withConverter(eventStripeConverter)
++}
++
++export const fetchEventStripe = async (
++  communityId: string,
++  eventId: string,
++  stripeId: string,
++): Promise<EventStripe | null> => {
++  const snapshot = await getDoc(getEventStripeRef(communityId, eventId, stripeId))
++  if (!snapshot.exists()) return null
++  return snapshot.data()
++}
++
++/** 残注文が参照する EventStripe の pay_user_fee_amount 合計。未設定は 0。 */
++export const fetchChargedUserPaymentFee = async (
++  communityId: string,
++  eventId: string,
++  orders: readonly ChargedFeeOrderRef[],
++): Promise<number> => {
++  const stripeIds = new Set<string>()
++  for (const order of orders) {
++    if (order.status === 'canceled') continue
++    if (order.stripe_id == null || order.stripe_id === '') continue
++    stripeIds.add(order.stripe_id)
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4114228705](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4114228705)
+
+[imo] ここでキャンセル済み・空 ID を除外して取得した Stripe ID を、`common` の `sumChargedUserPaymentFee` でも同じ条件で再抽出しています。現状は一致していますが、どちらか一方だけ条件を変更すると、読み取る決済と合算する決済がずれて手数料表示が誤ります。対象 ID の収集を共通関数に切り出して両方で使ってください。
+
+**コメント要約**: Stripe ID 抽出条件の共通化は妥当な任意改善<br>現条件の差異はなく、RC-24 と併せて整理する案
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: S
+
+**判断理由**: base/src/stores/eventStripe.ts:49–54 と common/src/utils/paymentUserFee.ts:87–93 は、ともに canceled・空 ID を除いて Set で重複排除している。現時点の不一致や表示誤りは確認できず、マージ必須のバグではない。将来片側だけ変わるリスクの低減として共通化する価値はある。
+
+対応方針・確認項目: common に対象 Stripe ID を返す純粋関数を置き、取得と合算の両方で使う。既存仕様の全 canceled 除外は維持し、同一 ID 重複、空文字・undefined、同一決済内の canceled と ordered 混在を確認する。金額計算を行う common に Firestore 依存を入れない。RC-24 で同じ取得経路を触る際に合わせるのが自然。
+
+---
+
+**識別子**: RC-24（GitHub id: 4114228701・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `base/src/stores/userOrderHistoryList.ts:90`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4114228701
+
+```diff
+@@ -60,31 +64,34 @@ export const useUserOrderHistoryByUserId = (
+     /** reload 後に完了した古い next の結果を反映しない（本人判定 watch 等の連続 reload 対策） */
+     let loadGeneration = 0
+ 
+-    const patchOrderState = (eventId: string, patch: Partial<UserEventListOrderEntry>) => {
+-      const prev = orderStateByEventId.value[eventId] ?? {
++    const patchOrderState = (eventKey: string, patch: Partial<UserEventListOrderEntry>) => {
++      const prev = orderStateByEventId.value[eventKey] ?? {
+         orders: null,
+         loading: false,
+         error: null,
++        chargedPaymentFee: null,
+       }
+       orderStateByEventId.value = {
+         ...orderStateByEventId.value,
+-        [eventId]: { ...prev, ...patch },
++        [eventKey]: { ...prev, ...patch },
+       }
+     }
+ 
+     const loadOrdersForEvent = async (event: BokudeliEvent, generation: number) => {
+-      const id = event.event_id
++      const eventKey = getUserOrderHistoryEventKey(event.community_id, event.event_id)
+       if (userId === '') return
+       if (generation !== loadGeneration) return
+       try {
+-        patchOrderState(id, { loading: true, error: null })
++        patchOrderState(eventKey, { loading: true, error: null })
+         const list = await fetchMemberOrdersForUser(event.community_id, event.event_id, userId)
+         if (generation !== loadGeneration) return
+-        patchOrderState(id, { orders: list, loading: false, error: null })
++        const chargedPaymentFee = await fetchChargedUserPaymentFee(event.community_id, event.event_id, list)
++        if (generation !== loadGeneration) return
++        patchOrderState(eventKey, { orders: list, loading: false, error: null, chargedPaymentFee })
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4114228701](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4114228701)
+
+[must] `fetchChargedUserPaymentFee` の失敗が注文取得と同じ `try` に入り、stripes の1件の権限エラー・パースエラー・ネットワーク失敗でも、取得済みの注文まで `orders: null` / `error` になってキャンセル・領収書操作が隠れます。手数料取得を注文取得から分離し、手数料だけの未取得状態を扱うか、少なくとも注文一覧を維持するようにしてください。
+
+**コメント要約**: 手数料取得失敗で注文操作まで隠れる問題が残る<br>注文状態と手数料状態を分離し、失敗を 0 円にしない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: base/src/stores/userOrderHistoryList.ts:84–94 で注文取得と手数料取得が同じ try にあり、後者が失敗しても orders:null に戻す。UserEventCard は ordersError/Loading に応じて注文表示・キャンセル・領収書操作を隠すため、1 件の stripes 読み取り失敗が既存操作を不能にする。単に手数料例外を握りつぶして 0 を返すと、未取得と無料を取り違える。
+
+対応方針・確認項目: 注文が取得できた時点で orders を保持し、注文 loading を解除する。手数料には loading/error/取得成功を独立して持たせる。失敗時も注文一覧・キャンセル・領収書操作を維持し、利用料・総額だけを未取得表示にして再試行を提供する。成功した旧決済のフィールド未設定は従来どおり 0 とし、通信・権限・parse エラーとは区別する。ログは reportClientError を使い、非同期完了時の generation チェックを維持する。確認は「注文成功＋料金失敗」「料金再試行成功」「reload 後に旧要求が完了」「料金成功 0 円」。
+
+---
+
+**識別子**: RC-28（GitHub id: 4114228685・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `functions/default/src/stripe.ts:279`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4114228685
+
+```diff
+@@ -270,6 +272,25 @@ export const createStripeCheckoutSession = onCall<
+       throw new HttpsError('internal', '決済明細の生成に失敗しました')
+     }
+ 
++    const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
++    const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
++    if (feeLineItem != null) {
++      lineItems.push(feeLineItem)
++    }
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4114228685](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4114228685)
+
+[must] ここから Functions はシステム利用料を実際に Checkout に追加しますが、Functions と user/enterprise のデプロイは独立しているため、Functions が先に反映されると旧フロントは手数料を表示しないまま高い Checkout を作成されます。逆順では新フロント表示と旧 Functions の実課金がずれます。互換期間のフラグ、またはデプロイ順序を保証する仕組みを用意してから課金を有効化してください。
+
+**コメント要約**: 課金開始とフロント表示の互換性確保が必要<br>スコープ内に見直し、旧画面を含む段階切替を設計する案
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: functions/default/src/stripe.ts:276–280 は無条件で利用料を追加し、deploy_functions / deploy_user / deploy_enterprise は別 workflow で独立に起動する。カートはローカル計算、Callable の要求には価格版がなく返却も URL 中心で、表示と課金の同期契約がない。RC-3 の旧 Session 受理は決済確定側の互換性であり、この新規 Session 作成時の価格差は解消しない。過去のスコープ外判断は見直す。本 PR が課金を始める以上、課金開始前の整合策もスコープ内であり、Issue 未作成の別件扱いにはしない。既存評価 🟡 は維持するが、課金有効化前に対応が必要。
+
+対応方針・確認項目: 推奨はサーバーの課金フラグを OFF にした互換実装を先行させ、カートがサーバー確定の見積額・価格版を使い、Checkout 作成時にその価格版を検証する段階切替。新しい user/enterprise と Webhook の準備確認後に ON にする。開いたままの旧画面からの要求を黙って増額せず、既存の注文状態を壊さない段階で再読み込み・再確認へ誘導する。すでに作成済みの Session は作成時の実課金額で確定する。単なる needs 追加・フロント先行だけでは古いタブやキャッシュを解決できず、Functions 内でも各関数の切替時刻は揃うとは限らない。確認は新旧フロント×新旧バックエンド、OFF/ON 切替中、片側デプロイ失敗、古い見積り・既存 Session。範囲が広がる場合は再見積りする。
+
+---
+
+**識別子**: RC-29（GitHub id: 4114336569・既存 RC の再確認）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: `base/src/components/pages/orders.vue:160`
+
+**該当コード（レビュー時点の diff）**:
+
+GitHub id: 4114336569
+
+```diff
+@@ -152,21 +153,41 @@ watch(
+         {{ $t('user_profile.empty.orders') }}
+       </div>
+       <v-row v-else>
+-        <v-col v-for="event in orderHistoryEvents" :key="`order_${event.event_id}`" sm="12" md="6" lg="4" cols="12">
++        <v-col
++          v-for="event in orderHistoryEvents"
++          :key="`order_${getUserOrderHistoryEventKey(event.community_id, event.event_id)}`"
+```
+
+**レビュワーのコメント（原文）**:
+
+[GitHub id: 4114336569](https://github.com/nijuniinc/bokudeli-event-new/pull/2361#discussion_r4114336569)
+
+[must] ここでカードの描画キーを複合キーにしても、同じ `orders.vue` の `cancelDialogEventId` / `cancelLoadingEventId` と `UserEventCard` 側のダイアログ判定は `event_id` 単体のままです。同じ `event_id` が別コミュニティに存在すると、片方のカードのキャンセル操作で両方が開く・ローディング表示になるため、キャンセル状態も `community_id + event_id` のキーに揃えてください。
+
+**コメント要約**: キャンセル状態の複合キー化は対応済み<br>ダイアログと loading の代入・比較を両方確認
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 24608fe72 により、UserEventCard.vue:47–55 は getUserOrderHistoryEventKey(community_id,event_id) でダイアログ状態を設定・比較し、orders.vue:96–97,188,196 は同じキーで loading を設定・比較する。変数名に EventId が残っていても実際に格納する値は JSON.stringify([communityId,eventId]) であり、event_id 単体比較という指摘は現 HEAD では解消済み。
+
+対応方針・確認項目: 追加修正なしで Resolve 可能。二つのコミュニティに同一 event_id を置き、片方だけダイアログが開く・loading が出ることを画面で確認するとよい。今回の確認はコード追跡であり、ブラウザ操作テストは未実施。
+
+---
+
+## 評価セッション（2026-09-27 16:17・review-comments-evaluate）
+
+- **評価日時**: 2026-09-27 16:17 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **REVIEW_REQUEST_SINCE**: 2026-09-27T07:08:24Z
+- **partial**: true（wake は partial。Codex は `Didn't find any major issues` の no_issues のみ。Copilot は処理エラーのあとインライン 1 件）
+- **新規 RC**: RC-30
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（id:5853652964 手順12定型文、id:5853653654 Copilot 処理エラー、id:5853674915 Codex の問題なしのみ）
+- **手順 4a 自動修正**: なし（RC-30 は欠落時を取得エラーにするか未確定にするかが仕様判断で一意でない。ラベルに 💰 金銭 と 👤 UX を含む）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-30 | 4114454601 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 👤 UX | 🔧 微修正 | M | EventStripe 欠落をレガシーと同じ 0 円にしている<br>フィールド未設定とドキュメント欠落の区別は表示方針が未決 |
+
+---
+
+**識別子**: RC-30（GitHub id: 4114454601）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/eventStripe.ts:60`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,64 @@
++import {
++  doc,
++  getDoc,
++  type DocumentData,
++  type DocumentReference,
++  type FirestoreDataConverter,
++  type QueryDocumentSnapshot,
++  type SnapshotOptions,
++} from 'firebase/firestore'
++import { db } from '@shokujii/base/firebase.js'
++import { EventStripe } from '@shokujii/common/schemas/EventStripe.js'
++import { sumChargedUserPaymentFee, type ChargedFeeOrderRef } from '@shokujii/common/utils/paymentUserFee.js'
++
++const eventStripeConverter: FirestoreDataConverter<EventStripe> = {
++  toFirestore(stripe: EventStripe): DocumentData {
++    return stripe.toFirestore()
++  },
++  fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): EventStripe {
++    const data = snapshot.data(options)
++    return new EventStripe(snapshot.id, data)
++  },
++}
++
++/** communities/{communityId}/events/{eventId}/stripes/{stripeId} */
++export const getEventStripeRef = (
++  communityId: string,
++  eventId: string,
++  stripeId: string,
++): DocumentReference<EventStripe> => {
++  return doc(db, 'communities', communityId, 'events', eventId, 'stripes', stripeId).withConverter(eventStripeConverter)
++}
++
++export const fetchEventStripe = async (
++  communityId: string,
++  eventId: string,
++  stripeId: string,
++): Promise<EventStripe | null> => {
++  const snapshot = await getDoc(getEventStripeRef(communityId, eventId, stripeId))
++  if (!snapshot.exists()) return null
++  return snapshot.data()
++}
++
++/** 残注文が参照する EventStripe の pay_user_fee_amount 合計。未設定は 0。 */
++export const fetchChargedUserPaymentFee = async (
++  communityId: string,
++  eventId: string,
++  orders: readonly ChargedFeeOrderRef[],
++): Promise<number> => {
++  const stripeIds = new Set<string>()
++  for (const order of orders) {
++    if (order.status === 'canceled') continue
++    if (order.stripe_id == null || order.stripe_id === '') continue
++    stripeIds.add(order.stripe_id)
++  }
++
++  const feeByStripeId: Record<string, number | undefined> = {}
++  await Promise.all(
++    [...stripeIds].map(async (stripeId) => {
++      const stripe = await fetchEventStripe(communityId, eventId, stripeId)
++      feeByStripeId[stripeId] = stripe?.pay_user_fee_amount
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `fetchEventStripe` が `null` を返した場合も `feeByStripeId[stripeId]` は `undefined` となり、レガシー決済と同じく 0 円として合算されます。`stripe_id` が付いた注文で `EventStripe` ドキュメントだけ欠落した場合、実際のシステム利用料を注文履歴から黙って消して合計額を誤表示します。レガシーの「fee フィールドなし」とドキュメント欠落を区別し、後者は取得エラーまたは未確定状態にしてください。
+
+**コメント要約**: EventStripe 欠落をレガシーと同じ 0 円にしている<br>フィールド未設定とドキュメント欠落の区別は表示方針が未決
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: `sumChargedUserPaymentFee` はフィールド未設定もドキュメント無しも 0 にする。仕様書は「未設定または 0 の既存 EventStripe は手数料 0」で、ドキュメント欠落までは 0 と書いていない。`stripe_id` は Webhook で EventStripe 作成と同時に付くため、ドキュメント欠落は通常のレガシー決済ではなくデータ不整合である。欠落時に注文一覧をエラーにするか、手数料だけ未確定にするかは RC-24 と同じ表示判断が必要で、修正方針が一意でない。自動修正はしない。
+
+---
