@@ -6,18 +6,44 @@ export const CHAT_GREETING_PROMPT_STATE_KEY = 'promptChatGreetingRoomId'
 export const CHAT_GREETING_NAMED_KEYS = [
   'chat.greeting.named_hello',
   'chat.greeting.named_nice_to_meet',
-  'chat.greeting.named_intro',
   'chat.greeting.named_looking_forward',
+  'chat.greeting.named_wave',
+  'chat.greeting.named_conversation',
+  'chat.greeting.named_friendly',
+  'chat.greeting.named_joined',
 ] as const
 
 export const CHAT_GREETING_UNNAMED_KEYS = [
   'chat.greeting.unnamed_hello',
   'chat.greeting.unnamed_nice_to_meet',
+  'chat.greeting.unnamed_looking_forward',
+  'chat.greeting.unnamed_wave',
+  'chat.greeting.unnamed_conversation',
+  'chat.greeting.unnamed_friendly',
   'chat.greeting.unnamed_joined',
+] as const
+
+export const CHAT_GREETING_EMOJI_KEYS = [
+  'chat.greeting_emoji.smile',
+  'chat.greeting_emoji.grin',
+  'chat.greeting_emoji.warm_smile',
+  'chat.greeting_emoji.raised_hands',
+  'chat.greeting_emoji.wave',
+  'chat.greeting_emoji.sparkles',
+  'chat.greeting_emoji.blossom',
+  'chat.greeting_emoji.tulip',
+  'chat.greeting_emoji.clover',
+  'chat.greeting_emoji.rainbow',
+  'chat.greeting_emoji.star',
+  'chat.greeting_emoji.glowing_star',
+  'chat.greeting_emoji.light_bulb',
+  'chat.greeting_emoji.bow',
+  'chat.greeting_emoji.folded_hands',
 ] as const
 
 export type ChatGreetingChoice = {
   key: (typeof CHAT_GREETING_NAMED_KEYS)[number] | (typeof CHAT_GREETING_UNNAMED_KEYS)[number]
+  emojiKey: (typeof CHAT_GREETING_EMOJI_KEYS)[number]
   name?: string
 }
 
@@ -34,12 +60,10 @@ const pickIndex = (length: number, random: () => number): number => {
 
 export const pickChatGreeting = (userName: string, random: () => number = Math.random): ChatGreetingChoice => {
   const name = userName.trim()
-  if (name === '') {
-    const key = CHAT_GREETING_UNNAMED_KEYS[pickIndex(CHAT_GREETING_UNNAMED_KEYS.length, random)]
-    return { key }
-  }
-  const key = CHAT_GREETING_NAMED_KEYS[pickIndex(CHAT_GREETING_NAMED_KEYS.length, random)]
-  return { key, name }
+  const keys = name === '' ? CHAT_GREETING_UNNAMED_KEYS : CHAT_GREETING_NAMED_KEYS
+  const key = keys[pickIndex(keys.length, random)]
+  const emojiKey = CHAT_GREETING_EMOJI_KEYS[pickIndex(CHAT_GREETING_EMOJI_KEYS.length, random)]
+  return name === '' ? { key, emojiKey } : { key, emojiKey, name }
 }
 
 export const withChatGreetingPrompt = (location: RouteLocationRaw, roomId: string): RouteLocationRaw => {

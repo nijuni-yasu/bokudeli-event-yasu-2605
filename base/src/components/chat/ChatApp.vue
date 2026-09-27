@@ -465,7 +465,7 @@ const acceptGreetingPrompt = (): void => {
     return
   }
   const choice = pickChatGreeting(currentUserStore.user?.user_name ?? '')
-  const body = t(choice.key, choice.name != null ? { name: choice.name } : {})
+  const body = t(choice.key, { name: choice.name ?? '', emoji: t(choice.emojiKey) })
   msg.value = body
   composeDraftStore.upsertDraft(roomId, { body, attachments: [] })
   isGreetingPromptVisible.value = false

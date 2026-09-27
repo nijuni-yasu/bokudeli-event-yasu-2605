@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  CHAT_GREETING_EMOJI_KEYS,
   CHAT_GREETING_NAMED_KEYS,
   CHAT_GREETING_PROMPT_STATE_KEY,
   CHAT_GREETING_UNNAMED_KEYS,
@@ -11,17 +12,45 @@ import {
 
 describe('pickChatGreeting', () => {
   it('名前があるときは名前入りの文面を選ぶ', () => {
-    expect(pickChatGreeting('山田', () => 0)).toEqual({ key: CHAT_GREETING_NAMED_KEYS[0], name: '山田' })
+    expect(pickChatGreeting('山田', () => 0)).toEqual({
+      key: CHAT_GREETING_NAMED_KEYS[0],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
+      name: '山田',
+    })
     expect(pickChatGreeting(' 山田 ', () => 0.99)).toEqual({
       key: CHAT_GREETING_NAMED_KEYS[CHAT_GREETING_NAMED_KEYS.length - 1],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
       name: '山田',
     })
   })
 
   it('名前が空のときは名前なしの文面を選ぶ', () => {
-    expect(pickChatGreeting('  ', () => 0)).toEqual({ key: CHAT_GREETING_UNNAMED_KEYS[0] })
+    expect(pickChatGreeting('  ', () => 0)).toEqual({
+      key: CHAT_GREETING_UNNAMED_KEYS[0],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
+    })
     expect(pickChatGreeting('', () => 1)).toEqual({
       key: CHAT_GREETING_UNNAMED_KEYS[CHAT_GREETING_UNNAMED_KEYS.length - 1],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
+    })
+  })
+
+  it.each(['山田', ''])('名前「%s」で文面と絵文字を独立して選ぶ', (userName) => {
+    const keys = userName === '' ? CHAT_GREETING_UNNAMED_KEYS : CHAT_GREETING_NAMED_KEYS
+    const random = vi
+      .fn<() => number>()
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0.99)
+      .mockReturnValueOnce(0)
+
+    expect(pickChatGreeting(userName, random)).toMatchObject({
+      key: keys[0],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
+    })
+    expect(pickChatGreeting(userName, random)).toMatchObject({
+      key: keys[keys.length - 1],
+      emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
     })
   })
 })
