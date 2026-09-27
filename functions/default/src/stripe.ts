@@ -262,6 +262,16 @@ export const createStripeCheckoutSession = onCall<
         quantity: item.quantity,
       }))
 
+    if (lineItems.length === 0 && totalPayment > 0) {
+      logger.error('Checkout line items empty despite positive totalPayment', {
+        eventId: event_id,
+        communityId: community_id,
+        userId: uid,
+        totalPayment,
+      })
+      throw new HttpsError('internal', '決済明細の生成に失敗しました')
+    }
+
     const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
     const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
     if (feeLineItem != null) {
@@ -279,16 +289,6 @@ export const createStripeCheckoutSession = onCall<
         'failed-precondition',
         '注文数が多すぎるため決済を開始できません。注文を分けてお試しください',
       )
-    }
-
-    if (lineItems.length === 0 && totalPayment > 0) {
-      logger.error('Checkout line items empty despite positive totalPayment', {
-        eventId: event_id,
-        communityId: community_id,
-        userId: uid,
-        totalPayment,
-      })
-      throw new HttpsError('internal', '決済明細の生成に失敗しました')
     }
 
     const stripe = new Stripe(STRIPE_API_KEY.value(), {

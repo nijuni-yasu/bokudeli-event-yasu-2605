@@ -36,6 +36,11 @@ export function computeStripeRefundAmountForMemberOrders(orders: EventMemberOrde
   return orders.reduce((sum, o) => sum + o.menu_price - getMemberOrderDiscountAmount(o), 0)
 }
 
+/** 返金累計の上限。pay_amount から非返金の決済手数料を除く。未設定は 0。 */
+export function maxRefundableFoodAmount(payAmount: number, payUserFeeAmount: number | undefined): number {
+  return Math.max(0, payAmount - (payUserFeeAmount ?? 0))
+}
+
 /**
  * cancelOrders / cancelEventBulkCore 共通の Stripe 返金（stripe_id 単位）。
  */
@@ -102,7 +107,7 @@ export async function refundMemberOrdersStripe(params: {
       }
 
       const existingRefundTotalPre = stripeDocPre.refunds.reduce((sum, r) => sum + r.amount, 0)
-      const refundableLimitPre = Math.max(0, stripeDocPre.pay_amount - (stripeDocPre.pay_user_fee_amount ?? 0))
+      const refundableLimitPre = maxRefundableFoodAmount(stripeDocPre.pay_amount, stripeDocPre.pay_user_fee_amount)
       if (existingRefundTotalPre + refundAmount > refundableLimitPre) {
         throw new Error(
           `返金累計額が返金上限を超えます: existing=${existingRefundTotalPre} + new=${refundAmount} > refundable_limit=${refundableLimitPre}`,
@@ -138,7 +143,7 @@ export async function refundMemberOrdersStripe(params: {
           return
         }
         const existingRefundTotal = stripeDoc.refunds.reduce((sum, r) => sum + r.amount, 0)
-        const refundableLimit = Math.max(0, stripeDoc.pay_amount - (stripeDoc.pay_user_fee_amount ?? 0))
+        const refundableLimit = maxRefundableFoodAmount(stripeDoc.pay_amount, stripeDoc.pay_user_fee_amount)
         if (existingRefundTotal + refundAmount > refundableLimit) {
           throw new Error(
             `返金累計額が返金上限を超えます: existing=${existingRefundTotal} + new=${refundAmount} > refundable_limit=${refundableLimit}`,

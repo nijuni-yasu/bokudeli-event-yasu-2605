@@ -45,14 +45,11 @@ export type EventReceiptMergeData = {
   reissue: boolean
   hasFee: boolean
   number: string
-  date: string
   issuedAt: string
   orderDate: string
   eventDate: string
   event: string
   shop: string
-  hasShopInvoice: boolean
-  invoiceId: string
   shopInvoiceLine: string
   address: string
   paymentMethod: string
@@ -61,8 +58,6 @@ export type EventReceiptMergeData = {
   shop8: string
   shop8Tax: string
   shopExTax: string
-  rawPrice: string
-  tax: string
   fee: string
   fee10: string
   fee10Tax: string
@@ -73,7 +68,6 @@ export type EventReceiptMergeData = {
   nijuniAddress: string
   nijuniEmail: string
   grandTotal: string
-  price: string
   footer: string
 }
 
@@ -126,25 +120,18 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
   const feeTax = computeInclusive10ExTaxAndTax(fee)
   const hasFee = fee > 0
   const shopInvoiceNumber = input.shopInvoiceNumber?.trim() ?? ''
-  const issuedAt = convertToDatetime(input.issuedAt)
   const shopSubtotalYen = convertNumberToYen(shopSubtotal)
-  const shop8TaxYen = convertNumberToYen(shopTax.taxPrice)
-  const shopExTaxYen = convertNumberToYen(shopTax.exTaxPrice)
-  const grandTotalYen = convertNumberToYen(grandTotal)
   const proviso = hasFee ? 'お食事代および決済手数料として' : 'お食事代として'
 
   return {
     reissue: input.reissue,
     hasFee,
     number: input.receiptNumber,
-    date: issuedAt,
-    issuedAt,
+    issuedAt: convertToDatetime(input.issuedAt),
     orderDate: convertToDatetime(input.orderCreatedAt),
     eventDate: convertToDate(input.eventStartDatetime),
     event: `${input.eventName} / ${proviso}`,
     shop: input.shopName,
-    hasShopInvoice: shopInvoiceNumber !== '',
-    invoiceId: shopInvoiceNumber,
     shopInvoiceLine:
       shopInvoiceNumber !== '' ? `適格請求書登録番号：${shopInvoiceNumber}` : RECEIPT_SHOP_NOT_QUALIFIED_INVOICE,
     address: input.shopAddress,
@@ -152,10 +139,8 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     menus: buildEventReceiptMenuLines(input.orders),
     shopSubtotal: shopSubtotalYen,
     shop8: shopSubtotalYen,
-    shop8Tax: shop8TaxYen,
-    shopExTax: shopExTaxYen,
-    rawPrice: shopExTaxYen,
-    tax: shop8TaxYen,
+    shop8Tax: convertNumberToYen(shopTax.taxPrice),
+    shopExTax: convertNumberToYen(shopTax.exTaxPrice),
     fee: convertNumberToYen(fee),
     fee10: convertNumberToYen(fee),
     fee10Tax: convertNumberToYen(feeTax.taxPrice),
@@ -165,8 +150,7 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     nijuniPostalCode: NIJUNI_POSTAL_CODE,
     nijuniAddress: NIJUNI_ADDRESS,
     nijuniEmail: NIJUNI_EMAIL,
-    grandTotal: grandTotalYen,
-    price: grandTotalYen,
+    grandTotal: convertNumberToYen(grandTotal),
     footer: RECEIPT_SHOP_FOOTER,
   }
 }

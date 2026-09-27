@@ -7,7 +7,7 @@
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | カート手数料プレビューが Checkout 判定と二重化<br>`previewUserPaymentFee` に統一済み |
 | [x] | RC-2 | 4079879628, 4079887328 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | マイページ手数料が残自己負担のプレビュー<br>部分キャンセル後に表示手数料が下がる |
 | [ ] | RC-3 | 4079879517, 4079887317, 5844074395, 5844370785, 4111556285 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 旧 Checkout セッションが Webhook で 400 になる<br>amount_total === 自己負担のレガシー許容を検討 |
-| [ ] | RC-4 | 4079879607, 4079887347, 5844074395, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にする |
+| [x] | RC-4 | 4079879607, 4079887347, 5844074395, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にした |
 | [x] | RC-5 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | 仕様の10%税抜が floor(税込/1.1) のまま<br>実装の整数演算に合わせて更新済み |
 | [x] | RC-6 | 4079879564 | 👌 修正不要 | — | 📌 スコープ内 | — | — | — | receipt.docx 未同梱指摘<br>PR に binary 同梱済みで誤検知 |
 | [x] | RC-7 | 4079887335 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 領収書明細 menu_price と自己負担小計の不一致 |
@@ -15,16 +15,22 @@
 | [x] | RC-10 | 4079879666 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 手数料説明をオンライン決済時に統一 |
 | [x] | RC-11 | 4079879724 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | 利用規約第13条2項の文言を明確化 |
 | [x] | RC-12 | 4079887341 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | キャンセルポリシー desc_after の br 表示 |
-| [ ] | RC-13 | 4101673881, 4103877591, 5844074395, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 無料の主催者負担キャンセルに手数料非返金<br>差額なしでは決済手数料が発生しない |
+| [x] | RC-13 | 4101673881, 4103877591, 5844074395, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 無料の主催者負担キャンセルに手数料非返金<br>差額なしの確認文から非返金の一文を外した |
 | [x] | RC-14 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 10%税抜コメントが floor(税込/1.1) と同値と誤記<br>110円で 99 になる旨へ修正済み |
 | [ ] | RC-15 | 4101673867, 4103877559, 5844074395, 4110518985, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 返金失敗でも canceled を明細から除外する<br>小計は成功返金のみ控除のため不一致になり得る |
 | [ ] | RC-16 | 4101673874, 4103877510, 5844074395, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行追加で Stripe 100明細上限を超え得る<br>呼び出し前の予約チェック方針が一意でない |
 | [ ] | RC-17 | 5831254045, 5844074395, 4110518997, 5844370785, 4110614493 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | M | 注文履歴のキーが event_id のみ<br>別コミュニティで同じ event_id だと読み飛ばす |
 | [ ] | RC-18 | 4103877536, 5844074395, 4110522576, 5844370785 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 金額不一致の client_error でも補助の Transaction が commit される<br>検証を副作用の前へ移すか throw するかは未決 |
-| [ ] | RC-19 | 4103877474, 5844074395, 4110522579, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止める |
+| [x] | RC-19 | 4103877474, 5844074395, 4110522579, 5844370785 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止めた |
 | [ ] | RC-20 | 4103870867, 4103877387, 4103877425, 5844370785 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 作者と件名が同じだけで force-with-lease を許可する<br>同等パッチ以外は確認に戻す案。依頼した判定と両立しない |
 | [ ] | RC-21 | 4110522582, 4110614506 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📋 仕様追加 | M | 自動中止の案内が全額返金のまま<br>返金計算は手数料を残す |
 | [x] | RC-22 | 4110522584 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 領収書メニューが繰り返しセクションでない<br>表セルの menus タグで行を繰り返す |
+| [ ] | RC-23 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 対象 stripe_id の抽出が common と二重実装<br>抽出関数を common から export して共用する |
+| [ ] | RC-24 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | M | 手数料の取得失敗で注文一覧ごとエラーになる<br>手数料だけ非表示にするかエラーにするか未決 |
+| [x] | RC-25 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行の追加で空明細ガードが効かない<br>ガードを手数料行の追加より前に移した |
+| [x] | RC-26 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 領収書マージデータに未参照キーが残る<br>テンプレートにない 6 キーを削除した |
+| [ ] | RC-27 | 4114073792 | 🟡 修正提案 | 未着手 | ❓ 要確認 | 📏 規約 | 🔧 微修正 | S | 番号なしコミットが fixup の # 必須と矛盾する<br>A1 を番号なしのまま通すかはワークフロー方針 |
+| [ ] | RC-28 | 4114073794 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 💰 金銭 | 📋 仕様追加 | M | Functions とフロントのデプロイ順が独立<br>切替窓の機能フラグはリリース手順の判断 |
 
 ---
 
@@ -223,11 +229,11 @@
 
 🟡 **修正提案** [🔧微修正/S]: 返金累計の上限が手数料込みの `pay_amount` のままなので、計算ずれ時に手数料分まで返金できる → 上限を `pay_amount - (pay_user_fee_amount ?? 0)` にする
 
-**コメント要約**: 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にする
+**コメント要約**: 返金上限が手数料込み pay_amount のまま<br>`pay_amount - fee` を上限にした
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -237,7 +243,7 @@
 
 **想定工数**: S
 
-**判断理由**: 返金額の式は Checkout 自己負担と同じため通常は手数料に食い込まない。ただし `pay_amount` の意味が手数料込みに変わったあと、安全側の上限だけが緩くなっている。仕様 §4.2.6.1 の「手数料は返金しない」に合わせるなら上限は `food_charged`。💰 のため自動修正しない。
+**判断理由**: 事前チェックと Transaction 内の再チェックの両方を `maxRefundableFoodAmount`（`pay_amount - (pay_user_fee_amount ?? 0)`）にした。手数料未設定の既存決済は上限が `pay_amount` のまま。
 
 ---
 
@@ -430,11 +436,11 @@
 
 🟡 **修正提案** [🔧微修正/S]: `description_community_bill` は差額なし（`type !== 'discount'`、実質 `free`）のキャンセル確認にだけ出るが、「決済手数料は返金されません」と書いている。この支払いでは Checkout せず手数料は 0 → この文をこのキーから外す
 
-**コメント要約**: 無料の主催者負担キャンセルに手数料非返金<br>差額なしでは決済手数料が発生しない
+**コメント要約**: 無料の主催者負担キャンセルに手数料非返金<br>差額なしの確認文から非返金の一文を外した
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -444,7 +450,7 @@
 
 **想定工数**: S
 
-**判断理由**: 仕様 §1.4.2 では請求書のみ・自己負担 0 は手数料なし。差額あり用の `description_community_bill_discount` に非返金を書くのは正しい。無料参加の確認文まで同じだと、払っていない手数料が返らないように読める。👤 UX のため手順 3b の対象外。
+**判断理由**: `description_community_bill` から「決済手数料は返金されません。」を外した。差額ありの `description_community_bill_discount` はそのまま。
 
 ---
 
@@ -721,11 +727,11 @@ Useful? React with 👍 / 👎.
 
 [bug] ここで取得した注文は存在しないドキュメントを `getOrdersByIds` 内で黙って除外します。領収書の小計は `EventStripe.pay_amount` と返金累計から計算されるため、1件でも欠落すると明細だけが不足した不正確な領収書を発行できます。`sessionOrders.length` と `stripeRow.order_ids.length` を検証し、不一致なら発行を中止してください。
 
-**コメント要約**: 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止める
+**コメント要約**: 欠落した注文を黙って除いて領収書を出せる<br>件数不一致で発行を止めた
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -735,7 +741,7 @@ Useful? React with 👍 / 👎.
 
 **想定工数**: S
 
-**判断理由**: `getOrdersByIds` は `exists` でないドキュメントを捨てる。小計は Stripe の確定額なので、欠落があると明細だけ短い領収書になる。発行中止は妥当だが金銭表示の変更なので自動修正しない。
+**判断理由**: `sessionOrders.length` と `stripeRow.order_ids.length` が違うときは `failed-precondition` で発行を止める。領収書番号の採番より前なので、欠落時に番号は付かない。
 
 ---
 
@@ -931,6 +937,331 @@ Useful? React with 👍 / 👎.
 ### RC 一覧（サマリ）
 
 新規 RC なし
+
+---
+
+## 評価セッション（2026-09-27 13:24・shokujii-code-review）
+
+- **評価日時**: 2026-09-27 13:24 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+- **重複スキップ**: `description_community_bill` の「決済手数料は返金されません」は RC-13、返金上限は RC-4、Webhook の検証順は RC-18、欠落注文は RC-19 と同じため再採番しない
+- **手順 3b 自動修正**: RC-25・RC-26（`eventReceiptMergeData.test.ts` / `paymentUserFeeStripe.test.ts` と functions の `tsc --noEmit` は通過）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-23 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📏 規約 | 📐 リファクタ | S | 対象 stripe_id の抽出が common と二重実装<br>抽出関数を common から export して共用する |
+| [ ] | RC-24 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | M | 手数料の取得失敗で注文一覧ごとエラーになる<br>手数料だけ非表示にするかエラーにするか未決 |
+| [x] | RC-25 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 手数料行の追加で空明細ガードが効かない<br>ガードを手数料行の追加より前に移した |
+| [x] | RC-26 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 領収書マージデータに未参照キーが残る<br>テンプレートにない 6 キーを削除した |
+
+---
+
+**識別子**: RC-23（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/stores/eventStripe.ts:49`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++  const stripeIds = new Set<string>()
++  for (const order of orders) {
++    if (order.status === 'canceled') continue
++    if (order.stripe_id == null || order.stripe_id === '') continue
++    stripeIds.add(order.stripe_id)
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [📐リファクタ/S]: `fetchChargedUserPaymentFee` の対象 stripe_id 抽出（キャンセル除外・空 ID 除外）が `common/src/utils/paymentUserFee.ts` の `sumChargedUserPaymentFee` 内と同じ処理の二重実装になっている。片方だけ条件を変えると取得対象と合算対象がずれる → `collectChargedStripeIds(orders)` を common から export し、両方で使う
+
+**コメント要約**: 対象 stripe_id の抽出が common と二重実装<br>抽出関数を common から export して共用する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: S
+
+**判断理由**: 現時点で条件は一致しており実害はない。変更種別がリファクタのため自動修正の対象外。
+
+---
+
+**識別子**: RC-24（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/stores/userOrderHistoryList.ts:85`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+         const list = await fetchMemberOrdersForUser(event.community_id, event.event_id, userId)
+         if (generation !== loadGeneration) return
+-        patchOrderState(id, { orders: list, loading: false, error: null })
++        const chargedPaymentFee = await fetchChargedUserPaymentFee(event.community_id, event.event_id, list)
++        if (generation !== loadGeneration) return
++        patchOrderState(id, { orders: list, loading: false, error: null, chargedPaymentFee })
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/M]: 手数料の取得（stripes の getDoc と EventStripe の Zod 変換）が注文取得と同じ try に入っているため、stripes 1 件の読み取り失敗やレガシー文書の parse 失敗で、そのイベントの注文一覧・キャンセルボタン・領収書ボタンまでエラー表示になる。これまで見えていた注文が手数料表示の追加で見えなくなる退行 → 手数料取得を別 try にして失敗時は `chargedPaymentFee: null`（手数料行を出さない）とし、`reportClientError` で記録する。または手数料が不明な状態を画面で明示する
+
+**コメント要約**: 手数料の取得失敗で注文一覧ごとエラーになる<br>手数料だけ非表示にするかエラーにするか未決
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 手数料だけ黙って隠すと合計金額が実課金と食い違って見えるため、非表示にするか「手数料を取得できません」を出すかは表示仕様の判断が要る。修正方針が一意でないため自動修正の対象外。
+
+---
+
+**識別子**: RC-25（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/stripe.ts:265`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
++    const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
++    if (feeLineItem != null) {
++      lineItems.push(feeLineItem)
++    }
++
+     if (lineItems.length === 0 && totalPayment > 0) {
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: 手数料行を push した後に `lineItems.length === 0 && totalPayment > 0` を判定している。`totalPayment > 0` なら手数料は必ず 110 円以上なので、メニュー明細が空でもガードが発火せず、手数料だけの Checkout が作られる（Webhook 側では amount_total 不一致で client_error になり、支払いだけ残る）→ ガードを手数料行の追加より前に移す
+
+**コメント要約**: 手数料行の追加で空明細ガードが効かない<br>ガードを手数料行の追加より前に移した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 手順 3b で自動修正。メニュー明細だけで空判定し、その後に手数料行を追加する順にした。
+
+---
+
+**識別子**: RC-26（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/utils/eventReceiptMergeData.ts:44`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    date: issuedAt,
++    hasShopInvoice: shopInvoiceNumber !== '',
++    invoiceId: shopInvoiceNumber,
++    rawPrice: shopExTaxYen,
++    tax: shop8TaxYen,
++    price: grandTotalYen,
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `receipt.docx` のタグ（`issuedAt` `shop8Tax` `shopExTax` `grandTotal` `shopInvoiceLine` 等）に置き換えた後も、旧テンプレート用の `date` `rawPrice` `tax` `price` と、テンプレートが参照しない `hasShopInvoice` `invoiceId` がマージデータ・型・テストに残っている。どのキーが PDF に効くのか読み手が判別できない → 未参照の 6 キーを型・戻り値・テストから削除する
+
+**コメント要約**: 領収書マージデータに未参照キーが残る<br>テンプレートにない 6 キーを削除した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 手順 3b で自動修正。`word/document.xml` からタグを抽出し、未参照キーを削除した。
+
+---
+
+## 評価セッション（2026-09-27 13:29・review-comments-evaluate）
+
+- **評価日時**: 2026-09-27 13:29 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **REVIEW_REQUEST_SINCE**: 2026-09-27T04:18:34Z
+- **partial**: false
+- **新規 RC**: RC-27、RC-28
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（id:5852567656 手順12定型文、id:5852568368 Copilot の処理エラー通知のみ、id:5328807976 Codex レビュー本文は接続案内のみ）
+- **重複スキップ**: Copilot 概要 id:5328802494 の各 discussion は既存 RC。4111556285 と 4079879517 は RC-3、4110614493 と 4110518997 は RC-17、4110518985 と 4103877559 は RC-15、4103877536 は RC-18、4103877510 は RC-16、4103877474 は RC-19、4103877425 と 4103877387 は RC-20、4079879607 は RC-4、4079879564 は RC-6、4110614506 は RC-21、4103877591 は RC-13。再採番しない
+- **手順 4a 自動修正**: なし（RC-27 は番号なしを A1 合格にするかの方針判断、RC-28 はリリース時の切替手順で本 PR のコード修正ではない）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-27 | 4114073792 | 🟡 修正提案 | 未着手 | ❓ 要確認 | 📏 規約 | 🔧 微修正 | S | 番号なしコミットが fixup の # 必須と矛盾する<br>A1 を番号なしのまま通すかはワークフロー方針 |
+| [ ] | RC-28 | 4114073794 | 🟡 修正提案 | 未着手 | 📤 スコープ外 | 💰 金銭 | 📋 仕様追加 | M | Functions とフロントのデプロイ順が独立<br>切替窓の機能フラグはリリース手順の判断 |
+
+---
+
+**識別子**: RC-27（GitHub id: 4114073792）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `.agents/skills/git-commit-message/references/issue-resolution.md:96`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -67,25 +67,33 @@ gh search issues "キーワード" --repo nijuniinc/bokudeli-event-new --state o
+ 
+ ### 5. 該当イシューなし
+ 
+-中断し、次をユーザーに提案する（勝手に作成しない）:
++コミットは止めない。タイトルに `#` を付けず、メッセージ生成へ進む。
+ 
+-> 該当イシューが見つかりません。`/git-create-issue` で新規イシューを作成しますか？
+-
+-- 同意後 [git-create-issue](../../git-create-issue/SKILL.md) を実行
+-- タイトル・本文は diff から下書き。**タイトルに `#番号` は含めない**
+-- 作成 URL の番号を採用
++- Issue は作らない。ユーザーが `/git-create-issue` を明示したときだけ別途作成する
++- 採用は **なし**
+ 
+ ### 6. 出力（メッセージ生成前に必須）
+ 
++一致したとき:
++
++```
++### イシュー
++- 採用: #NNNN（理由: 内容一致 / 検索で発見）
++- 却下: #2101（ブランチ候補だが Issue 内容と diff が不一致）
++```
++
++該当が無いとき:
++
+ ```
+ ### イシュー
+-- 採用: #NNNN（理由: 内容一致 / 検索で発見 / 新規作成）
++- 採用: なし（理由: 内容一致する open Issue が無い）
+ - 却下: #2101（ブランチ候補だが Issue 内容と diff が不一致）
+ ```
+ 
+ ### 7. 制約
+ 
+-- **`#番号` は原則必須**。解決完了までコミットメッセージを出力しない
++- 内容一致する Issue があるときだけタイトルに `#番号` を付ける
++- 該当が無いときは `#` なしでコミットメッセージを出す。作成提案で止めない
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  番号なしコミットを fixup 判定でも受け入れる**
+
+一致する Issue がない変更を番号なしでコミットした後に `/git-fixup` で追修正する場合、この変更は番号なし生成を許可する一方、`.agents/skills/git-commit-workflow/references/classification.md:88` と本ファイルの `coherence-lite` / `coherence-full` は引き続き `#` の欠落を NG とするため、必ず A2 squash または別コミットへ逸れてメッセージ維持の fixup を実行できません。番号なしを正規の解決結果として、既存タイトルと差分の整合性だけで A1 を判定できるよう各フローを揃えてください。
+
+AGENTS.md reference: [AGENTS.md:L213-L213](https://github.com/nijuniinc/bokudeli-event-new/blob/ff17413aadd2410b9be01122f6081bb734ecc36c/AGENTS.md#L213-L213)
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 番号なしコミットが fixup の # 必須と矛盾する<br>A1 を番号なしのまま通すかはワークフロー方針
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: ❓ 要確認
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 指摘どおり、番号なしを正規の結果にしたあとも A1-fast はタイトルに `#` が無いと NG のままである。番号なしのまま fixup できるようにするか、メッセージを書き直す A2 に残すかは、この PR で入れたコミット手順の方針判断なので自動修正しない。
+
+---
+
+**識別子**: RC-28（GitHub id: 4114073794）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/stripe.ts:268`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -260,6 +262,12 @@ export const createStripeCheckoutSession = onCall<
+         quantity: item.quantity,
+       }))
+ 
++    const userFee = computeUserPaymentFeeFromSelfPay(totalPayment)
++    const feeLineItem = buildUserPaymentFeeCheckoutLineItem(userFee)
++    if (feeLineItem != null) {
++      lineItems.push(feeLineItem)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  手数料課金とフロント表示のデプロイ順序を保証する**
+
+この行から Functions は即座に手数料を課金しますが、確認した `.github/workflows/deploy_functions.yml:3-15`、`deploy_user.yml:3-10`、`deploy_enterprise.yml:3-11` は同じ push から独立して起動し、`needs` や `workflow_run` による順序保証がありません。Functions が先に完了した場合は旧フロントのカート金額より Stripe Checkout が110〜220円高くなり、逆順または片方のデプロイ失敗では新フロントが表示した手数料を旧 Functions が課金しない状態が継続するため、互換期間を設ける機能フラグか順序付きデプロイで表示と実課金を同時に切り替えてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: Functions とフロントのデプロイ順が独立<br>切替窓の機能フラグはリリース手順の判断
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📤 スコープ外
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 本番反映時に Functions と user / enterprise の公開順で、表示額と課金額が一時的にずれる窓はある。旧 Checkout を Webhook が 400 にする件は RC-3 で別記録済み。機能フラグやワークフローの順序保証はリリース手順の話で、この PR の手数料計算には足さない。
 
 ---
 

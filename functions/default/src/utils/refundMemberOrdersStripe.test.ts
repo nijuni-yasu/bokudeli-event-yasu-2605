@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { computeEventStripePayFields } from '@shokujii/common/utils/paymentUserFee.js'
-import { computeStripeRefundAmountForMemberOrders } from './refundMemberOrdersStripe.js'
+import { computeStripeRefundAmountForMemberOrders, maxRefundableFoodAmount } from './refundMemberOrdersStripe.js'
 
 const makeOrder = (id: string, menuPrice: number, discount?: { subsidy?: number; communityBill?: number }) =>
   new EventMemberOrder(id, {
@@ -37,10 +37,10 @@ describe('computeStripeRefundAmountForMemberOrders', () => {
     expect(computeEventStripePayFields(2000).pay_user_fee_amount).toBe(220)
   })
 
-  it('自己負担合計が pay_amount（手数料込み）以下なので上限チェックは通る', () => {
+  it('返金上限は手数料を除いた食事分。未設定は pay_amount のまま', () => {
     const refundAmount = computeStripeRefundAmountForMemberOrders([makeOrder('o1', 1000)])
-    const { pay_amount } = computeEventStripePayFields(1000)
-    expect(refundAmount).toBeLessThan(pay_amount)
-    expect(refundAmount + (pay_amount - refundAmount)).toBe(pay_amount)
+    const { pay_amount, pay_user_fee_amount } = computeEventStripePayFields(1000)
+    expect(maxRefundableFoodAmount(pay_amount, pay_user_fee_amount)).toBe(refundAmount)
+    expect(maxRefundableFoodAmount(1000, undefined)).toBe(1000)
   })
 })
