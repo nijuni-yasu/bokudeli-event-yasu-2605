@@ -12,6 +12,7 @@ import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
 import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
 import { convertStoragePathToURL } from '../utils/storage'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
+import { getUserOrderHistoryEventKey } from '@shokujii/base/stores/userOrderHistoryList.js'
 
 const props = defineProps<{
   event: BokudeliEvent
@@ -41,15 +42,16 @@ const emit = defineEmits<{
   retryOrders: [eventId: string]
 }>()
 
-/** キャンセルダイアログを開いているイベント ID（閉じているときは null）。親が v-model で保持し、成功後に閉じる。 */
+/** キャンセルダイアログを開いている注文履歴キー（community_id と event_id。閉じているときは null）。親が v-model で保持し、成功後に閉じる。 */
 const cancelDialogEventId = defineModel<string | null>('cancelDialogEventId', { default: null })
+const orderHistoryEventKey = computed(() => getUserOrderHistoryEventKey(props.event.community_id, props.event.event_id))
 
 const cancelDialogOpen = computed({
-  get: () => cancelDialogEventId.value === props.event.event_id,
+  get: () => cancelDialogEventId.value === orderHistoryEventKey.value,
   set: (open: boolean) => {
     if (open) {
-      cancelDialogEventId.value = props.event.event_id
-    } else if (cancelDialogEventId.value === props.event.event_id) {
+      cancelDialogEventId.value = orderHistoryEventKey.value
+    } else if (cancelDialogEventId.value === orderHistoryEventKey.value) {
       cancelDialogEventId.value = null
     }
   },

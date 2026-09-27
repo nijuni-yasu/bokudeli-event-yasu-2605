@@ -69,6 +69,7 @@ const orderHistoryStateByEventId = computed(() => userOrderHistoryStore.value?.o
 const orderHistoryHasMore = computed(() => userOrderHistoryStore.value?.hasMore ?? false)
 const isOrderHistoryLoaded = computed(() => userOrderHistoryStore.value?.initialLoaded ?? false)
 
+/** 値は getUserOrderHistoryEventKey。event_id 単体ではない。 */
 const cancelLoadingEventId = ref<string | null>(null)
 const cancelDialogEventId = ref<string | null>(null)
 
@@ -92,7 +93,8 @@ const cancel = async (orderIds: string[], communityId: string, eventId: string) 
   const store = userOrderHistoryStore.value
   if (orderIds.length === 0 || store == null) return
 
-  cancelLoadingEventId.value = eventId
+  const eventKey = getUserOrderHistoryEventKey(communityId, eventId)
+  cancelLoadingEventId.value = eventKey
   try {
     const { data } = await callCancelOrders({
       community_id: communityId,
@@ -183,7 +185,7 @@ watch(
               :event="event"
               :is-owner="true"
               :hide-private-scope-chip="true"
-              :cancel-loading="cancelLoadingEventId === event.event_id"
+              :cancel-loading="cancelLoadingEventId === getUserOrderHistoryEventKey(event.community_id, event.event_id)"
               :event-detail-path="props.resolveEventPath(event.community_account, event.event_id)"
               @download-invoice="downloadReceipt"
               @cancel="(orderIds: string[]) => cancel(orderIds, event.community_id, event.event_id)"
@@ -191,7 +193,7 @@ watch(
             />
 
             <div
-              v-if="cancelLoadingEventId === event.event_id"
+              v-if="cancelLoadingEventId === getUserOrderHistoryEventKey(event.community_id, event.event_id)"
               class="progress-container d-flex justify-center align-center"
             >
               <v-progress-circular :indeterminate="true" size="large" />
