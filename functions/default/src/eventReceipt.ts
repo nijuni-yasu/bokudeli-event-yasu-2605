@@ -94,6 +94,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
         status: order.status === 'canceled' ? 'ordered' : order.status,
         pay_community_bill_off_amount: order.pay_community_bill_off_amount,
         pay_enterprise_subsidy_amount: order.pay_enterprise_subsidy_amount,
+        selected_options: order.selected_options,
       }))
     // 個別キャンセル後は食事の返金分だけ差し引く。システム利用料は満額のまま（番号は初回採番）
     const jsonDataForMerge = buildEventReceiptMergeData({
