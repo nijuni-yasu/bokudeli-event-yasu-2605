@@ -6,6 +6,7 @@ import UserEventCard from '@shokujii/base/components/UserEventCard.vue'
 import IncrementalLoader from '@shokujii/base/components/IncrementalLoader.vue'
 import UserSuccessJoinEventDialog from '@shokujii/base/components/UserSuccessJoinEventDialog.vue'
 import {
+  getUserOrderHistoryEventKey,
   useUserOrderHistoryByUserId,
   type UserOrderHistoryListStore,
 } from '@shokujii/base/stores/userOrderHistoryList.js'
@@ -98,7 +99,7 @@ const cancel = async (orderIds: string[], communityId: string, eventId: string) 
       event_id: eventId,
       order_ids: orderIds,
     })
-    await store.reloadOrdersForEvent(eventId)
+    await store.reloadOrdersForEvent(communityId, eventId)
 
     cancelDialogEventId.value = null
 
@@ -152,14 +153,33 @@ watch(
         {{ $t('user_profile.empty.orders') }}
       </div>
       <v-row v-else>
-        <v-col v-for="event in orderHistoryEvents" :key="`order_${event.event_id}`" sm="12" md="6" lg="4" cols="12">
+        <v-col
+          v-for="event in orderHistoryEvents"
+          :key="`order_${getUserOrderHistoryEventKey(event.community_id, event.event_id)}`"
+          sm="12"
+          md="6"
+          lg="4"
+          cols="12"
+        >
           <div class="event-card">
             <UserEventCard
               v-model:cancel-dialog-event-id="cancelDialogEventId"
-              :orders="orderHistoryStateByEventId[event.event_id]?.orders ?? []"
-              :orders-loading="orderHistoryStateByEventId[event.event_id]?.loading ?? false"
-              :orders-error="orderHistoryStateByEventId[event.event_id]?.error != null"
-              :charged-payment-fee="orderHistoryStateByEventId[event.event_id]?.chargedPaymentFee ?? null"
+              :orders="
+                orderHistoryStateByEventId[getUserOrderHistoryEventKey(event.community_id, event.event_id)]?.orders ??
+                []
+              "
+              :orders-loading="
+                orderHistoryStateByEventId[getUserOrderHistoryEventKey(event.community_id, event.event_id)]?.loading ??
+                false
+              "
+              :orders-error="
+                orderHistoryStateByEventId[getUserOrderHistoryEventKey(event.community_id, event.event_id)]?.error !=
+                null
+              "
+              :charged-payment-fee="
+                orderHistoryStateByEventId[getUserOrderHistoryEventKey(event.community_id, event.event_id)]
+                  ?.chargedPaymentFee ?? null
+              "
               :event="event"
               :is-owner="true"
               :hide-private-scope-chip="true"
@@ -167,7 +187,7 @@ watch(
               :event-detail-path="props.resolveEventPath(event.community_account, event.event_id)"
               @download-invoice="downloadReceipt"
               @cancel="(orderIds: string[]) => cancel(orderIds, event.community_id, event.event_id)"
-              @retry-orders="(eid: string) => userOrderHistoryStore?.reloadOrdersForEvent(eid)"
+              @retry-orders="() => userOrderHistoryStore?.reloadOrdersForEvent(event.community_id, event.event_id)"
             />
 
             <div

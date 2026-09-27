@@ -102,9 +102,10 @@ export async function refundMemberOrdersStripe(params: {
       }
 
       const existingRefundTotalPre = stripeDocPre.refunds.reduce((sum, r) => sum + r.amount, 0)
-      if (existingRefundTotalPre + refundAmount > stripeDocPre.pay_amount) {
+      const refundableLimitPre = Math.max(0, stripeDocPre.pay_amount - (stripeDocPre.pay_user_fee_amount ?? 0))
+      if (existingRefundTotalPre + refundAmount > refundableLimitPre) {
         throw new Error(
-          `返金累計額が決済額を超えます: existing=${existingRefundTotalPre} + new=${refundAmount} > pay_amount=${stripeDocPre.pay_amount}`,
+          `返金累計額が返金上限を超えます: existing=${existingRefundTotalPre} + new=${refundAmount} > refundable_limit=${refundableLimitPre}`,
         )
       }
 
@@ -137,9 +138,10 @@ export async function refundMemberOrdersStripe(params: {
           return
         }
         const existingRefundTotal = stripeDoc.refunds.reduce((sum, r) => sum + r.amount, 0)
-        if (existingRefundTotal + refundAmount > stripeDoc.pay_amount) {
+        const refundableLimit = Math.max(0, stripeDoc.pay_amount - (stripeDoc.pay_user_fee_amount ?? 0))
+        if (existingRefundTotal + refundAmount > refundableLimit) {
           throw new Error(
-            `返金累計額が決済額を超えます: existing=${existingRefundTotal} + new=${refundAmount} > pay_amount=${stripeDoc.pay_amount}`,
+            `返金累計額が返金上限を超えます: existing=${existingRefundTotal} + new=${refundAmount} > refundable_limit=${refundableLimit}`,
           )
         }
         stripeDoc.refunds.push({

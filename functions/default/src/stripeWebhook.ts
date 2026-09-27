@@ -356,30 +356,6 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
         }
       | undefined
 
-    if (eventData.event_payment === 'enterprise_subsidy') {
-      if (enterpriseId == null) {
-        return { kind: 'client_error', message: 'enterprise_id is required for enterprise_subsidy' }
-      }
-      const subsidyResult = await processEnterpriseSubsidyOrdersForWebhook({
-        enterpriseId,
-        userId,
-        event: eventData,
-        orders,
-        transaction,
-      })
-      if (!subsidyResult.ok) {
-        return { kind: 'client_error', message: subsidyResult.message }
-      }
-      subsidyTotal = subsidyResult.subsidyTotal
-      if (subsidyResult.enterpriseOrderCreateLog != null) {
-        enterpriseOrderCreateLog = {
-          ...subsidyResult.enterpriseOrderCreateLog,
-          totalPayment: 0,
-          stripeDocId,
-        }
-      }
-    }
-
     const allAlreadyOrdered = orders.every((o) => o.status === 'ordered')
     if (allAlreadyOrdered) {
       logger.info('All orders already ordered', { paymentIntent })
@@ -400,10 +376,9 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
       }
     }
 
-    const orderedAt = Timestamp.now().toMillis()
     const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
     const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(selfPayAmount)
-    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount)) {
+    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount, selfPayAmount)) {
       logger.error('Checkout amount_total does not match recomputed pay_amount', {
         paymentIntent,
         amountTotal: session.amount_total,
@@ -416,10 +391,32 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
         message: `amount_total mismatch: session=${session.amount_total} pay_amount=${payAmount}`,
       }
     }
-    if (enterpriseOrderCreateLog != null) {
-      // 監査上の total_payment は食事の自己負担。手数料は pay_user_fee_amount に載せる
-      enterpriseOrderCreateLog.totalPayment = selfPayAmount
+
+    if (eventData.event_payment === 'enterprise_subsidy') {
+      if (enterpriseId == null) {
+        return { kind: 'client_error', message: 'enterprise_id is required for enterprise_subsidy' }
+      }
+      const subsidyResult = await processEnterpriseSubsidyOrdersForWebhook({
+        enterpriseId,
+        userId,
+        event: eventData,
+        orders,
+        transaction,
+      })
+      if (!subsidyResult.ok) {
+        return { kind: 'client_error', message: subsidyResult.message }
+      }
+      subsidyTotal = subsidyResult.subsidyTotal
+      if (subsidyResult.enterpriseOrderCreateLog != null) {
+        enterpriseOrderCreateLog = {
+          ...subsidyResult.enterpriseOrderCreateLog,
+          totalPayment: selfPayAmount,
+          stripeDocId,
+        }
+      }
     }
+
+    const orderedAt = Timestamp.now().toMillis()
     const sessionPayCommunityBillOffAmount = orders.reduce((sum, o) => sum + (o.pay_community_bill_off_amount ?? 0), 0)
 
     const menusMap = new Map<string, StripeMenuType>()

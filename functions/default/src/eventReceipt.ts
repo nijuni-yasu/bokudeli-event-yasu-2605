@@ -56,6 +56,9 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
       }
 
       const sessionOrders = await getOrdersByIds(event.community_id, eventId, uid, stripeRow.order_ids, transaction)
+      if (sessionOrders.length !== stripeRow.order_ids.length) {
+        throw new HttpsError('failed-precondition', '領収書対象の注文が不足しています')
+      }
 
       if (stripeRow.receipt_number != null) {
         return {
@@ -72,6 +75,16 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
     })
 
     const refundedTotal = stripe.refunds.reduce((sum, r) => sum + r.amount, 0)
+    const refundedOrderIds = new Set(stripe.refunds.flatMap((r) => r.order_ids))
+    const receiptOrders = orders
+      .filter((order) => !refundedOrderIds.has(order.id))
+      .map((order) => ({
+        menu_name: order.menu_name,
+        menu_price: order.menu_price,
+        status: order.status === 'canceled' ? 'ordered' : order.status,
+        pay_community_bill_off_amount: order.pay_community_bill_off_amount,
+        pay_enterprise_subsidy_amount: order.pay_enterprise_subsidy_amount,
+      }))
     // 個別キャンセル後は食事の返金分だけ差し引く。決済手数料は満額のまま（番号は初回採番）
     const jsonDataForMerge = buildEventReceiptMergeData({
       eventName: event.event_name,
@@ -86,7 +99,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
       payAmount: stripe.pay_amount,
       payUserFeeAmount: stripe.pay_user_fee_amount,
       refundedTotal,
-      orders,
+      orders: receiptOrders,
     })
 
     const pdfGenerator = new PdfGenerator()

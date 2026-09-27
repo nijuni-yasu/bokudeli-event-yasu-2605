@@ -57,9 +57,10 @@ describe('isCheckoutAmountTotalMatchingPayAmount', () => {
     expect(isCheckoutAmountTotalMatchingPayAmount(undefined, 1110)).toBe(true)
   })
 
-  it('amount_total があるときは pay_amount と一致必須', () => {
+  it('amount_total があるときは pay_amount か legacy selfPay と一致必須', () => {
     expect(isCheckoutAmountTotalMatchingPayAmount(1110, 1110)).toBe(true)
-    expect(isCheckoutAmountTotalMatchingPayAmount(1000, 1110)).toBe(false)
+    expect(isCheckoutAmountTotalMatchingPayAmount(1000, 1110, 1000)).toBe(true)
+    expect(isCheckoutAmountTotalMatchingPayAmount(900, 1110, 1000)).toBe(false)
   })
 })
 

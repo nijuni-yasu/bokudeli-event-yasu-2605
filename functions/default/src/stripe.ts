@@ -268,6 +268,19 @@ export const createStripeCheckoutSession = onCall<
       lineItems.push(feeLineItem)
     }
 
+    if (lineItems.length > 100) {
+      logger.warn('Checkout line items exceed Stripe limit', {
+        eventId: event_id,
+        communityId: community_id,
+        userId: uid,
+        lineItemCount: lineItems.length,
+      })
+      throw new HttpsError(
+        'failed-precondition',
+        '注文数が多すぎるため決済を開始できません。注文を分けてお試しください',
+      )
+    }
+
     if (lineItems.length === 0 && totalPayment > 0) {
       logger.error('Checkout line items empty despite positive totalPayment', {
         eventId: event_id,

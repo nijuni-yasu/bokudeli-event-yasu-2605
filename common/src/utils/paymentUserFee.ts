@@ -36,12 +36,17 @@ export function computeEventStripePayFields(selfPay: number): {
   }
 }
 
-/** amount_total が無いセッションは検証スキップ。あるときは pay_amount と一致必須。 */
+/** amount_total が無いセッションは検証スキップ。あるときは pay_amount か legacy_self_pay と一致必須。 */
 export function isCheckoutAmountTotalMatchingPayAmount(
   amountTotal: number | null | undefined,
   payAmount: number,
+  legacySelfPayAmount?: number,
 ): boolean {
-  return amountTotal == null || amountTotal === payAmount
+  return (
+    amountTotal == null ||
+    amountTotal === payAmount ||
+    (legacySelfPayAmount != null && amountTotal === legacySelfPayAmount)
+  )
 }
 
 /** Stripe Checkout に手数料を載せる支払い方式か（自己負担 0 は対象外） */
