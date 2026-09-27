@@ -1,11 +1,5 @@
 import { z } from 'zod'
 
-export const MENU_ALLERGEN_VALUES = ['ebi', 'kani', 'kurumi', 'komugi', 'soba', 'tamago', 'milk', 'peanuts'] as const
-export type MenuAllergenType = (typeof MENU_ALLERGEN_VALUES)[number]
-
-export const MENU_BADGE_VALUES = ['recommended', 'new', 'limited'] as const
-export type MenuBadgeType = (typeof MENU_BADGE_VALUES)[number]
-
 export const OPTION_SELECTION_VALUES = ['single', 'multiple'] as const
 export type OptionSelectionType = (typeof OPTION_SELECTION_VALUES)[number]
 
@@ -14,15 +8,10 @@ export const PRICE_DELTA_MAX = 10000
 export const MENU_OPTION_IDS_MAX = 10
 export const OPTION_ITEMS_MAX = 20
 
-export const MenuAllergenSchema = z.enum(MENU_ALLERGEN_VALUES)
-export const MenuBadgeSchema = z.enum(MENU_BADGE_VALUES)
-
 function hasUniqueValues(values: readonly string[]): boolean {
   return new Set(values).size === values.length
 }
 
-export const MenuAllergenListSchema = z.array(MenuAllergenSchema).refine(hasUniqueValues)
-export const MenuBadgeListSchema = z.array(MenuBadgeSchema).refine(hasUniqueValues)
 export const OptionIdListSchema = z.array(z.string().nonempty()).max(MENU_OPTION_IDS_MAX).refine(hasUniqueValues)
 export const OptionSelectionSchema = z.enum(OPTION_SELECTION_VALUES)
 

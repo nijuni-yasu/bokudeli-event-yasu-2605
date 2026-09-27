@@ -85,10 +85,6 @@ export function convertFromPartnerMenuToEventMenu(
     limit_per_event: partnerMenu.limit_per_event,
     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
     options,
-    allergens: partnerMenu.allergens ?? [],
-    is_vegan: partnerMenu.is_vegan ?? false,
-    is_halal: partnerMenu.is_halal ?? false,
-    badges: partnerMenu.badges ?? [],
   })
 }
 

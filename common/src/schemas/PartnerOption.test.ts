@@ -48,23 +48,13 @@ describe('PartnerOption', () => {
   })
 })
 
-describe('PartnerMenu allergens / badges', () => {
+describe('PartnerMenu option_ids', () => {
   const base = {
     menu_name: 'バーガー',
     menu_description: '説明',
     menu_price: 800,
     menu_sort_number: 0,
   }
-
-  it('アレルギーの重複は構築できない', () => {
-    expect(
-      () =>
-        new PartnerMenu('partner-1', 'menu-1', {
-          ...base,
-          allergens: ['tamago', 'tamago'],
-        }),
-    ).toThrow()
-  })
 
   it('option_ids の重複は保存できない', () => {
     expect(
@@ -74,14 +64,5 @@ describe('PartnerMenu allergens / badges', () => {
           option_ids: ['opt-1', 'opt-1'],
         }),
     ).toThrow()
-  })
-
-  it('アレルギーが重複しなければ保存できる', () => {
-    const menu = new PartnerMenu('partner-1', 'menu-1', {
-      ...base,
-      allergens: ['tamago', 'milk'],
-      badges: ['new'],
-    })
-    expect(menu.isValidForDatabase()).toBe(true)
   })
 })

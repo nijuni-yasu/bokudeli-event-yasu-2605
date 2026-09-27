@@ -246,18 +246,6 @@ service cloud.firestore {
                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
                 allow create, update, delete: if isSupport()
             }
-            function isValidAllergenList(value) {
-                return value is list
-                    && value.size() <= 8
-                    && value.size() == value.toSet().size()
-                    && value.hasOnly(['ebi', 'kani', 'kurumi', 'komugi', 'soba', 'tamago', 'milk', 'peanuts']);
-            }
-            function isValidBadgeList(value) {
-                return value is list
-                    && value.size() <= 3
-                    && value.size() == value.toSet().size()
-                    && value.hasOnly(['recommended', 'new', 'limited']);
-            }
             function isValidOptionIdList(value) {
                 return value is list
                     && value.size() <= 10
@@ -274,11 +262,7 @@ service cloud.firestore {
                     && (value.size() < 10 || (value[9] is string && value[9].size() > 0));
             }
             function menuWriteFieldsValid() {
-                return (!('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids))
-                    && (!('allergens' in request.resource.data) || isValidAllergenList(request.resource.data.allergens))
-                    && (!('badges' in request.resource.data) || isValidBadgeList(request.resource.data.badges))
-                    && (!('is_vegan' in request.resource.data) || request.resource.data.is_vegan is bool)
-                    && (!('is_halal' in request.resource.data) || request.resource.data.is_halal is bool);
+                return !('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids);
             }
             function optionWriteFieldsValid() {
                 return request.resource.data.option_name is string

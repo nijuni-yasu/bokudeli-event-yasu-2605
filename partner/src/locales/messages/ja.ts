@@ -288,8 +288,6 @@ export default {
     error_limit_per_event: '1〜1000の整数を入力してください',
     options: '設定するオプション',
     options_empty: '先にオプションを作成してください',
-    allergens: 'アレルギー（特定原材料）',
-    badges: '表示バッジ',
     error_min_total: '選べる組み合わせの合計が1円未満です',
   },
   option_edit_card: {

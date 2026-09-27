@@ -8,12 +8,6 @@ import ImageInput from '@shokujii/base/components/ImageInput.vue'
 import DateInput from '@shokujii/base/components/DateInput.vue'
 import { MENU_LIMIT_PER_EVENT_MAX } from '@shokujii/common/utils/menuLimit.js'
 import type { BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
-import {
-  MENU_ALLERGEN_VALUES,
-  MENU_BADGE_VALUES,
-  type MenuAllergenType,
-  type MenuBadgeType,
-} from '@shokujii/common/schemas/menuOption.js'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
 import { getOptionsPath } from '../navigation/utils'
 
@@ -144,30 +138,6 @@ const moveOption = (optionId: string, direction: -1 | 1) => {
   current.splice(next, 0, moved)
   menu.value.option_ids = current
 }
-
-const allergenItems = MENU_ALLERGEN_VALUES.map((value) => ({
-  title: $t(`menu_allergen.${value}`),
-  value,
-}))
-
-const badgeItems = MENU_BADGE_VALUES.map((value) => ({
-  title: $t(`menu_badge.${value}`),
-  value,
-}))
-
-const allergensModel = computed({
-  get: () => menu.value.allergens ?? [],
-  set: (value: MenuAllergenType[]) => {
-    menu.value.allergens = value
-  },
-})
-
-const badgesModel = computed({
-  get: () => menu.value.badges ?? [],
-  set: (value: MenuBadgeType[]) => {
-    menu.value.badges = value
-  },
-})
 
 // 販売期間のバリデーションを入力欄に紐付けて、変更を監視する
 watch(
@@ -361,30 +331,6 @@ onBeforeUnmount(() => {
               @update:model-value="toggleOptionId(option.option_id, true)"
             />
             <p class="menu-edit-card__hint text-error">{{ minTotalRule() === true ? '' : minTotalRule() }}</p>
-          </div>
-          <div class="menu-edit-card__section">
-            <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.allergens') }}</div>
-            <v-select
-              v-model="allergensModel"
-              :items="allergenItems"
-              multiple
-              chips
-              closable-chips
-              :label="$t('menu_edit_card.allergens')"
-            />
-            <v-switch v-model="menu.is_vegan" :label="$t('menu_attribute.vegan')" color="success" hide-details />
-            <v-switch v-model="menu.is_halal" :label="$t('menu_attribute.halal')" color="success" hide-details />
-          </div>
-          <div class="menu-edit-card__section">
-            <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.badges') }}</div>
-            <v-select
-              v-model="badgesModel"
-              :items="badgeItems"
-              multiple
-              chips
-              closable-chips
-              :label="$t('menu_edit_card.badges')"
-            />
           </div>
           <div class="menu-edit-card__switch">
             <v-switch

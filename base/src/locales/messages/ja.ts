@@ -198,25 +198,6 @@ export default {
     price_delta_zero: '差額なし',
     login: 'ご注文にはログインが必要です。\nログイン完了後、再度この画面からメニューを選んでカートに追加してください。',
   },
-  menu_allergen: {
-    ebi: 'えび',
-    kani: 'かに',
-    kurumi: 'くるみ',
-    komugi: '小麦',
-    soba: 'そば',
-    tamago: '卵',
-    milk: '乳',
-    peanuts: '落花生',
-  },
-  menu_badge: {
-    recommended: 'おすすめ',
-    new: '新メニュー',
-    limited: '期間限定',
-  },
-  menu_attribute: {
-    vegan: 'ヴィーガン',
-    halal: 'ハラル',
-  },
   event_create_modal: {
     title: 'イベント開催のステップ',
     desc: `・<b>「郵便番号」</b>と<b>「開催日時」</b>を入力し、デリバリー可能な飲食店から1店舗を選択📍<br />

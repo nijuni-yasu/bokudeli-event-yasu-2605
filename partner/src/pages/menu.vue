@@ -4,9 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import MenuEditCard from '@/components/MenuEditCard.vue'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
-import type { MenuBadgeType } from '@shokujii/common/schemas/menuOption.js'
 import MenuCard from '@shokujii/base/components/MenuCard.vue'
-import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
 import { mdiPlus, mdiClose } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { VueDraggableNext as draggable } from 'vue-draggable-next'
@@ -135,19 +133,8 @@ const attachedOptions = (menu: BokudeliPartnerMenu): { id: string; name: string 
   })
 }
 
-const visibleBadges = (menu: BokudeliPartnerMenu): MenuBadgeType[] => {
-  const hasPeriod = menu.menu_date_start != null && menu.menu_date_end != null
-  return menu.badges.filter((badge) => !(hasPeriod && badge === 'limited'))
-}
-
 const hasMenuMeta = (menu: BokudeliPartnerMenu): boolean => {
-  return (
-    attachedOptions(menu).length > 0 ||
-    menu.allergens.length > 0 ||
-    visibleBadges(menu).length > 0 ||
-    menu.is_vegan ||
-    menu.is_halal
-  )
+  return attachedOptions(menu).length > 0
 }
 
 const example = new BokudeliPartnerMenu(partnerId, null, {
@@ -199,27 +186,17 @@ const saveSortOrder = async () => {
             @click="openDialog(menu)"
           >
             <template v-if="hasMenuMeta(menu)" #meta>
-              <div class="d-flex flex-column ga-1">
-                <div v-if="attachedOptions(menu).length > 0" class="d-flex flex-wrap ga-1">
-                  <v-chip
-                    v-for="option in attachedOptions(menu)"
-                    :key="option.id"
-                    size="small"
-                    color="primary"
-                    variant="tonal"
-                    label
-                  >
-                    {{ option.name }}
-                  </v-chip>
-                </div>
-                <MenuAttributeChips
-                  :allergens="menu.allergens"
-                  :badges="visibleBadges(menu)"
-                  :is-vegan="menu.is_vegan"
-                  :is-halal="menu.is_halal"
+              <div class="d-flex flex-wrap ga-1">
+                <v-chip
+                  v-for="option in attachedOptions(menu)"
+                  :key="option.id"
                   size="small"
+                  color="primary"
+                  variant="tonal"
                   label
-                />
+                >
+                  {{ option.name }}
+                </v-chip>
               </div>
             </template>
             <v-btn

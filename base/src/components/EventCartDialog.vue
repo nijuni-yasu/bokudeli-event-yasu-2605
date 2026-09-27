@@ -10,7 +10,6 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
-import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
 import { buildMenuPriceLines, resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import type { CartSelectedItemType } from '@shokujii/common/schemas/menuOption.js'
 import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
@@ -236,14 +235,6 @@ const addCart = async () => {
       </v-card-title>
       <v-card-text class="text-left py-2">
         {{ currentMenu.menu_description }}
-      </v-card-text>
-      <v-card-text class="py-1">
-        <MenuAttributeChips
-          :allergens="currentMenu.allergens"
-          :badges="currentMenu.badges"
-          :is-vegan="currentMenu.is_vegan"
-          :is-halal="currentMenu.is_halal"
-        />
       </v-card-text>
       <v-card-text v-if="menuOptions.length > 0" class="text-left py-2">
         <div v-for="option in menuOptions" :key="option.option_id" class="mb-4">

@@ -88,33 +88,11 @@ describe('partner options / menu option fields firestore rules', () => {
     await assertSucceeds(optionRef(PARTNER_A, 'opt-1').delete())
   })
 
-  it('店舗アカウントは option_ids と allergens をメニューに保存できる', async () => {
+  it('店舗アカウントは option_ids をメニューに保存できる', async () => {
     await assertSucceeds(
       menuRef(PARTNER_A, 'menu-1').set({
         menu_name: 'バーガー',
         option_ids: ['opt-1'],
-        allergens: ['tamago'],
-        badges: ['new'],
-        is_vegan: false,
-        is_halal: false,
-      }),
-    )
-  })
-
-  it('allergens の重複は保存できない', async () => {
-    await assertFails(
-      menuRef(PARTNER_A, 'menu-1').set({
-        menu_name: 'バーガー',
-        allergens: ['tamago', 'tamago'],
-      }),
-    )
-  })
-
-  it('allergens に未定義の値は保存できない', async () => {
-    await assertFails(
-      menuRef(PARTNER_A, 'menu-1').set({
-        menu_name: 'バーガー',
-        allergens: ['unknown'],
       }),
     )
   })
@@ -124,15 +102,6 @@ describe('partner options / menu option fields firestore rules', () => {
       menuRef(PARTNER_A, 'menu-1').set({
         menu_name: 'バーガー',
         option_ids: ['opt-1', 'opt-1'],
-      }),
-    )
-  })
-
-  it('is_vegan が文字列なら保存できない', async () => {
-    await assertFails(
-      menuRef(PARTNER_A, 'menu-1').set({
-        menu_name: 'バーガー',
-        is_vegan: 'yes',
       }),
     )
   })

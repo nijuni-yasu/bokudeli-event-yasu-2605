@@ -9,7 +9,6 @@ import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
 import { mdiFoodForkDrink } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
-import MenuAttributeChips from '@shokujii/base/components/MenuAttributeChips.vue'
 
 /** 横長レイアウトを適用するメニュー数の上限（この数以下は横長、超えるとグリッド） */
 const HORIZONTAL_LAYOUT_MAX_COUNT = 2
@@ -92,14 +91,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <div class="mb-2 flex-shrink-0">
-                  <MenuAttributeChips
-                    :allergens="menu.allergens"
-                    :badges="menu.badges"
-                    :is-vegan="menu.is_vegan"
-                    :is-halal="menu.is_halal"
-                  />
-                </div>
                 <div class="menu-spacer" />
                 <div class="d-flex align-center flex-shrink-0 mb-2">
                   <MenuStatusChips
@@ -162,14 +153,6 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
                   {{ menu.menu_description }}
                 </v-card-text>
-                <div class="px-1 mb-2 flex-shrink-0">
-                  <MenuAttributeChips
-                    :allergens="menu.allergens"
-                    :badges="menu.badges"
-                    :is-vegan="menu.is_vegan"
-                    :is-halal="menu.is_halal"
-                  />
-                </div>
                 <div class="menu-spacer" />
                 <div class="flex-shrink-0">
                   <div class="d-flex align-center px-1 ma-3">
