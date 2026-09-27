@@ -1,4 +1,4 @@
-import type { HistoryState, RouteLocationRaw } from 'vue-router'
+import type { HistoryState, RouteLocationRaw, Router } from 'vue-router'
 
 /** history.state に載せる、挨拶案内の対象ルーム ID */
 export const CHAT_GREETING_PROMPT_STATE_KEY = 'promptChatGreetingRoomId'
@@ -85,12 +85,22 @@ export const readChatGreetingPromptRoomId = (): string | null => {
   return typeof value === 'string' && value !== '' ? value : null
 }
 
-export const clearChatGreetingPromptState = (): void => {
-  const current = history.state
+export const clearChatGreetingPromptState = (router?: Router): void => {
+  const current = history.state as HistoryState | null
   if (current == null || !(CHAT_GREETING_PROMPT_STATE_KEY in current)) {
     return
   }
   const next: HistoryState = { ...current }
   delete next[CHAT_GREETING_PROMPT_STATE_KEY]
+  if (router != null) {
+    const route = router.currentRoute.value
+    void router.replace({
+      path: route.path,
+      query: route.query,
+      hash: route.hash,
+      state: next,
+    })
+    return
+  }
   history.replaceState(next, '')
 }

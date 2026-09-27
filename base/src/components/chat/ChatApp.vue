@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { mdiClose, mdiImageOutline, mdiMenu, mdiMessageOutline, mdiPlus, mdiSend } from '@mdi/js'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
@@ -29,6 +30,8 @@ import {
 } from '@shokujii/base/utils/chatGreetingPrompt.js'
 import ChatLeftSidebarContent from './ChatLeftSidebarContent.vue'
 import ChatLog from './ChatLog.vue'
+
+const router = useRouter()
 
 const MEMBERSHIP_WAIT_TIMEOUT_MS = 10_000
 const CHAT_ATTACHMENT_MAX_SIZE_LABEL = '10MB'
@@ -98,6 +101,7 @@ const composeInputRef = ref<{ focus: () => void } | null>(null)
 const isGreetingPromptVisible = ref(false)
 let greetingPromptRequestId = 0
 const greetingPromptStartedRoomIds = new Set<string>()
+const greetingPromptTargetRoomId = ref<string | null>(null)
 
 const canSendMessage = computed(() => {
   return msg.value.trim() !== '' || selectedImages.value.length > 0
@@ -394,6 +398,9 @@ const sendMessage = async () => {
   if (store.activeRoom?.isReadonly === true) return
   if (!canSendMessage.value) return
 
+  // 投稿有無の取得が遅れて完了しても、送信開始後に挨拶案内を出さない。
+  greetingPromptRequestId += 1
+  isGreetingPromptVisible.value = false
   isSending.value = true
   const sentRoomId = roomId
   const sentCompose = toComposeDraftFromLocal()
@@ -459,16 +466,16 @@ const isLocalComposeEmpty = (): boolean => {
 }
 
 const acceptGreetingPrompt = (): void => {
-  const roomId = store.activeRoomId
-  if (roomId == null || !isLocalComposeEmpty()) {
-    isGreetingPromptVisible.value = false
+  const roomId = greetingPromptTargetRoomId.value ?? store.activeRoomId
+  if (roomId == null || store.activeRoomId !== roomId || !isLocalComposeEmpty()) {
+    dismissGreetingPrompt()
     return
   }
   const choice = pickChatGreeting(currentUserStore.user?.user_name ?? '')
   const body = t(choice.key, { name: choice.name ?? '', emoji: t(choice.emojiKey) })
   msg.value = body
   composeDraftStore.upsertDraft(roomId, { body, attachments: [] })
-  isGreetingPromptVisible.value = false
+  dismissGreetingPrompt()
   nextTick(() => {
     composeInputRef.value?.focus()
   })
@@ -476,6 +483,7 @@ const acceptGreetingPrompt = (): void => {
 
 const dismissGreetingPrompt = (): void => {
   isGreetingPromptVisible.value = false
+  greetingPromptTargetRoomId.value = null
 }
 
 const maybeOfferGreetingPrompt = async (roomId: string): Promise<void> => {
@@ -487,7 +495,7 @@ const maybeOfferGreetingPrompt = async (roomId: string): Promise<void> => {
     return
   }
   if (room.roomType !== 'event' || room.isReadonly === true) {
-    clearChatGreetingPromptState()
+    clearChatGreetingPromptState(router)
     return
   }
   const userId = currentUserId.value
@@ -496,19 +504,19 @@ const maybeOfferGreetingPrompt = async (roomId: string): Promise<void> => {
   }
   const draft = composeDraftStore.getDraft(roomId)
   if ((draft != null && !isChatComposeDraftEmpty(draft)) || !isLocalComposeEmpty()) {
-    clearChatGreetingPromptState()
+    clearChatGreetingPromptState(router)
     return
   }
   if (greetingPromptStartedRoomIds.has(roomId)) {
     return
   }
   greetingPromptStartedRoomIds.add(roomId)
-  clearChatGreetingPromptState()
   const requestId = ++greetingPromptRequestId
   let hasSent: boolean
   try {
     hasSent = await hasOwnUserChatMessage(roomId, userId)
   } catch (error) {
+    greetingPromptStartedRoomIds.delete(roomId)
     reportClientError(error, {
       componentInfo: 'ChatApp.maybeOfferGreetingPrompt',
       documentPath: `chat_rooms/${roomId}/messages`,
@@ -517,13 +525,30 @@ const maybeOfferGreetingPrompt = async (roomId: string): Promise<void> => {
     return
   }
   if (requestId !== greetingPromptRequestId || store.activeRoomId !== roomId) {
+    greetingPromptStartedRoomIds.delete(roomId)
     return
   }
   if (hasSent || !isLocalComposeEmpty()) {
+    clearChatGreetingPromptState(router)
     return
   }
+  greetingPromptTargetRoomId.value = roomId
   isGreetingPromptVisible.value = true
+  clearChatGreetingPromptState(router)
 }
+
+watch(
+  () => store.activeRoomId,
+  (activeRoomId) => {
+    if (!isGreetingPromptVisible.value) {
+      return
+    }
+    const targetRoomId = greetingPromptTargetRoomId.value
+    if (targetRoomId != null && activeRoomId !== targetRoomId) {
+      dismissGreetingPrompt()
+    }
+  },
+)
 
 watch(
   () => {
