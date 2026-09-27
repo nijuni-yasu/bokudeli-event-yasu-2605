@@ -13,6 +13,8 @@ export const NIJUNI_EMAIL = 'support@nijuni.jp'
 export const RECEIPT_PAYMENT_METHOD_FALLBACK = 'オンライン決済'
 export const RECEIPT_SHOP_FOOTER =
   'お食事代に係る領収書は、販売元の委託に基づき、ニジュウニ株式会社が代理発行しています。'
+export const RECEIPT_SHOP_INVOICE_NUMBER_PREFIX = '適格請求書登録番号：'
+export const RECEIPT_SHOP_INVOICE_NUMBER_NONE = 'なし'
 export const RECEIPT_SHOP_NOT_QUALIFIED_INVOICE = 'お食事代部分は適格請求書ではありません'
 
 export type EventReceiptMergeInput = {
@@ -90,6 +92,15 @@ function computeReceiptMenuSelfPay(order: EventReceiptMenuSource): number {
   return order.menu_price - getMemberOrderDiscountAmount(order)
 }
 
+/** 登録番号が無い店は番号行「なし」と、適格請求書ではない旨を 2 行で出す */
+function buildShopInvoiceLine(shopInvoiceNumber: string): string {
+  if (shopInvoiceNumber !== '') {
+    return `${RECEIPT_SHOP_INVOICE_NUMBER_PREFIX}${shopInvoiceNumber}`
+  }
+  // Adobe Document Generation は JSON の改行を潰すため <br> で改行する
+  return `${RECEIPT_SHOP_INVOICE_NUMBER_PREFIX}${RECEIPT_SHOP_INVOICE_NUMBER_NONE}<br>${RECEIPT_SHOP_NOT_QUALIFIED_INVOICE}`
+}
+
 /** `ordered` の自己負担単価を menu_name + 単価で集約する。キャンセル行は出さない */
 export function buildEventReceiptMenuLines(
   orders: EventReceiptMenuSource[],
@@ -132,8 +143,7 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
     eventDate: convertToDate(input.eventStartDatetime),
     event: `${input.eventName} / ${proviso}`,
     shop: input.shopName,
-    shopInvoiceLine:
-      shopInvoiceNumber !== '' ? `適格請求書登録番号：${shopInvoiceNumber}` : RECEIPT_SHOP_NOT_QUALIFIED_INVOICE,
+    shopInvoiceLine: buildShopInvoiceLine(shopInvoiceNumber),
     address: input.shopAddress,
     paymentMethod: input.paymentMethod ?? RECEIPT_PAYMENT_METHOD_FALLBACK,
     menus: buildEventReceiptMenuLines(input.orders),

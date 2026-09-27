@@ -83,7 +83,7 @@ describe('buildEventReceiptMergeData', () => {
       payAmount: 1000,
       payUserFeeAmount: undefined,
     })
-    expect(data.shopInvoiceLine).toBe('お食事代部分は適格請求書ではありません')
+    expect(data.shopInvoiceLine).toBe('適格請求書登録番号：なし<br>お食事代部分は適格請求書ではありません')
     expect(data.hasFee).toBe(false)
     expect(data.fee).toBe(convertNumberToYen(0))
     expect(data.event).toBe('カレー会 / お食事代として')
