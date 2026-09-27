@@ -377,7 +377,13 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
     }
 
     const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
-    const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(selfPayAmount)
+    const computedPayFields = computeEventStripePayFields(selfPayAmount)
+    const isLegacyCheckoutWithoutUserFee =
+      session.amount_total != null &&
+      session.amount_total === selfPayAmount &&
+      session.amount_total !== computedPayFields.pay_amount
+    const payAmount = isLegacyCheckoutWithoutUserFee ? selfPayAmount : computedPayFields.pay_amount
+    const userFeeAmount = isLegacyCheckoutWithoutUserFee ? undefined : computedPayFields.pay_user_fee_amount
     if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount, selfPayAmount)) {
       logger.error('Checkout amount_total does not match recomputed pay_amount', {
         paymentIntent,
