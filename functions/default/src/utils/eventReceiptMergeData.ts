@@ -121,7 +121,7 @@ export function buildEventReceiptMergeData(input: EventReceiptMergeInput): Event
   const hasFee = fee > 0
   const shopInvoiceNumber = input.shopInvoiceNumber?.trim() ?? ''
   const shopSubtotalYen = convertNumberToYen(shopSubtotal)
-  const proviso = hasFee ? 'お食事代および決済手数料として' : 'お食事代として'
+  const proviso = hasFee ? 'お食事代およびシステム利用料として' : 'お食事代として'
 
   return {
     reissue: input.reissue,

@@ -16,7 +16,7 @@ export type UserEventListOrderEntry = {
   orders: EventMemberOrder[] | null
   loading: boolean
   error: unknown | null
-  /** 確定済み決済手数料（円）。注文取得前は null。未課金・レガシーは 0 */
+  /** 確定済みシステム利用料（円）。注文取得前は null。未課金・レガシーは 0 */
   chargedPaymentFee: number | null
 }
 

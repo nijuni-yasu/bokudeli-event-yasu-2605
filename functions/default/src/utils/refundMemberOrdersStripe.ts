@@ -29,14 +29,14 @@ export type RefundMemberOrdersStripeResult = {
 
 /**
  * Stripe 返金額は食事の自己負担（menu_price − 割引）のみ。
- * 決済手数料（EventStripe.pay_user_fee_amount）は返金しない。
+ * システム利用料（EventStripe.pay_user_fee_amount）は返金しない。
  * pay_amount が手数料込みでも、返金額に手数料を足さない。
  */
 export function computeStripeRefundAmountForMemberOrders(orders: EventMemberOrder[]): number {
   return orders.reduce((sum, o) => sum + o.menu_price - getMemberOrderDiscountAmount(o), 0)
 }
 
-/** 返金累計の上限。pay_amount から非返金の決済手数料を除く。未設定は 0。 */
+/** 返金累計の上限。pay_amount から非返金のシステム利用料を除く。未設定は 0。 */
 export function maxRefundableFoodAmount(payAmount: number, payUserFeeAmount: number | undefined): number {
   return Math.max(0, payAmount - (payUserFeeAmount ?? 0))
 }

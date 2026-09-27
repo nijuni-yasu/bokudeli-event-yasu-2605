@@ -27,7 +27,7 @@ const props = defineProps<{
   /** 指定時はカバー・タイトルをイベント詳細へリンク（操作ボタンはリンク外） */
   eventDetailPath?: RouteLocationRaw
   /**
-   * 確定済みの決済手数料（円）。EventStripe.pay_user_fee_amount の合計。
+   * 確定済みのシステム利用料（円）。EventStripe.pay_user_fee_amount の合計。
    * null は未取得。0 または null のときは手数料行を出さない。
    */
   chargedPaymentFee: number | null

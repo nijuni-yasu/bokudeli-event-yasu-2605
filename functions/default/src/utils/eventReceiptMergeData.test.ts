@@ -73,7 +73,7 @@ describe('buildEventReceiptMergeData', () => {
     expect(data.grandTotal).toBe(convertNumberToYen(1110))
     expect(data.menus).toEqual([{ menu_name: 'カレー', count: 1, price: convertNumberToYen(1000) }])
     expect(data.paymentMethod).toBe(RECEIPT_PAYMENT_METHOD_FALLBACK)
-    expect(data.event).toBe('カレー会 / お食事代および決済手数料として')
+    expect(data.event).toBe('カレー会 / お食事代およびシステム利用料として')
   })
 
   it('店番号が無いときは適格請求書ではないと書き、手数料 0 はお食事代のみ', () => {

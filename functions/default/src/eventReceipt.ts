@@ -95,7 +95,7 @@ export const eventReceipt = onCall<EventReceiptRequest, Promise<EventReceiptResp
         pay_community_bill_off_amount: order.pay_community_bill_off_amount,
         pay_enterprise_subsidy_amount: order.pay_enterprise_subsidy_amount,
       }))
-    // 個別キャンセル後は食事の返金分だけ差し引く。決済手数料は満額のまま（番号は初回採番）
+    // 個別キャンセル後は食事の返金分だけ差し引く。システム利用料は満額のまま（番号は初回採番）
     const jsonDataForMerge = buildEventReceiptMergeData({
       eventName: event.event_name,
       eventStartDatetime: event.event_start_datetime,

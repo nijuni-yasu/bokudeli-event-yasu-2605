@@ -13,7 +13,7 @@ describe('buildUserPaymentFeeCheckoutLineItem', () => {
     expect(buildUserPaymentFeeCheckoutLineItemFromSelfPay(0)).toBeNull()
   })
 
-  it('自己負担 1000 円は 決済手数料 110 円の inclusive line item', () => {
+  it('自己負担 1000 円は システム利用料 110 円の inclusive line item', () => {
     const item = buildUserPaymentFeeCheckoutLineItemFromSelfPay(1000)
     expect(item).toEqual({
       price_data: {
