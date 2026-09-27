@@ -227,6 +227,8 @@ export default {
     send_email: '主催者へメッセージを送信する',
     order_detail: '注文内容',
     menu_name: 'メニュー名',
+    option: 'オプション',
+    no_option: 'ー',
     menu_price: '金額',
     user_name: '名前',
     order_date: '注文日時',

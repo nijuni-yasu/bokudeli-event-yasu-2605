@@ -18,7 +18,7 @@ import { getNamesPrintPath } from '@/navigation/utils'
 import { getNamesPrintPdf } from '@shokujii/base/utils/namesPrint.js'
 import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl.js'
 import { computed, ref, watch } from 'vue'
-import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
+import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { getEventUrl, getUserUrl } from '@shokujii/common/utils/urls.js'
 import {
@@ -74,6 +74,9 @@ const confirmDialogContent = computed(() => {
     cancelText: $t('order_detail.confirm_decline_dialog.close'),
   }
 })
+
+const selectedOptionItems = (order: EventMemberOrder): NonNullable<EventMemberOrder['selected_options']> =>
+  order.selected_options ?? []
 
 watch(reservationAction, (newValue) => {
   shopComment.value = newValue === 0 ? $t('order_detail.accept_order_sample') : $t('order_detail.decline_order_sample')
@@ -328,6 +331,7 @@ const downloadNamesPrint = async () => {
                 <th>#</th>
                 <th>{{ $t('order_detail.user_name') }}</th>
                 <th>{{ $t('order_detail.menu_name') }}</th>
+                <th>{{ $t('order_detail.option') }}</th>
                 <th>{{ $t('order_detail.menu_price') }}</th>
                 <th>{{ $t('order_detail.order_date') }}</th>
               </tr>
@@ -343,7 +347,15 @@ const downloadNamesPrint = async () => {
                     </div>
                   </a>
                 </td>
-                <td>{{ formatOrderMenuDisplayName(order.menu_name, order.selected_options) }}</td>
+                <td>{{ order.menu_name }}</td>
+                <td class="order-options">
+                  <div v-for="item in selectedOptionItems(order)" :key="`${item.option_id}-${item.item_id}`">
+                    {{ item.item_name }}
+                  </div>
+                  <span v-if="selectedOptionItems(order).length === 0" class="text-medium-emphasis">{{
+                    $t('order_detail.no_option')
+                  }}</span>
+                </td>
                 <td>{{ $n(order.menu_price, 'currency') }}</td>
                 <td>{{ order.ordered_at != null ? convertToDatetime(order.ordered_at) : '' }}</td>
               </tr>
@@ -355,6 +367,7 @@ const downloadNamesPrint = async () => {
               <tr>
                 <th>#</th>
                 <th>{{ $t('order_detail.menu_name') }}</th>
+                <th>{{ $t('order_detail.option') }}</th>
                 <th>{{ $t('order_detail.order_count') }}</th>
                 <th>{{ $t('order_detail.unit_price') }}</th>
                 <th>{{ $t('order_detail.subtotal_price') }}</th>
@@ -367,6 +380,14 @@ const downloadNamesPrint = async () => {
               >
                 <td>{{ key + 1 }}</td>
                 <td>{{ subtotalOrder.name }}</td>
+                <td class="order-options">
+                  <template v-if="subtotalOrder.optionItemNames.length > 0">
+                    <div v-for="(itemName, itemIndex) in subtotalOrder.optionItemNames" :key="`${key}-${itemIndex}`">
+                      {{ itemName }}
+                    </div>
+                  </template>
+                  <span v-else class="text-medium-emphasis">{{ $t('order_detail.no_option') }}</span>
+                </td>
                 <td>{{ subtotalOrder.count }}</td>
                 <td>{{ $n(subtotalOrder.price, 'currency') }}</td>
                 <td>{{ $n(subtotalOrder.price * subtotalOrder.count, 'currency') }}</td>
@@ -401,8 +422,14 @@ const downloadNamesPrint = async () => {
 <style scoped lang="scss">
 tbody {
   tr {
-    height: 70px;
+    height: auto;
+    min-height: 70px;
   }
+}
+
+.order-options {
+  line-height: 1.5;
+  vertical-align: middle;
 }
 
 .name-link {
