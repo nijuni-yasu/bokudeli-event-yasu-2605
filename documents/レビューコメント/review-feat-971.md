@@ -33,6 +33,8 @@
 | [ ] | RC-28 | 4114073794, 4114228685, 5853357251 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 課金開始とフロント表示の互換性確保が必要<br>スコープ内に見直し、旧画面を含む段階切替を設計する案 |
 | [x] | RC-29 | 4114336068, 4114336569 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | キャンセル状態の複合キー化は対応済み<br>ダイアログと loading の代入・比較を両方確認 |
 | [ ] | RC-30 | 4114454601 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭, 👤 UX | 🔧 微修正 | M | EventStripe 欠落をレガシーと同じ 0 円にしている<br>フィールド未設定とドキュメント欠落の区別は表示方針が未決 |
+| [ ] | RC-31 | 4114705594 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | M | 領収書が communityId を渡さない<br>別コミュニティの event_id で Stripe not found になり得る |
+| [ ] | RC-32 | 4114705596 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📄 ドキュメントのみ | S | pay_amount の不変条件が手数料分ずれる<br>既存仕様の等式を手数料控除後に更新する |
 
 ---
 
@@ -2221,5 +2223,144 @@ GitHub id: 4114336569
 **想定工数**: M
 
 **判断理由**: `sumChargedUserPaymentFee` はフィールド未設定もドキュメント無しも 0 にする。仕様書は「未設定または 0 の既存 EventStripe は手数料 0」で、ドキュメント欠落までは 0 と書いていない。`stripe_id` は Webhook で EventStripe 作成と同時に付くため、ドキュメント欠落は通常のレガシー決済ではなくデータ不整合である。欠落時に注文一覧をエラーにするか、手数料だけ未確定にするかは RC-24 と同じ表示判断が必要で、修正方針が一意でない。自動修正はしない。
+
+---
+
+## 評価セッション（2026-09-27 17:52・review-comments-evaluate）
+
+- **評価日時**: 2026-09-27 17:52 JST
+- **ブランチ名**: feat/971
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2361
+- **REVIEW_REQUEST_SINCE**: 2026-09-27T08:43:19Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（GitHub id: 5854301045・依頼定型文）
+- **重複除外**: Copilot 5854309841 は RC-20、RC-21、RC-24、RC-30 と同一。Codex 4114705592 は RC-24 と同一。新規 RC は採番しない。
+- **手順 4a 自動修正**: なし（新規は 🟡 のみ。RC-31 は工数 M かつ 👤 UX、RC-32 は 📑 仕様書と 💰 金銭のため対象外）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-31 | 4114705594 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害, 👤 UX | 🔧 微修正 | M | 領収書が communityId を渡さない<br>別コミュニティの event_id で Stripe not found になり得る |
+| [ ] | RC-32 | 4114705596 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 📄 ドキュメントのみ | S | pay_amount の不変条件が手数料分ずれる<br>既存仕様の等式を手数料控除後に更新する |
+
+---
+
+**識別子**: RC-31（GitHub id: 4114705594）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/pages/orders.vue:160`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -152,25 +155,45 @@ watch(
+         {{ $t('user_profile.empty.orders') }}
+       </div>
+       <v-row v-else>
+-        <v-col v-for="event in orderHistoryEvents" :key="`order_${event.event_id}`" sm="12" md="6" lg="4" cols="12">
++        <v-col
++          v-for="event in orderHistoryEvents"
++          :key="`order_${getUserOrderHistoryEventKey(event.community_id, event.event_id)}`"
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  領収書にもコミュニティ ID を引き渡す**
+
+複合キー化により同じ `event_id` を持つ別コミュニティのカードを両方表示できるようになりましたが、領収書導線は引き続き `eventId` と `stripeId` しか渡さず、`eventReceipt` は `getEvent(eventId)` の collection-group 検索で先頭1件を選びます。この条件で先頭ではないコミュニティの領収書を開くと、別コミュニティ配下で Stripe ドキュメントを探して `Stripe not found` になるため、emit・URL・Callable request に `communityId` を追加して `getEventInCommunity` を使ってください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 領収書が communityId を渡さない<br>別コミュニティの event_id で Stripe not found になり得る
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: orders.vue の downloadReceipt は eventId と stripeId だけを渡す。eventReceipt は getEvent(eventId) の collectionGroup limit 1 でイベントを決め、その community_id で Stripe を読む。同じ event_id が別コミュニティにあると、先頭以外の領収書は Stripe not found になる。注文一覧の複合キーとは別の導線なので新規 RC とする。emit、URL、Callable、getEventInCommunity までまたぐため、この評価では実装しない。
+
+---
+
+**識別子**: RC-32（GitHub id: 4114705596）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `common/src/utils/paymentUserFee.ts:35`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,101 @@
++/**
++ * Stripe 実課金の自己負担額に対するシステム利用料（画面上の名称）。
++ * `MIN(220, MAX(110, FLOOR(自己負担 × 0.1, 100) × 1.1))` と同等。自己負担 0 以下は 0。
++ *
++ * @see documents/01_マネタイズと決済/02_ユーザー決済手数料.md
++ */
++import type { CommunityBillSettingsType, EventPaymentType } from '../schemas/Event.js'
++
++/** 1,000 円刻みの税込手数料単位（最低額でもある） */
++export const USER_PAYMENT_FEE_UNIT = 110
++/** 1 セッションあたりの手数料上限 */
++export const USER_PAYMENT_FEE_MAX = 220
++
++export function computeUserPaymentFeeFromSelfPay(selfPay: number): number {
++  if (selfPay <= 0) return 0
++  return Math.min(
++    USER_PAYMENT_FEE_MAX,
++    Math.max(USER_PAYMENT_FEE_UNIT, Math.floor(selfPay / 1000) * USER_PAYMENT_FEE_UNIT),
++  )
++}
++
++export function computeCheckoutTotalFromSelfPay(selfPay: number): { selfPay: number; fee: number; total: number } {
++  const fee = computeUserPaymentFeeFromSelfPay(selfPay)
++  return { selfPay, fee, total: selfPay + fee }
++}
++
++/** Webhook が EventStripe に書く pay_amount / pay_user_fee_amount。手数料 0 のレガシーは fee フィールドを省略。 */
++export function computeEventStripePayFields(selfPay: number): {
++  pay_amount: number
++  pay_user_fee_amount?: number
++} {
++  const fee = computeUserPaymentFeeFromSelfPay(selfPay)
++  return {
++    pay_amount: selfPay + fee,
++    ...(fee > 0 ? { pay_user_fee_amount: fee } : {}),
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  pay_amount の新しい不変条件を既存仕様書へ反映する**
+
+ここで `pay_amount` を自己負担額とシステム利用料の合計へ変更したため、既存の有効な仕様書に残る `pay_amount + pay_community_bill_off_amount = Σ menu_price`（`documents/01_マネタイズと決済/03_無料参加・割引参加_EventMemberOrder対応.md:228`）および企業補助版の同じ不変条件（`documents/08_エンタープライズ/10_仕様/02_アーキテクチャ.md:506`、`04_詳細_割引・決済.md:726,841`）は常に手数料分だけ不成立になります。今後の集計・検算実装が手数料を商品額として扱わないよう、これらを `pay_amount - pay_user_fee_amount + 補助額 = Σ menu_price` に更新してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: pay_amount の不変条件が手数料分ずれる<br>既存仕様の等式を手数料控除後に更新する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💰 金銭
+
+**変更種別**: 📄 ドキュメントのみ
+
+**想定工数**: S
+
+**判断理由**: computeEventStripePayFields は pay_amount を自己負担額とシステム利用料の合計にする。03_無料参加・割引参加_EventMemberOrder対応.md の等式は pay_amount を参加者の実支払額だけとして書いてあり、手数料分だけ合わない。企業補助の同じ等式も同様。等式の更新自体は指摘どおりでよいが、主催者負担と企業補助が同時にあるときの式は仕様の確認が要る。📑 と 💰 があるため自動修正はしない。
 
 ---
