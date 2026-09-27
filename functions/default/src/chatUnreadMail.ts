@@ -27,8 +27,8 @@ const logger = createModuleLogger('chatUnreadMail')
 
 export const CHAT_UNREAD_MAIL_TEMPLATE_ID = 'd-8d54dcbff9bd45e8b2f0355efb92d42f'
 
-/** コンソールでグループ作成後に差し替える。0 のあいだは送らない */
-export const CHAT_UNREAD_MAIL_ASM_GROUP_ID = 0
+/** SendGrid Unsubscribe Group「チャットの未読通知」 */
+export const CHAT_UNREAD_MAIL_ASM_GROUP_ID = 36010
 
 export const isChatUnreadMailTemplateConfigured = (): boolean => {
   return CHAT_UNREAD_MAIL_TEMPLATE_ID.startsWith('d-') && !CHAT_UNREAD_MAIL_TEMPLATE_ID.includes('pending')
