@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import type { ChatMembership } from '@shokujii/common/schemas/ChatMembership.js'
 import { DEFAULT_TIME_ZONE } from '@shokujii/common/utils/datetime.js'
+import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 
 export const CHAT_UNREAD_MAIL_TIME_ZONE = DEFAULT_TIME_ZONE
 export const CHAT_UNREAD_MAIL_DEBOUNCE_MILLIS = 15 * 60 * 1000
@@ -25,6 +26,8 @@ export type ChatUnreadMailRoomPayload = {
   unread_count: number
   preview: string
   chat_url: string
+  /** イベントチャットのカバー画像 URL。イベント以外は空文字 */
+  cover_url: string
 }
 
 export type ChatUnreadMailTemplateData = {
@@ -109,6 +112,21 @@ export const shouldSendChatUnreadMail = (params: {
 
 export const sortUnreadMembershipsForMail = (memberships: ChatMembership[]): ChatMembership[] => {
   return [...memberships].sort((a, b) => (b.last_message_at ?? 0) - (a.last_message_at ?? 0))
+}
+
+export const buildChatUnreadMailCoverUrl = (
+  membership: Pick<ChatMembership, 'room_type' | 'community_id' | 'event_id'>,
+  toStorageUrl: (storagePath: string) => string,
+): string => {
+  if (membership.room_type !== 'event') {
+    return ''
+  }
+  const communityId = membership.community_id
+  const eventId = membership.event_id
+  if (communityId == null || communityId === '' || eventId == null || eventId === '') {
+    return ''
+  }
+  return toStorageUrl(getEventCoverStoragePath(communityId, eventId))
 }
 
 export const buildChatUnreadMailSubject = (unreadRoomCount: number, firstRoomName: string): string => {

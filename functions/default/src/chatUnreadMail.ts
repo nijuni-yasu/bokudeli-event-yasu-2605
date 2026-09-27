@@ -8,13 +8,14 @@ import {
   CHAT_UNREAD_MAIL_FALLBACK_ROOM_NAME,
   CHAT_UNREAD_MAIL_MAX_ROOMS,
   CHAT_UNREAD_MAIL_TIME_ZONE,
+  buildChatUnreadMailCoverUrl,
   buildChatUnreadMailSubject,
   buildChatUnreadMailTemplateData,
   resolveChatMailSlot,
   sortUnreadMembershipsForMail,
   type ChatUnreadMailRoomPayload,
 } from './utils/chatUnreadMail.js'
-import { getChatUrlForUser } from './utils/urls.js'
+import { convertStoragePathToURL, getChatUrlForUser } from './utils/urls.js'
 import { listActiveUnreadChatMemberships } from './stores/chatMembership.js'
 import { getChatRoom } from './stores/chatRoom.js'
 import { getCommunity } from './stores/community.js'
@@ -160,6 +161,7 @@ const sendChatUnreadMailToUser = async (
         unread_count: membership.unread_count,
         preview: membership.last_message_preview ?? '',
         chat_url: chatUrl,
+        cover_url: buildChatUnreadMailCoverUrl(membership, convertStoragePathToURL),
       })
     }
 

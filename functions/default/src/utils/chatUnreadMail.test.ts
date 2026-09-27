@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildChatUnreadMailCoverUrl,
   buildChatUnreadMailSubject,
   buildChatUnreadMailTemplateData,
   isSameChatMailSlot,
@@ -124,6 +125,27 @@ describe('shouldSendChatUnreadMail', () => {
   })
 })
 
+describe('buildChatUnreadMailCoverUrl', () => {
+  const toStorageUrl = (storagePath: string): string => `https://storage.example/${storagePath}`
+
+  it('returns the event cover url for an event room', () => {
+    expect(
+      buildChatUnreadMailCoverUrl(
+        { room_type: 'event', community_id: 'community-1', event_id: 'event-1' },
+        toStorageUrl,
+      ),
+    ).toBe('https://storage.example/communities/community-1/events/event-1/cover')
+  })
+
+  it('returns an empty string for a community room', () => {
+    expect(buildChatUnreadMailCoverUrl({ room_type: 'community', community_id: 'community-1' }, toStorageUrl)).toBe('')
+  })
+
+  it('returns an empty string when the event id is missing', () => {
+    expect(buildChatUnreadMailCoverUrl({ room_type: 'event', community_id: 'community-1' }, toStorageUrl)).toBe('')
+  })
+})
+
 describe('buildChatUnreadMail payload', () => {
   it('uses the room name for a single unread room', () => {
     expect(buildChatUnreadMailSubject(1, '春の食事会')).toBe('春の食事会に未読のチャットがあります')
@@ -139,6 +161,7 @@ describe('buildChatUnreadMail payload', () => {
       unread_count: 1,
       preview: 'hello',
       chat_url: `https://example.com/chat/${index}`,
+      cover_url: '',
     }))
     const data = buildChatUnreadMailTemplateData({
       userName: '太郎',
