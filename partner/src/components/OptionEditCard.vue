@@ -77,11 +77,17 @@ const handleSubmit = () => {
           :rules="[(v: string) => maxLengthValidator(v ?? '', 200)]"
           rows="2"
         />
-        <v-radio-group v-model="option.selection" :label="$t('option_edit_card.selection')" inline hide-details>
-          <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
-          <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
-        </v-radio-group>
-        <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
+        <div>
+          <v-radio-group v-model="option.selection" :label="$t('option_edit_card.selection')" inline hide-details>
+            <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
+            <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
+          </v-radio-group>
+          <p class="option-edit-card__hint option-edit-card__hint--lines">{{ $t('option_edit_card.selection_hint') }}</p>
+        </div>
+        <div>
+          <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
+          <p class="option-edit-card__hint">{{ $t('option_edit_card.required_hint') }}</p>
+        </div>
         <div>
           <div class="text-subtitle-2 mb-2">{{ $t('option_edit_card.items') }}</div>
           <div
@@ -128,6 +134,19 @@ const handleSubmit = () => {
 </template>
 
 <style scoped lang="scss">
+.option-edit-card__hint {
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+  text-align: left;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.option-edit-card__hint--lines {
+  white-space: pre-line;
+}
+
 .option-edit-card__item-name {
   flex: 1 1 auto;
   min-width: 0;

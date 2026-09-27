@@ -181,6 +181,8 @@ export default {
   options: {
     add: 'オプションの追加',
     edit: 'オプションの編集',
+    intro:
+      'メニューに設定できる「オプションメニュー」の選択肢を作成します。\n大盛り、トッピング、ドリンクセットなど、同じ選択肢を複数のメニューで使えます。\n作成したあとは、メニュー編集画面の「設定するオプション」で各メニューに設定してください。',
     empty: 'オプションはまだありません',
     saved: 'オプションを保存しました',
     save_error: 'オプションを保存できませんでした',
@@ -188,8 +190,6 @@ export default {
     delete_error: 'オプションを削除できませんでした',
     delete_confirm: 'このオプションを削除しますか？メニューから外されます。',
     delete: '削除',
-    item_count: '項目 {0}',
-    menu_count: 'メニュー {0}件',
     unused: '未使用',
   },
   orders: {
@@ -286,7 +286,7 @@ export default {
     limit_per_event_hint:
       '1つのイベントで受け付ける上限の食数です。すでに注文受付中のイベントには反映されません。変更を反映するには、イベントを差し戻してから再度予約承認してください。',
     error_limit_per_event: '1〜1000の整数を入力してください',
-    options: '付けるオプション',
+    options: '設定するオプション',
     options_empty: '先にオプションを作成してください',
     allergens: 'アレルギー（特定原材料）',
     badges: '表示バッジ',
@@ -298,7 +298,11 @@ export default {
     selection: '選択方法',
     selection_single: '単一',
     selection_multiple: '複数',
+    selection_hint:
+      '「単一」は1つだけ選べます。大盛り/中盛りのサイズや、ドリンクセットなど\n「複数」はいくつか同時に選べます。カレーの追加トッピングなど',
     required: '必須',
+    optional: '任意',
+    required_hint: '「必須」をオンにすると選ばないと注文できません。オフなら選ばなくても注文できます。',
     items: '項目',
     item_name: '項目名',
     price_delta: '金額差分',

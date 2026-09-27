@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import OptionEditCard from '@/components/OptionEditCard.vue'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
+import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiPlus, mdiDelete } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 
@@ -16,24 +17,32 @@ const partnerStore = usePartnerStore(partnerId)
 const menus = computed<BokudeliPartnerMenu[]>(() => partnerStore.menus ?? [])
 const options = computed<BokudeliPartnerOption[]>(() => partnerStore.options ?? [])
 
-const menuCountByOptionId = computed(() => {
-  const counts = new Map<string, number>()
+const attachedMenusByOptionId = computed(() => {
+  const attached = new Map<string, { menuId: string; name: string }[]>()
   for (const menu of menus.value) {
     for (const optionId of menu.option_ids ?? []) {
-      counts.set(optionId, (counts.get(optionId) ?? 0) + 1)
+      const current = attached.get(optionId) ?? []
+      current.push({ menuId: menu.menu_id, name: menu.menu_name })
+      attached.set(optionId, current)
     }
   }
-  return counts
+  return attached
 })
+
+const attachedMenus = (optionId: string): { menuId: string; name: string }[] =>
+  attachedMenusByOptionId.value.get(optionId) ?? []
 
 const namedItems = (option: BokudeliPartnerOption): BokudeliPartnerOption['option_items'] =>
   option.option_items.filter((item) => item.name.trim() !== '')
 
 const formatPriceDelta = (priceDelta: number): string => {
   if (priceDelta > 0) {
-    return `+${priceDelta}`
+    return `+¥${priceString(priceDelta)}`
   }
-  return String(priceDelta)
+  if (priceDelta < 0) {
+    return `-¥${priceString(Math.abs(priceDelta))}`
+  }
+  return `¥${priceString(0)}`
 }
 
 const targetOption: Ref<BokudeliPartnerOption | null> = ref(null)
@@ -129,6 +138,7 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
           {{ $t('options.add') }}
         </v-btn>
       </div>
+      <p class="options-intro mx-4 text-body-2 text-medium-emphasis">{{ $t('options.intro') }}</p>
       <div class="ma-4">
         <p v-if="options.length === 0" class="text-medium-emphasis">{{ $t('options.empty') }}</p>
         <div v-else class="d-flex flex-column ga-3">
@@ -151,31 +161,43 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
                   {{ option.option_description }}
                 </div>
                 <div class="d-flex flex-wrap ga-1 mt-2">
-                  <v-chip size="small" label variant="tonal">
+                  <v-chip size="small" label variant="outlined">
                     {{
                       option.selection === 'single'
                         ? $t('option_edit_card.selection_single')
                         : $t('option_edit_card.selection_multiple')
                     }}
                   </v-chip>
-                  <v-chip v-if="option.required" size="small" label color="primary" variant="tonal">
-                    {{ $t('option_edit_card.required') }}
-                  </v-chip>
                   <v-chip size="small" label variant="outlined">
-                    {{ $t('options.item_count', [option.option_items.length]) }}
-                  </v-chip>
-                  <v-chip size="small" label variant="tonal">
-                    {{
-                      (menuCountByOptionId.get(option.option_id) ?? 0) > 0
-                        ? $t('options.menu_count', [menuCountByOptionId.get(option.option_id) ?? 0])
-                        : $t('options.unused')
-                    }}
+                    {{ option.required ? $t('option_edit_card.required') : $t('option_edit_card.optional') }}
                   </v-chip>
                 </div>
                 <div v-if="namedItems(option).length > 0" class="d-flex flex-wrap align-center ga-1 mt-2">
-                  <v-chip v-for="item in namedItems(option)" :key="item.item_id" size="small" label variant="outlined">
+                  <v-chip
+                    v-for="item in namedItems(option)"
+                    :key="item.item_id"
+                    size="small"
+                    label
+                    color="primary"
+                    variant="tonal"
+                  >
                     {{ item.name }} {{ formatPriceDelta(item.price_delta) }}
                   </v-chip>
+                </div>
+                <div v-if="attachedMenus(option.option_id).length > 0" class="d-flex flex-wrap align-center ga-1 mt-2">
+                  <v-chip
+                    v-for="menu in attachedMenus(option.option_id)"
+                    :key="menu.menuId"
+                    size="small"
+                    label
+                    color="warning"
+                    variant="tonal"
+                  >
+                    {{ menu.name }}
+                  </v-chip>
+                </div>
+                <div v-else class="d-flex flex-wrap ga-1 mt-2">
+                  <v-chip size="small" label variant="outlined">{{ $t('options.unused') }}</v-chip>
                 </div>
               </div>
               <v-btn
@@ -204,6 +226,10 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
 <style scoped lang="scss">
 .option-row {
   cursor: pointer;
+}
+
+.options-intro {
+  white-space: pre-line;
 }
 
 .option-row__body {
