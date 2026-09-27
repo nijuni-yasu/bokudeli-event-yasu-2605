@@ -40,6 +40,11 @@
 | [x] | RC-34 | 5846025147 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot が RC-11 と RC-19 を実装した報告<br>新しい指摘はない |
 | [x] | RC-35 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 1食あたり文言を依存のない computed で中継している<br>テンプレートの `$t` に置く |
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 任意の単一選択から「選ばない」が消えている<br>ラジオと文言を戻す |
+| [x] | RC-37 | 5329573969 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>個別 RC で扱う |
+| [x] | RC-38 | 5329588949 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC で扱う |
+| [x] | RC-39 | 4114702159 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | ラジオラベルを ¥0 形式にしてほしい<br>仕様の ¥0 は内訳行。MenuPriceBreakdown で出している |
+| [ ] | RC-40 | 4114711280 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
+| [x] | RC-41 | 4114711275 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 0円の注文なし参加がカート検証で落ちる<br>本体0円かつ合計0円のときだけ通す |
 
 ---
 
@@ -1622,4 +1627,446 @@ Copilot review overview。未解決として selected_items の検証、option_i
 
 **判断理由**: 仕様 §4.2.3 は任意の単一選択を未選択のままにできる。空文字は `setSingleValue` が選択解除として扱っており、戻し方は一意。
 
+---
 
+## 評価セッション（2026-09-27 17:57・review-comments-evaluate）
+
+- **評価日時**: 2026-09-27 17:57 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **since**: 2026-09-27T08:43:34Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（依頼コメント 5854303653）
+- **重複除外**: 7（5854318932=RC-14、4114702066/4114702084/4114702108=RC-29、4114702181=RC-30、4114702125=RC-31、4114702139=RC-32）
+- **新規 RC**: RC-37〜RC-41
+- **手順 4a 自動修正**: RC-41（🚨 1件）。🟡 は 👤 UX のため対象外（RC-40）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-37 | 5329573969 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>個別 RC で扱う |
+| [x] | RC-38 | 5329588949 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC で扱う |
+| [x] | RC-39 | 4114702159 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | ラジオラベルを ¥0 形式にしてほしい<br>仕様の ¥0 は内訳行。MenuPriceBreakdown で出している |
+| [ ] | RC-40 | 4114711280 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
+| [x] | RC-41 | 4114711275 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 0円の注文なし参加がカート検証で落ちる<br>本体0円かつ合計0円のときだけ通す |
+
+---
+
+**識別子**: RC-37（GitHub id: 5329573969）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+Unresolved rollout compatibility, validation, Rules, Stripe naming, display, and deletion-consistency issues remain.
+
+**Review effort:** Lite  
+**Findings:** 7 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (9)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [デプロイ順序の不整合でカート金額と注文可否が変わる](#discussion_r4114702066) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [新API拡張が旧Functionsと後方互換になっていない](#discussion_r4114702084) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [EventMenuとFunctionsの独立デプロイで互換性が崩れる](#discussion_r4114702108) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Stripe商品名が長さ制限を超えて決済に失敗する](#discussion_r4114702125) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [オプション削除と参照解除が原子的に実行されない](#discussion_r4114702139) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Callable入力の未検証でTypeErrorが500エラーになる](#discussion_r4110466923)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各項目をRulesで厳格に検証する](#discussion_r4104985599)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [差額表示に円記号と¥0が反映されていない](#discussion_r4114702159) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [selected_itemsの件数上限を検証前に制限していない](#discussion_r4114702181) · New
+</details>
+
+<details>
+<summary><strong>Resolved since last review (2)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [存在しないoption_idを検出してスナップショットを失敗させる](#discussion_r4104985498)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Stripe明細上限超過時の制御されたエラー処理がない](#discussion_r4110466957)
+</details>
+
+**コメント要約**: Copilot 概要は既存スレッドと新規インラインの再掲。
+個別 RC で扱う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 新規の独立した指摘はなく、インラインと既存 RC の一覧である。個別は RC-29〜RC-32・RC-14・RC-23・RC-39 で扱う。
+
+---
+
+**識別子**: RC-38（GitHub id: 5329588949）
+
+**レビュワー**: Codex
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `247b89b395`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+**コメント要約**: Codex レビュー本体は案内のみ。
+具体指摘はインライン RC で扱う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: レビュー本文にコード指摘はなく、インライン（RC-40・RC-41）へ誘導する案内である。
+
+---
+
+**識別子**: RC-39（GitHub id: 4114702159）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:143`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -65,14 +69,84 @@ const countOptions = computed(() => {
+   return Array.from({ length: max }, (_, i) => i + 1)
+ })
+ 
++const menuOptions = computed(() => currentMenu.value.options ?? [])
++
++const resetOptionSelection = () => {
++  const initial: Record<string, string[]> = {}
++  for (const option of menuOptions.value) {
++    initial[option.option_id] =
++      option.required && option.selection === 'single' && option.option_items[0] != null
++        ? [option.option_items[0].item_id]
++        : []
++  }
++  selectedByOption.value = initial
++}
++
++const selectedItems = computed((): CartSelectedItemType[] =>
++  Object.entries(selectedByOption.value).flatMap(([option_id, itemIds]) =>
++    itemIds.map((item_id) => ({ option_id, item_id })),
++  ),
++)
++
++const resolvedSelection = computed(() =>
++  resolveEventMenuCartOrder({
++    eventMenu: currentMenu.value,
++    selectedItems: selectedItems.value,
++  }),
++)
++
++const displayedPrice = computed(() =>
++  resolvedSelection.value.ok ? resolvedSelection.value.menu_price : currentMenu.value.menu_price,
++)
++
++const priceBreakdownLines = computed(() => {
++  const resolved = resolvedSelection.value
++  if (!resolved.ok) {
++    return []
++  }
++  return buildMenuPriceLines(currentMenu.value.menu_name, resolved.menu_price, resolved.selected_options)
++})
++
+ const isAddDisabled = computed(
+-  () => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value) || countOptions.value.length === 0,
++  () =>
++    currentMenu.value.is_sold_out ||
++    isMenuLimitSoldOut(currentMenu.value) ||
++    countOptions.value.length === 0 ||
++    !resolvedSelection.value.ok,
+ )
+ 
++const getSingleValue = (optionId: string): string | null => selectedByOption.value[optionId]?.[0] ?? null
++
++const setSingleValue = (optionId: string, itemId: string | null) => {
++  selectedByOption.value = { ...selectedByOption.value, [optionId]: itemId == null || itemId === '' ? [] : [itemId] }
++}
++
++const isMultipleChecked = (optionId: string, itemId: string): boolean =>
++  selectedByOption.value[optionId]?.includes(itemId) === true
++
++const toggleMultiple = (optionId: string, itemId: string, checked: boolean) => {
++  const current = new Set(selectedByOption.value[optionId] ?? [])
++  if (checked) {
++    current.add(itemId)
++  } else {
++    current.delete(itemId)
++  }
++  selectedByOption.value = { ...selectedByOption.value, [optionId]: [...current] }
++}
++
++const formatDelta = (delta: number): string => {
++  if (delta === 0) {
++    return $t('cart_dialog.price_delta_zero')
++  }
++  const sign = delta > 0 ? '+' : ''
++  return `${sign}${priceString(delta)}`
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 仕様では差額 0 は `¥0`、正負の差額も円記号付きで表示しますが、ここでは 0 を「差額なし」に置き換え、非 0 は `+100` / `-100` のように円記号なしで表示しています。`¥0`、`+¥100`、`-¥100` の形式で表示してください。
+
+**コメント要約**: ラジオラベルを ¥0 形式にしてほしい。
+仕様の ¥0 は内訳行。MenuPriceBreakdown で出している。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 仕様 §4.2.3 / §4.3 の「差額 0 も ¥0」は選択内訳の金額行であり、ラジオ／チェックの項目ラベルではない。内訳は `MenuPriceBreakdown` が `¥0` / `-¥n` で出している。
+
+---
+
+**識別子**: RC-40（GitHub id: 4114711280）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/pages/cart.vue:128`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -99,34 +106,44 @@ async function resolveEventStoreOptions(): Promise<EventStoreOptions> {
+ }
+ 
+ type GroupedMenu = {
++  group_key: string
+   menu_id: string
+   menu_name: string
+   menu_price: number
++  price_lines: MenuPriceLine[]
+   count: number
+   order_ids: string[]
+   totalPrice: number
+   totalDiscount: number
+   totalPayment: number
+   /** 1個分の割引。enterprise_subsidy では品目ごとに異なり得るため表示は totalDiscount/count を使用 */
+   offAmountPerUnit: number
++  selected_items?: { option_id: string; item_id: string }[]
+ }
+ 
+ const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
+   const map = new Map<string, GroupedMenu>()
+   for (const order of orders) {
+     const discount = getMemberOrderDiscountAmount(order)
+-    const existing = map.get(order.menu_id)
++    const key = getOrderMenuGroupKey(order)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  限定食数は全オプション組み合わせの個数で判定する**
+
+同じ限定メニューを異なるオプション構成でカートに入れると、このキーによって別々の `GroupedMenu` になりますが、`canIncrementMenuCount` は現在のグループの `menu.count` しか加算していません。たとえば残り2食で構成AとBを1食ずつ入れた状態でも両方の追加ボタンが有効なままで、`assertMenuLimitsForCartAdd` も既存カート数を数えないため3食目を追加でき、注文確定時の `assertMenuLimitsForConfirm` で初めて拒否されます。増加可否には同じ `menu_id` を持つ全グループの個数合計を使用してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: カートの + が同じ menu_id の他構成を数えない。
+増加可否は同一 menu_id の合計で見る。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 限定食数はメニュー単位（仕様 02 §3.3 / 14）。グループ化後の + が自グループだけを見るのは妥当。確定時の `assertMenuLimitsForConfirm` は menu_id 合計なので在庫は守られる。カート投入は在庫を確保しない（仕様 14 §3.2）ため、`assertMenuLimitsForCartAdd` にカート数を足す必要はない。UI の + だけ同じ menu_id を合計すればよい。👤 UX のため自動修正しない。
+
+---
+
+**識別子**: RC-41（GitHub id: 4114711275）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/utils/menuOption.ts:268`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・189 行）
++  menuName: string,
++  selectedOptions?: readonly SelectedOptionType[] | null,
++  maxLength = NAMES_PRINT_MAX_MENU_LABEL_LENGTH,
++): string {
++  const normalizedName = menuName.normalize('NFKC')
++  if (normalizedName.length >= maxLength) {
++    return normalizedName.slice(0, maxLength)
++  }
++  if (selectedOptions == null || selectedOptions.length === 0) {
++    return normalizedName
++  }
++  const prefix = `${normalizedName}（`
++  const suffix = '）'
++  const remaining = maxLength - prefix.length - suffix.length
++  if (remaining < 1) {
++    return normalizedName
++  }
++  const itemPart = formatSelectedOptionItemNames(selectedOptions)
++  if (itemPart.length <= remaining) {
++    return `${prefix}${itemPart}${suffix}`
++  }
++  const ellipsis = '…'
++  const keep = Math.max(0, remaining - ellipsis.length)
++  return `${prefix}${itemPart.slice(0, keep)}${ellipsis}${suffix}`
++}
++
++export { hasDuplicateOptionItemNames } from '../schemas/menuOption.js'
++
++function isCartSelectedItem(value: unknown): value is CartSelectedItemType {
++  if (typeof value !== 'object' || value == null) {
++    return false
++  }
++  if (!('option_id' in value) || !('item_id' in value)) {
++    return false
++  }
++  return (
++    typeof value.option_id === 'string' &&
++    value.option_id.length > 0 &&
++    typeof value.item_id === 'string' &&
++    value.item_id.length > 0
++  )
++}
++
++function isCartSelectedItemList(value: unknown): value is CartSelectedItemType[] {
++  return Array.isArray(value) && value.every(isCartSelectedItem)
++}
++
++export type ResolveEventMenuCartOrderInput = {
++  eventMenu: {
++    menu_id: string
++    menu_name: string
++    menu_price: number
++    is_selected?: boolean
++    options?: readonly MenuOptionDefinition[] | null
++  }
++  selectedItems?: unknown
++  presentedMenuPrice?: number
++}
++
++export type ResolveEventMenuCartOrderResult =
++  | { ok: true; selected_options: SelectedOptionType[]; menu_price: number }
++  | { ok: false; httpsCode: 'invalid-argument' | 'failed-precondition'; reason: string }
++
++export function resolveEventMenuCartOrder(input: ResolveEventMenuCartOrderInput): ResolveEventMenuCartOrderResult {
++  const optionDefs = input.eventMenu.options ?? []
++  const rawSelected = input.selectedItems ?? []
++  if (!isCartSelectedItemList(rawSelected)) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
++  }
++  const selectedItems = rawSelected
++  if (optionDefs.length === 0 && selectedItems.length > 0) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
++  }
++  const validation = validateCartOptionSelection(optionDefs, selectedItems)
++  if (!validation.ok) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: validation.reason }
++  }
++  const menu_price = computeOrderMenuPrice(input.eventMenu.menu_price, validation.selected_options)
++  if (menu_price < MENU_OPTION_MIN_TOTAL) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_MENU_PRICE_MESSAGE }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  0円の注文なし参加をカート検証から除外する**
+
+このコミットでは `EventMenu` と `EventMemberOrder` が「注文なしで参加」用の `menu_price: 0` を明示的に許容していますが、オプションなしの当該メニューもここで必ず `invalid-argument` になります。`EventCartDialog` でも同じ関数の失敗結果によって追加ボタンが無効になるため、利用者は0円参加メニューをカートへ追加できません。負のオプションによる不正価格は拒否しつつ、正規の0円参加メニューは通すよう条件を分けてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 0円の注文なし参加がカート検証で落ちる。
+本体0円かつ合計0円のときだけ通す。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `EventMenu` / `EventMemberOrder` は 0円の注文なし参加を許容する。オプション仕様の「1円未満は不可」は有料メニューの組み合わせ向けで、既存の 0円参加を壊してはならない。`menu_price === 0` かつ計算結果も 0 のときだけ通し、有料メニューを差額で 0 円以下にはしない。手順 4a で修正済み。
+
+---

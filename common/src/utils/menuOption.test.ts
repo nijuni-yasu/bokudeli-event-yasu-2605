@@ -274,6 +274,43 @@ describe('validateCartOptionSelection / resolveEventMenuCartOrder', () => {
     })
     expect(resolved).toMatchObject({ ok: false, httpsCode: 'invalid-argument' })
   })
+
+  it('0円の注文なし参加は通す', () => {
+    const resolved = resolveEventMenuCartOrder({
+      eventMenu: {
+        menu_id: 'm0',
+        menu_name: '注文なしで参加',
+        menu_price: 0,
+        options: [],
+      },
+    })
+    expect(resolved.ok).toBe(true)
+    if (resolved.ok) {
+      expect(resolved.menu_price).toBe(0)
+      expect(resolved.selected_options).toEqual([])
+    }
+  })
+
+  it('有料メニューをオプションで0円以下にはできない', () => {
+    const resolved = resolveEventMenuCartOrder({
+      eventMenu: {
+        menu_id: 'm1',
+        menu_name: 'バーガー',
+        menu_price: 100,
+        options: [
+          {
+            option_id: 'opt-disc',
+            option_name: '値引き',
+            selection: 'single',
+            required: true,
+            option_items: [{ item_id: 'off', name: '100円引', price_delta: -100 }],
+          },
+        ],
+      },
+      selectedItems: [{ option_id: 'opt-disc', item_id: 'off' }],
+    })
+    expect(resolved).toMatchObject({ ok: false, httpsCode: 'invalid-argument' })
+  })
 })
 
 describe('formatNamesPrintMenuLabel', () => {

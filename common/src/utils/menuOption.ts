@@ -264,7 +264,8 @@ export function resolveEventMenuCartOrder(input: ResolveEventMenuCartOrderInput)
     return { ok: false, httpsCode: 'invalid-argument', reason: validation.reason }
   }
   const menu_price = computeOrderMenuPrice(input.eventMenu.menu_price, validation.selected_options)
-  if (menu_price < MENU_OPTION_MIN_TOTAL) {
+  const isAttendanceOnlyMenu = input.eventMenu.menu_price === 0 && menu_price === 0
+  if (menu_price < MENU_OPTION_MIN_TOTAL && !isAttendanceOnlyMenu) {
     return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_MENU_PRICE_MESSAGE }
   }
   if (input.presentedMenuPrice != null && input.presentedMenuPrice !== menu_price) {
