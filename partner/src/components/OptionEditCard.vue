@@ -82,7 +82,9 @@ const handleSubmit = () => {
             <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
             <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
           </v-radio-group>
-          <p class="option-edit-card__hint option-edit-card__hint--lines">{{ $t('option_edit_card.selection_hint') }}</p>
+          <p class="option-edit-card__hint option-edit-card__hint--lines">
+            {{ $t('option_edit_card.selection_hint') }}
+          </p>
         </div>
         <div>
           <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
