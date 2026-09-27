@@ -132,7 +132,8 @@ export default {
     company_subsidy_total: '会社負担合計',
     your_payment: 'お支払い額',
     payment_fee: 'システム利用料',
-    payment_fee_note: '事前決済（クレジットカード等）のときだけかかります。最低110円・最大220円。キャンセルしても返金されません。',
+    payment_fee_note:
+      '事前決済（クレジットカード等）のときだけかかります。最低110円・最大220円。キャンセルしても返金されません。',
     grand_total: '合計',
     enterprise_subsidy_month: '{0}分の福利厚生割引として適用されます',
     enterprise_subsidy_partial: '⚠ {0}分の割引上限に達するため、一部は全額自己負担となります',
@@ -540,7 +541,8 @@ export default {
     total_price: '【支払い金額】{0}',
     total_self_pay: '【自己負担額】{0}',
     payment_fee: '【システム利用料】{0}',
-    payment_fee_note: '事前決済（クレジットカード等）のときだけかかります。最低110円・最大220円。キャンセルしても返金されません。',
+    payment_fee_note:
+      '事前決済（クレジットカード等）のときだけかかります。最低110円・最大220円。キャンセルしても返金されません。',
     grand_total: '【合計金額】{0}',
     event_payment: '【支払い方法】{0}',
     cancel_order: '参加注文をキャンセルする',
