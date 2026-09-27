@@ -228,6 +228,14 @@ const getMessagesCollectionRef = (roomId: string) => {
   return collection(db, 'chat_rooms', roomId, 'messages').withConverter(chatMessageConverter)
 }
 
+/** 自分のユーザー投稿が1件でもあるか。システムメッセージは sender_user_id を持たないため対象外。取り消し済みも含む */
+export const hasOwnUserChatMessage = async (roomId: string, userId: string): Promise<boolean> => {
+  const snapshot = await getDocs(
+    query(getMessagesCollectionRef(roomId), where('sender_user_id', '==', userId), limit(1)),
+  )
+  return snapshot.size > 0
+}
+
 const toMessageItem = (message: ChatMessage): ChatMessageItem => ({
   id: message.id,
   messageType: message.message_type,

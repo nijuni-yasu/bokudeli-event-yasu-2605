@@ -80,7 +80,7 @@ const onOpenChatClick = async () => {
 
   isNavigatingToChat.value = true
   try {
-    const succeeded = await props.navigateToEventChat(target)
+    const succeeded = await props.navigateToEventChat({ ...target, promptGreeting: true })
     if (succeeded && model.value) {
       model.value = false
     }

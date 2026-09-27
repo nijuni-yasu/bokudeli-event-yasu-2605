@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { mdiClose, mdiImageOutline, mdiMenu, mdiMessageOutline, mdiPlus, mdiSend } from '@mdi/js'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
@@ -12,7 +13,8 @@ import {
 } from '@shokujii/common/schemas/ChatMessage.js'
 import { isAllowedChatAttachmentMimeType } from '@shokujii/base/utils/storage.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
-import { CHAT_SEND_MESSAGE_ERROR, useChatStore } from '@shokujii/base/stores/chat.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
+import { CHAT_SEND_MESSAGE_ERROR, hasOwnUserChatMessage, useChatStore } from '@shokujii/base/stores/chat.js'
 import {
   type ChatComposeDraft,
   isChatComposeDraftEmpty,
@@ -21,8 +23,15 @@ import {
 } from '@shokujii/base/stores/chatComposeDraft.js'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import type { ResolveChatRoomPathFn, ResolveUserPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import {
+  clearChatGreetingPromptState,
+  pickChatGreeting,
+  readChatGreetingPromptRoomId,
+} from '@shokujii/base/utils/chatGreetingPrompt.js'
 import ChatLeftSidebarContent from './ChatLeftSidebarContent.vue'
 import ChatLog from './ChatLog.vue'
+
+const router = useRouter()
 
 const MEMBERSHIP_WAIT_TIMEOUT_MS = 10_000
 const CHAT_ATTACHMENT_MAX_SIZE_LABEL = '10MB'
@@ -88,6 +97,11 @@ type ChatLogPerfectScrollbarRef = {
 const chatLogPS = ref<ChatLogPerfectScrollbarRef | null>(null)
 const selectedImages = ref<SelectedImage[]>([])
 const imageInputRef = ref<HTMLInputElement | null>(null)
+const composeInputRef = ref<{ focus: () => void } | null>(null)
+const isGreetingPromptVisible = ref(false)
+let greetingPromptRequestId = 0
+const greetingPromptStartedRoomIds = new Set<string>()
+const greetingPromptTargetRoomId = ref<string | null>(null)
 
 const canSendMessage = computed(() => {
   return msg.value.trim() !== '' || selectedImages.value.length > 0
@@ -332,6 +346,7 @@ const ensureRoomOpened = (roomId: string): void => {
     store.openRoom(roomId)
     scrollToBottomInChatLog()
   }
+  void maybeOfferGreetingPrompt(roomId)
 }
 
 const onChatLogScroll = (event: Event) => {
@@ -383,6 +398,9 @@ const sendMessage = async () => {
   if (store.activeRoom?.isReadonly === true) return
   if (!canSendMessage.value) return
 
+  // 投稿有無の取得が遅れて完了しても、送信開始後に挨拶案内を出さない。
+  greetingPromptRequestId += 1
+  isGreetingPromptVisible.value = false
   isSending.value = true
   const sentRoomId = roomId
   const sentCompose = toComposeDraftFromLocal()
@@ -442,6 +460,113 @@ const loadOlderMessages = async () => {
     }
   })
 }
+
+const isLocalComposeEmpty = (): boolean => {
+  return msg.value.trim() === '' && selectedImages.value.length === 0
+}
+
+const acceptGreetingPrompt = (): void => {
+  const roomId = greetingPromptTargetRoomId.value ?? store.activeRoomId
+  if (roomId == null || store.activeRoomId !== roomId || !isLocalComposeEmpty()) {
+    dismissGreetingPrompt()
+    return
+  }
+  const choice = pickChatGreeting(currentUserStore.user?.user_name ?? '')
+  const body = t(choice.key, { name: choice.name ?? '', emoji: t(choice.emojiKey) })
+  msg.value = body
+  composeDraftStore.upsertDraft(roomId, { body, attachments: [] })
+  dismissGreetingPrompt()
+  nextTick(() => {
+    composeInputRef.value?.focus()
+  })
+}
+
+const dismissGreetingPrompt = (): void => {
+  isGreetingPromptVisible.value = false
+  greetingPromptTargetRoomId.value = null
+}
+
+const maybeOfferGreetingPrompt = async (roomId: string): Promise<void> => {
+  if (readChatGreetingPromptRoomId() !== roomId) {
+    return
+  }
+  const room = store.activeRoom
+  if (room == null || room.roomId !== roomId) {
+    return
+  }
+  if (room.roomType !== 'event' || room.isReadonly === true) {
+    clearChatGreetingPromptState(router)
+    return
+  }
+  const userId = currentUserId.value
+  if (userId === '') {
+    return
+  }
+  const draft = composeDraftStore.getDraft(roomId)
+  if ((draft != null && !isChatComposeDraftEmpty(draft)) || !isLocalComposeEmpty()) {
+    clearChatGreetingPromptState(router)
+    return
+  }
+  if (greetingPromptStartedRoomIds.has(roomId)) {
+    return
+  }
+  greetingPromptStartedRoomIds.add(roomId)
+  const requestId = ++greetingPromptRequestId
+  let hasSent: boolean
+  try {
+    hasSent = await hasOwnUserChatMessage(roomId, userId)
+  } catch (error) {
+    greetingPromptStartedRoomIds.delete(roomId)
+    reportClientError(error, {
+      componentInfo: 'ChatApp.maybeOfferGreetingPrompt',
+      documentPath: `chat_rooms/${roomId}/messages`,
+      severity: 'warn',
+    })
+    return
+  }
+  if (requestId !== greetingPromptRequestId || store.activeRoomId !== roomId) {
+    greetingPromptStartedRoomIds.delete(roomId)
+    return
+  }
+  if (hasSent || !isLocalComposeEmpty()) {
+    clearChatGreetingPromptState(router)
+    return
+  }
+  greetingPromptTargetRoomId.value = roomId
+  isGreetingPromptVisible.value = true
+  clearChatGreetingPromptState(router)
+}
+
+watch(
+  () => store.activeRoomId,
+  (activeRoomId) => {
+    if (!isGreetingPromptVisible.value) {
+      return
+    }
+    const targetRoomId = greetingPromptTargetRoomId.value
+    if (targetRoomId != null && activeRoomId !== targetRoomId) {
+      dismissGreetingPrompt()
+    }
+  },
+)
+
+watch(
+  () => {
+    const room = store.activeRoom
+    const userId = currentUserId.value
+    if (room == null || store.activeRoomId !== room.roomId || userId === '') {
+      return null
+    }
+    return `${userId}:${room.roomId}:${room.roomType}:${room.isReadonly === true}`
+  },
+  (trigger) => {
+    const roomId = store.activeRoomId
+    if (trigger == null || roomId == null) {
+      return
+    }
+    void maybeOfferGreetingPrompt(roomId)
+  },
+)
 
 const canOpenActiveEvent = computed(() => {
   const room = store.activeRoom
@@ -773,6 +898,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <VTextarea
+                ref="composeInputRef"
                 v-model="msg"
                 variant="plain"
                 class="chat-compose-input"
@@ -845,6 +971,23 @@ onBeforeUnmount(() => {
         <VProgressCircular indeterminate color="primary" />
       </div>
     </VMain>
+
+    <VDialog v-model="isGreetingPromptVisible" max-width="420">
+      <VCard class="pa-6" rounded="lg">
+        <h2 class="text-h6 text-center mb-2">{{ t('chat.greeting_prompt.title') }}</h2>
+        <p class="text-body-2 text-medium-emphasis text-center mb-6">
+          {{ t('chat.greeting_prompt.body') }}
+        </p>
+        <div class="d-flex flex-wrap justify-center ga-2">
+          <VBtn variant="outlined" color="primary" rounded="pill" @click="dismissGreetingPrompt">
+            {{ t('chat.greeting_prompt.cancel') }}
+          </VBtn>
+          <VBtn color="primary" rounded="pill" @click="acceptGreetingPrompt">
+            {{ t('chat.greeting_prompt.ok') }}
+          </VBtn>
+        </div>
+      </VCard>
+    </VDialog>
   </VLayout>
 </template>
 

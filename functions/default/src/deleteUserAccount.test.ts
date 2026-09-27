@@ -101,6 +101,12 @@ vi.mock('./utils/recountUserProfileCounts.js', () => ({
   recountUserProfileCountsForUsers: (...args: unknown[]) => recountUserProfileCountsForUsersMock(...args),
 }))
 
+const deleteChatUnreadMailStateMock = vi.fn()
+
+vi.mock('./stores/chatUnreadMailState.js', () => ({
+  deleteChatUnreadMailState: (...args: unknown[]) => deleteChatUnreadMailStateMock(...args),
+}))
+
 vi.mock('./stores/chatMembership.js', () => ({
   listChatMembershipsForUser: (...args: unknown[]) => listChatMembershipsForUserMock(...args),
   getChatMembershipRef: vi.fn(() => ({ path: 'users/uid/chat_memberships/room1' })),
@@ -149,6 +155,7 @@ beforeEach(() => {
   listFriendUserIdsMock.mockReset()
   recountUserProfileCountsForUsersMock.mockReset()
   listChatMembershipsForUserMock.mockReset()
+  deleteChatUnreadMailStateMock.mockReset()
   batchCommitMock.mockReset()
   batchUpdateMock.mockReset()
   batchSetMock.mockReset()
@@ -173,6 +180,7 @@ beforeEach(() => {
   listFriendUserIdsMock.mockResolvedValue(['userA', 'userC'])
   recountUserProfileCountsForUsersMock.mockResolvedValue(undefined)
   listChatMembershipsForUserMock.mockResolvedValue([])
+  deleteChatUnreadMailStateMock.mockResolvedValue(undefined)
   batchCommitMock.mockResolvedValue(undefined)
   chatRoomSnapshots.clear()
 })
@@ -186,6 +194,7 @@ describe('deleteUserAccount', () => {
     const result = await callDeleteUserAccount('userB')
 
     expect(result).toEqual({ success: true })
+    expect(deleteChatUnreadMailStateMock).toHaveBeenCalledWith('userB')
     expect(listFriendUserIdsMock).toHaveBeenCalledWith('userB')
     expect(recountUserProfileCountsForUsersMock).toHaveBeenCalledWith(['userA', 'userC'])
     expect(deleteUserMock).toHaveBeenCalledWith('userB')
@@ -206,6 +215,18 @@ describe('deleteUserAccount', () => {
     await callDeleteUserAccount('userB')
 
     expect(recountUserProfileCountsForUsersMock).toHaveBeenCalledWith([])
+  })
+
+  it('未読メール状態の削除に失敗しても chat cleanup とアカウント削除は続ける', async () => {
+    deleteChatUnreadMailStateMock.mockRejectedValue(new Error('state delete failed'))
+    listChatMembershipsForUserMock.mockResolvedValue([{ room_id: 'event_comm_evt', id: 'event_comm_evt' }])
+    chatRoomSnapshots.set('event_comm_evt', { exists: true, member_user_ids: ['userB', 'userC'] })
+
+    const result = await callDeleteUserAccount('userB')
+
+    expect(result).toEqual({ success: true })
+    expect(listChatMembershipsForUserMock).toHaveBeenCalledWith('userB')
+    expect(deleteUserMock).toHaveBeenCalledWith('userB')
   })
 
   it('成功後に chat_memberships を削除し member_user_ids から除外する（RC-18）', async () => {

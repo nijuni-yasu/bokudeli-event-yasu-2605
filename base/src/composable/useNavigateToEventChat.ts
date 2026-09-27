@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { waitForEventChatMembership } from '@shokujii/base/stores/chat.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import type { NavigateToEventChatFn } from '@shokujii/base/types/profilePathResolvers.js'
+import { withChatGreetingPrompt } from '@shokujii/base/utils/chatGreetingPrompt.js'
 
 type UseNavigateToEventChatOptions = {
   getChatPath: (roomId: string) => string
@@ -34,7 +35,9 @@ export const useNavigateToEventChat = (options: UseNavigateToEventChatOptions): 
         notification.show(t('chat.error.preparing'), 'warning')
         return false
       }
-      await router.push(options.getChatPath(roomId))
+      const location = options.getChatPath(roomId)
+      const destination = params.promptGreeting === true ? withChatGreetingPrompt(location, roomId) : location
+      await router.push(destination)
       return true
     } catch {
       notification.show(t('chat.error.open_failed'), 'error')

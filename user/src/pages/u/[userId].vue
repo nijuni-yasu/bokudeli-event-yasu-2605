@@ -4,6 +4,8 @@ import { storeToRefs } from 'pinia'
 import UserSuccessJoinEventDialog from '@shokujii/base/components/UserSuccessJoinEventDialog.vue'
 import { useUserEventListByUserId } from '@shokujii/base/stores/userEventList.js'
 import { waitForEventChatMembership } from '@shokujii/base/stores/chat.js'
+import type { NavigateToEventChatFn } from '@shokujii/base/types/profilePathResolvers.js'
+import { withChatGreetingPrompt } from '@shokujii/base/utils/chatGreetingPrompt.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { getChatPath, getOrdersPath } from '@/router/utils'
@@ -50,7 +52,7 @@ watch(
   { immediate: true },
 )
 
-const navigateToEventChat = async (params: { communityId: string; eventId: string }): Promise<boolean> => {
+const navigateToEventChat: NavigateToEventChatFn = async (params) => {
   const uid = profileOwnerUid.value
   if (uid === '') {
     return false
@@ -61,7 +63,9 @@ const navigateToEventChat = async (params: { communityId: string; eventId: strin
       notification.show($t('chat.error.preparing'), 'warning')
       return false
     }
-    await router.push(getChatPath(roomId))
+    const location = getChatPath(roomId)
+    const destination = params.promptGreeting === true ? withChatGreetingPrompt(location, roomId) : location
+    await router.push(destination)
     return true
   } catch {
     notification.show($t('chat.error.open_failed'), 'error')

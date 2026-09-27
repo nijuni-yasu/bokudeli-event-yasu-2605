@@ -385,6 +385,9 @@ service cloud.firestore {
                 allow read: if request.auth != null && request.auth.uid == user_id;
                 allow write: if false;
             }
+            match /notification_states/{stateId} {
+                allow read, write: if false;
+            }
         }
         match /chat_rooms/{roomId} {
             allow read: if isChatRoomMember(roomId);

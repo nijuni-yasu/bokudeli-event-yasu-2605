@@ -13,6 +13,13 @@ export function getUserUrl(host: string, userId: string) {
   return `https://${host}/u/${userId}`
 }
 
+export function getChatUrl(host: string, roomId?: string) {
+  if (roomId != null && roomId !== '') {
+    return `https://${host}/chat/${roomId}`
+  }
+  return `https://${host}/chat`
+}
+
 export const getCommunityInvitationUrl = (host: string, communityAccount: string, tokenId: string): string => {
   return `https://${host}/c/${communityAccount}/invites?t=${tokenId}`
 }

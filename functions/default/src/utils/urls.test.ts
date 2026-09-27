@@ -23,6 +23,7 @@ import {
   getEventUrlForCommunity,
   getEventUrlForEvent,
   getUserUrlForCommunity,
+  getChatUrlForUser,
   resolveAppHostForCommunity,
 } from './urls.js'
 
@@ -143,6 +144,18 @@ describe('urls community host resolution', () => {
     it('enterprise 未存在時は undefined', async () => {
       getEnterpriseById.mockResolvedValue(undefined)
       await expect(getUserUrlForCommunity({ enterprise_id: 'ent-missing' }, 'user-1')).resolves.toBeUndefined()
+    })
+  })
+
+  describe('getChatUrlForUser', () => {
+    it('PF ユーザーは EVENT_HOST のチャット URL を返す', async () => {
+      await expect(getChatUrlForUser({ enterprise_id: null }, 'room-1')).resolves.toBe(
+        'https://pf.example.com/chat/room-1',
+      )
+    })
+
+    it('roomId が無いときは一覧 URL を返す', async () => {
+      await expect(getChatUrlForUser({ enterprise_id: null })).resolves.toBe('https://pf.example.com/chat')
     })
   })
 })

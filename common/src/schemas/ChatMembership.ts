@@ -12,6 +12,7 @@ const ChatMembershipDbSchema = z.object({
   is_active: z.boolean().default(true),
   unread_count: z.number().int().min(0).max(CHAT_UNREAD_COUNT_MAX).default(0),
   last_read_at: TimestampSchema.optional(),
+  last_unread_mail_sent_at: TimestampSchema.optional(),
   last_message_at: TimestampSchema.optional(),
   last_message_preview: z.string().max(CHAT_LAST_MESSAGE_PREVIEW_MAX_LENGTH).optional(),
   created_at: TimestampSchema,
@@ -26,6 +27,7 @@ const ChatMembershipAppSchema = z.object({
   is_active: z.boolean().default(true),
   unread_count: z.number().int().min(0).max(CHAT_UNREAD_COUNT_MAX).default(0),
   last_read_at: EpochMillisSchema.optional(),
+  last_unread_mail_sent_at: EpochMillisSchema.optional(),
   last_message_at: EpochMillisSchema.optional(),
   last_message_preview: z.string().max(CHAT_LAST_MESSAGE_PREVIEW_MAX_LENGTH).optional(),
 })
@@ -50,6 +52,7 @@ export class ChatMembership {
   is_active: boolean = true
   unread_count: number = 0
   last_read_at?: number
+  last_unread_mail_sent_at?: number
   last_message_at?: number
   last_message_preview?: string
   created_at: number

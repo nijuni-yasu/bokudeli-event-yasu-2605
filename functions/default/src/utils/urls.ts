@@ -110,6 +110,17 @@ export const getEventUrlForExternalBrowser = (communityAccount: string, eventId:
 
 export const getUserUrl = (userId: string) => common.getUserUrl(EVENT_HOST.value(), userId)
 
+export async function getChatUrlForUser(
+  user: Pick<CommunityHostSource, 'enterprise_id'>,
+  roomId?: string,
+): Promise<string | undefined> {
+  const host = await resolveAppHostForCommunity(user)
+  if (host == null) {
+    return undefined
+  }
+  return common.getChatUrl(host, roomId)
+}
+
 export const getCommunityInvitationUrl = (communityAccount: string, tokenId: string) =>
   common.getCommunityInvitationUrl(EVENT_HOST.value(), communityAccount, tokenId)
 
