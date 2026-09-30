@@ -194,8 +194,10 @@ export default {
     add: 'カートに追加',
     close: '閉じる',
     required: '必須',
-    no_selection: '選ばない',
-    price_delta_zero: '差額なし',
+    clear_selection: '選択を解除',
+    optional: '任意',
+    count: '個数',
+    price_pending: '—',
     login: 'ご注文にはログインが必要です。\nログイン完了後、再度この画面からメニューを選んでカートに追加してください。',
   },
   event_create_modal: {

@@ -10,9 +10,8 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
-import { buildMenuPriceLines, resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import type { CartSelectedItemType } from '@shokujii/common/schemas/menuOption.js'
-import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -99,13 +98,9 @@ const displayedPrice = computed(() =>
   resolvedSelection.value.ok ? resolvedSelection.value.menu_price : currentMenu.value.menu_price,
 )
 
-const priceBreakdownLines = computed(() => {
-  const resolved = resolvedSelection.value
-  if (!resolved.ok) {
-    return []
-  }
-  return buildMenuPriceLines(currentMenu.value.menu_name, resolved.menu_price, resolved.selected_options)
-})
+const displayedSubtotal = computed(() =>
+  resolvedSelection.value.ok ? resolvedSelection.value.menu_price * selectedCount.value : null,
+)
 
 const isAddDisabled = computed(
   () =>
@@ -135,11 +130,8 @@ const toggleMultiple = (optionId: string, itemId: string, checked: boolean) => {
 }
 
 const formatDelta = (delta: number): string => {
-  if (delta === 0) {
-    return $t('cart_dialog.price_delta_zero')
-  }
-  const sign = delta > 0 ? '+' : ''
-  return `${sign}${priceString(delta)}`
+  const sign = delta > 0 ? '+' : delta < 0 ? '-' : ''
+  return `${sign}¥${priceString(Math.abs(delta))}`
 }
 
 watch(isOpen, (open) => {
@@ -227,57 +219,21 @@ const addCart = async () => {
 </script>
 
 <template>
-  <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeDialog()">
-    <v-card class="pa-sm-10 pa-5">
-      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
-      <v-card-title class="text-left text-h4 py-1 text-wrap">
-        {{ currentMenu.menu_name }}
-      </v-card-title>
-      <v-card-text class="text-left py-2">
-        {{ currentMenu.menu_description }}
-      </v-card-text>
-      <v-card-text v-if="menuOptions.length > 0" class="text-left py-2">
-        <div v-for="option in menuOptions" :key="option.option_id" class="mb-4">
-          <div class="text-subtitle-2 mb-1">
-            {{ option.option_name }}
-            <span v-if="option.required" class="text-error">{{ $t('cart_dialog.required') }}</span>
-          </div>
-          <p
-            v-if="option.option_description != null && option.option_description !== ''"
-            class="text-caption text-medium-emphasis mb-2"
-          >
-            {{ option.option_description }}
-          </p>
-          <v-radio-group
-            v-if="option.selection === 'single'"
-            :model-value="getSingleValue(option.option_id)"
-            :mandatory="option.required"
-            hide-details
-            @update:model-value="(value) => setSingleValue(option.option_id, typeof value === 'string' ? value : null)"
-          >
-            <v-radio v-if="!option.required" :label="$t('cart_dialog.no_selection')" :value="''" />
-            <v-radio
-              v-for="item in option.option_items"
-              :key="item.item_id"
-              :value="item.item_id"
-              :label="`${item.name}（${formatDelta(item.price_delta)}）`"
-            />
-          </v-radio-group>
-          <div v-else>
-            <v-checkbox
-              v-for="item in option.option_items"
-              :key="item.item_id"
-              :model-value="isMultipleChecked(option.option_id, item.item_id)"
-              :label="`${item.name}（${formatDelta(item.price_delta)}）`"
-              hide-details
-              density="compact"
-              @update:model-value="(value) => toggleMultiple(option.option_id, item.item_id, value === true)"
-            />
-          </div>
-        </div>
-      </v-card-text>
-      <v-card-text class="pb-8">
-        <div class="d-flex align-center ga-3">
+  <v-dialog v-model="isOpen" max-width="500px" scrollable @click:outside="closeDialog()">
+    <v-card>
+      <v-card-text class="pa-5 pa-sm-10">
+        <EventMenuImage
+          v-if="eventStore.event != null"
+          :event="eventStore.event"
+          :menu="currentMenu"
+          :alt="currentMenu.menu_name"
+          class="my-3"
+        />
+        <v-card-title class="text-left text-h4 font-weight-bold px-0 py-1 text-wrap">
+          {{ currentMenu.menu_name }}
+        </v-card-title>
+        <div class="text-h5 py-1">¥{{ priceString(currentMenu.menu_price) }}</div>
+        <div v-if="showRemainingChip || showSoldOutStatusChip" class="mt-2">
           <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
           <MenuStatusChips
             v-else-if="showSoldOutStatusChip"
@@ -285,66 +241,131 @@ const addCart = async () => {
             :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
             align="start"
           />
-          <v-spacer />
-          <div v-if="priceBreakdownLines.length === 0" class="text-no-wrap">
-            <span class="text-h5">¥ </span>
-            <span class="text-h4">{{ priceString(displayedPrice) }}</span>
-          </div>
         </div>
-        <div v-if="priceBreakdownLines.length > 0" class="cart-dialog-price mt-4">
-          <MenuPriceBreakdown class="text-body-1" :lines="priceBreakdownLines" />
-          <div class="cart-dialog-price__total text-no-wrap">
-            <span class="text-h5">¥ </span>
-            <span class="text-h4">{{ priceString(displayedPrice) }}</span>
+        <p
+          v-if="currentMenu.menu_description != null && currentMenu.menu_description !== ''"
+          class="text-body-2 text-medium-emphasis mt-4 mb-0"
+        >
+          {{ currentMenu.menu_description }}
+        </p>
+        <div v-for="option in menuOptions" :key="option.option_id" class="mt-6">
+          <v-divider class="mb-5" />
+          <div class="d-flex align-center flex-wrap ga-2 mb-1">
+            <h3 class="text-subtitle-1 font-weight-bold">{{ option.option_name }}</h3>
+            <v-chip
+              :color="option.required ? 'error' : 'secondary'"
+              variant="outlined"
+              size="small"
+              class="flex-shrink-0"
+            >
+              {{ $t(option.required ? 'cart_dialog.required' : 'cart_dialog.optional') }}
+            </v-chip>
+            <v-btn
+              v-if="option.selection === 'single' && !option.required && getSingleValue(option.option_id) != null"
+              variant="text"
+              size="small"
+              class="ms-auto"
+              @click="setSingleValue(option.option_id, null)"
+            >
+              {{ $t('cart_dialog.clear_selection') }}
+            </v-btn>
+          </div>
+          <p
+            v-if="option.option_description != null && option.option_description !== ''"
+            class="text-body-2 text-medium-emphasis mb-2"
+          >
+            {{ option.option_description }}
+          </p>
+          <v-radio-group
+            v-if="option.selection === 'single'"
+            :model-value="getSingleValue(option.option_id)"
+            :mandatory="option.required"
+            class="cart-dialog-options"
+            hide-details
+            @update:model-value="(value) => setSingleValue(option.option_id, typeof value === 'string' ? value : null)"
+          >
+            <v-radio v-for="item in option.option_items" :key="item.item_id" :value="item.item_id">
+              <template #label>
+                <span class="cart-dialog-option-label">
+                  <span>{{ item.name }}</span>
+                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                </span>
+              </template>
+            </v-radio>
+          </v-radio-group>
+          <div v-else class="cart-dialog-options">
+            <v-checkbox
+              v-for="item in option.option_items"
+              :key="item.item_id"
+              :model-value="isMultipleChecked(option.option_id, item.item_id)"
+              hide-details
+              @update:model-value="(value) => toggleMultiple(option.option_id, item.item_id, value === true)"
+            >
+              <template #label>
+                <span class="cart-dialog-option-label">
+                  <span>{{ item.name }}</span>
+                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                </span>
+              </template>
+            </v-checkbox>
           </div>
         </div>
       </v-card-text>
-      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
-        <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
-      </v-row>
-      <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mx-3 mb-2">
-        {{ addErrorMessage }}
-      </v-alert>
-      <v-row class="justify-center mx-1 my-2">
-        <v-btn
-          class="justify-center mx-1 align-self-center"
-          rounded="pill"
-          color="primary"
-          :prepend-icon="mdiCart"
-          :loading="isAddingOrder"
-          :disabled="isAddDisabled"
-          @click="addCart()"
-        >
-          {{ $t('cart_dialog.add') }}
-        </v-btn>
-        <v-btn
-          class="justify-center mx-1 my-2 align-self-center"
-          rounded="pill"
-          size="small"
-          variant="outlined"
-          color="secondary"
-          @click="closeDialog()"
-        >
-          {{ $t('cart_dialog.close') }}
-        </v-btn>
-      </v-row>
+      <v-divider />
+      <div class="pa-5 px-sm-10 py-sm-6 flex-shrink-0">
+        <div class="d-flex align-center justify-space-between ga-4 mb-4">
+          <v-select
+            v-if="countOptions.length > 0"
+            v-model="selectedCount"
+            :items="countOptions"
+            :label="$t('cart_dialog.count')"
+            class="cart-dialog-count"
+            hide-details
+          />
+          <div class="text-h5 text-no-wrap text-right ms-auto">
+            {{ displayedSubtotal == null ? $t('cart_dialog.price_pending') : `¥${priceString(displayedSubtotal)}` }}
+          </div>
+        </div>
+        <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mb-4">
+          {{ addErrorMessage }}
+        </v-alert>
+        <div class="d-flex justify-end align-center flex-wrap ga-3">
+          <v-btn rounded="pill" size="small" variant="outlined" color="secondary" @click="closeDialog()">
+            {{ $t('cart_dialog.close') }}
+          </v-btn>
+          <v-btn
+            rounded="pill"
+            color="primary"
+            :prepend-icon="mdiCart"
+            :loading="isAddingOrder"
+            :disabled="isAddDisabled"
+            @click="addCart()"
+          >
+            {{ $t('cart_dialog.add') }}
+          </v-btn>
+        </div>
+      </div>
     </v-card>
   </v-dialog>
 </template>
 
 <style scoped>
-.cart-dialog-price {
-  width: max-content;
-  max-width: 100%;
+.cart-dialog-options :deep(.v-label) {
+  flex: 1;
+  min-width: 0;
 }
 
-.cart-dialog-price :deep(.menu-price-breakdown) {
-  width: 100%;
-  grid-template-columns: minmax(0, 1fr) max-content;
+.cart-dialog-option-label {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-.cart-dialog-price__total {
-  margin-top: 0.75rem;
-  text-align: right;
+.cart-dialog-count {
+  flex: 0 0 120px;
 }
 </style>
