@@ -1,4 +1,13 @@
-import type { EventMenuOptionType, SelectedOptionType, CartSelectedItemType } from '../schemas/menuOption.js'
+import {
+  MENU_OPTION_IDS_MAX,
+  OPTION_ITEMS_MAX,
+  type EventMenuOptionType,
+  type SelectedOptionType,
+  type CartSelectedItemType,
+} from '../schemas/menuOption.js'
+
+/** 正規の選択はオプション数×項目数まで。超えた配列は走査しない */
+const CART_SELECTED_ITEMS_MAX = MENU_OPTION_IDS_MAX * OPTION_ITEMS_MAX
 
 export const MENU_OPTION_MIN_TOTAL = 1
 export const INVALID_OPTION_SELECTION_MESSAGE = 'オプションの選択が正しくありません'
@@ -143,6 +152,9 @@ export function validateCartOptionSelection(
   optionDefs: readonly MenuOptionDefinition[],
   selectedItems: readonly CartSelectedItemType[],
 ): CartOptionValidationResult {
+  if (selectedItems.length > CART_SELECTED_ITEMS_MAX) {
+    return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
+  }
   const optionById = new Map(optionDefs.map((option) => [option.option_id, option]))
   for (const selected of selectedItems) {
     const option = optionById.get(selected.option_id)
@@ -252,6 +264,9 @@ export type ResolveEventMenuCartOrderResult =
 export function resolveEventMenuCartOrder(input: ResolveEventMenuCartOrderInput): ResolveEventMenuCartOrderResult {
   const optionDefs = input.eventMenu.options ?? []
   const rawSelected = input.selectedItems ?? []
+  if (Array.isArray(rawSelected) && rawSelected.length > CART_SELECTED_ITEMS_MAX) {
+    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
+  }
   if (!isCartSelectedItemList(rawSelected)) {
     return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
   }

@@ -52,6 +52,9 @@ const filteredMenus = computed(() => {
   return selectedMenus == null ? undefined : sortMenusWithSoldOutLast(selectedMenus)
 })
 
+/** スマホはカード幅を確保するため説明文を出さない */
+const showMenuDescription = computed(() => !display.xs.value)
+
 /** 横長レイアウトを使う条件: 2件以下 かつ PC・タブレット（スマホ xs のみグリッド） */
 const useHorizontalLayout = computed(() => {
   if (filteredMenus.value === undefined || filteredMenus.value.length === 0) return false
@@ -90,7 +93,10 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-title class="justify-start text-h5 font-weight-bold text-wrap pa-0 mb-3 flex-shrink-0">
                   {{ menu.menu_name }}
                 </v-card-title>
-                <v-card-text class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0">
+                <v-card-text
+                  v-if="showMenuDescription"
+                  class="text-left text-subtitle-2 px-0 py-0 mb-3 description-text-single flex-shrink-0"
+                >
                   {{ menu.menu_description }}
                 </v-card-text>
                 <div class="menu-spacer" />
@@ -152,7 +158,10 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                 <v-card-title class="justify-start text-h6 font-weight-bold text-wrap pa-1 flex-shrink-0">
                   {{ menu.menu_name }}
                 </v-card-title>
-                <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
+                <v-card-text
+                  v-if="showMenuDescription"
+                  class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0"
+                >
                   {{ menu.menu_description }}
                 </v-card-text>
                 <div class="menu-spacer" />

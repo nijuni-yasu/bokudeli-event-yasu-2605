@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { SelectedOptionType } from '../schemas/menuOption.js'
+import { MENU_OPTION_IDS_MAX, OPTION_ITEMS_MAX, type SelectedOptionType } from '../schemas/menuOption.js'
 import type { MenuOptionDefinition } from './menuOption.js'
 import {
   computeMenuMinTotal,
@@ -217,6 +217,18 @@ describe('validateCartOptionSelection / resolveEventMenuCartOrder', () => {
     menu_price: 1000,
     options: [sizeOption, toppingOption],
   }
+
+  it('selected_items がオプション数×項目数を超えるときは拒否する', () => {
+    const overLimit = Array.from({ length: MENU_OPTION_IDS_MAX * OPTION_ITEMS_MAX + 1 }, () => ({
+      option_id: 'opt-size',
+      item_id: 'large',
+    }))
+    const resolved = resolveEventMenuCartOrder({
+      eventMenu,
+      selectedItems: overLimit,
+    })
+    expect(resolved).toMatchObject({ ok: false, httpsCode: 'invalid-argument' })
+  })
 
   it('selected_items が配列でないときは拒否する', () => {
     const resolved = resolveEventMenuCartOrder({

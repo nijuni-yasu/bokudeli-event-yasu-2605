@@ -134,13 +134,17 @@ const formatDelta = (delta: number): string => {
   return `${sign}¥${priceString(Math.abs(delta))}`
 }
 
-watch(isOpen, (open) => {
-  if (open) {
-    addErrorMessage.value = ''
-    selectedCount.value = countOptions.value[0] ?? 1
-    resetOptionSelection()
-  }
-})
+watch(
+  isOpen,
+  (open) => {
+    if (open) {
+      addErrorMessage.value = ''
+      selectedCount.value = countOptions.value[0] ?? 1
+      resetOptionSelection()
+    }
+  },
+  { immediate: true },
+)
 
 watch(countOptions, (options) => {
   if (options.length === 0) {

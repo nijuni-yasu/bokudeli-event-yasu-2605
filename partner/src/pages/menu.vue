@@ -74,9 +74,14 @@ const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null): Promise<b
       notification.show($t('menu.save_error'), 'error')
       return false
     }
-    const attached = (menu.option_ids ?? [])
+    const optionIds = menu.option_ids ?? []
+    const attached = optionIds
       .map((optionId) => options.value.find((option) => option.option_id === optionId))
       .filter((option): option is BokudeliPartnerOption => option != null)
+    if (attached.length !== optionIds.length) {
+      notification.show($t('menu_edit_card.error_missing_option'), 'error')
+      return false
+    }
     if (!isMenuMinTotalValid(menu.menu_price, attached)) {
       notification.show($t('menu_edit_card.error_min_total'), 'error')
       return false

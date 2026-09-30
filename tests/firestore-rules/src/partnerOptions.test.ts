@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { assertFails, assertSucceeds, initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing'
+import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment,
+  type RulesTestEnvironment,
+} from '@firebase/rules-unit-testing'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 
 const PROJECT_ID = 'firestore-rules-partner-options'
@@ -92,6 +97,7 @@ describe('partner options / menu option fields firestore rules', () => {
     await assertSucceeds(
       menuRef(PARTNER_A, 'menu-1').set({
         menu_name: 'バーガー',
+        menu_description: '説明',
         option_ids: ['opt-1'],
       }),
     )
@@ -101,6 +107,7 @@ describe('partner options / menu option fields firestore rules', () => {
     await assertFails(
       menuRef(PARTNER_A, 'menu-1').set({
         menu_name: 'バーガー',
+        menu_description: '説明',
         option_ids: ['opt-1', 'opt-1'],
       }),
     )
@@ -110,7 +117,43 @@ describe('partner options / menu option fields firestore rules', () => {
     await assertFails(
       menuRef(PARTNER_A, 'menu-1').set({
         menu_name: 'バーガー',
+        menu_description: '説明',
         option_ids: Array.from({ length: 11 }, (_, i) => `opt-${i}`),
+      }),
+    )
+  })
+
+  it('menu_description は 300 文字まで保存できる', async () => {
+    await assertSucceeds(
+      menuRef(PARTNER_A, 'menu-1').set({
+        menu_name: 'バーガー',
+        menu_description: 'あ'.repeat(300),
+      }),
+    )
+  })
+
+  it('menu_description が 301 文字なら作成できない', async () => {
+    await assertFails(
+      menuRef(PARTNER_A, 'menu-1').set({
+        menu_name: 'バーガー',
+        menu_description: 'あ'.repeat(301),
+      }),
+    )
+  })
+
+  it('menu_description が空なら作成できない', async () => {
+    await assertFails(
+      menuRef(PARTNER_A, 'menu-1').set({
+        menu_name: 'バーガー',
+        menu_description: '',
+      }),
+    )
+  })
+
+  it('menu_description が無いと作成できない', async () => {
+    await assertFails(
+      menuRef(PARTNER_A, 'menu-1').set({
+        menu_name: 'バーガー',
       }),
     )
   })

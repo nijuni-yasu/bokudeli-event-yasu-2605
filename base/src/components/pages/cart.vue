@@ -398,12 +398,15 @@ const isMenuSoldOutInCart = (eventId: string, menuId: string): boolean =>
 const getMenuLimitRemainingInCart = (eventId: string, menuId: string): MenuLimitRemainingInfo | undefined =>
   menuLimitRemainingByEvent.value[eventId]?.[menuId]
 
-const canIncrementMenuCount = (eventId: string, menu: GroupedMenu): boolean => {
+const countSameMenuInCart = (groups: readonly GroupedMenu[], menuId: string): number =>
+  groups.reduce((sum, group) => (group.menu_id === menuId ? sum + group.count : sum), 0)
+
+const canIncrementMenuCount = (eventId: string, menu: GroupedMenu, groups: readonly GroupedMenu[]): boolean => {
   const info = getMenuLimitRemainingInCart(eventId, menu.menu_id)
   if (info == null) {
     return true
   }
-  return info.ordered + menu.count < info.limit
+  return info.ordered + countSameMenuInCart(groups, menu.menu_id) < info.limit
 }
 
 const getOrderErrorMessage = (error: unknown): string | null => {
@@ -1006,7 +1009,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                           :icon="mdiPlusCircleOutline"
                           variant="text"
                           :loading="isMenuUpdating(menu)"
-                          :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu)"
+                          :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu, cartItem.groupedMenus)"
                           @click="incrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>

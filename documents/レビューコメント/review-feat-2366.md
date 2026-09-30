@@ -33,7 +33,7 @@
 | [x] | RC-27 | 4110615817 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 🔧 微修正 | S | option_description の型と長さを Rules が見ない<br>存在時は 200 文字以下の文字列にする |
 | [x] | RC-28 | 4110615872 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | オプション設定へのリンクがパス直書き<br>getOptionsPath を使う |
 | [ ] | RC-29 | 4111286766 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 画面と Functions のデプロイ順で金額がずれる<br>同時反映か機能ゲートを決める |
-| [ ] | RC-30 | 4111286772 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items を走査前に件数制限していない<br>正規の上限で切ってから検証する |
+| [x] | RC-30 | 4111286772 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items を走査前に件数制限していない<br>正規の上限で切ってから検証する |
 | [ ] | RC-31 | 5325821161 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | Stripe の商品名が 250 文字を超える<br>切り詰め方を決めてから実装する |
 | [ ] | RC-32 | 4111286768 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | オプション削除がメニュー更新と別書き込み<br>参照解除と削除を同じ batch にする |
 | [x] | RC-33 | 5325813791 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 概要は既存の未解決スレッドの再掲<br>個別 RC で扱う |
@@ -43,8 +43,14 @@
 | [x] | RC-37 | 5329573969 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>個別 RC で扱う |
 | [x] | RC-38 | 5329588949 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC で扱う |
 | [x] | RC-39 | 4114702159 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | ラジオラベルを ¥0 形式にしてほしい<br>仕様の ¥0 は内訳行。MenuPriceBreakdown で出している |
-| [ ] | RC-40 | 4114711280 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
+| [x] | RC-40 | 4114711280 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
 | [x] | RC-41 | 4114711275 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 0円の注文なし参加がカート検証で落ちる<br>本体0円かつ合計0円のときだけ通す |
+| [x] | RC-42 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートモーダル初回だけ選択初期化が走らない<br>`watch(isOpen)` に `immediate: true` を付ける |
+| [x] | RC-43 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | スマホの参加者メニュー一覧が説明文を出す<br>仕様どおり xs では説明文を出さない |
+| [x] | RC-44 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | Rules がメニュー説明文の 300 文字を見ない<br>`menuWriteFieldsValid` で長さを制限する |
+| [x] | RC-45 | 5365750304 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-46 で扱う |
+| [ ] | RC-46 | 4144224625 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 0円の事前決済がカート後に確定できない<br>決済なし確定か、対象の支払い方式を制限する |
+| [x] | RC-47 | 4144265403 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 削除済みオプション ID が保存で戻る<br>欠落 ID があるメニューは保存しない |
 
 ---
 
@@ -1297,7 +1303,7 @@ getOptionsPath を使う。
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 | :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | [ ] | RC-29 | 4111286766 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 画面と Functions のデプロイ順で金額がずれる<br>同時反映か機能ゲートを決める |
-| [ ] | RC-30 | 4111286772 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items を走査前に件数制限していない<br>正規の上限で切ってから検証する |
+| [x] | RC-30 | 4111286772 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items を走査前に件数制限していない<br>正規の上限で切ってから検証する |
 | [ ] | RC-31 | 5325821161 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | Stripe の商品名が 250 文字を超える<br>切り詰め方を決めてから実装する |
 | [ ] | RC-32 | 4111286768 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | オプション削除がメニュー更新と別書き込み<br>参照解除と削除を同じ batch にする |
 | [x] | RC-33 | 5325813791 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 概要は既存の未解決スレッドの再掲<br>個別 RC で扱う |
@@ -1365,7 +1371,7 @@ getOptionsPath を使う。
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -1375,7 +1381,7 @@ getOptionsPath を使う。
 
 **想定工数**: S
 
-**判断理由**: 上限チェック自体は小さいが、セキュリティラベルのため自動修正の対象外。上限値を仕様の 200 にするかは確認してから入れる。
+**判断理由**: 上限チェック自体は小さいが、セキュリティラベルのため自動修正の対象外。上限値を仕様の 200 にするかは確認してから入れる。確認の結果、正規の上限は `MENU_OPTION_IDS_MAX * OPTION_ITEMS_MAX`（200）で一意だったため、走査前に超えた配列を拒否するよう実装した。
 
 ---
 
@@ -1650,7 +1656,7 @@ Copilot review overview。未解決として selected_items の検証、option_i
 | [x] | RC-37 | 5329573969 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>個別 RC で扱う |
 | [x] | RC-38 | 5329588949 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC で扱う |
 | [x] | RC-39 | 4114702159 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | ラジオラベルを ¥0 形式にしてほしい<br>仕様の ¥0 は内訳行。MenuPriceBreakdown で出している |
-| [ ] | RC-40 | 4114711280 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
+| [x] | RC-40 | 4114711280 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートの + が同じ menu_id の他構成を数えない<br>増加可否は同一 menu_id の合計で見る |
 | [x] | RC-41 | 4114711275 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 0円の注文なし参加がカート検証で落ちる<br>本体0円かつ合計0円のときだけ通す |
 
 ---
@@ -1938,7 +1944,7 @@ Useful? React with 👍 / 👎.
 
 **評価**: 🟡 修正提案
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -1948,7 +1954,7 @@ Useful? React with 👍 / 👎.
 
 **想定工数**: S
 
-**判断理由**: 限定食数はメニュー単位（仕様 02 §3.3 / 14）。グループ化後の + が自グループだけを見るのは妥当。確定時の `assertMenuLimitsForConfirm` は menu_id 合計なので在庫は守られる。カート投入は在庫を確保しない（仕様 14 §3.2）ため、`assertMenuLimitsForCartAdd` にカート数を足す必要はない。UI の + だけ同じ menu_id を合計すればよい。👤 UX のため自動修正しない。
+**判断理由**: 限定食数はメニュー単位（仕様 02 §3.3 / 14）。確定時の `assertMenuLimitsForConfirm` は menu_id 合計なので在庫は守られる。カート投入は在庫を確保しない（仕様 14 §3.2）ため、`assertMenuLimitsForCartAdd` にはカート数を足していない。UI の + は同じ `menu_id` の合計で無効化するよう実装した。
 
 ---
 
@@ -2068,5 +2074,309 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: `EventMenu` / `EventMemberOrder` は 0円の注文なし参加を許容する。オプション仕様の「1円未満は不可」は有料メニューの組み合わせ向けで、既存の 0円参加を壊してはならない。`menu_price === 0` かつ計算結果も 0 のときだけ通し、有料メニューを差額で 0 円以下にはしない。手順 4a で修正済み。
+
+---
+
+## 評価セッション（2026-09-30 20:50・shokujii-code-review）
+
+- **評価日時**: 2026-09-30 20:50 JST
+- **評価者**: Cursor Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+- **新規 RC**: RC-42〜RC-44
+- **手順 3a / 3b 自動修正**: なし（🟡 は 👤 UX または 🔒 セキュリティのため対象外）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-42 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カートモーダル初回だけ選択初期化が走らない<br>`watch(isOpen)` に `immediate: true` を付ける |
+| [x] | RC-43 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | スマホの参加者メニュー一覧が説明文を出す<br>仕様どおり xs では説明文を出さない |
+| [x] | RC-44 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | Rules がメニュー説明文の 300 文字を見ない<br>`menuWriteFieldsValid` で長さを制限する |
+
+---
+
+**識別子**: RC-42（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:137`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+ watch(isOpen, (open) => {
+   if (open) {
+     addErrorMessage.value = ''
+     selectedCount.value = countOptions.value[0] ?? 1
++    resetOptionSelection()
+   }
+ })
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: カート追加モーダルは `v-if` で作られ、初回は `isOpen === true` のままマウントされる。`watch(isOpen)` に `immediate: true` が無いので、初回は `resetOptionSelection` が走らず必須の単一選択が空のままになる。閉じたあとの再表示だけ先頭項目が入り、初回と 2 回目で小計と追加可否が変わる。 → `watch` に `immediate: true` を付け、開いた時点で必ず初期化する。
+
+**コメント要約**: カートモーダル初回だけ選択初期化が走らない。
+`watch(isOpen)` に `immediate: true` を付ける。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 親はメニュー選択と同時に `isOpen` を true にしてダイアログをマウントする。watch の既定は初回に発火しないため、必須 single の先頭選択が初回だけ欠ける。`watch(isOpen)` に `immediate: true` を付けて、開いた時点で初期化するよう実装した。
+
+---
+
+**識別子**: RC-43（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/EventMenuList.vue:155`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+ <v-card-text class="text-left text-subtitle-2 px-1 py-0 description-text flex-shrink-0">
+   {{ menu.menu_description }}
+ </v-card-text>
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: 参加者のメニュー一覧はスマホ（`display.xs`）でもグリッド側の説明文を出している。仕様 `documents/03_参加者獲得/12_イベントページのメニュー表示.md` の 4.2・4.4・5.4 は、スマホではカード幅を確保するため説明文を表示しない。説明文の上限が 300 文字になったので、2 行クランプでも狭いカードを圧迫する。 → xs では説明文を出さない。
+
+**コメント要約**: スマホの参加者メニュー一覧が説明文を出す。
+仕様どおり xs では説明文を出さない。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `useHorizontalLayout` は xs で false になり、グリッド模板が使われる。仕様の非表示は 2 件以下・3 件以上のスマホ両方に書いてある。xs では説明文を出さないよう実装した。
+
+---
+
+**識別子**: RC-44（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `firestore.rules:264`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+ function menuWriteFieldsValid() {
+     return !('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids);
+ }
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: メニュー説明文の上限はスキーマと入力欄で 300 文字になったが、`menuWriteFieldsValid` は `option_ids` しか見ていない。Rules を迂回して 301 文字以上を書くと converter が拒否し、そのメニューが一覧から消える。オプション説明は 200 文字を Rules で見ている。 → `menu_description` が文字列で 1〜300 文字であることを `menuWriteFieldsValid` に加え、Rules テストを更新する。
+
+**コメント要約**: Rules がメニュー説明文の 300 文字を見ない。
+`menuWriteFieldsValid` で長さを制限する。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 公式画面の `maxlength` は迂回できる。`option_description` は同じ PR で Rules の長さ検証がある。説明文だけクライアントスキーマ任せだと、不正な長さのドキュメントが読めなくなる。`menuWriteFieldsValid` で 1〜300 文字を必須にし、Rules テストを更新した。
+
+---
+
+
+## 評価セッション（2026-09-30 20:54・review-comments-evaluate）
+
+- **評価日時**: 2026-09-30 20:54 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **since**: 2026-09-30T11:39:38Z
+- **partial**: sentinel は true。完了直後の Codex インラインを含めて評価した
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼コメント 5910429089、Codex レビュー本体 5365800454 は案内のみ）
+- **新規 RC**: RC-45〜RC-47
+- **手順 4a 自動修正**: RC-47（🚨 1件）。RC-46 は 💰 金銭・仕様判断のため対象外
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-45 | 5365750304 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-46 で扱う |
+| [ ] | RC-46 | 4144224625 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 0円の事前決済がカート後に確定できない<br>決済なし確定か、対象の支払い方式を制限する |
+| [x] | RC-47 | 4144265403 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 削除済みオプション ID が保存で戻る<br>欠落 ID があるメニューは保存しない |
+
+---
+
+**識別子**: RC-45（GitHub id: 5365750304）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+Unresolved issues remain in zero-price payment handling, deployment compatibility, cart limits, validation, and atomic option deletion.
+
+**Review effort:** Lite  
+**Findings:** 10 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (11)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [0円事前決済注文が確定できない支払い方式の不整合](#discussion_r4144224625) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各要素をRulesで検証していない](#discussion_r4115300334)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [同一メニューの別選択行を合算せず上限超過を許す](#discussion_r4115300308)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [オプション削除と参照解除が原子的に実行されない](#discussion_r4114702139)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Stripe商品名が長さ制限を超えて決済に失敗する](#discussion_r4114702125)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [EventMenuとFunctionsの独立デプロイで互換性が崩れる](#discussion_r4114702108)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [新API拡張が旧Functionsと後方互換になっていない](#discussion_r4114702084)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [デプロイ順序の不整合でカート金額と注文可否が変わる](#discussion_r4114702066)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Callable入力の未検証でTypeErrorが500エラーになる](#discussion_r4110466923)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各項目をRulesで厳格に検証する](#discussion_r4104985599)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [selected_itemsの件数上限を検証前に制限していない](#discussion_r4114702181)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (1)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [差額表示に円記号と¥0が反映されていない](#discussion_r4114702159)
+</details>
+
+**コメント要約**: Copilot 概要は既存スレッドと新規インラインの再掲。
+新規は RC-46 で扱う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 未解決一覧の大半は RC-14・RC-23・RC-29〜RC-32 の再掲。新規の 0 円事前決済は RC-46 で扱う。
+
+---
+
+**識別子**: RC-46（GitHub id: 4144224625）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/menuOption.ts:274`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+  const menu_price = computeOrderMenuPrice(input.eventMenu.menu_price, validation.selected_options)
+  const isAttendanceOnlyMenu = input.eventMenu.menu_price === 0 && menu_price === 0
+  if (menu_price < MENU_OPTION_MIN_TOTAL && !isAttendanceOnlyMenu) {
+    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_MENU_PRICE_MESSAGE }
+  }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 0円の注文なし参加をここで許可すると、`user_advance` のカートでも 0円注文が通りますが、画面側は事前決済を常に Stripe Checkout へ送り、`stripe.ts` は `totalPayment <= 0` を拒否し、`confirmOrder` は `user_advance` を拒否します。この組み合わせでは注文を確定できません。0円の事前決済を決済なしで確定する経路を追加するか、対象の支払い方式をカート検証で明確に制限してください。
+
+**コメント要約**: 0円の事前決済がカート後に確定できない。
+決済なし確定か、対象の支払い方式を制限する。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: `resolveEventMenuCartOrder` は本体 0 円かつ合計 0 円を通す。`confirmOrder` は `user_advance` を拒否し、`createStripeCheckoutSession` は支払額 0 円を拒否する。カート追加後に確定できない。決済なしで確定するか、事前決済では 0 円参加をカート検証で止めるかは仕様判断が要る。
+
+---
+
+**識別子**: RC-47（GitHub id: 4144265403）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `partner/src/pages/menu.vue:79`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+    const attached = (menu.option_ids ?? [])
+      .map((optionId) => options.value.find((option) => option.option_id === optionId))
+      .filter((option): option is BokudeliPartnerOption => option != null)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  欠落したオプション参照を保存前に拒否する**
+
+別タブでオプションが削除された後に古いメニュー編集ダイアログから保存すると、削除済み ID はこの `filter` で検証対象から除外される一方、`menu.option_ids` には残ったまま `updateMenu` へ渡されるため、削除処理が外した参照を再登録できます。そのメニューは次回の承認時に `snapshotPartnerOptionsForMenu` が `null` を返してイベントメニューから消えるので、対応するオプションが全件存在することを確認してから保存してください。
+
+**コメント要約**: 削除済みオプション ID が保存で戻る。
+欠落 ID があるメニューは保存しない。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 最小合計の検査は存在するオプションだけを見るが、保存は `option_ids` をそのまま書く。欠落 ID が戻ると承認時のスナップショットが失敗し、メニューがイベントから消える。件数不一致で保存を拒否する。手順 4a で修正済み。
 
 ---

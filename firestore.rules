@@ -262,7 +262,10 @@ service cloud.firestore {
                     && (value.size() < 10 || (value[9] is string && value[9].size() > 0));
             }
             function menuWriteFieldsValid() {
-                return !('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids);
+                return request.resource.data.menu_description is string
+                    && request.resource.data.menu_description.size() >= 1
+                    && request.resource.data.menu_description.size() <= 300
+                    && (!('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids));
             }
             function optionWriteFieldsValid() {
                 return request.resource.data.option_name is string

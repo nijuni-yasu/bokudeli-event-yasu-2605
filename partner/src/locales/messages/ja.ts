@@ -289,6 +289,7 @@ export default {
     options: '設定するオプション',
     options_empty: '先にオプションを作成してください',
     error_min_total: '選べる組み合わせの合計が1円未満です',
+    error_missing_option: '削除されたオプションが付いています。付け直してから保存してください',
   },
   option_edit_card: {
     name: 'オプション名',
