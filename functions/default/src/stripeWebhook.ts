@@ -20,6 +20,7 @@ import {
   computeEventStripePayFields,
   isCheckoutAmountTotalMatchingPayAmount,
 } from '@shokujii/common/utils/paymentUserFee.js'
+import { retrieveCheckoutUserPaymentFeeAmount } from './utils/paymentUserFeeStripe.js'
 import {
   computeOrderSelfPayUnitAmount,
   getEventEnterpriseId,
@@ -159,7 +160,7 @@ export const stripeWebhook = onRequest(
     }
 
     // checkout.session.completed (paid / no_payment_required) と async_payment_succeeded は確定フロー
-    await handleOrderConfirmation({ session, event, eventId, communityId, userId, orderIds, res })
+    await handleOrderConfirmation({ stripe, session, event, eventId, communityId, userId, orderIds, res })
   },
 )
 
@@ -285,8 +286,10 @@ async function handleAsyncPaymentFailed(args: HandlerArgs): Promise<void> {
 }
 
 /** checkout.session.completed (paid / no_payment_required) と async_payment_succeeded の確定フロー */
-async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event; res: HttpResponse }): Promise<void> {
-  const { session, event, eventId, communityId, userId, orderIds, res } = args
+async function handleOrderConfirmation(
+  args: HandlerArgs & { stripe: Stripe; event: Stripe.Event; res: HttpResponse },
+): Promise<void> {
+  const { stripe, session, event, eventId, communityId, userId, orderIds, res } = args
 
   // no_payment_required では payment_intent が null の可能性があるため、必須はしない
   const paymentStatus = session.payment_status
@@ -320,6 +323,8 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
     return
   }
 
+  // 外部 API 呼び出しはトランザクション再試行の対象にしない。
+  const chargedFee = await retrieveCheckoutUserPaymentFeeAmount(stripe, session.id)
   const stripeDocId = createStripeDoc(communityId, eventId)
 
   const txResult = await db.runTransaction(async (transaction): Promise<StripeWebhookTransactionResult> => {
@@ -377,14 +382,11 @@ async function handleOrderConfirmation(args: HandlerArgs & { event: Stripe.Event
     }
 
     const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
-    const computedPayFields = computeEventStripePayFields(selfPayAmount)
-    const isLegacyCheckoutWithoutUserFee =
-      session.amount_total != null &&
-      session.amount_total === selfPayAmount &&
-      session.amount_total !== computedPayFields.pay_amount
-    const payAmount = isLegacyCheckoutWithoutUserFee ? selfPayAmount : computedPayFields.pay_amount
-    const userFeeAmount = isLegacyCheckoutWithoutUserFee ? undefined : computedPayFields.pay_user_fee_amount
-    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount, selfPayAmount)) {
+    const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(
+      selfPayAmount,
+      chargedFee,
+    )
+    if (!isCheckoutAmountTotalMatchingPayAmount(session.amount_total, payAmount)) {
       logger.error('Checkout amount_total does not match recomputed pay_amount', {
         paymentIntent,
         amountTotal: session.amount_total,

@@ -50,6 +50,7 @@ jobs:
               - 'support/**'
             terms:
               - 'terms/**'
+              - 'common/src/utils/paymentUserFee.ts'
             functions:
               - 'functions/**'
             root:

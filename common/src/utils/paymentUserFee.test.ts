@@ -15,25 +15,22 @@ describe('computeUserPaymentFeeFromSelfPay', () => {
     expect(computeUserPaymentFeeFromSelfPay(-1)).toBe(0)
   })
 
-  it('1000 円未満でも最低 110 円', () => {
-    expect(computeUserPaymentFeeFromSelfPay(1)).toBe(110)
-    expect(computeUserPaymentFeeFromSelfPay(999)).toBe(110)
-  })
-
-  it('仕様書の計算例', () => {
-    expect(computeUserPaymentFeeFromSelfPay(1000)).toBe(110)
-    expect(computeUserPaymentFeeFromSelfPay(1999)).toBe(110)
-    expect(computeUserPaymentFeeFromSelfPay(2000)).toBe(220)
-    expect(computeUserPaymentFeeFromSelfPay(3000)).toBe(220)
-    expect(computeUserPaymentFeeFromSelfPay(3500)).toBe(220)
-    expect(computeUserPaymentFeeFromSelfPay(4000)).toBe(220)
-    expect(computeUserPaymentFeeFromSelfPay(10000)).toBe(220)
-  })
+  it.each([1, 999, 1000, 1999, 2000, 3000, 3500, 4000, 10000, 1000000])(
+    '自己負担 %i 円でも手数料は一律 110 円',
+    (selfPay) => {
+      expect(computeUserPaymentFeeFromSelfPay(selfPay)).toBe(110)
+    },
+  )
 })
 
 describe('computeCheckoutTotalFromSelfPay', () => {
   it('自己負担 0 は合計 0', () => {
     expect(computeCheckoutTotalFromSelfPay(0)).toEqual({ selfPay: 0, fee: 0, total: 0 })
+  })
+
+  it('自己負担 2000 円以上でも合計への加算は 110 円', () => {
+    expect(computeCheckoutTotalFromSelfPay(2000)).toEqual({ selfPay: 2000, fee: 110, total: 2110 })
+    expect(computeCheckoutTotalFromSelfPay(10000)).toEqual({ selfPay: 10000, fee: 110, total: 10110 })
   })
 
   it('自己負担 + 手数料が合計', () => {
@@ -42,25 +39,34 @@ describe('computeCheckoutTotalFromSelfPay', () => {
 })
 
 describe('computeEventStripePayFields', () => {
+  it.each([0, 110, 220, 330])('Checkout に記録された手数料 %i 円を料金改定後も保持する', (chargedFee) => {
+    const fields = computeEventStripePayFields(2000, chargedFee)
+    expect(fields.pay_amount).toBe(2000 + chargedFee)
+    expect(fields.pay_user_fee_amount).toBe(chargedFee === 0 ? undefined : chargedFee)
+    expect(isCheckoutAmountTotalMatchingPayAmount(2000 + chargedFee, fields.pay_amount)).toBe(true)
+    expect(isCheckoutAmountTotalMatchingPayAmount(1999 + chargedFee, fields.pay_amount)).toBe(false)
+  })
+
   it('手数料 0 では pay_user_fee_amount を書かない', () => {
-    expect(computeEventStripePayFields(0)).toEqual({ pay_amount: 0 })
+    expect(computeEventStripePayFields(0, 0)).toEqual({ pay_amount: 0 })
   })
 
   it('自己負担 1000 は pay_amount 1110 と fee 110', () => {
-    expect(computeEventStripePayFields(1000)).toEqual({ pay_amount: 1110, pay_user_fee_amount: 110 })
+    expect(computeEventStripePayFields(1000, 110)).toEqual({ pay_amount: 1110, pay_user_fee_amount: 110 })
   })
 })
 
 describe('isCheckoutAmountTotalMatchingPayAmount', () => {
-  it('amount_total が無いときは一致とみなす', () => {
-    expect(isCheckoutAmountTotalMatchingPayAmount(null, 1110)).toBe(true)
-    expect(isCheckoutAmountTotalMatchingPayAmount(undefined, 1110)).toBe(true)
+  it('amount_total が無いときは確定しない', () => {
+    expect(isCheckoutAmountTotalMatchingPayAmount(null, 1110)).toBe(false)
+    expect(isCheckoutAmountTotalMatchingPayAmount(undefined, 1110)).toBe(false)
   })
 
-  it('amount_total があるときは pay_amount か legacy selfPay と一致必須', () => {
+  it('amount_total と保存予定額は一致必須で、手数料抜きの額にフォールバックしない', () => {
     expect(isCheckoutAmountTotalMatchingPayAmount(1110, 1110)).toBe(true)
-    expect(isCheckoutAmountTotalMatchingPayAmount(1000, 1110, 1000)).toBe(true)
-    expect(isCheckoutAmountTotalMatchingPayAmount(900, 1110, 1000)).toBe(false)
+    expect(isCheckoutAmountTotalMatchingPayAmount(1000, 1000)).toBe(true)
+    expect(isCheckoutAmountTotalMatchingPayAmount(1000, 1110)).toBe(false)
+    expect(isCheckoutAmountTotalMatchingPayAmount(900, 1110)).toBe(false)
   })
 })
 
@@ -72,10 +78,10 @@ describe('shouldApplyUserPaymentFee / previewUserPaymentFee', () => {
     expect(previewUserPaymentFee('user_advance', 0)).toBe(0)
   })
 
-  it('user_advance / enterprise_subsidy / 割引差額は適用する', () => {
-    expect(previewUserPaymentFee('user_advance', 1000)).toBe(110)
-    expect(previewUserPaymentFee('enterprise_subsidy', 1000)).toBe(110)
-    expect(previewUserPaymentFee('community_bill', 1000, { type: 'discount' })).toBe(110)
+  it.each([1, 1000, 2000, 10000])('対象の全支払い方式で自己負担 %i 円は 110 円', (selfPay) => {
+    expect(previewUserPaymentFee('user_advance', selfPay)).toBe(110)
+    expect(previewUserPaymentFee('enterprise_subsidy', selfPay)).toBe(110)
+    expect(previewUserPaymentFee('community_bill', selfPay, { type: 'discount' })).toBe(110)
   })
 
   it('当日払い・無料参加は適用しない', () => {

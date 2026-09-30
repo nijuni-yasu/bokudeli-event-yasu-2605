@@ -1,4 +1,5 @@
 import { LEGAL_URLS } from '@shokujii/base/constants/legalUrls.js'
+import { USER_PAYMENT_FEE_AMOUNT } from '@shokujii/common/utils/paymentUserFee.js'
 
 export default {
   ok: 'OK',
@@ -472,11 +473,11 @@ export default {
     payment: '支払い設定',
     payment_hint_user_advance: `参加者事前決済 を設定した場合<br />
       食事の代金は、参加者がクレジットカード・Apple Pay・Google Pay・PayPay などで事前にお支払いいただきます。<br />
-      参加者にはシステム利用料（最低110円・最大220円）がかかります。キャンセルしても返金されません。<br />
+      自己負担がある場合はシステム利用料（現在は1回の決済につき税込${USER_PAYMENT_FEE_AMOUNT}円）がかかります。適用額は決済前の画面に表示し、キャンセルしても返金されません。<br />
       支払い設定は予約申請後、変更できないためご注意ください。`,
     payment_hint_enterprise_subsidy: `福利厚生割引 を設定した場合<br />
       企業の割引ルールが適用されます。残額は参加者がクレジットカード等でお支払いいただきます。<br />
-      自己負担がある場合はシステム利用料（最低110円・最大220円）がかかり、キャンセルしても返金されません。<br />
+      自己負担がある場合はシステム利用料（現在は1回の決済につき税込${USER_PAYMENT_FEE_AMOUNT}円）がかかります。適用額は決済前の画面に表示し、キャンセルしても返金されません。<br />
       自己負担0円の場合は決済不要で注文確定できます。`,
     payment_hint_community_bill_title: '主催者請求書払いについて',
     payment_hint_community_bill: `
@@ -649,8 +650,7 @@ export default {
     <br />
     注文期限内であれば `,
     orders_link: '注文履歴',
-    desc_after:
-      ' にてご自身でキャンセルを行うことができます。注文期限後、キャンセルはできませんのでご了承ください。<br />システム利用料（最低110円・最大220円）は返金されません。事前決済のときだけかかり、金額はカートと注文履歴に表示します。',
+    desc_after: ` にてご自身でキャンセルを行うことができます。注文期限後、キャンセルはできませんのでご了承ください。<br />システム利用料（現在は1回の決済につき税込${USER_PAYMENT_FEE_AMOUNT}円）は返金されません。自己負担がある事前決済のときだけかかり、適用額は決済前の画面と注文履歴に表示します。`,
   },
   letter_status: {
     draft: '下書き',
