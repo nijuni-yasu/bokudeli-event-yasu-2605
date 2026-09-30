@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
 import { OptionIdListSchema } from './menuOption.js'
 
 const PartnerMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
-  menu_description: z.string().nonempty(),
+  menu_description: MenuDescriptionDbFieldSchema,
   menu_name: z.string().nonempty(),
   menu_price: z.number().int().positive(),
   is_sold_out: z.boolean(),
@@ -21,7 +22,7 @@ const PartnerMenuDbSchema = z.object({
 
 const PartnerMenuAppSchema = z.object({
   // Default
-  menu_description: z.string().default(''),
+  menu_description: MenuDescriptionAppFieldSchema,
   menu_name: z.string().default(''),
   menu_price: z.number().int().positive().default(1000),
   is_sold_out: z.boolean().default(false),

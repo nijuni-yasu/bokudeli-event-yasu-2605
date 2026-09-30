@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import ImageInput from '@shokujii/base/components/ImageInput.vue'
 import DateInput from '@shokujii/base/components/DateInput.vue'
 import { MENU_LIMIT_PER_EVENT_MAX } from '@shokujii/common/utils/menuLimit.js'
+import { MENU_DESCRIPTION_MAX_LENGTH } from '@shokujii/common/schemas/menuDescriptionField.js'
 import type { BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
 import { getOptionsPath } from '../navigation/utils'
@@ -245,9 +246,11 @@ onBeforeUnmount(() => {
             v-model="menu.menu_description"
             outlined
             rows="3"
+            :maxlength="MENU_DESCRIPTION_MAX_LENGTH"
+            :counter="MENU_DESCRIPTION_MAX_LENGTH"
             class="menu-edit-card__field"
             :label="$t('menu_edit_card.description')"
-            :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 140)]"
+            :rules="[requiredValidator, (v: string) => maxLengthValidator(v, MENU_DESCRIPTION_MAX_LENGTH)]"
           />
           <v-text-field
             type="number"

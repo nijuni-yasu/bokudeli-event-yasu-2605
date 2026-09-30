@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
 import { EventMenuOptionSchema } from './menuOption.js'
 
 const EventMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
-  menu_description: z.string().nonempty(),
+  menu_description: MenuDescriptionDbFieldSchema,
   menu_name: z.string().nonempty(),
   // 0 は「注文なしで参加」。負数は拒否する。
   menu_price: z.number().int().nonnegative(),
@@ -21,7 +22,7 @@ const EventMenuAppSchema = z.object({
   menu_name: z.string().nonempty(),
   // Default
   menu_price: z.number().int().nonnegative().default(100),
-  menu_description: z.string().default(''),
+  menu_description: MenuDescriptionAppFieldSchema,
   is_sold_out: z.boolean().default(false),
   is_selected: z.boolean().default(true),
   // Mandatory
