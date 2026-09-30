@@ -222,7 +222,10 @@ async function sendNewEventNotificationToMembers(eventId: string, userId: string
       {
         from: DEFAULT_FROM,
         templateId: NEW_EVENT_NOTIFICATION_TEMPLATE_ID,
-        asm: { groupId: NEW_EVENT_NOTIFICATION_ASM_GROUP_ID },
+        asm: {
+          groupId: NEW_EVENT_NOTIFICATION_ASM_GROUP_ID,
+          groupsToDisplay: [NEW_EVENT_NOTIFICATION_ASM_GROUP_ID],
+        },
       },
       emails.map((to) => ({ to, dynamicTemplateData })),
       { feature: 'newEventNotification', eventId: event.id, communityId },

@@ -154,7 +154,7 @@ describe('sendOrderCompletionMails', () => {
     expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         templateId: 'd-5ed49e5d3b5c43e1823a96bbf80af471',
-        asm: { groupId: 12345 },
+        asm: { groupId: 12345, groupsToDisplay: [12345] },
       }),
       expect.anything(),
       expect.objectContaining({ feature: 'newEventNotification' }),
