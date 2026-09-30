@@ -8,6 +8,7 @@ import { mdiStorefrontOutline, mdiGestureTap } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import { sortMenusWithSoldOutLast } from '@shokujii/common/utils/menuSort.js'
 
 const { t } = useI18n()
 
@@ -62,6 +63,8 @@ const isLastSelected = (menuId: string): boolean => {
 const selectedCount = computed(() => {
   return props.menus.filter((menu) => menu.is_selected).length
 })
+
+const displayMenus = computed(() => sortMenusWithSoldOutLast(props.menus))
 </script>
 
 <template>
@@ -92,7 +95,7 @@ const selectedCount = computed(() => {
             </v-card-subtitle>
 
             <v-row>
-              <v-col v-for="(item, i) of props.menus" :key="`menu_${i}`" md="4" sm="4" cols="12">
+              <v-col v-for="item of displayMenus" :key="item.menu_id" md="4" sm="4" cols="12">
                 <v-card
                   height="100%"
                   class="mb-3 mx-0 menu-card d-flex flex-column"
