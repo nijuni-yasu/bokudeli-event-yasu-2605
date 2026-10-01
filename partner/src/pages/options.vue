@@ -47,6 +47,7 @@ const formatPriceDelta = (priceDelta: number): string => {
 }
 
 const targetOption: Ref<BokudeliPartnerOption | null> = ref(null)
+const isSaving = ref(false)
 const optionDialog = computed({
   get: () => targetOption.value != null,
   set: (value) => {
@@ -71,7 +72,11 @@ const openOptionDialog = (option: BokudeliPartnerOption, create = false) => {
   })
 }
 
-const saveOption = async (option: BokudeliPartnerOption) => {
+const saveOption = async (option: BokudeliPartnerOption): Promise<void> => {
+  if (isSaving.value) {
+    return
+  }
+  isSaving.value = true
   try {
     if (partnerStore.menus == null) {
       notification.show($t('options.save_error'), 'error')
@@ -102,6 +107,8 @@ const saveOption = async (option: BokudeliPartnerOption) => {
   } catch (e) {
     console.error(e)
     notification.show($t('options.save_error'), 'error')
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -217,8 +224,8 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
       </div>
     </v-col>
   </v-row>
-  <v-dialog v-if="targetOption != null" v-model="optionDialog" max-width="600px">
-    <OptionEditCard v-model="targetOption" @save="saveOption" @cancel="optionDialog = false">
+  <v-dialog v-if="targetOption != null" v-model="optionDialog" :persistent="isSaving" max-width="600px">
+    <OptionEditCard v-model="targetOption" v-model:saving="isSaving" @save="saveOption" @cancel="optionDialog = false">
       <template #title>
         {{ targetOption.option_name === '' ? $t('options.add') : $t('options.edit') }}
       </template>

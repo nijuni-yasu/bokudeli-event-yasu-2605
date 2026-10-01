@@ -9,6 +9,7 @@ const { requiredValidator, maxLengthValidator } = useValidators()
 const { t: $t } = useI18n()
 
 const option = defineModel<BokudeliPartnerOption>({ required: true })
+const saving = defineModel<boolean>('saving', { required: true })
 
 const emit = defineEmits<{
   save: [option: BokudeliPartnerOption]
@@ -50,7 +51,7 @@ const removeItem = (itemId: string) => {
 }
 
 const handleSubmit = () => {
-  if (!isValid.value || !option.value.isValidForDatabase()) {
+  if (saving.value || !isValid.value || !option.value.isValidForDatabase()) {
     return
   }
   emit('save', option.value)
@@ -65,69 +66,76 @@ const handleSubmit = () => {
           <slot name="title" />
         </div>
       </template>
-      <v-card-text class="d-flex flex-column ga-4">
-        <v-text-field
-          v-model="option.option_name"
-          :label="$t('option_edit_card.name')"
-          :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40)]"
-        />
-        <v-textarea
-          v-model="option.option_description"
-          :label="$t('option_edit_card.description')"
-          :rules="[(v: string) => maxLengthValidator(v ?? '', 200)]"
-          rows="2"
-        />
-        <div>
-          <v-radio-group v-model="option.selection" :label="$t('option_edit_card.selection')" inline hide-details>
-            <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
-            <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
-          </v-radio-group>
-          <p class="option-edit-card__hint option-edit-card__hint--lines">
-            {{ $t('option_edit_card.selection_hint') }}
-          </p>
-        </div>
-        <div>
-          <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
-          <p class="option-edit-card__hint">{{ $t('option_edit_card.required_hint') }}</p>
-        </div>
-        <div>
-          <div class="text-subtitle-2 mb-2">{{ $t('option_edit_card.items') }}</div>
-          <div
-            v-for="item in option.option_items"
-            :key="item.item_id"
-            class="option-edit-card__item d-flex align-start ga-2 mb-2"
-          >
-            <v-text-field
-              v-model="item.name"
-              class="option-edit-card__item-name"
-              :label="$t('option_edit_card.item_name')"
-              :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40), uniqueItemNameRule]"
-              density="compact"
-            />
-            <v-text-field
-              v-model.number="item.price_delta"
-              class="option-edit-card__price-delta"
-              type="number"
-              :label="$t('option_edit_card.price_delta')"
-              :min="PRICE_DELTA_MIN"
-              :max="PRICE_DELTA_MAX"
-              :rules="[priceDeltaRule]"
-              density="compact"
-            />
-            <v-btn class="flex-shrink-0" variant="text" @click="removeItem(item.item_id)">
-              {{ $t('option_edit_card.remove_item') }}
-            </v-btn>
+      <v-card-text>
+        <div class="d-flex flex-column ga-4" :inert="saving">
+          <v-text-field
+            v-model="option.option_name"
+            :label="$t('option_edit_card.name')"
+            :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40)]"
+          />
+          <v-textarea
+            v-model="option.option_description"
+            :label="$t('option_edit_card.description')"
+            :rules="[(v: string) => maxLengthValidator(v ?? '', 200)]"
+            rows="2"
+          />
+          <div>
+            <v-radio-group v-model="option.selection" :label="$t('option_edit_card.selection')" inline hide-details>
+              <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
+              <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
+            </v-radio-group>
+            <p class="option-edit-card__hint option-edit-card__hint--lines">
+              {{ $t('option_edit_card.selection_hint') }}
+            </p>
           </div>
-          <v-btn variant="tonal" :disabled="option.option_items.length >= 20" @click="addItem">
-            {{ $t('option_edit_card.add_item') }}
-          </v-btn>
-          <p class="text-caption text-medium-emphasis mt-2">{{ itemCountRule() === true ? '' : itemCountRule() }}</p>
+          <div>
+            <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
+            <p class="option-edit-card__hint">{{ $t('option_edit_card.required_hint') }}</p>
+          </div>
+          <div>
+            <div class="text-subtitle-2 mb-2">{{ $t('option_edit_card.items') }}</div>
+            <div
+              v-for="item in option.option_items"
+              :key="item.item_id"
+              class="option-edit-card__item d-flex align-start ga-2 mb-2"
+            >
+              <v-text-field
+                v-model="item.name"
+                class="option-edit-card__item-name"
+                :label="$t('option_edit_card.item_name')"
+                :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40), uniqueItemNameRule]"
+                density="compact"
+              />
+              <v-text-field
+                v-model.number="item.price_delta"
+                class="option-edit-card__price-delta"
+                type="number"
+                :label="$t('option_edit_card.price_delta')"
+                :min="PRICE_DELTA_MIN"
+                :max="PRICE_DELTA_MAX"
+                :rules="[priceDeltaRule]"
+                density="compact"
+              />
+              <v-btn class="flex-shrink-0" variant="text" @click="removeItem(item.item_id)">
+                {{ $t('option_edit_card.remove_item') }}
+              </v-btn>
+            </div>
+            <v-btn variant="tonal" :disabled="option.option_items.length >= 20" @click="addItem">
+              {{ $t('option_edit_card.add_item') }}
+            </v-btn>
+            <p class="text-caption text-medium-emphasis mt-2">{{ itemCountRule() === true ? '' : itemCountRule() }}</p>
+          </div>
         </div>
       </v-card-text>
       <template #actions>
         <v-spacer />
-        <v-btn variant="plain" @click="$emit('cancel')">{{ $t('option_edit_card.close') }}</v-btn>
-        <v-btn type="submit" :disabled="!isValid || !option.isValidForDatabase()" variant="tonal">
+        <v-btn variant="plain" :disabled="saving" @click="$emit('cancel')">{{ $t('option_edit_card.close') }}</v-btn>
+        <v-btn
+          type="submit"
+          :disabled="saving || !isValid || !option.isValidForDatabase()"
+          :loading="saving"
+          variant="tonal"
+        >
           {{ $t('option_edit_card.submit') }}
         </v-btn>
       </template>

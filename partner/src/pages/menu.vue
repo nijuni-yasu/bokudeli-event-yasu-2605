@@ -55,6 +55,7 @@ const sortedMenus = computed<BokudeliPartnerMenu[]>({
 })
 
 const targetMenu: Ref<BokudeliPartnerMenu | null> = ref(null)
+const isSaving = ref(false)
 
 const dialog = computed({
   get: () => targetMenu.value != null,
@@ -69,6 +70,10 @@ const openDialog = (menu: BokudeliPartnerMenu) => {
   targetMenu.value = Object.assign(Object.create(Object.getPrototypeOf(menu)), menu)
 }
 const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null): Promise<boolean> => {
+  if (isSaving.value) {
+    return false
+  }
+  isSaving.value = true
   try {
     if (partnerStore.options == null) {
       notification.show($t('menu.save_error'), 'error')
@@ -96,11 +101,14 @@ const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null): Promise<b
 
     await partnerStore.updateMenu(menu, file ?? undefined)
     notification.show($t('menu.saved'), 'success')
+    dialog.value = false
     return true
   } catch (e) {
     console.error(e)
     notification.show($t('menu.save_error'), 'error')
     return false
+  } finally {
+    isSaving.value = false
   }
 }
 const onDelete = async (menu: BokudeliPartnerMenu) => {
@@ -221,19 +229,13 @@ const saveSortOrder = async () => {
       </v-row>
     </v-col>
   </v-row>
-  <v-dialog v-if="targetMenu != null" v-model="dialog" max-width="600px" scrollable>
+  <v-dialog v-if="targetMenu != null" v-model="dialog" :persistent="isSaving" max-width="600px" scrollable>
     <MenuEditCard
       v-model="targetMenu"
       :image-url="partnerStore.menuImageUrls.get(targetMenu.menu_id) ?? ''"
       :options="options"
-      @save="
-        async (menu, imageFile) => {
-          const saved = await saveMenu(menu, imageFile)
-          if (saved) {
-            dialog = false
-          }
-        }
-      "
+      :saving="isSaving"
+      @save="saveMenu"
       @cancel="dialog = false"
     >
       <template #title> {{ targetMenu.menu_id == null ? $t('menu.add') : $t('menu.edit') }} </template>

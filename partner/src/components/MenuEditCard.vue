@@ -20,6 +20,7 @@ const menu = defineModel<BokudeliPartnerMenu>({ required: true })
 const props = defineProps<{
   imageUrl: string
   options: BokudeliPartnerOption[]
+  saving: boolean
 }>()
 
 const emit = defineEmits<{
@@ -150,7 +151,7 @@ watch(
 )
 
 const handleSubmit = () => {
-  if (!isValid.value || !minTotalValid.value) {
+  if (props.saving || !isValid.value || !minTotalValid.value) {
     return
   }
   emit('save', menu.value, imageFile.value)
@@ -221,139 +222,141 @@ onBeforeUnmount(() => {
         :class="{ 'menu-edit-card__body--more': canScrollDown }"
         @scroll="updateScrollHint"
       >
-        <v-row justify="center" class="menu-edit-card__image pb-2">
-          <v-col cols="7">
-            <ImageInput
-              :urls="[imageUrl]"
-              @file-selected="(f) => (imageFile = f)"
-              style="width: auto; max-width: min(600px, 100%); aspect-ratio: 1/1"
-              :cover="true"
+        <div :inert="saving">
+          <v-row justify="center" class="menu-edit-card__image pb-2">
+            <v-col cols="7">
+              <ImageInput
+                :urls="[imageUrl]"
+                @file-selected="(f) => (imageFile = f)"
+                style="width: auto; max-width: min(600px, 100%); aspect-ratio: 1/1"
+                :cover="true"
+                :rules="[requiredValidator]"
+              />
+              <span class="text-caption text-medium-emphasis">{{ $t('menu_edit_card.image_hint') }}</span>
+            </v-col>
+          </v-row>
+          <div class="menu-edit-card__fields pt-2">
+            <v-text-field
+              v-model="menu.menu_name"
+              outlined
+              dense
+              class="menu-edit-card__field"
+              :label="$t('menu_edit_card.name')"
               :rules="[requiredValidator]"
             />
-            <span class="text-caption text-medium-emphasis">{{ $t('menu_edit_card.image_hint') }}</span>
-          </v-col>
-        </v-row>
-        <div class="menu-edit-card__fields pt-2">
-          <v-text-field
-            v-model="menu.menu_name"
-            outlined
-            dense
-            class="menu-edit-card__field"
-            :label="$t('menu_edit_card.name')"
-            :rules="[requiredValidator]"
-          />
-          <v-textarea
-            v-model="menu.menu_description"
-            outlined
-            rows="3"
-            :maxlength="MENU_DESCRIPTION_MAX_LENGTH"
-            :counter="MENU_DESCRIPTION_MAX_LENGTH"
-            class="menu-edit-card__field"
-            :label="$t('menu_edit_card.description')"
-            :rules="[requiredValidator, (v: string) => maxLengthValidator(v, MENU_DESCRIPTION_MAX_LENGTH)]"
-          />
-          <v-text-field
-            type="number"
-            min="10"
-            max="100000"
-            class="menu-edit-card__field"
-            :prefix="$n(0, 'currency').replace('0', '')"
-            v-model.number="price"
-            :label="$t('menu_edit_card.price')"
-            :rules="[requiredValidator, (v: string) => betweenValidator(v, 10, 100000)]"
-          />
-          <div class="menu-edit-card__section">
-            <div class="menu-edit-card__section-label">
-              {{ $t('menu_edit_card.limited_edition') }}
-            </div>
-            <v-row dense>
-              <v-col cols="6">
-                <DateInput
-                  v-model="dateStart"
-                  :clearable="true"
-                  :label="$t('menu_edit_card.date_start')"
-                  :rules="dateRangeRules"
-                />
-              </v-col>
-              <v-col cols="6">
-                <DateInput
-                  v-model="dateEnd"
-                  :clearable="true"
-                  :label="$t('menu_edit_card.date_end')"
-                  :rules="dateRangeRules"
-                />
-              </v-col>
-            </v-row>
-            <p class="menu-edit-card__hint">
-              {{ $t('menu_edit_card.limited_edition_hint') }}
-            </p>
-          </div>
-          <div class="menu-edit-card__section menu-edit-card__section--limit">
-            <div class="menu-edit-card__section-label">
-              {{ $t('menu_edit_card.limit_per_event_section') }}
-            </div>
-            <v-text-field
-              v-model="limitPerEvent"
-              type="number"
-              min="1"
-              :max="MENU_LIMIT_PER_EVENT_MAX"
-              clearable
-              :label="$t('menu_edit_card.limit_per_event')"
-              :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
-              :rules="[limitPerEventRule]"
+            <v-textarea
+              v-model="menu.menu_description"
+              outlined
+              rows="3"
+              :maxlength="MENU_DESCRIPTION_MAX_LENGTH"
+              :counter="MENU_DESCRIPTION_MAX_LENGTH"
+              class="menu-edit-card__field"
+              :label="$t('menu_edit_card.description')"
+              :rules="[requiredValidator, (v: string) => maxLengthValidator(v, MENU_DESCRIPTION_MAX_LENGTH)]"
             />
-            <p class="menu-edit-card__hint">
-              {{ $t('menu_edit_card.limit_per_event_hint') }}
-            </p>
-          </div>
-          <div class="menu-edit-card__section">
-            <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.options') }}</div>
-            <div v-if="options.length === 0" class="menu-edit-card__hint">
-              {{ $t('menu_edit_card.options_empty') }}
-              <RouterLink class="ms-1" :to="getOptionsPath()">{{ $t('navigation.option') }}</RouterLink>
+            <v-text-field
+              type="number"
+              min="10"
+              max="100000"
+              class="menu-edit-card__field"
+              :prefix="$n(0, 'currency').replace('0', '')"
+              v-model.number="price"
+              :label="$t('menu_edit_card.price')"
+              :rules="[requiredValidator, (v: string) => betweenValidator(v, 10, 100000)]"
+            />
+            <div class="menu-edit-card__section">
+              <div class="menu-edit-card__section-label">
+                {{ $t('menu_edit_card.limited_edition') }}
+              </div>
+              <v-row dense>
+                <v-col cols="6">
+                  <DateInput
+                    v-model="dateStart"
+                    :clearable="true"
+                    :label="$t('menu_edit_card.date_start')"
+                    :rules="dateRangeRules"
+                  />
+                </v-col>
+                <v-col cols="6">
+                  <DateInput
+                    v-model="dateEnd"
+                    :clearable="true"
+                    :label="$t('menu_edit_card.date_end')"
+                    :rules="dateRangeRules"
+                  />
+                </v-col>
+              </v-row>
+              <p class="menu-edit-card__hint">
+                {{ $t('menu_edit_card.limited_edition_hint') }}
+              </p>
             </div>
-            <div v-for="optionId in menu.option_ids ?? []" :key="optionId" class="d-flex align-center ga-2 mb-1">
+            <div class="menu-edit-card__section menu-edit-card__section--limit">
+              <div class="menu-edit-card__section-label">
+                {{ $t('menu_edit_card.limit_per_event_section') }}
+              </div>
+              <v-text-field
+                v-model="limitPerEvent"
+                type="number"
+                min="1"
+                :max="MENU_LIMIT_PER_EVENT_MAX"
+                clearable
+                :label="$t('menu_edit_card.limit_per_event')"
+                :placeholder="$t('menu_edit_card.limit_per_event_placeholder')"
+                :rules="[limitPerEventRule]"
+              />
+              <p class="menu-edit-card__hint">
+                {{ $t('menu_edit_card.limit_per_event_hint') }}
+              </p>
+            </div>
+            <div class="menu-edit-card__section">
+              <div class="menu-edit-card__section-label">{{ $t('menu_edit_card.options') }}</div>
+              <div v-if="options.length === 0" class="menu-edit-card__hint">
+                {{ $t('menu_edit_card.options_empty') }}
+                <RouterLink class="ms-1" :to="getOptionsPath()">{{ $t('navigation.option') }}</RouterLink>
+              </div>
+              <div v-for="optionId in menu.option_ids ?? []" :key="optionId" class="d-flex align-center ga-2 mb-1">
+                <v-checkbox
+                  :model-value="true"
+                  :label="options.find((option) => option.option_id === optionId)?.option_name ?? optionId"
+                  hide-details
+                  density="compact"
+                  @update:model-value="toggleOptionId(optionId, false)"
+                />
+                <v-btn size="x-small" variant="text" @click="moveOption(optionId, -1)">↑</v-btn>
+                <v-btn size="x-small" variant="text" @click="moveOption(optionId, 1)">↓</v-btn>
+              </div>
               <v-checkbox
-                :model-value="true"
-                :label="options.find((option) => option.option_id === optionId)?.option_name ?? optionId"
+                v-for="option in options.filter((item) => !(menu.option_ids ?? []).includes(item.option_id))"
+                :key="option.option_id"
+                :model-value="false"
+                :label="option.option_name"
+                :disabled="(menu.option_ids ?? []).length >= 10"
                 hide-details
                 density="compact"
-                @update:model-value="toggleOptionId(optionId, false)"
+                @update:model-value="toggleOptionId(option.option_id, true)"
               />
-              <v-btn size="x-small" variant="text" @click="moveOption(optionId, -1)">↑</v-btn>
-              <v-btn size="x-small" variant="text" @click="moveOption(optionId, 1)">↓</v-btn>
+              <p class="menu-edit-card__hint text-error">{{ minTotalRule() === true ? '' : minTotalRule() }}</p>
             </div>
-            <v-checkbox
-              v-for="option in options.filter((item) => !(menu.option_ids ?? []).includes(item.option_id))"
-              :key="option.option_id"
-              :model-value="false"
-              :label="option.option_name"
-              :disabled="(menu.option_ids ?? []).length >= 10"
-              hide-details
-              density="compact"
-              @update:model-value="toggleOptionId(option.option_id, true)"
-            />
-            <p class="menu-edit-card__hint text-error">{{ minTotalRule() === true ? '' : minTotalRule() }}</p>
-          </div>
-          <div class="menu-edit-card__switch">
-            <v-switch
-              v-model="menu.is_sold_out"
-              color="error"
-              hide-details
-              :label="`${menu.is_sold_out ? $t('menu_edit_card.sold_out') : $t('menu_edit_card.in_stock')}`"
-            />
-            <p class="menu-edit-card__hint">
-              {{ $t('menu_edit_card.sold_out_sync_notice') }}
-            </p>
+            <div class="menu-edit-card__switch">
+              <v-switch
+                v-model="menu.is_sold_out"
+                color="error"
+                hide-details
+                :label="`${menu.is_sold_out ? $t('menu_edit_card.sold_out') : $t('menu_edit_card.in_stock')}`"
+              />
+              <p class="menu-edit-card__hint">
+                {{ $t('menu_edit_card.sold_out_sync_notice') }}
+              </p>
+            </div>
           </div>
         </div>
       </v-card-text>
       <template #actions>
         <v-spacer></v-spacer>
-        <v-btn variant="plain" @click="$emit('cancel')">
+        <v-btn variant="plain" :disabled="saving" @click="$emit('cancel')">
           {{ $t('menu_edit_card.close') }}
         </v-btn>
-        <v-btn type="submit" :disabled="!isValid || !minTotalValid" variant="tonal">
+        <v-btn type="submit" :disabled="saving || !isValid || !minTotalValid" :loading="saving" variant="tonal">
           {{ $t('menu_edit_card.submit') }}
         </v-btn>
       </template>
