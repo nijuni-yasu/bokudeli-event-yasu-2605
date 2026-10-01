@@ -246,49 +246,15 @@ service cloud.firestore {
                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
                 allow create, update, delete: if isSupport()
             }
-            function isValidOptionIdList(value) {
-                return value is list
-                    && value.size() <= 10
-                    && value.size() == value.toSet().size()
-                    && (value.size() < 1 || (value[0] is string && value[0].size() > 0))
-                    && (value.size() < 2 || (value[1] is string && value[1].size() > 0))
-                    && (value.size() < 3 || (value[2] is string && value[2].size() > 0))
-                    && (value.size() < 4 || (value[3] is string && value[3].size() > 0))
-                    && (value.size() < 5 || (value[4] is string && value[4].size() > 0))
-                    && (value.size() < 6 || (value[5] is string && value[5].size() > 0))
-                    && (value.size() < 7 || (value[6] is string && value[6].size() > 0))
-                    && (value.size() < 8 || (value[7] is string && value[7].size() > 0))
-                    && (value.size() < 9 || (value[8] is string && value[8].size() > 0))
-                    && (value.size() < 10 || (value[9] is string && value[9].size() > 0));
-            }
-            function menuWriteFieldsValid() {
-                return request.resource.data.menu_description is string
-                    && request.resource.data.menu_description.size() >= 1
-                    && request.resource.data.menu_description.size() <= 300
-                    && (!('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids));
-            }
-            function optionWriteFieldsValid() {
-                return request.resource.data.option_name is string
-                    && request.resource.data.option_name.size() >= 1
-                    && request.resource.data.option_name.size() <= 40
-                    && request.resource.data.selection in ['single', 'multiple']
-                    && request.resource.data.required is bool
-                    && request.resource.data.option_items is list
-                    && request.resource.data.option_items.size() >= 1
-                    && request.resource.data.option_items.size() <= 20
-                    && (!('option_description' in request.resource.data)
-                        || (request.resource.data.option_description is string
-                            && request.resource.data.option_description.size() <= 200));
-            }
+            // オプションの参照整合性・項目検証・原子的な削除は Callable で保証する。
+            // 店舗本人も直書きでは保存・削除できない。
             match /menus/{menu} {
                 allow read: if true
-                allow create, update: if request.auth != null && request.auth.uid == partner_id && menuWriteFieldsValid()
-                allow delete: if request.auth != null && request.auth.uid == partner_id
+                allow write: if false
             }
             match /options/{option} {
                 allow read: if true
-                allow create, update: if request.auth != null && request.auth.uid == partner_id && optionWriteFieldsValid()
-                allow delete: if request.auth != null && request.auth.uid == partner_id
+                allow write: if false
             }
         }
         match /communities/{community} {
