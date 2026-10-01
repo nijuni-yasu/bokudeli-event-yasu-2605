@@ -2,6 +2,8 @@
 
 ### RC 一覧（サマリ）
 
+冒頭表は最新評価を示す。2026-10-01 のリリース前方針による再評価は末尾に記録し、各過去セッションの評価は履歴として保持する。既存指摘は同じ RC 番号で追跡する。
+
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 | :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | [x] | RC-1 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | オプション説明の表示判定が falsy<br>`!= null` と空文字で判定する |
@@ -17,7 +19,7 @@
 | [x] | RC-11 | 4104985498 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 存在しない option_id を黙って捨てる<br>欠落 ID を検出して EventMenu 変換を失敗扱いにする |
 | [x] | RC-12 | 4104985534 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 🔒 セキュリティ | 🔧 微修正 | S | Rules が option_ids の型と重複を見ない<br>文字列かつ一意にする |
 | [x] | RC-13 | 4104985569 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | is_vegan / is_halal の型を Rules が見ない<br>bool 以外を拒否する |
-| [x] | RC-14 | 4104985599 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | option_items の中身を Rules で検証してほしい<br>仕様 5.3 は Rules の対象外 |
+| [x] | RC-14 | 4104985599, 4115300334 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 📋 仕様追加 | M | 検証付き Callable に保存を集約し、全項目の型・範囲・ID/名前の重複を Zod で検証。Rules は直接書き込みを禁止した。 |
 | [x] | RC-15 | 4104985632 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | メニュー未読込のままオプションを消せる<br>読込完了まで削除しない |
 | [x] | RC-16 | 4104985666 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | オプション欄にメニュー名が重複する<br>項目名だけを出す |
 | [x] | RC-17 | 4105006874 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | オプション編集で既存メニューが 1 円未満になる<br>参照メニューの最小合計を保存前に見る |
@@ -26,16 +28,16 @@
 | [x] | RC-20 | 4105006894 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | Rules が option_ids の重複を許す<br>RC-12 と同じく一意にする |
 | [x] | RC-21 | 5318264543 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 📄 ドキュメントのみ | S | 仕様書が未実装のまま<br>Phase 1 実装済みに更新する |
 | [x] | RC-22 | 5324935902 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 概要は既存のインライン指摘の再掲<br>個別 RC で扱う |
-| [x] | RC-23 | 4110466923 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items が配列以外だと 500 になる<br>配列と要素を見て invalid-argument にする |
+| [x] | RC-23 | 4110466923 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 👀 確認のみ | — | selected_items の不正入力は修正済み<br>配列・要素・件数を確認し invalid-argument を返す |
 | [x] | RC-24 | 4110466941 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 区切り文字を含む ID でまとめキーが衝突する<br>選択の組を JSON にして境界を固定する |
 | [x] | RC-25 | 5844335856 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 概要は RC-11 と RC-19 の再掲<br>個別 RC で扱う |
 | [x] | RC-26 | 4110615850 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 💾 データ | 🔧 微修正 | S | オプション未取得を空配列にしている<br>再生成では読込完了まで保存しない |
 | [x] | RC-27 | 4110615817 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 🔧 微修正 | S | option_description の型と長さを Rules が見ない<br>存在時は 200 文字以下の文字列にする |
 | [x] | RC-28 | 4110615872 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | オプション設定へのリンクがパス直書き<br>getOptionsPath を使う |
-| [ ] | RC-29 | 4111286766 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 画面と Functions のデプロイ順で金額がずれる<br>同時反映か機能ゲートを決める |
+| [x] | RC-29 | 4111286766, 4114702066, 4114702084, 4114702108 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 独立デプロイに関する3件はコード対応不要<br>メンテナンス中に全対象を反映してから利用を再開する |
 | [x] | RC-30 | 4111286772 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | selected_items を走査前に件数制限していない<br>正規の上限で切ってから検証する |
-| [ ] | RC-31 | 5325821161 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | Stripe の商品名が 250 文字を超える<br>切り詰め方を決めてから実装する |
-| [ ] | RC-32 | 4111286768 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | オプション削除がメニュー更新と別書き込み<br>参照解除と削除を同じ batch にする |
+| [x] | RC-31 | 5325821161, 4114702125 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 👤 UX | 📋 仕様追加 | M | Stripe product_data.name のみ250コードポイントに制限（超過時は249文字＋…）。注文スナップショット・金額・集約キーは維持した。 |
+| [x] | RC-32 | 4111286768, 4114702139 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 👤 UX | 🔧 微修正 | M | サーバートランザクションで実際の参照メニューを読み、参照解除と本体削除を一括確定。メニュー保存も参照先を読み、同時参照追加と古い編集による復活を拒否した。 |
 | [x] | RC-33 | 5325813791 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 概要は既存の未解決スレッドの再掲<br>個別 RC で扱う |
 | [x] | RC-34 | 5846025147 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot が RC-11 と RC-19 を実装した報告<br>新しい指摘はない |
 | [x] | RC-35 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 1食あたり文言を依存のない computed で中継している<br>テンプレートの `$t` に置く |
@@ -49,14 +51,15 @@
 | [x] | RC-43 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | スマホの参加者メニュー一覧が説明文を出す<br>仕様どおり xs では説明文を出さない |
 | [x] | RC-44 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | Rules がメニュー説明文の 300 文字を見ない<br>`menuWriteFieldsValid` で長さを制限する |
 | [x] | RC-45 | 5365750304 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-46 で扱う |
-| [ ] | RC-46 | 4144224625 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 📋 仕様追加 | M | 0円の事前決済がカート後に確定できない<br>決済なし確定か、対象の支払い方式を制限する |
+| [x] | RC-46 | 4144224625 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 👤 UX | 📋 仕様追加 | M | user_advance の支払合計0円だけ confirmOrder で確定可能にした。サーバー再計算・既存の確定条件・確定後処理を維持し、有料混在は拒否した。 |
 | [x] | RC-47 | 4144265403 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 削除済みオプション ID が保存で戻る<br>欠落 ID があるメニューは保存しない |
 | [x] | RC-48 | 5911293633 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 返信は既存の未解消指摘の再掲<br>個別 RC で扱う |
 | [x] | RC-49 | 5366192698 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-50 で扱う |
-| [x] | RC-50 | 4144582288 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | Rules で option_ids の実在を見てほしい<br>仕様 5.3 は配列長まで。存在確認は承認時 |
+| [x] | RC-50 | 4144582288 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 📋 仕様追加 | M | 認証 UID 配下の option ドキュメントを保存トランザクション内で取得し、欠落・他店舗の参照を拒否。クライアント直書きも禁止した。 |
 | [x] | RC-51 | 5374647587 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存の未解消指摘の再掲<br>新しい指摘はない |
 | [x] | RC-52 | 5374647675 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC-53 で扱う |
 | [x] | RC-53 | 4151569102 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 別オプションの同時追加で限定数を超える<br>増加ロックをイベントとメニューで共有する |
+| [x] | RC-54 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 💾 データ | 🔧 微修正 | M | 正の必須オプション削除で残りの最小金額が1円未満になる<br>削除前に残存構成を検証し、失敗時は全体を中止する |
 
 ---
 
@@ -2768,3 +2771,700 @@ Useful? React with 👍 / 👎.
 **判断理由**: 増加ロックが group_key 単位だと、同じメニューの別オプションを通信完了前に両方押したとき、サーバーはカート内の数を見ないため両方成功しうる。増加中はイベントと menu_id で共通ロックする。手順 4a で修正済み。
 
 ---
+
+---
+
+## 評価セッション（2026-10-01 13:55・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 13:55 JST
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **対象**: ユーザー指定の Open 10件。対象外スレッドは今回の再評価に含めない
+- **照合した PR HEAD**: `2d02d19bd121f06ceb0ed4eed2750d6265378f8a`
+- **ローカル HEAD**: `1ac9da3d16656bc7fefd56f6f9740217273e2064`。PR より1コミット先行するが、追加差分はお名前シート用の表示調整であり、対象の保存・削除・決済処理の差は無い
+- **Outdated 除外件数**: 1件（GraphQL の isOutdated で判定）
+- **レビュー非該当スキップ件数**: 0件（指定10件内）
+- **新規 RC**: なし。同一論点の重複採番をせず、既存 RC-14 / 23 / 29 / 31 / 32 / 46 / 50 を再評価
+- **前提変更**: オプションは未リリース。後からスキーマ変更・backfill が必要になる設計課題はリリース前に解消する。デプロイはメンテナンス下で同時反映する。オプション削除時は店舗メニューの参照も解除する
+- **初回評価時の手順4a**: 自動修正0件。未着手5項目は仕様判断または認可経路の影響確認が必要であり、[自動修正ポリシー](../../.agents/skills/review-comments-evaluate/references/auto-fix-policy.md)の共通対象外。今回の成果物は評価と実装方針。ソースコード変更なし
+- **初回評価時の検証**: `npm -w common run test -- src/utils/menuOption.test.ts` → 30件成功。Rules エミュレータ、実際の同時削除、Stripe 接続、実データ調査は未実施
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-14 | 4104985599, 4115300334 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 📋 仕様追加 | M | 検証付き Callable に保存を集約し、全項目の型・範囲・ID/名前の重複を Zod で検証。Rules は直接書き込みを禁止した。 |
+| [x] | RC-23 | 4110466923 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 👀 確認のみ | — | selected_items の不正入力は修正済み<br>配列・要素・件数を確認し invalid-argument を返す |
+| [x] | RC-29 | 4111286766, 4114702066, 4114702084, 4114702108 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 独立デプロイに関する3件はコード対応不要<br>メンテナンス中に全対象を反映してから利用を再開する |
+| [x] | RC-31 | 5325821161, 4114702125 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 👤 UX | 📋 仕様追加 | M | Stripe product_data.name のみ250コードポイントに制限（超過時は249文字＋…）。注文スナップショット・金額・集約キーは維持した。 |
+| [x] | RC-32 | 4111286768, 4114702139 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 👤 UX | 🔧 微修正 | M | サーバートランザクションで実際の参照メニューを読み、参照解除と本体削除を一括確定。メニュー保存も参照先を読み、同時参照追加と古い編集による復活を拒否した。 |
+| [x] | RC-46 | 4144224625 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 👤 UX | 📋 仕様追加 | M | user_advance の支払合計0円だけ confirmOrder で確定可能にした。サーバー再計算・既存の確定条件・確定後処理を維持し、有料混在は拒否した。 |
+| [x] | RC-50 | 4144582288 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ, 💾 データ | 📋 仕様追加 | M | 認証 UID 配下の option ドキュメントを保存トランザクション内で取得し、欠落・他店舗の参照を拒否。クライアント直書きも禁止した。 |
+
+### 初回評価時の推奨案（下記の実装結果を参照）
+
+1. **RC-14 / RC-50 / RC-32 を一体で対応**。オプション保存・削除、およびメニューのオプション参照を変更する操作を検証付き Callable に集約する案を推奨する。認証した partner と保存先をサーバーで確定し、store の converter 付き ref を使う。オプション項目の完全な検証、同一 partner 内での参照先の実在、メニューの最小合計金額を検査する。UI の検査は操作支援として残す。
+2. **削除と参照保存の競合対策**。サーバーのトランザクション内で対象オプションと実際の参照メニューを読み、最新の option_ids から対象を除去して本体削除とまとめて確定する。メニュー保存側も同じオプションをトランザクション内で確認し、同時の参照追加を防ぐ。Rules ではこの経路を迂回する直接変更を禁止する。削除対象をクライアントのキャッシュだけで決めない。原子処理の上限を超える場合も途中まで削除しない。メニュー全体の古い値を再保存せず、必要な参照フィールドだけを更新する。
+3. **RC-31**。Stripe に送る商品名だけを250文字以内に省略する。注文スナップショットの完全な選択内容・確定額・集約キーは保持する。
+4. **RC-46**。支払合計が0円の user_advance を決済なしで確定できる経路を推奨する。サーバーで合計を確認し、正額を無決済で確定できないことを検証する。0円単独・有料との混在・キャンセルまでを対象にする。
+
+**保存スキーマの変更は、この10件からは必須ではない。** `option_items` 配列、`option_ids` 配列、EventMenu の options、注文の selected_options を維持したまま上記を実現できる。Rules のためだけに項目をサブコレクション化したり、逆引きの参照配列を追加したりする必要はない。新規 Callable の入力 Zod スキーマは common/src/apis に置くが、これは Firestore の保存形式変更とは別である。
+
+この案では形式移行の backfill は原則不要。ただし既存データに不正項目・無効参照が存在しないことは、実データを読んでいないため断定しない。検証環境等で既に作成したデータは、締め付け前に監査し必要なら補正する。補正バッチが必要な場合は AGENTS.md に従い `bokudeli-event-batch` 側で実施し、アプリ本体には schema / converter / store / Rules / テストを整備する。未リリースという理由だけで既存データが空だとは扱わない。
+
+**削除時に残すもの**: 店舗メニューの option_ids からは取り除く。一方、承認済み EventMenu と確定済み注文はその時点の契約内容なので残す。将来の承認・再生成では削除後の店舗メニューをコピーする。既に存在するカートの扱いは承認済み EventMenu のスナップショット方針を維持する。
+
+**リリース運用**: 全対象の更新・確認が完了するまでメンテナンスを維持する。古いタブの再読込と、適用中の注文・承認の停止も手順に含める。この前提が崩れる運用に変更する場合に限り、RC-29 の互換性対策を再検討する。
+
+**実装前に仕様書へ反映する決め**: §5.3・§5.4 の書き込み経路、§4.3.3 の Stripe 用省略ルール、0円参加の確定方法。推奨案の段階であり、今回これらのプロダクト仕様を実装済みに書き換えてはいない。
+
+**公式資料**:
+
+- [Firebase: 各フィールドの型検証](https://firebase.google.com/docs/firestore/security/rules-fields) — list / map 全要素を一括で型検証する短縮記法は無い。最大20要素を個別に検証する Rules 案も可能であり、「Rules では不可能」だから保存形式を変更するという判断はしない。
+- [Firebase: トランザクションとバッチ](https://firebase.google.com/docs/firestore/manage-data/transactions) — 原子的な更新と getAfter、Rules のアクセス上限を確認。クライアントで参照先検証を増やす場合は1操作10回・バッチ全体20回の上限も設計に含める。
+- [Stripe: 商品名の250文字制限](https://docs.stripe.com/changelog/2018-10-31/names-products-character-limit)
+
+---
+
+**識別子**: RC-14（GitHub id: 4115300334。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `firestore.rules:278`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -246,15 +246,46 @@ service cloud.firestore {
+                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
+                 allow create, update, delete: if isSupport()
+             }
++            function isValidOptionIdList(value) {
++                return value is list
++                    && value.size() <= 10
++                    && value.size() == value.toSet().size()
++                    && (value.size() < 1 || (value[0] is string && value[0].size() > 0))
++                    && (value.size() < 2 || (value[1] is string && value[1].size() > 0))
++                    && (value.size() < 3 || (value[2] is string && value[2].size() > 0))
++                    && (value.size() < 4 || (value[3] is string && value[3].size() > 0))
++                    && (value.size() < 5 || (value[4] is string && value[4].size() > 0))
++                    && (value.size() < 6 || (value[5] is string && value[5].size() > 0))
++                    && (value.size() < 7 || (value[6] is string && value[6].size() > 0))
++                    && (value.size() < 8 || (value[7] is string && value[7].size() > 0))
++                    && (value.size() < 9 || (value[8] is string && value[8].size() > 0))
++                    && (value.size() < 10 || (value[9] is string && value[9].size() > 0));
++            }
++            function menuWriteFieldsValid() {
++                return !('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids);
++            }
++            function optionWriteFieldsValid() {
++                return request.resource.data.option_name is string
++                    && request.resource.data.option_name.size() >= 1
++                    && request.resource.data.option_name.size() <= 40
++                    && request.resource.data.selection in ['single', 'multiple']
++                    && request.resource.data.required is bool
++                    && request.resource.data.option_items is list
++                    && request.resource.data.option_items.size() >= 1
++                    && request.resource.data.option_items.size() <= 20
+```
+
+**レビュワーのコメント（原文）**:
+
+`option_items` はリスト型と件数しか検証しておらず、要素ごとの `item_id`・`name`・`price_delta` の型、空文字、差分の範囲を Rules で制限していません。認証済みクライアントが不正な要素を書き込めるため、`PartnerOption` の変換や承認時の `getOptions()` が Zod エラーで失敗し、店舗のオプション／イベント承認を壊せます。各要素を Rules で検証し、その拒否テストも追加してください。
+
+**対応要約**: 検証付き Callable に保存を集約し、全項目の型・範囲・ID/名前の重複を Zod で検証。Rules は直接書き込みを禁止した。
+
+**コメント要約**: option_items の型・範囲・重複を保存時に検証する
+旧「仕様対象外」評価をリリース前の方針で再評価
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ, 💾 データ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 2026-10-01 のユーザーによる修正指示に基づき対応済み。検証付き Callable に保存を集約し、全項目の型・範囲・ID/名前の重複を Zod で検証。Rules は直接書き込みを禁止した。
+
+再評価時点の判断:  Rules はリスト型と件数のみを検証しており、price_delta の非数値・範囲外や不正な item_id などを直書きできる。PartnerOption の AppSchema の parse、getOptions() の全件変換を失敗させる値が保存可能。項目名の空文字など、保存用 DbSchema と読込用 AppSchema で許容範囲が異なる値もあるため、すべての不正値が直ちに読込例外になるとは限らない。旧評価の「§5.3 の対象外」は欠陥が無い根拠にはならず、今回は §5.3・§5.4 の見直しを含めて対応対象とする。項目は 1〜20 件、item_id の非空・一意、name の 1〜40 文字・重複不可、price_delta の整数・-10000〜10000 をサーバーで検証する案を推奨。partner_id と認証・保存先の一致、必要な日時フィールドも確認する。既存配列の保存形式は維持できる。
+
+初回評価時の自動修正判定: 保存を Callable に集約する案は §5.4 の直書き方針と認可境界を変更する。セキュリティ影響範囲と仕様の決定が必要なため自動修正対象外。 後続のユーザー指示「必須事項について修正を進めてください」により実装した。
+
+---
+
+**識別子**: RC-23（GitHub id: 4110466923。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/apis/order.ts:4`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -1,7 +1,14 @@
++export type AddToCartMenuRequest = {
++  menu_id: string
++  count: number
++  selected_items?: { option_id: string; item_id: string }[]
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] これは型定義だけで、Callable の `request.data` は実行時検証されないまま `selected_items` が `resolveEventMenuCartOrder` に渡されます。外部から配列以外（例: オブジェクト）を送ると `validateCartOptionSelection` の反復で TypeError になり、入力エラーではなく Functions 500 になります。Callable 境界で配列と各要素を検証して `invalid-argument` に変換してください。
+
+**コメント要約**: selected_items の不正入力は修正済み
+配列・要素・件数を確認し invalid-argument を返す
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: common/src/utils/menuOption.ts の resolveEventMenuCartOrder は unknown を受け取り、最大200件の検査、Array.isArray、各要素の option_id/item_id の型・非空を検査してから走査する。memberOrders.ts と enterpriseSubsidyOrders.ts は失敗結果を HttpsError に変換している。今回 common の menuOption.test.ts 30件を実行し全件成功した。指摘の selected_items に関する追加修正は不要。Callable の全入力を包括的に監査したという意味ではない。
+
+自動修正の判定: 既対応のため自動修正不要。
+
+---
+
+**識別子**: RC-29（GitHub id: 4114702066。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:205`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -128,6 +205,8 @@ const addCart = async () => {
+         {
+           menu_id,
+           count: selectedCount.value,
++          selected_items: selectedItems.value,
++          presented_menu_price: displayedPrice.value,
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] カート画面と Functions のデプロイが独立しているため、片方だけ先に反映される時間帯に金額不整合が起きます。新しい画面を先に配布すると旧 `addToCart` は `selected_items` / `presented_menu_price` を無視して本体価格を保存し、Functions を先に配布すると旧画面は必須オプションを送らず注文できません。互換 rollout または feature gate を用意し、オプション利用を両側が揃った後だけ有効化してください。
+
+**コメント要約**: 独立デプロイに関する3件はコード対応不要
+メンテナンス中に全対象を反映してから利用を再開する
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: ユーザーがメンテナンスモード下の同時反映を指定したため、異なるバージョンが通常利用されるリリース窓を許容しない運用とする。Functions・Rules・partner・user・enterprise および承認スナップショットを書き込む画面を反映し、確認後に解除する前提で、互換 API や feature gate は追加しない。適用中の注文・承認を止めることと、再開後の古いタブを更新させることはリリース手順に含める。既存のメンテナンス機構がこの条件を実際に満たすかは本評価では実機確認していない。3コメントは既存 RC-29 と同一論点のため重複採番しない。
+
+自動修正の判定: ユーザー指定の運用方針で対応不要。実デプロイは本タスクの対象外。
+
+---
+
+**識別子**: RC-29（GitHub id: 4114702084。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/apis/order.ts:5`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -1,7 +1,14 @@
++export type AddToCartMenuRequest = {
++  menu_id: string
++  count: number
++  selected_items?: { option_id: string; item_id: string }[]
++  presented_menu_price?: number
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この API 拡張は旧 Functions と後方互換ではありません。新しい画面が先に配信されると、旧 `addToCart` は `selected_items` と `presented_menu_price` を解釈せず本体価格で注文を保存するため、画面表示額と確定注文額が不一致になります。Functions を先にデプロイする順序を CI/運用で保証するか、未対応バックエンドでは新 UI を有効化しない機能ゲートを追加してください。
+
+**コメント要約**: 独立デプロイに関する3件はコード対応不要
+メンテナンス中に全対象を反映してから利用を再開する
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: ユーザーがメンテナンスモード下の同時反映を指定したため、異なるバージョンが通常利用されるリリース窓を許容しない運用とする。Functions・Rules・partner・user・enterprise および承認スナップショットを書き込む画面を反映し、確認後に解除する前提で、互換 API や feature gate は追加しない。適用中の注文・承認を止めることと、再開後の古いタブを更新させることはリリース手順に含める。既存のメンテナンス機構がこの条件を実際に満たすかは本評価では実機確認していない。3コメントは既存 RC-29 と同一論点のため重複採番しない。
+
+自動修正の判定: ユーザー指定の運用方針で対応不要。実デプロイは本タスクの対象外。
+
+---
+
+**識別子**: RC-29（GitHub id: 4114702108。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/eventMenuConverter.ts:87`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -74,9 +84,24 @@ export function convertFromPartnerMenuToEventMenu(
+     menu_sort_number: partnerMenu.menu_sort_number,
+     limit_per_event: partnerMenu.limit_per_event,
+     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
++    options,
+```
+
+**レビュワーのコメント（原文）**:
+
+[imo] 承認時に `EventMenu.options` を追加する一方、`addToCart` は新しい必須オプションに対して `selected_items` を要求します。各 package のデプロイが独立しているため、旧 Functions が新しい EventMenu の options を無視したり、新 Functions が旧 user/enterprise UI のリクエストを拒否したりするリリース窓があり、料金や注文可否がバージョン順で変わります。UI 先行→Functions 有効化など、互換 rollout または feature gate を定めてください。
+
+**コメント要約**: 独立デプロイに関する3件はコード対応不要
+メンテナンス中に全対象を反映してから利用を再開する
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: ユーザーがメンテナンスモード下の同時反映を指定したため、異なるバージョンが通常利用されるリリース窓を許容しない運用とする。Functions・Rules・partner・user・enterprise および承認スナップショットを書き込む画面を反映し、確認後に解除する前提で、互換 API や feature gate は追加しない。適用中の注文・承認を止めることと、再開後の古いタブを更新させることはリリース手順に含める。既存のメンテナンス機構がこの条件を実際に満たすかは本評価では実機確認していない。3コメントは既存 RC-29 と同一論点のため重複採番しない。
+
+自動修正の判定: ユーザー指定の運用方針で対応不要。実デプロイは本タスクの対象外。
+
+---
+
+**識別子**: RC-31（GitHub id: 4114702125。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/stripe.ts:243`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -236,7 +238,7 @@ export const createStripeCheckoutSession = onCall<
+         existing.quantity++
+       } else {
+         grouped.set(groupKey, {
+-          menuName: order.menu_name,
++          menuName: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `formatOrderMenuDisplayName` はメニュー名に選択項目名をすべて連結するため、複数選択を多数付けると 250 文字を超え得ます。その値をそのまま Stripe の `product_data.name` に渡すと Checkout Session 作成が Stripe の商品名長制限で失敗し、正しい注文でも決済できません。Stripe 用の名前を上限内にする方針（切り詰め、または明細分割）を決めて適用してください。
+
+**対応要約**: Stripe product_data.name のみ250コードポイントに制限（超過時は249文字＋…）。注文スナップショット・金額・集約キーは維持した。
+
+**コメント要約**: 選択項目の連結で Stripe 商品名の250文字上限を超える
+Stripe 用表示名だけを短縮し注文の完全な選択内容は保持する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 👤 UX
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 2026-10-01 のユーザーによる修正指示に基づき対応済み。Stripe product_data.name のみ250コードポイントに制限（超過時は249文字＋…）。注文スナップショット・金額・集約キーは維持した。
+
+再評価時点の判断:  formatOrderMenuDisplayName は選択項目をすべて連結し、stripe.ts は上限処理なく product_data.name に渡している。項目名40文字を7つ選ぶだけでも上限を超え得る。Stripe 公式仕様で商品名は250文字まで。§4.3.3 に Stripe 用の省略ルールを追加し、メニュー名優先・省略記号込み250文字以内を推奨する。Unicode の途中で切らないこと、短縮した名前で明細を再集約しないこと、Firestore の selected_options・確定金額・共通の完全表示名を変えないことを条件とする。保存スキーマと backfill は不要。
+
+初回評価時の自動修正判定: §4.3.3 は完全表示名を指定しており、省略箇所・表示形式は新たな仕様判断になるため自動修正対象外。 後続のユーザー指示「必須事項について修正を進めてください」により実装した。
+
+---
+
+**識別子**: RC-32（GitHub id: 4114702139。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `partner/src/pages/options.vue:124`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・46 行）
++}
++
++const targetOption: Ref<BokudeliPartnerOption | null> = ref(null)
++const optionDialog = computed({
++  get: () => targetOption.value != null,
++  set: (value) => {
++    if (!value) {
++      targetOption.value = null
++    }
++  },
++})
++
++const createBlankOption = () =>
++  new BokudeliPartnerOption(partnerId, null, {
++    option_items: [{ item_id: crypto.randomUUID(), name: '', price_delta: 0 }],
++  })
++
++const openOptionDialog = (option: BokudeliPartnerOption) => {
++  targetOption.value = new BokudeliPartnerOption(partnerId, option.option_id, {
++    ...option,
++    option_items: option.option_items.map((item) => ({ ...item })),
++  })
++}
++
++const saveOption = async (option: BokudeliPartnerOption) => {
++  try {
++    if (partnerStore.menus == null) {
++      notification.show($t('options.save_error'), 'error')
++      return
++    }
++    if (!option.isValidForDatabase()) {
++      notification.show($t('options.save_error'), 'error')
++      return
++    }
++    const invalidMenu = menus.value.find((menu) => {
++      if (!(menu.option_ids ?? []).includes(option.option_id)) {
++        return false
++      }
++      const attached = (menu.option_ids ?? [])
++        .map((optionId) =>
++          optionId === option.option_id ? option : options.value.find((item) => item.option_id === optionId),
++        )
++        .filter((item): item is BokudeliPartnerOption => item != null)
++      return !isMenuMinTotalValid(menu.menu_price, attached)
++    })
++    if (invalidMenu != null) {
++      notification.show($t('menu_edit_card.error_min_total'), 'error')
++      return
++    }
++    await partnerStore.updateOption(option)
++    notification.show($t('options.saved'), 'success')
++    optionDialog.value = false
++  } catch (e) {
++    console.error(e)
++    notification.show($t('options.save_error'), 'error')
++  }
++}
++
++const onDeleteOption = async (option: BokudeliPartnerOption) => {
++  const result = window.confirm($t('options.delete_confirm'))
++  if (!result) {
++    return
++  }
++  if (partnerStore.menus == null) {
++    notification.show($t('options.delete_error'), 'error')
++    return
++  }
++  try {
++    const attachedMenus = menus.value.filter((menu) => (menu.option_ids ?? []).includes(option.option_id))
++    await Promise.all(
++      attachedMenus.map((menu) => {
++        const next = new BokudeliPartnerMenu(partnerId, menu.menu_id, {
++          ...menu,
++          option_ids: (menu.option_ids ?? []).filter((id) => id !== option.option_id),
++        })
++        return partnerStore.updateMenu(next)
++      }),
++    )
++    await partnerStore.deleteOption(option.option_id)
+```
+
+**レビュワーのコメント（原文）**:
+
+[ask] 使用中オプションの参照解除とオプション削除が別々の書き込みです。複数メニューの更新途中で失敗した場合や、更新後に別クライアントが参照を追加した場合、参照を残したままオプションだけ削除する競合が起き、次回の EventMenu スナップショットでメニューが欠落し得ます。メニュー更新と削除を単一の batch / transaction にまとめてください。
+
+**対応要約**: サーバートランザクションで実際の参照メニューを読み、参照解除と本体削除を一括確定。メニュー保存も参照先を読み、同時参照追加と古い編集による復活を拒否した。
+
+**コメント要約**: 参照解除とオプション削除を一体化する
+途中失敗と同時参照追加を防ぎ、承認済みの内容は保持する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 2026-10-01 のユーザーによる修正指示に基づき対応済み。サーバートランザクションで実際の参照メニューを読み、参照解除と本体削除を一括確定。メニュー保存も参照先を読み、同時参照追加と古い編集による復活を拒否した。
+
+再評価時点の判断:  現状は参照メニューごとの updateMenu を Promise.all で実行し、すべて成功した後に deleteOption を実行する。正常時は参照解除される。一部更新が失敗した場合、deleteOption には進まないが、成功したメニューの変更は戻らず部分更新が残る。参照一覧取得後に別クライアントが追加した参照や、古い画面からの保存では削除後の参照が残り得る。参照欠落を snapshotPartnerOptionsForMenu が null とし、convertFromPartnerMenuToEventMenu がメニュー全体を除外する。単一 batch は取得済み参照の途中失敗には有効だが、新たな参照追加や直接 delete の抜け道を単独では防げない。RC-50 と一体でサーバー上のトランザクション、保存時の同一オプションの参照検証、クライアント直書き制限を設計する。承認済み EventMenu と確定済み EventMemberOrder のスナップショットは当時の金額・内容のため変更しない。
+
+初回評価時の自動修正判定: 単純な batch 化だけでは要件を満たさず、RC-14/50 と合わせた保存・削除の認可経路変更が必要なため自動修正対象外。 後続のユーザー指示「必須事項について修正を進めてください」により実装した。
+
+---
+
+**識別子**: RC-46（GitHub id: 4144224625。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/menuOption.ts:289`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・196 行）
++  }
++  if (selectedOptions == null || selectedOptions.length === 0) {
++    return normalizedName
++  }
++  const prefix = `${normalizedName}（`
++  const suffix = '）'
++  const remaining = maxLength - prefix.length - suffix.length
++  if (remaining < 1) {
++    return normalizedName
++  }
++  const itemPart = formatSelectedOptionItemNames(selectedOptions)
++  if (itemPart.length <= remaining) {
++    return `${prefix}${itemPart}${suffix}`
++  }
++  const ellipsis = '…'
++  const keep = Math.max(0, remaining - ellipsis.length)
++  return `${prefix}${itemPart.slice(0, keep)}${ellipsis}${suffix}`
++}
++
++export { hasDuplicateOptionItemNames } from '../schemas/menuOption.js'
++
++function isCartSelectedItem(value: unknown): value is CartSelectedItemType {
++  if (typeof value !== 'object' || value == null) {
++    return false
++  }
++  if (!('option_id' in value) || !('item_id' in value)) {
++    return false
++  }
++  return (
++    typeof value.option_id === 'string' &&
++    value.option_id.length > 0 &&
++    typeof value.item_id === 'string' &&
++    value.item_id.length > 0
++  )
++}
++
++function isCartSelectedItemList(value: unknown): value is CartSelectedItemType[] {
++  return Array.isArray(value) && value.every(isCartSelectedItem)
++}
++
++export type ResolveEventMenuCartOrderInput = {
++  eventMenu: {
++    menu_id: string
++    menu_name: string
++    menu_price: number
++    is_selected?: boolean
++    options?: readonly MenuOptionDefinition[] | null
++  }
++  selectedItems?: unknown
++  presentedMenuPrice?: number
++}
++
++export type ResolveEventMenuCartOrderResult =
++  | { ok: true; selected_options: SelectedOptionType[]; menu_price: number }
++  | { ok: false; httpsCode: 'invalid-argument' | 'failed-precondition'; reason: string }
++
++export function resolveEventMenuCartOrder(input: ResolveEventMenuCartOrderInput): ResolveEventMenuCartOrderResult {
++  const optionDefs = input.eventMenu.options ?? []
++  const rawSelected = input.selectedItems ?? []
++  if (!isCartSelectedItemList(rawSelected)) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
++  }
++  const selectedItems = rawSelected
++  if (optionDefs.length === 0 && selectedItems.length > 0) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_OPTION_SELECTION_MESSAGE }
++  }
++  const validation = validateCartOptionSelection(optionDefs, selectedItems)
++  if (!validation.ok) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: validation.reason }
++  }
++  const menu_price = computeOrderMenuPrice(input.eventMenu.menu_price, validation.selected_options)
++  const isAttendanceOnlyMenu = input.eventMenu.menu_price === 0 && menu_price === 0
++  if (menu_price < MENU_OPTION_MIN_TOTAL && !isAttendanceOnlyMenu) {
++    return { ok: false, httpsCode: 'invalid-argument', reason: INVALID_MENU_PRICE_MESSAGE }
++  }
++  if (input.presentedMenuPrice != null && input.presentedMenuPrice !== menu_price) {
++    return { ok: false, httpsCode: 'failed-precondition', reason: INVALID_MENU_PRICE_MESSAGE }
++  }
++  return { ok: true, selected_options: validation.selected_options, menu_price }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 0円の注文なし参加をここで許可すると、`user_advance` のカートでも 0円注文が通りますが、画面側は事前決済を常に Stripe Checkout へ送り、`stripe.ts` は `totalPayment <= 0` を拒否し、`confirmOrder` は `user_advance` を拒否します。この組み合わせでは注文を確定できません。0円の事前決済を決済なしで確定する経路を追加するか、対象の支払い方式をカート検証で明確に制限してください。
+
+**対応要約**: user_advance の支払合計0円だけ confirmOrder で確定可能にした。サーバー再計算・既存の確定条件・確定後処理を維持し、有料混在は拒否した。
+
+**コメント要約**: user_advance の支払合計0円を確定する経路が無い
+サーバー再計算で0円の場合のみ決済なし確定を推奨
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 👤 UX
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 2026-10-01 のユーザーによる修正指示に基づき対応済み。user_advance の支払合計0円だけ confirmOrder で確定可能にした。サーバー再計算・既存の確定条件・確定後処理を維持し、有料混在は拒否した。
+
+再評価時点の判断:  カートは本体0円かつ合計0円を許可するが、cart.vue は user_advance なら常に Stripe、stripe.ts は totalPayment <= 0 を拒否、confirmOrder は user_advance を金額検査前に拒否する。したがって0円メニューだけの注文が確定不能。有料注文と混在して支払合計が正なら同じ条件ではない。既存の「注文なしで参加」を維持するため、確定対象の合計をサーバーが再計算して0円のときだけ confirmOrder を許可し、正額のときは引き続き Checkout を必須にする案を推奨。画面分岐・ボタン文言、キャンセル・通知・決済記録が無い注文の扱いも確認する。EventMenu と EventMemberOrder は既に0円を許容するので、この修正のための必須フィールド追加や backfill は原則不要。
+
+初回評価時の自動修正判定: 支払い方式ごとの無料参加可否と決済なし確定の仕様を決める必要があるため自動修正対象外。 後続のユーザー指示「必須事項について修正を進めてください」により実装した。
+
+---
+
+**識別子**: RC-50（GitHub id: 4144582288。既存 RC の再評価）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `firestore.rules:268`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -246,15 +246,49 @@ service cloud.firestore {
+                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
+                 allow create, update, delete: if isSupport()
+             }
++            function isValidOptionIdList(value) {
++                return value is list
++                    && value.size() <= 10
++                    && value.size() == value.toSet().size()
++                    && (value.size() < 1 || (value[0] is string && value[0].size() > 0))
++                    && (value.size() < 2 || (value[1] is string && value[1].size() > 0))
++                    && (value.size() < 3 || (value[2] is string && value[2].size() > 0))
++                    && (value.size() < 4 || (value[3] is string && value[3].size() > 0))
++                    && (value.size() < 5 || (value[4] is string && value[4].size() > 0))
++                    && (value.size() < 6 || (value[5] is string && value[5].size() > 0))
++                    && (value.size() < 7 || (value[6] is string && value[6].size() > 0))
++                    && (value.size() < 8 || (value[7] is string && value[7].size() > 0))
++                    && (value.size() < 9 || (value[8] is string && value[8].size() > 0))
++                    && (value.size() < 10 || (value[9] is string && value[9].size() > 0));
++            }
++            function menuWriteFieldsValid() {
++                return request.resource.data.menu_description is string
++                    && request.resource.data.menu_description.size() >= 1
++                    && request.resource.data.menu_description.size() <= 300
++                    && (!('option_ids' in request.resource.data) || isValidOptionIdList(request.resource.data.option_ids));
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `option_ids` は配列の形しか検証されておらず、削除済み・存在しない ID や別パートナーの ID を直接 Firestore に保存できます。UI の `saveMenu` 検証を経由しない書き込みでは、承認時にこのメニューが `EventMenu` から黙って除外されるため、メニュー保存時点で同一パートナー配下のオプション参照を検証するか、少なくとも無効参照を拒否するサーバー側経路を追加してください。
+
+**対応要約**: 認証 UID 配下の option ドキュメントを保存トランザクション内で取得し、欠落・他店舗の参照を拒否。クライアント直書きも禁止した。
+
+**コメント要約**: option_ids の実在と同一パートナー所属を保存時に検証する
+承認時の除外だけでは参照不整合を防げない
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ, 💾 データ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 2026-10-01 のユーザーによる修正指示に基づき対応済み。認証 UID 配下の option ドキュメントを保存トランザクション内で取得し、欠落・他店舗の参照を拒否。クライアント直書きも禁止した。
+
+再評価時点の判断:  Rules は配列の件数・非空文字列・重複のみを検証し、参照先を確認していない。Rules テストにも option ドキュメント無しで menu に opt-1 を保存できるケースがある。自店舗の partners/{partnerId}/options/{optionId} の実在を検証し、削除処理と競合しても無効な参照を保存できないようにする。別店舗の ID を書けば別店舗からオプションを読み出す実装ではなく、自店舗配下に対応する ID が無ければ参照欠落になる。§4.2.2 の同一パートナー要件とデータ整合性のため、旧「§5.3 の対象外」判断を見直す。RC-14/32 とまとめて書き込み入口をサーバーへ集約する案を推奨。option_ids 配列を変更する必要はない。
+
+初回評価時の自動修正判定: 認可経路変更と §5.3・§5.4 の仕様見直しが必要なため自動修正対象外。 後続のユーザー指示「必須事項について修正を進めてください」により実装した。
+
+---
+
+## 評価セッション（2026-10-01 14:11・shokujii-code-review）
+
+- **評価日時**: 2026-10-01 14:11 JST
+- **評価者**: Codex Agent（`/shokujii-code-review`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **Outdated / レビュー非該当**: 該当なし（ローカル変更のセルフレビュー）
+- **実装結果**: ユーザー指示に基づき RC-14 / RC-31 / RC-32 / RC-46 / RC-50 を対応。RC-23 は既存修正を維持、RC-29 は同時メンテナンスデプロイ前提を維持。
+- **保存形式**: option_items / option_ids / EventMenu / 注文の保存形式は維持。形式移行の backfill は不要。実環境の不正データ監査・補正は未実施。
+- **検証**: lint-and-format 指定の deploy verifier・Vue 型検査ゲート・ビルド・lint・format・各パッケージテストを実施。common lint のテスト内 braces 指摘は修正後再実行して成功。変更後の追加チェックは下記結果に追記。
+- **エミュレータ**: 店舗操作8件（参照存在/所属、入力、削除、競合、ロールバック、編集、並び替え等）と0円注文3件に成功。Rules の直書き拒否・公開読取8件に成功。実際の Stripe API・メール送信・ブラウザ操作は未実施（注文確定後処理は呼び出しを検証）。
+- **再レビュー**: RC-54 修正後、入力境界・認証店舗固定・直接書き込み禁止・全読取後の一括書込・保存項目維持・0円/正額経路・Functions export・UI エラー処理を再確認。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-54 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 💾 データ | 🔧 微修正 | M | 正の必須オプション削除で残りの最小金額が1円未満になる<br>削除前に残存構成を検証し、失敗時は全体を中止する |
+
+**識別子**: RC-54（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Codex Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/utils/partnerMenuOperations.ts:90`
+
+**該当コード（修正前）**:
+
+```typescript
+const menus = await partner.getMenusUsingOption(optionId, transaction)
+for (const menu of menus) {
+  menu.option_ids = menu.option_ids.filter((id) => id !== optionId)
+  await partner.saveMenu(menu, transaction)
+}
+partner.deleteOption(optionId, transaction)
+```
+
+**レビュワーのコメント（原文）**: 正の必須オプションを削除すると、残った値引きオプションとの最小合計が1円未満になる場合があります。削除後の構成を同じトランザクション内で検証し、成立しない場合は本体削除も参照解除も中止してください。
+
+**コメント要約**: オプション削除時も残った構成の最低価格を保証する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 残存オプションを取得して全アクティブ参照メニューを検証後に書き込む。削除拒否の説明を画面に追加した。本体100円・必須加算1000円・値引き500円の構成から必須加算を消すテストで、削除と参照解除が両方とも行われないことを確認した。
+
+**最終チェック結果**: 指定パッケージの通常テスト計1293件成功（common 485 / base 153 / user 45 / partner 1 / enterprise 47 / functions 562）。通常実行でスキップしたエミュレータ依存11件はローカルエミュレータで別途全件成功。Rules 8件も成功。追加した Rules テストファイル単体の lint / format は成功。Rules テスト用ワークスペース全体は既存未変更ファイルの lint 警告（minimumParticipants.test.ts の未使用 context）および format 差異（chatReactions.test.ts、enterprise.test.ts）で失敗し、今回の変更には含めない。ブラウザ実操作、実環境へのデプロイは未実施。
