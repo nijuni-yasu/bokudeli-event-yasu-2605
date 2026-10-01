@@ -29,20 +29,16 @@ const normalizedQuery = computed(() => normalizeTag(query.value))
 const isSearching = computed(() => normalizedQuery.value !== '')
 const isAtLimit = computed(() => tags.value.length >= USER_TAG_MAX_COUNT)
 const isTooLong = computed(() => tagCodePointLength(normalizedQuery.value) > USER_TAG_MAX_LENGTH)
-const selectedTags = computed(() => new Map(tags.value.map((tag) => [normalizeTag(tag), tag])))
+/** 選択判定はマスタ表記と自由入力の大文字小文字を同一視する */
+const tagSelectionKey = (tag: string): string => normalizeTag(tag).toLowerCase()
+const selectedTags = computed(() => new Map(tags.value.map((tag) => [tagSelectionKey(tag), tag])))
 const candidates = computed(() => getProfileTagCandidates(query.value))
 const pageSize = computed(() => (xs.value ? PROFILE_TAG_PAGE_SIZE.mobile : PROFILE_TAG_PAGE_SIZE.desktop))
 const visibleTags = computed(() => candidates.value.slice(0, page.value * pageSize.value))
 const hasMore = computed(() => visibleTags.value.length < candidates.value.length)
 const isBrowsingGenres = computed(() => showGenres.value)
 const exactMasterTag = computed(() => findExactMasterTag(normalizedQuery.value))
-const hasSelectedQuery = computed(() => {
-  const key = normalizedQuery.value.toLowerCase()
-  for (const stored of selectedTags.value.keys()) {
-    if (stored.toLowerCase() === key) return true
-  }
-  return false
-})
+const hasSelectedQuery = computed(() => selectedTags.value.has(tagSelectionKey(normalizedQuery.value)))
 const canCreate = computed(
   () => isSearching.value && !isBrowsingGenres.value && exactMasterTag.value == null && !hasSelectedQuery.value,
 )
@@ -84,12 +80,12 @@ const setGenreView = async (show: boolean): Promise<void> => {
   candidateHeading.value?.scrollIntoView({ block: 'nearest' })
 }
 
-const isSelected = (tag: string): boolean => selectedTags.value.has(normalizeTag(tag))
+const isSelected = (tag: string): boolean => selectedTags.value.has(tagSelectionKey(tag))
 
 const addTag = (raw: string, clearQuery: boolean): void => {
   const normalized = normalizeTag(raw)
   const tag = findExactMasterTag(normalized) ?? normalized
-  const alreadySelected = tags.value.some((item) => normalizeTag(item).toLowerCase() === tag.toLowerCase())
+  const alreadySelected = tags.value.some((item) => tagSelectionKey(item) === tagSelectionKey(tag))
   if (
     props.loading ||
     isComposing.value ||
@@ -114,12 +110,13 @@ const removeTag = (tag: string, restoreFocus: boolean): void => {
 }
 
 const toggleTag = (tag: string): void => {
-  const storedTag = selectedTags.value.get(normalizeTag(tag))
-  if (storedTag != null) {
-    removeTag(storedTag, false)
-  } else {
-    addTag(tag, false)
+  const key = tagSelectionKey(tag)
+  if (selectedTags.value.has(key)) {
+    if (props.loading) return
+    tags.value = tags.value.filter((item) => tagSelectionKey(item) !== key)
+    return
   }
+  addTag(tag, false)
 }
 
 const onEnter = (event: KeyboardEvent): void => {

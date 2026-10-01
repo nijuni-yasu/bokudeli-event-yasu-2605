@@ -72,11 +72,14 @@ const saveTags = async (): Promise<void> => {
   if (isUpdating.value || !tagsReady.value || !hasTagChanges.value) return
   isUpdating.value = true
   errorMessage.value = ''
+  const uidAtSaveStart = currentUserStore.firebaseUser?.uid ?? null
+  const uidStillSame = (): boolean => (currentUserStore.firebaseUser?.uid ?? null) === uidAtSaveStart
   try {
     const savedTags = normalizeTagList([...tags.value])
     const tagsBeforeSave = [...(currentUserStore.user?.user_tags ?? [])]
     const response = await updateUserTags(savedTags)
     if (!response.data.success) throw new Error(response.data.message)
+    if (!uidStillSame()) return
     const snapshotTags = currentUserStore.user?.user_tags ?? []
     const snapshotMatchesSaved = sameTagList(snapshotTags, savedTags)
     const snapshotMoved = !sameTagList(snapshotTags, tagsBeforeSave)
@@ -89,8 +92,9 @@ const saveTags = async (): Promise<void> => {
     }
     model.value = false
   } catch (error: unknown) {
-    errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
+    if (!uidStillSame()) return
     reportClientError(error, { componentInfo: 'TagSettingsDialog', severity: 'warn' })
+    errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
   } finally {
     isUpdating.value = false
   }
