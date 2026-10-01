@@ -120,10 +120,10 @@ const onEnter = (event: KeyboardEvent): void => {
       <h3 ref="candidateHeading" class="text-subtitle-2" tabindex="-1">
         {{
           $t(
-            isSearching
-              ? 'user_tags.search_results'
-              : isBrowsingGenres
-                ? 'user_tags.browse_genres'
+            isBrowsingGenres
+              ? 'user_tags.browse_genres'
+              : isSearching
+                ? 'user_tags.search_results'
                 : 'user_tags.choose_tags',
           )
         }}

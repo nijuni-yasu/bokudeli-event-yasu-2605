@@ -416,8 +416,8 @@ export const TAG_GENRES = [
       '社会課題',
       '社会貢献',
       '人権',
-      '地方創生',
       '地域創生',
+      '地方創生',
       '都市開発',
       '復興',
       '福祉',
@@ -462,10 +462,10 @@ export const TAG_GENRES = [
       'テニス',
       'バイク',
       'バスケットボール',
-      'ボディメイク',
       'パラスポーツ',
       'ピラティス',
       'フィットネス',
+      'ボディメイク',
       'マリンスポーツ',
       'ヨガ',
       'ランニング',
@@ -658,11 +658,19 @@ export const TAG_GENRES = [
   },
   {
     genre: 'マッチング／出会い',
-    tags: ['街コン', '婚活', '友だちづくり'] as const,
+    tags: [
+      '街コン',
+      '婚活',
+      '友だちづくり',
+    ] as const,
   },
   {
     genre: 'マネー/資産形成',
-    tags: ['家計', '資産運用', '投資'] as const,
+    tags: [
+      '家計',
+      '資産運用',
+      '投資',
+    ] as const,
   },
 ] as const
 
@@ -679,3 +687,4 @@ for (const g of TAG_GENRES) {
 export function isMasterTagLabel(label: string): boolean {
   return _masterTagSet.has(label)
 }
+
