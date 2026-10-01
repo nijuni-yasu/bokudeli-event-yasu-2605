@@ -92,8 +92,8 @@ const saveTags = async (): Promise<void> => {
     }
     model.value = false
   } catch (error: unknown) {
-    reportClientError(error, { componentInfo: 'TagSettingsDialog', severity: 'warn' })
     if (!uidStillSame()) return
+    reportClientError(error, { componentInfo: 'TagSettingsDialog', severity: 'warn' })
     errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
   } finally {
     isUpdating.value = false
