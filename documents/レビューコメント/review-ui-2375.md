@@ -16,6 +16,11 @@
 | [x] | RC-10 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 保存成功確認時にタグが別更新されると待機値が残る<br>保存開始時の購読値から進んだスナップショットでは待機を捨てる |
 | [x] | RC-11 | 4153810009 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カテゴリ閲覧中も検索用の「一致なし」「もっと見る」が出る<br>検索補助表示は `!isBrowsingGenres` のときだけ出す |
 | [ ] | RC-12 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 保存リクエスト中の中間スナップショットで待機値を解除し得る<br>成功した保存より古い購読値を再表示・再保存する可能性 |
+| [x] | RC-13 | 4153966193 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 全角や大小文字のマスタ一致でも自由タグ追加が出る<br>候補と同じ正規化で完全一致し、マスタ表記で追加する |
+| [x] | RC-14 | 4153966243 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 🔧 微修正 | S | 検索開始・解除でカテゴリ表示が仕様どおり戻らない<br>検索前の表示と開閉を保持し、検索中の文言変更では検索結果に戻す |
+| [x] | RC-15 | 4153988206 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カテゴリ閲覧中も「を追加」が残る<br>`canCreate` をカテゴリ表示中は出さない |
+| [x] | RC-16 | 4153988186 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 🔧 微修正 | S | 別アカウントへ切り替えても旧タグの下書きが残る<br>`firebaseUser.uid` の変化で編集内容を初期化する |
+| [x] | RC-17 | 4153966298 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 初期候補が11件で Issue の12件と違う、という指摘<br>仕様書 4.2.1 は11件。Issue の12件は更新前の完了条件 |
 
 ## 評価セッション（2026-10-01 13:33・shokujii-code-review）
 
@@ -777,3 +782,313 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: `tagsBeforeSave` は Callable 呼び出し開始前に取得され、`snapshotMoved` は成功応答時点の値がそれと異なるだけで true になります。Firestore の購読更新と Callable 応答の到着順は独立しているため、リクエスト中に届いた別更新が Callable の保存より前に確定したスナップショットでも条件を満たします。したがって待機値の解除を保存成功より後の snapshot と保証できず、次回表示・保存で成功済みタグを戻し得ます。
+
+---
+
+## 評価セッション（2026-10-01 18:45・review-comments-evaluate auto / PR #2383）
+
+- **評価日時**: 2026-10-01 18:45 JST
+- **評価者**: Cursor Agent（review-comments-evaluate auto）
+- **ブランチ名**: ui/2375
+- **PR**: #2383（since: 2026-10-01T09:32:30Z、partial: false）
+- **Issue**: #2375
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（依頼コメント 5928713558）
+- **既記録のため再採番しない**: 4153966114 と 5928765348 は RC-12 と同一指摘
+- **手順 4a 自動修正**: RC-13（🚨）、RC-14（🚨）、RC-15（🟡）、RC-16（🟡）。RC-12 は配列比較では更新順を判定できないため未着手のまま
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [x] | RC-13 | 4153966193 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 全角や大小文字のマスタ一致でも自由タグ追加が出る<br>候補と同じ正規化で完全一致し、マスタ表記で追加する |
+| [x] | RC-14 | 4153966243 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書, 👤 UX | 🔧 微修正 | S | 検索開始・解除でカテゴリ表示が仕様どおり戻らない<br>検索前の表示と開閉を保持し、検索中の文言変更では検索結果に戻す |
+| [x] | RC-15 | 4153988206 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カテゴリ閲覧中も「を追加」が残る<br>`canCreate` をカテゴリ表示中は出さない |
+| [x] | RC-16 | 4153988186 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 🔧 微修正 | S | 別アカウントへ切り替えても旧タグの下書きが残る<br>`firebaseUser.uid` の変化で編集内容を初期化する |
+| [x] | RC-17 | 4153966298 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 初期候補が11件で Issue の12件と違う、という指摘<br>仕様書 4.2.1 は11件。Issue の12件は更新前の完了条件 |
+
+---
+
+**識別子**: RC-13（GitHub id: 4153966193）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/TagInput.vue:35`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++const queryField = ref<InstanceType<typeof VTextField> | null>(null)
++const candidateHeading = ref<HTMLElement | null>(null)
++const showGenres = ref(false)
++const expandedGenres = ref<string[]>([])
++const page = ref(1)
++const isComposing = ref(false)
++const normalizedQuery = computed(() => normalizeTag(query.value))
++const isSearching = computed(() => normalizedQuery.value !== '')
++const isAtLimit = computed(() => tags.value.length >= USER_TAG_MAX_COUNT)
++const isTooLong = computed(() => tagCodePointLength(normalizedQuery.value) > USER_TAG_MAX_LENGTH)
++const selectedTags = computed(() => new Map(tags.value.map((tag) => [normalizeTag(tag), tag])))
++const candidates = computed(() => getProfileTagCandidates(query.value))
++const pageSize = computed(() => (xs.value ? PROFILE_TAG_PAGE_SIZE.mobile : PROFILE_TAG_PAGE_SIZE.desktop))
++const visibleTags = computed(() => candidates.value.slice(0, page.value * pageSize.value))
++const hasMore = computed(() => visibleTags.value.length < candidates.value.length)
++const canCreate = computed(
++  () => isSearching.value && !isMasterTagLabel(normalizedQuery.value) && !selectedTags.value.has(normalizedQuery.value),
++)
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+[must] 大文字小文字を無視した完全一致候補の判定と一致していません。`getProfileTagCandidates('ａｉ')` は `AI` を完全一致として先頭に返しますが、ここでは `isMasterTagLabel('ai')` が false になるため、重複する自由タグ追加ボタンが表示されます。候補側と同じ正規化で完全一致を判定してください。
+
+This issue also appears on line 90 of the same file.
+```
+
+**コメント要約**: 全角や大小文字のマスタ一致でも自由タグ追加が出る。
+候補と同じ正規化で完全一致し、マスタ表記で追加する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `isMasterTagLabel` は表記の完全一致だけを見る。候補検索は `normalizeTag` と小文字化で `ａｉ` を `AI` とみなす。`findExactMasterTag` で同じ判定にし、追加時はマスタ表記を使う。Enter からの追加も同じ関数に寄せた。
+
+---
+
+**識別子**: RC-14（GitHub id: 4153966243）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/TagInput.vue:40`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++const candidates = computed(() => getProfileTagCandidates(query.value))
++const pageSize = computed(() => (xs.value ? PROFILE_TAG_PAGE_SIZE.mobile : PROFILE_TAG_PAGE_SIZE.desktop))
++const visibleTags = computed(() => candidates.value.slice(0, page.value * pageSize.value))
++const hasMore = computed(() => visibleTags.value.length < candidates.value.length)
++const canCreate = computed(
++  () => isSearching.value && !isMasterTagLabel(normalizedQuery.value) && !selectedTags.value.has(normalizedQuery.value),
++)
++const isBrowsingGenres = computed(() => showGenres.value)
+ 
+-const freeInput = ref('')
+-const snackbar = ref(false)
+-const snackbarMessage = ref('')
+-
+-const isAtLimit = computed(() => props.tags.length >= USER_TAG_MAX_COUNT)
+-const tagProgress = computed(() => (props.tags.length / USER_TAG_MAX_COUNT) * 100)
++watch([normalizedQuery, pageSize], () => {
++  page.value = 1
++})
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+[must] カテゴリ表示中に検索文字列を変更しても、この監視はページ番号を戻すだけで `showGenres` が true のままなので、横断検索結果へ切り替わりません。逆に「おすすめに戻る」後に検索語を消してもカテゴリ表示と開閉状態へ復帰せず、仕様書 4.2.1 の「検索を解除すると直前の候補表示・カテゴリ開閉状態に戻る」を満たしません。検索開始前の表示モードと開閉状態を保持し、検索開始・解除で復元する状態遷移を追加してください。
+```
+
+**コメント要約**: 検索開始・解除でカテゴリ表示が仕様どおり戻らない。
+検索前の表示と開閉を保持し、検索中の文言変更では検索結果に戻す。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 仕様書 4.2.1 は、検索を解除すると直前の候補表示とカテゴリの開閉に戻る、とある。検索開始時に表示と開閉を保持して検索結果へ切り替え、解除時に戻す。検索中に文言が変わりカテゴリ表示のままだった場合は検索結果へ戻す。「ほかの候補を見る」自体は検索中でも使える。
+
+---
+
+**識別子**: RC-15（GitHub id: 4153988206）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/TagInput.vue:208`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++      >
++        {{ tag }}
++      </v-btn>
++    </div>
++
++    <p
++      v-if="isSearching && !isBrowsingGenres && visibleTags.length === 0"
++      class="text-body-2 text-medium-emphasis my-3"
++    >
++      {{ $t('user_tags.no_results') }}
++    </p>
++    <div v-if="isSearching && !isBrowsingGenres && hasMore" class="text-center mt-3">
++      <v-btn variant="text" size="small" color="secondary" @click="page += 1">
++        {{ $t('user_tags.more_results') }}
++      </v-btn>
++    </div>
++    <v-btn
++      v-if="canCreate"
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  カテゴリ表示中は自由入力の追加操作も隠してください**
+
+マスタに完全一致しない検索語を入力したまま「ほかの候補を見る」を押すと、カテゴリ一覧へ切り替わっても `canCreate` は true のままなので、一覧末尾に「『検索語』を追加」が残ります。更新された仕様では検索結果からカテゴリ一覧へ切り替え、「おすすめに戻る」で検索結果へ戻る構成であり、前回のカテゴリ補助表示の修正後も現コードではこの検索由来の操作だけが残っています。`isBrowsingGenres` 中はこのボタンも非表示にしてください。
+
+Useful? React with 👍 / 👎.
+```
+
+**コメント要約**: カテゴリ閲覧中も「を追加」が残る。
+`canCreate` をカテゴリ表示中は出さない。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-11 で一致なしと「もっと見る」はカテゴリ表示中に隠した。自由入力の追加ボタンは `canCreate` のままだった。`isBrowsingGenres` のあいだは出さない。
+
+---
+
+**識別子**: RC-16（GitHub id: 4153988186）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/TagSettingsDialog.vue:52`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++  [model, () => currentUserStore.user],
++  ([isOpen], previous) => {
++    const openedNow = isOpen && previous?.[0] !== true
++    const user = currentUserStore.user
++    if (user == null) {
++      savedTagsAwaitingSnapshot.value = null
++      tagsObservedBeforeSave.value = null
++    } else if (savedTagsAwaitingSnapshot.value != null) {
++      const snapshot = user.user_tags ?? []
++      const matchedSave = sameTagList(snapshot, savedTagsAwaitingSnapshot.value)
++      const movedPastStart =
++        tagsObservedBeforeSave.value != null && !sameTagList(snapshot, tagsObservedBeforeSave.value)
++      if (matchedSave || movedPastStart) {
++        savedTagsAwaitingSnapshot.value = null
++        tagsObservedBeforeSave.value = null
++      }
++    }
++    if (isOpen && (openedNow || user == null)) {
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  認証 UID が変わったときに編集用タグを初期化してください**
+
+ダイアログを開いたまま別タブで別アカウントへログインするなど、認証ユーザーが非 null のまま別 UID に切り替わると、`openedNow` は false かつ `user == null` でもないため `tagsReady` と旧アカウントの編集用タグが維持されます。この状態で保存すると Callable は新しい認証 UID で実行され、旧アカウントのタグを新アカウントの `user_tags` に上書きします。`firebaseUser.uid` の変更も監視して下書きとベースラインを初期化してください。
+
+Useful? React with 👍 / 👎.
+```
+
+**コメント要約**: 別アカウントへ切り替えても旧タグの下書きが残る。
+`firebaseUser.uid` の変化で編集内容を初期化する。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🔒 セキュリティ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 開いたまま認証 UID が変わると、旧アカウントの下書きのまま新 UID で保存し得る。`firebaseUser.uid` の変化で待機値を捨て、下書きとベースラインを新しいユーザーから取り直す。
+
+---
+
+**識別子**: RC-17（GitHub id: 4153966298）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/utils/profileTagOptions.ts:18`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++import { TAG_GENRES, type MasterTag } from '@shokujii/common/constants/tags.js'
++import { normalizeTag } from '@shokujii/common/utils/normalizeTag.js'
++
++export const PROFILE_TAG_PAGE_SIZE = { desktop: 12, mobile: 8 }
++
++const STARTER_TAGS: readonly MasterTag[] = [
++  'コミュマネ',
++  '筋トレ',
++  '食べ歩き',
++  'カレー',
++  'サウナ',
++  '地域創生',
++  '二拠点生活',
++  '音楽フェス',
++  'カメラ',
++  '読書会',
++  'スタートアップ',
++]
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+[must] 関連 Issue #2375 の完了条件はデスクトップ初期候補を12個としていますが、この配列・テスト・更新仕様書は11個へ変更されています。意図した仕様変更なら Issue の完了条件も11個へ更新し、そうでなければ承認済みの候補を1件追加して整合させてください。
+```
+
+**コメント要約**: 初期候補が11件で Issue の12件と違う、という指摘。
+仕様書 4.2.1 は11件。Issue の12件は更新前の完了条件。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 実装と `documents/03_参加者獲得/04_プロフィールタグ機能.md` 4.2.1 は初期候補11件（コミュマネからスタートアップ）で一致する。Issue #2375 の「12個」は、その後の候補入替より前の完了条件なので、コードを12件に戻さない。
+
