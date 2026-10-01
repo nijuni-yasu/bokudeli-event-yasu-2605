@@ -508,11 +508,8 @@ const onPrimaryCartButton = async (item: EnrichedCartItem) => {
   if (presence === 'loading') {
     return
   }
-  if (presence === 'error') {
-    alertBody.value = $t('cart.form_presence_failed')
-    return
-  }
-  if (presence === 'no') {
+  // 一時的な取得失敗も、次の注文操作で1回だけ再取得する。
+  if (presence === 'no' || presence === 'error') {
     await loadFormPresence(item.event, true)
   }
   const latestPresence = formPresenceOf(item.event)

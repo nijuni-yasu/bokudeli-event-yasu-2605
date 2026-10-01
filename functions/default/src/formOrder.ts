@@ -135,6 +135,7 @@ export const saveOrderFormAttempt = onCall(async (request): Promise<SaveOrderFor
     definition_version: config.definition_version,
     revision_basis: confirmed?.revision ?? 0,
     answers: validated.answers,
+    fields_snapshot: config.fields,
     status: 'pending',
   })
   logger.info('注文フローの回答試行を保存した', {

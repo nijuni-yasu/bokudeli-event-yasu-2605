@@ -38,6 +38,7 @@ const alertMessage = ref('')
 const isOpenAlert = ref(false)
 const openConfirmOrder = ref(false)
 const confirmDialogMessage = ref('')
+const pendingAttemptId = ref('')
 
 const showAlert = (message: string) => {
   alertMessage.value = message
@@ -50,6 +51,9 @@ const cartItem = computed(() =>
   ),
 )
 const fields = computed<FormField[]>(() => form.value?.fields ?? [])
+const cartItemKey = computed(() =>
+  cartItem.value == null ? '' : `${cartItem.value.event.community_id}\0${cartItem.value.event.event_id}`,
+)
 
 const needsStripe = computed(() => {
   const item = cartItem.value
@@ -65,35 +69,42 @@ const needsStripe = computed(() => {
   return false
 })
 
-const load = async () => {
-  const item = cartItem.value
-  if (item == null) {
-    loading.value = false
-    showAlert($t('cart.form_load_failed'))
-    return
-  }
-  loading.value = true
-  try {
-    const response = await getOrderFormForCart({
-      community_id: item.event.community_id,
-      event_id: item.event.event_id,
-    })
-    form.value = response.data
-    answers.value = response.data.initial_answers ?? []
-    if (!response.data.has_form) {
-      void router.replace(props.resolveCartPath())
-    }
-  } catch {
-    showAlert($t('cart.form_load_failed'))
-  } finally {
-    loading.value = false
-  }
-}
-
 watch(
-  () => (cartItem.value == null ? '' : `${cartItem.value.event.community_id}\0${cartItem.value.event.event_id}`),
-  () => {
-    void load()
+  cartItemKey,
+  async (_key, _previousKey, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    form.value = null
+    answers.value = []
+    issues.value = []
+    openConfirmOrder.value = false
+    pendingAttemptId.value = ''
+    isOpenAlert.value = false
+    const item = cartItem.value
+    if (item == null) {
+      loading.value = false
+      showAlert($t('cart.form_load_failed'))
+      return
+    }
+    loading.value = true
+    try {
+      const response = await getOrderFormForCart({
+        community_id: item.event.community_id,
+        event_id: item.event.event_id,
+      })
+      if (cancelled) return
+      form.value = response.data
+      answers.value = response.data.initial_answers ?? []
+      if (!response.data.has_form) {
+        void router.replace(props.resolveCartPath())
+      }
+    } catch {
+      if (!cancelled) showAlert($t('cart.form_load_failed'))
+    } finally {
+      if (!cancelled) loading.value = false
+    }
   },
   { immediate: true },
 )
@@ -109,6 +120,7 @@ const getOrderErrorMessage = (error: unknown): string | null => {
 }
 
 const persistAttempt = async (): Promise<string | null> => {
+  const key = cartItemKey.value
   const item = cartItem.value
   const current = form.value
   if (item == null || current?.definition_version == null) {
@@ -120,6 +132,7 @@ const persistAttempt = async (): Promise<string | null> => {
     definition_version: current.definition_version,
     answers: answers.value,
   })
+  if (cartItemKey.value !== key) return null
   if (response.data.issues != null && response.data.issues.length > 0) {
     issues.value = response.data.issues
     return null
@@ -177,9 +190,12 @@ const startOrder = async (attemptId: string) => {
 }
 
 const onPrimary = async () => {
+  if (loading.value || saving.value || form.value?.has_form !== true) return
+  const key = cartItemKey.value
   saving.value = true
   try {
     const attemptId = await persistAttempt()
+    if (cartItemKey.value !== key) return
     if (attemptId == null) {
       if (issues.value.length === 0) {
         showAlert($t('cart.form_save_failed'))
@@ -197,15 +213,16 @@ const onPrimary = async () => {
     pendingAttemptId.value = attemptId
     openConfirmOrder.value = true
   } catch (error) {
-    showAlert(getOrderErrorMessage(error) ?? $t('cart.form_save_failed'))
+    if (cartItemKey.value === key) {
+      showAlert(getOrderErrorMessage(error) ?? $t('cart.form_save_failed'))
+    }
   } finally {
     saving.value = false
   }
 }
 
-const pendingAttemptId = ref('')
-
 const confirmOrderNow = async () => {
+  if (loading.value || saving.value || pendingAttemptId.value === '') return
   saving.value = true
   try {
     await startOrder(pendingAttemptId.value)

@@ -77,7 +77,9 @@ watch(
         hasPreEventForm.value = response.data.has_form
       }
     } catch {
-      hasPreEventForm.value = false
+      if (preEventFormKey.value === key) {
+        hasPreEventForm.value = false
+      }
     }
   },
   { immediate: true },

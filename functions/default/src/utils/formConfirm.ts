@@ -85,12 +85,17 @@ export async function planFormConfirmation(params: {
   throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
 }
 
-function mergeAttemptAnswersWithHiddenExisting(
+export function mergeAttemptAnswersWithHiddenExisting(
   attemptAnswers: FormAnswerSnapshot[],
   existingAnswers: FormAnswerSnapshot[] | undefined,
-  fields: FormField[],
+  fields: FormField[] | undefined,
 ): FormAnswerSnapshot[] {
-  const hiddenIds = new Set(fields.filter((field) => field.hidden_for_new).map((field) => field.field_id))
+  // 旧試行は定義の復元ができないため、今回の回答に含まれない確定済み回答を維持する。
+  const hiddenIds = new Set(
+    fields == null
+      ? (existingAnswers ?? []).map((answer) => answer.field_id)
+      : fields.filter((field) => field.hidden_for_new).map((field) => field.field_id),
+  )
   const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
   const kept = (existingAnswers ?? []).filter(
     (answer) => hiddenIds.has(answer.field_id) && !attemptIds.has(answer.field_id),
@@ -126,12 +131,15 @@ export async function applyAttemptToConfirmedResponse(params: {
 
   const now = Date.now()
   const nextRevision = (existing?.revision ?? 0) + 1
-  const config = await getEventFormConfig(params.event.community_id, params.event.id, params.transaction)
   const confirmed = new FormResponse(params.userId, {
     user_id: params.userId,
     definition_version: params.attempt.definition_version,
     revision: nextRevision,
-    answers: mergeAttemptAnswersWithHiddenExisting(params.attempt.answers, existing?.answers, config?.fields ?? []),
+    answers: mergeAttemptAnswersWithHiddenExisting(
+      params.attempt.answers,
+      existing?.answers,
+      params.attempt.fields_snapshot,
+    ),
     answered_at: existing?.answered_at ?? now,
     updated_at: now,
   })

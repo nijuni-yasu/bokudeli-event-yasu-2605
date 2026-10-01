@@ -43,7 +43,7 @@ const requiredRule = (value: string): boolean | string => value.trim() !== '' ||
 const previewFields = computed<FormField[]>(() => {
   const parsed: FormField[] = []
   fields.value.forEach((field, index) => {
-    if (field.label.trim() === '') {
+    if (field.hidden_for_new || field.label.trim() === '') {
       return
     }
     if (isChoiceFieldType(field.type)) {
