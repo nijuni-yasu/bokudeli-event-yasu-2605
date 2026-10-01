@@ -326,9 +326,9 @@ describe('validateCartOptionSelection / resolveEventMenuCartOrder', () => {
 })
 
 describe('formatNamesPrintMenuLabel', () => {
-  it('メニュー名が 28 文字以上ならメニュー名だけ切る', () => {
-    const longName = 'あ'.repeat(30)
-    expect(formatNamesPrintMenuLabel(longName, selectedLargeCheese)).toBe('あ'.repeat(28))
+  it('メニュー名が 32 文字以上ならメニュー名だけ切る', () => {
+    const longName = 'あ'.repeat(34)
+    expect(formatNamesPrintMenuLabel(longName, selectedLargeCheese)).toBe('あ'.repeat(32))
   })
 
   it('未満なら項目名側だけ切って … を付ける', () => {

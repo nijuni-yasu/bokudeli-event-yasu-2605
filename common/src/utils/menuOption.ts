@@ -188,7 +188,7 @@ export function computeOrderMenuPrice(basePrice: number, selectedOptions: readon
   return basePrice + sumSelectedPriceDelta(selectedOptions)
 }
 
-export const NAMES_PRINT_MAX_MENU_LABEL_LENGTH = 28
+export const NAMES_PRINT_MAX_MENU_LABEL_LENGTH = 32
 
 export function formatSelectedOptionItemNames(selectedOptions?: readonly SelectedOptionType[] | null): string {
   if (selectedOptions == null || selectedOptions.length === 0) {
