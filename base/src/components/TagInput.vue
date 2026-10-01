@@ -33,7 +33,7 @@ const hasMore = computed(() => visibleTags.value.length < candidates.value.lengt
 const canCreate = computed(
   () => isSearching.value && !isMasterTagLabel(normalizedQuery.value) && !selectedTags.value.has(normalizedQuery.value),
 )
-const isBrowsingGenres = computed(() => showGenres.value && !isSearching.value)
+const isBrowsingGenres = computed(() => showGenres.value)
 
 watch([normalizedQuery, pageSize], () => {
   page.value = 1
@@ -130,9 +130,10 @@ const onEnter = (event: KeyboardEvent): void => {
       </h3>
       <v-btn
         v-if="isBrowsingGenres"
+        class="tag-input__nav-link"
         variant="text"
         size="small"
-        color="secondary"
+        color="primary"
         :prepend-icon="mdiArrowLeft"
         @click="setGenreView(false)"
       >
@@ -195,11 +196,6 @@ const onEnter = (event: KeyboardEvent): void => {
     <p v-if="isSearching && visibleTags.length === 0" class="text-body-2 text-medium-emphasis my-3">
       {{ $t('user_tags.no_results') }}
     </p>
-    <div v-if="!isSearching && !showGenres" class="text-center mt-3">
-      <v-btn variant="text" size="small" color="secondary" @click="setGenreView(true)">
-        {{ $t('user_tags.show_more') }}
-      </v-btn>
-    </div>
     <div v-if="isSearching && hasMore" class="text-center mt-3">
       <v-btn variant="text" size="small" color="secondary" @click="page += 1">
         {{ $t('user_tags.more_results') }}
@@ -216,6 +212,17 @@ const onEnter = (event: KeyboardEvent): void => {
       @click="addTag(query, true)"
     >
       {{ $t('user_tags.create_tag', { tag: normalizedQuery }) }}
+    </v-btn>
+    <v-btn
+      v-if="!showGenres"
+      class="tag-input__show-more mt-4"
+      block
+      variant="outlined"
+      size="large"
+      color="primary"
+      @click="setGenreView(true)"
+    >
+      {{ $t('user_tags.show_more') }}
     </v-btn>
 
     <section v-if="tags.length > 0" class="tag-input__selected" :aria-label="$t('user_tags.current_tags_heading')">
@@ -242,6 +249,18 @@ const onEnter = (event: KeyboardEvent): void => {
 </template>
 
 <style lang="scss" scoped>
+.tag-input__nav-link {
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.tag-input__show-more {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 .tag-input__heading {
   display: flex;
   flex-wrap: wrap;

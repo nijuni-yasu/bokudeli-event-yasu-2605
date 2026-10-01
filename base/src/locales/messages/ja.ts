@@ -787,13 +787,12 @@ export default {
   },
   user_tags: {
     add_tag: 'タグ追加',
-    dialog_title: '好きなことを選びましょう',
     close: '閉じる',
     save: '保存',
     save_failed: '保存に失敗しました',
-    save_hint: '保存せずに閉じると、変更は残りません',
     save_status_saving: '保存中…',
-    dialog_hint: '1つだけでも大丈夫です。同じタグがあると、食事のときに話しやすくなります。',
+    dialog_hint:
+      '興味・関心や趣味を選んでプロフィールタグを設定しよう！\n共通のタグがあると、食事会の場でお話しやすくなります🤝',
     current_tags_heading: '選択中のタグ',
     search_label: 'タグを検索・追加',
     search_placeholder: '例：コーヒー、サウナ',
@@ -809,7 +808,6 @@ export default {
     limit_help: 'これ以上は追加できません。入れ替えるときは、選択中のタグを外してください。',
     tag_max_length: 'タグは最大20文字までです',
     section_title: 'プロフィールタグ',
-    section_empty: '未設定',
     section_count: '{count}個選択中 ／ 最大10個',
     import_hint_title: 'タグの取り込み',
     import_hint_body: 'タグをタップすると、自分のプロフィールに追加・解除できます。',

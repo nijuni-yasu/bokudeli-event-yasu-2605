@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { mdiClose } from '@mdi/js'
@@ -7,6 +7,7 @@ import TagInput from '@shokujii/base/components/TagInput.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { updateUserTags } from '@shokujii/base/apis/userTags.js'
 import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
+import { normalizeTagList } from '@shokujii/common/utils/normalizeTag.js'
 
 const model = defineModel<boolean>({ required: true })
 const { t: $t } = useI18n()
@@ -17,21 +18,42 @@ const errorMessage = ref('')
 const isUpdating = ref(false)
 const tagsReady = ref(false)
 const tags = ref<string[]>([])
+const baselineTags = ref<string[]>([])
+/** 保存成功後、Firestore 購読が同じ配列を返すまで次回オープンの初期値にする */
+const savedTagsAwaitingSnapshot = ref<string[] | null>(null)
+
+const sameTagList = (left: readonly string[] | undefined, right: readonly string[]): boolean => {
+  const current = left ?? []
+  return current.length === right.length && current.every((tag, index) => tag === right[index])
+}
+
+const hasTagChanges = computed(() => tagsReady.value && !sameTagList(baselineTags.value, tags.value))
 
 watch(
   [model, () => currentUserStore.user],
   ([isOpen], previous) => {
     const openedNow = isOpen && previous?.[0] !== true
     const user = currentUserStore.user
+    if (user == null) {
+      savedTagsAwaitingSnapshot.value = null
+    } else if (
+      savedTagsAwaitingSnapshot.value != null &&
+      sameTagList(user.user_tags, savedTagsAwaitingSnapshot.value)
+    ) {
+      savedTagsAwaitingSnapshot.value = null
+    }
     if (isOpen && (openedNow || user == null)) {
       tagsReady.value = false
       tags.value = []
+      baselineTags.value = []
       if (openedNow) {
         errorMessage.value = ''
       }
     }
     if (isOpen && !tagsReady.value && user != null) {
-      tags.value = [...(user.user_tags ?? [])]
+      const source = [...(savedTagsAwaitingSnapshot.value ?? user.user_tags ?? [])]
+      tags.value = [...source]
+      baselineTags.value = source
       tagsReady.value = true
     }
   },
@@ -39,12 +61,14 @@ watch(
 )
 
 const saveTags = async (): Promise<void> => {
-  if (isUpdating.value || !tagsReady.value) return
+  if (isUpdating.value || !tagsReady.value || !hasTagChanges.value) return
   isUpdating.value = true
   errorMessage.value = ''
   try {
-    const response = await updateUserTags([...tags.value])
+    const savedTags = normalizeTagList([...tags.value])
+    const response = await updateUserTags(savedTags)
     if (!response.data.success) throw new Error(response.data.message)
+    savedTagsAwaitingSnapshot.value = savedTags
     model.value = false
   } catch (error: unknown) {
     errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
@@ -68,9 +92,10 @@ const saveTags = async (): Promise<void> => {
     <v-card class="tag-settings-dialog">
       <header class="tag-settings-dialog__header">
         <div>
-          <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.section_title') }}</p>
-          <h2 class="tag-settings-dialog__title">{{ $t('user_tags.dialog_title') }}</h2>
-          <p class="text-body-2 text-medium-emphasis mt-2">{{ $t('user_tags.dialog_hint') }}</p>
+          <h2 class="tag-settings-dialog__title">{{ $t('user_tags.section_title') }}</h2>
+          <p class="tag-settings-dialog__hint text-body-2 text-medium-emphasis mt-2">
+            {{ $t('user_tags.dialog_hint') }}
+          </p>
         </div>
         <v-btn
           :icon="mdiClose"
@@ -91,8 +116,8 @@ const saveTags = async (): Promise<void> => {
       <v-card-actions class="tag-settings-dialog__footer">
         <div class="tag-settings-dialog__summary text-caption">
           <span v-if="tagsReady">{{ $t('user_tags.section_count', { count: tags.length }) }}</span>
-          <span class="text-medium-emphasis" role="status">
-            {{ $t(isUpdating ? 'user_tags.save_status_saving' : 'user_tags.save_hint') }}
+          <span v-if="isUpdating" class="text-medium-emphasis" role="status">
+            {{ $t('user_tags.save_status_saving') }}
           </span>
         </div>
         <div v-if="errorMessage !== ''" class="tag-settings-dialog__error">
@@ -104,7 +129,7 @@ const saveTags = async (): Promise<void> => {
           color="primary"
           size="large"
           rounded="lg"
-          :disabled="isUpdating || !tagsReady"
+          :disabled="isUpdating || !tagsReady || !hasTagChanges"
           :loading="isUpdating"
           @click="saveTags"
         >
@@ -121,7 +146,7 @@ const saveTags = async (): Promise<void> => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
-  padding: 28px 28px 20px;
+  padding: 28px 28px 12px;
 }
 
 .tag-settings-dialog__title {
@@ -130,8 +155,15 @@ const saveTags = async (): Promise<void> => {
   font-weight: 600;
 }
 
-.tag-settings-dialog__body.v-card-text {
-  padding: 4px 28px 24px;
+.tag-settings-dialog__hint {
+  white-space: pre-line;
+}
+
+// Materio はダイアログ本文の上パディングを 0 にしており、コンポーネント側の指定より詳細度が高い。
+// outlined のラベルは枠の上にはみ出すので、同じかそれ以上の詳細度で上余白を取る。
+.v-dialog > .v-overlay__content > .v-card > .tag-settings-dialog__body.v-card-text {
+  // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える
+  padding-top: 8px;
 }
 
 .tag-settings-dialog__footer.v-card-actions {
@@ -169,7 +201,7 @@ const saveTags = async (): Promise<void> => {
 
 @media (max-width: 599px) {
   .tag-settings-dialog__header {
-    padding: 20px 20px 16px;
+    padding: 20px 20px 10px;
   }
 
   .tag-settings-dialog__title {

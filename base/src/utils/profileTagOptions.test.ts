@@ -3,20 +3,20 @@ import { isMasterTagLabel } from '@shokujii/common/constants/tags.js'
 import { getProfileTagCandidates, PROFILE_TAG_PAGE_SIZE } from './profileTagOptions.js'
 
 describe('プロフィールタグの候補', () => {
-  it('最初の候補は既存マスタから重複なく12個提示する', () => {
+  it('最初の候補は既存マスタから重複なく11個提示する', () => {
     const candidates = getProfileTagCandidates('')
     expect(candidates.slice(0, PROFILE_TAG_PAGE_SIZE.mobile)).toEqual([
-      'コーヒー',
+      'コミュマネ',
+      '筋トレ',
       '食べ歩き',
       'カレー',
       'サウナ',
-      '国内旅行',
-      '映画',
+      '地域創生',
+      '二拠点生活',
       '音楽フェス',
-      'ランニング',
     ])
     expect(candidates.every(isMasterTagLabel)).toBe(true)
-    expect(candidates).toHaveLength(PROFILE_TAG_PAGE_SIZE.desktop)
+    expect(candidates).toHaveLength(11)
     expect(new Set(candidates).size).toBe(candidates.length)
   })
 

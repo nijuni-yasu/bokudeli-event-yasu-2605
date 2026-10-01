@@ -4,17 +4,16 @@ import { normalizeTag } from '@shokujii/common/utils/normalizeTag.js'
 export const PROFILE_TAG_PAGE_SIZE = { desktop: 12, mobile: 8 }
 
 const STARTER_TAGS: readonly MasterTag[] = [
-  'コーヒー',
+  'コミュマネ',
+  '筋トレ',
   '食べ歩き',
   'カレー',
   'サウナ',
-  '国内旅行',
-  '映画',
+  '地域創生',
+  '二拠点生活',
   '音楽フェス',
-  'ランニング',
   'カメラ',
   '読書会',
-  'ゲーム',
   'スタートアップ',
 ]
 
