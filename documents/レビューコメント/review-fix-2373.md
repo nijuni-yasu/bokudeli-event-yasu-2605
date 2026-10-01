@@ -11,6 +11,7 @@
 | [x] | RC-3 | 4151708630 | 👌 修正不要 | — | — | 💰 金銭 | 🔧 微修正 | — | user と partner のデプロイが料金定数の変更で走らない<br>110円も220円も本番未リリースのため、このリリースでは修正しない |
 | [x] | RC-4 | 4151708584 | 👌 修正不要 | — | — | 💰 金銭 | 📋 仕様追加 | — | カート表示と Checkout 作成の反映順が保証されていない<br>本番に220円の旧 Function が無いため修正しない |
 | [x] | RC-5 | 4151716901 | 👌 修正不要 | — | — | 💰 金銭 | 📋 仕様追加 | — | 新 Checkout と旧 Webhook の組み合わせで金額不一致になりうる<br>本番に220円の旧 Webhook が無いため修正しない |
+| [x] | RC-6 | 5925207089 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 🔧 微修正 | S | 料金定数変更時の hosting 反映漏れと Functions との反映順を保証する必要がある<br>common 変更は Functions 成功後に user / partner を workflow_dispatch する構成へ変更済み |
 
 ---
 
@@ -305,3 +306,58 @@ Useful? React with 👍 / 👎.
 
 新規 RC なし。
 
+
+
+---
+
+## 評価セッション（2026-10-01 15:21・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 15:21 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` manual）
+- **ブランチ名**: fix/2373
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2374
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **手順 4a 自動修正**: RC-6（🚨 1件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :--: | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
+| [x] | RC-6 | 5925207089 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 🔧 微修正 | S | 料金定数変更時の hosting 反映漏れと Functions との反映順を保証する必要がある<br>common 変更は Functions 成功後に user / partner を workflow_dispatch する構成へ変更済み |
+
+**識別子**: RC-6（GitHub id: 5925207089）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/paymentUserFee.ts:10`, `.github/workflows/deploy_user.yml:8`, `.github/workflows/deploy_partner.yml:8`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `common/src/utils/paymentUserFee.ts:10` の料金定数はカート表示と Checkout 作成 Function の双方で使われますが、`deploy_user.yml` / `deploy_partner.yml` と `deploy_functions.yml` は別々に実行され、反映順が保証されていません。片方が先に反映されると、画面表示と実際の請求額が一時的に食い違うため、互換期間を設けた段階反映などで順序を保証してください。
+
+🚨 **必須修正** [🔧微修正/S]: `common/src/utils/paymentUserFee.ts:10` を料金改定の変更箇所としていますが、`deploy_user.yml` / `deploy_partner.yml` の push paths に `common/**` がありません。今回の差分では `base/**` の変更で再デプロイされますが、次回この定数だけを変更した場合はカート・案内文が更新されません。両 workflow にこのファイル（または `common/**`）のトリガーも追加してください。
+
+**コメント要約**: 料金定数を含む `common/**` の変更で user / partner が漏れず、Functions 反映後に hosting を反映する仕組みが必要<br>Functions workflow が `common/**` を監視し、成功後に user / partner の workflow_dispatch を実行する構成に変更
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 指摘は妥当であり、料金表示と Checkout の不一致は金銭上の実害になり得る。`deploy_functions.yml` は `common/**` を既に監視しているため、Functions のデプロイ成功後に同じ ref・環境の user / partner workflow を dispatch することで、共通定数変更時の反映順と hosting の再デプロイを一つの連携にまとめた。user / partner の push paths に `common/**` を重複追加すると Functions と並走して順序保証を失うため、直接トリガーではなく Functions workflow をオーケストレーターとして使用している。
+
+---

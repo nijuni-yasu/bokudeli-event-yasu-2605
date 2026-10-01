@@ -1,5 +1,9 @@
 name: Deploy functions
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   push:
     branches:
@@ -37,6 +41,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: Setup node
         uses: actions/setup-node@v6
         with:
@@ -67,3 +73,15 @@ jobs:
           project_id: ${{ vars.PROJECT_ID }}
           args: '--only functions'
           named_force_on_failure_policy: 'true'
+      # common/** changes are deployed here first; hosting workflows are dispatched only after success.
+      - name: Deploy applications after shared code
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
+        run: |
+          if ! git diff --name-only "$GITHUB_EVENT_BEFORE" "$GITHUB_SHA" | grep -q '^common/'; then
+            exit 0
+          fi
+          gh workflow run deploy_user.yml --ref "$GITHUB_REF_NAME" --field environment="$ENVIRONMENT"
+          gh workflow run deploy_partner.yml --ref "$GITHUB_REF_NAME" --field environment="$ENVIRONMENT"
