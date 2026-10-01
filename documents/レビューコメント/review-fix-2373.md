@@ -287,3 +287,21 @@ Useful? React with 👍 / 👎.
 
 ---
 
+## 評価セッション（2026-10-01 14:26・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 14:26 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: fix/2373（作業ツリーは fix/2370。両ブランチは同一コミット `78e14d1c7`）
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2374
+- **since**: 2026-10-01T05:14:26Z
+- **partial**: true（wake フラグ。Codex は commit `78e14d1c7` に対し問題なしと返却。limits や接続案内のみではない）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型 5925207089、Codex 問題なし 5925294489）
+- **重複除外**: Copilot の issue コメント 5925239732 は RC-3 と RC-4 と同一指摘。Copilot overview 5375253720 は既存インライン RC-1、RC-3、RC-4 の索引
+- **新規 RC なし**
+- **手順 4a 自動修正**: なし
+
+### RC 一覧（サマリ）
+
+新規 RC なし。
+
