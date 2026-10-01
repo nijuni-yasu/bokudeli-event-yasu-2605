@@ -60,6 +60,12 @@
 | [x] | RC-52 | 5374647675 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC-53 で扱う |
 | [x] | RC-53 | 4151569102 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 別オプションの同時追加で限定数を超える<br>増加ロックをイベントとメニューで共有する |
 | [x] | RC-54 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭, 💾 データ | 🔧 微修正 | M | 正の必須オプション削除で残りの最小金額が1円未満になる<br>削除前に残存構成を検証し、失敗時は全体を中止する |
+| [x] | RC-55 | 5375385918 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-57〜RC-60 で扱う |
+| [x] | RC-56 | 5925550697 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | トップレベル返信は4件のインライン指摘の再掲<br>個別 RC で扱う |
+| [ ] | RC-57 | 4152199953 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 🔧 微修正 | S | 保存失敗でもメニュー画像だけ更新される<br>成功後アップロードか補償が必要。方式選択のため未修正 |
+| [ ] | RC-58 | 4152199771 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 末尾空白違いの項目名を別物として通す<br>trim 後の長さと重複検証が必要。表示の扱いのため未修正 |
+| [ ] | RC-59 | 4152199895 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | 参照500件超の削除がトランザクション上限で失敗する<br>§5.4 は全体失敗を許容。明示拒否か分割かの選択が残る |
+| [x] | RC-60 | 4152199773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 保存中も送信でき、二重作成で誤エラーになる<br>保存完了まで loading で再送信できない |
 
 ---
 
@@ -3468,3 +3474,501 @@ partner.deleteOption(optionId, transaction)
 **判断理由**: 残存オプションを取得して全アクティブ参照メニューを検証後に書き込む。削除拒否の説明を画面に追加した。本体100円・必須加算1000円・値引き500円の構成から必須加算を消すテストで、削除と参照解除が両方とも行われないことを確認した。
 
 **最終チェック結果**: 指定パッケージの通常テスト計1293件成功（common 485 / base 153 / user 45 / partner 1 / enterprise 47 / functions 562）。通常実行でスキップしたエミュレータ依存11件はローカルエミュレータで別途全件成功。Rules 8件も成功。追加した Rules テストファイル単体の lint / format は成功。Rules テスト用ワークスペース全体は既存未変更ファイルの lint 警告（minimumParticipants.test.ts の未使用 context）および format 差異（chatReactions.test.ts、enterprise.test.ts）で失敗し、今回の変更には含めない。ブラウザ実操作、実環境へのデプロイは未実施。
+
+---
+
+## 評価セッション（2026-10-01 15:10・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 15:10 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **対象**: pending wake `since` 2026-10-01T05:29:52Z 以降（`partial: false`）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（5925368393 レビュー依頼定型文、5375385755 Codex レビュー本体は接続案内のみ）
+- **手順 4a 自動修正**: なし（RC-57 は補償方式の選択が必要。RC-58 / RC-60 は 👤 UX。RC-59 は工数 M かつ拒否と分割の二案）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-55 | 5375385918 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-57〜RC-60 で扱う |
+| [x] | RC-56 | 5925550697 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | トップレベル返信は4件のインライン指摘の再掲<br>個別 RC で扱う |
+| [ ] | RC-57 | 4152199953 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 👤 UX | 🔧 微修正 | S | 保存失敗でもメニュー画像だけ更新される<br>成功後アップロードか補償が必要。方式選択のため未修正 |
+| [ ] | RC-58 | 4152199771 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 末尾空白違いの項目名を別物として通す<br>trim 後の長さと重複検証が必要。表示の扱いのため未修正 |
+| [ ] | RC-59 | 4152199895 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | 参照500件超の削除がトランザクション上限で失敗する<br>§5.4 は全体失敗を許容。明示拒否か分割かの選択が残る |
+| [x] | RC-60 | 4152199773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 保存中も送信でき、二重作成で誤エラーになる<br>保存完了まで loading で再送信できない |
+
+---
+
+**識別子**: RC-55（GitHub id: 5375385918）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR レビュー概要
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+画像アップロードの補償処理、500件超の削除処理、仕様書の不整合を解消する必要があります。
+
+**Review effort:** Lite  
+**Findings:** 8 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (9)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [参照メニュー500件超でFirestoreトランザクションが失敗する](#discussion_r4152199895) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [0円事前決済注文が確定できない支払い方式の不整合](#discussion_r4144224625)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [オプション削除と参照解除が原子的に実行されない](#discussion_r4114702139)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Stripe商品名が長さ制限を超えて決済に失敗する](#discussion_r4114702125)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [EventMenuとFunctionsの独立デプロイで互換性が崩れる](#discussion_r4114702108)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [新API拡張が旧Functionsと後方互換になっていない](#discussion_r4114702084)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [デプロイ順序の不整合でカート金額と注文可否が変わる](#discussion_r4114702066)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Callable入力の未検証でTypeErrorが500エラーになる](#discussion_r4110466923)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [画像アップロード先行により失敗編集の画像が公開される](#discussion_r4152199953) · New
+</details>
+
+<details>
+<summary><strong>Resolved since last review (3)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_idsの存在とパートナー所属を検証していない](#discussion_r4144582288)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各要素をRulesで検証していない](#discussion_r4115300334)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各項目をRulesで厳格に検証する](#discussion_r4104985599)
+</details>
+
+**コメント要約**: Copilot 概要は既存スレッドと新規インラインの再掲
+新規は RC-57〜RC-60 で扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 未解決一覧の大半は既存 RC（RC-23 / RC-29 / RC-31 / RC-32 / RC-46 など）の再掲。新規は画像の先行アップロード（RC-57）と削除トランザクション上限（RC-59）。冒頭の「仕様書の不整合」に対応する独立した差分指摘は概要内に無い。
+
+---
+
+**識別子**: RC-56（GitHub id: 5925550697）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行差分をチェックリストに沿って確認しました。利用可能な GitHub 操作には新規のインライン review comment を作成する機能がないため、この返信で指摘箇所を報告します。
+
+- 🟡 **修正提案** [🔧微修正/M] `functions/default/src/utils/partnerMenuOperations.ts:100,127-132` — 削除は参照メニューごとに1書込＋オプション削除、並び替えも入力メニューごとに1書込を同一 transaction に追加します。Firestore の transaction は500書込が上限のため、参照数またはメニュー数が上限を超えると削除・並び替えを実行できません。上限超過を明示的に拒否するか、上限を踏まえた更新方式が必要です。
+- 🚨 **必須修正** [🔧微修正/M] `base/src/stores/partner.ts:251-254` — メニュー画像を既存の固定 Storage パスへ上書きした後に Callable を呼びます。Callable が競合やサーバー検証で失敗しても画像は戻らず、旧メニュー情報のまま画像だけが変わります。このパスは承認時のスナップショットにも使われるため、一時パスまたは失敗時の補償が必要です。
+- 🟡 **修正提案** [🔧微修正/S] `common/src/schemas/menuOption.ts:20,61-64` — 項目名の重複判定は完全一致のみです。末尾空白などの違いは画面上で同じ選択肢に見え得るため、trim 後に長さと重複を検証することを推奨します。
+- 🟡 **修正提案** [🔧微修正/S] `partner/src/components/OptionEditCard.vue:130` — 保存中も送信ボタンが有効なため、新規オプションを連続送信すると片方の Callable が `already-exists` になり、保存成功後にエラー通知が出る可能性があります。保存中は loading/disabled にしてください。
+
+CI は PR verify #662 と Test Firestore Rules #727 が成功しており、確認した範囲で失敗はありません。
+
+**コメント要約**: トップレベル返信は4件のインライン指摘の再掲
+個別 RC で扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 画像（RC-57）、項目名の空白（RC-58）、トランザクション上限（RC-59）、二重送信（RC-60）と同じ内容。並び替えも 500 書込に当たる点は RC-59 の判断に含めた。
+
+---
+
+**識別子**: RC-57（GitHub id: 4152199953）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/stores/partner.ts:254`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -209,43 +251,58 @@ export const usePartnerStore = (partnerId: string) => {
+         await uploadImage(image, getMenuImageStoragePath(partnerRef.id, data.menu_id))
+         _menuImageCacheBusters.value = new Map(_menuImageCacheBusters.value).set(data.menu_id, Date.now())
+       }
+-      const menuRef = doc(partnerRef, 'menus', data.menu_id).withConverter(menuConverter)
+-      return await setDoc(menuRef, data, { merge: true })
++      return await savePartnerMenu({
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 画像を Storage にアップロードしてから Callable を呼ぶため、Callable がオプション欠落・最低価格違反・競合などで拒否されても、メニュー文書は旧値のまま画像だけが更新されます。画像パスは menu_id 固定で承認時のスナップショットが後からコピーするため、失敗した編集の画像が公開され得ます。成功後にアップロードするか、失敗時に新規画像を削除する補償処理／一時パスを導入してください。
+
+**コメント要約**: 保存失敗でもメニュー画像だけ更新される
+成功後アップロードか補償が必要。方式選択のため未修正
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `updateMenu` は固定 Storage パスへ上書きしてから `savePartnerMenu` を呼ぶ。Callable がオプション欠落・最小合計・競合で拒否しても画像は戻り、承認時スナップショット（`eventMenusSnapshot.ts`）がそのパスをコピーする。失敗した編集の画像が公開され得る。成功後アップロード、失敗時削除、一時パスのどれにするかは仕様書に無く、失敗時削除は上書き済みの旧画像を戻せない。方式の選択が必要なため自動修正しない。
+
+---
+
+**識別子**: RC-58（GitHub id: 4152199771）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/schemas/menuOption.ts:20`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,64 @@
++import { z } from 'zod'
++
++export const OPTION_SELECTION_VALUES = ['single', 'multiple'] as const
++export type OptionSelectionType = (typeof OPTION_SELECTION_VALUES)[number]
++
++export const PRICE_DELTA_MIN = -10000
++export const PRICE_DELTA_MAX = 10000
++export const MENU_OPTION_IDS_MAX = 10
++export const OPTION_ITEMS_MAX = 20
++
++function hasUniqueValues(values: readonly string[]): boolean {
++  return new Set(values).size === values.length
++}
++
++export const OptionIdListSchema = z.array(z.string().nonempty()).max(MENU_OPTION_IDS_MAX).refine(hasUniqueValues)
++export const OptionSelectionSchema = z.enum(OPTION_SELECTION_VALUES)
++
++export const OptionItemSchema = z.object({
++  item_id: z.string().nonempty(),
++  name: z.string().min(1).max(40),
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  空白を正規化して項目名の重複を拒否する**
+
+`「大盛」` と `「大盛 」` のように末尾空白だけが異なる項目名は、現在のスキーマと `hasDuplicateOptionItemNames` を通過しますが、画面では空白が折り畳まれて同じ選択肢に見えます。異なる価格差を持つ見分け不能な項目を注文できてしまうため、項目名を `trim()` してから長さと重複を検証してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 末尾空白違いの項目名を別物として通す
+trim 後の長さと重複検証が必要。表示の扱いのため未修正
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `OptionItemSchema` と `hasDuplicateOptionItemNames` は完全一致のみで、末尾空白違いを別項目として保存できる。画面上は同じに見え、価格差だけが異なる選択肢になり得る。指摘は妥当。保存値を trim するか比較だけ trim するかで既存データとスナップショットの見た目が変わるため、👤 UX の自動修正対象外とした。
+
+---
+
+**識別子**: RC-59（GitHub id: 4152199895）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/utils/partnerMenuOperations.ts:101`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・22 行）
++function authenticatedPartner(request: PartnerRequest): Partner {
++  const uid = request.auth?.uid
++  if (uid == null) throw new HttpsError('unauthenticated', '認証が必要です')
++  // 保存先をリクエストから受け取らず、認証した店舗に固定する。
++  return new Partner(uid)
++}
++
++function assertMenuOptions(menu: PartnerMenu, options: PartnerOption[]): void {
++  if (findMissingOptionIds(menu.option_ids, options).length > 0) {
++    throw new HttpsError('failed-precondition', '削除済み、または自店舗に存在しないオプションが含まれています')
++  }
++  const attached = options.filter((option) => menu.option_ids.includes(option.id))
++  if (!isMenuMinTotalValid(menu.menu_price, attached)) {
++    throw new HttpsError('invalid-argument', MENU_MIN_TOTAL_INVALID_MESSAGE)
++  }
++}
++
++export async function savePartnerMenuHandler(request: PartnerRequest): Promise<void> {
++  const partner = authenticatedPartner(request)
++  const parsed = SavePartnerMenuRequestSchema.safeParse(request.data)
++  if (!parsed.success) throw new HttpsError('invalid-argument', 'メニューの入力が正しくありません')
++  const input = parsed.data
++  await getFirestore().runTransaction(async (transaction) => {
++    const existing = await partner.getMenu(input.menu_id, transaction)
++    if (existing?.is_deleted === true) throw new HttpsError('not-found', 'メニューは削除されています')
++    // オプションの読取を同じトランザクションに含め、削除・編集と直列化する。
++    const loaded = await Promise.all(input.option_ids.map((id) => partner.getOption(id, transaction)))
++    const options = loaded.filter((option): option is PartnerOption => option != null)
++    const menu = new PartnerMenu(partner.id, input.menu_id, {
++      ...existing,
++      ...input,
++      menu_sort_number: existing?.menu_sort_number ?? input.menu_sort_number,
++    })
++    assertMenuOptions(menu, options)
++    await partner.saveMenu(menu, transaction)
++  })
++}
++
++export async function savePartnerOptionHandler(request: PartnerRequest): Promise<void> {
++  const partner = authenticatedPartner(request)
++  const parsed = SavePartnerOptionRequestSchema.safeParse(request.data)
++  if (!parsed.success) throw new HttpsError('invalid-argument', 'オプションの入力が正しくありません')
++  const input = parsed.data
++  await getFirestore().runTransaction(async (transaction) => {
++    const existing = await partner.getOption(input.option_id, transaction)
++    if (input.create && existing != null) throw new HttpsError('already-exists', 'オプションは既に存在します')
++    if (!input.create && existing == null) throw new HttpsError('not-found', 'オプションは削除されています')
++    const option = new PartnerOption(partner.id, input.option_id, {
++      ...existing,
++      ...input,
++      option_description: input.option_description,
++    })
++    const menus = await partner.getMenusUsingOption(input.option_id, transaction)
++    const options = await partner.getOptions(transaction)
++    const nextOptions = [...options.filter((item) => item.id !== option.id), option]
++    for (const menu of menus) {
++      if (!menu.is_deleted) assertMenuOptions(menu, nextOptions)
++    }
++    partner.saveOption(option, transaction)
++  })
++}
++
++export async function deletePartnerOptionHandler(request: PartnerRequest): Promise<void> {
++  const partner = authenticatedPartner(request)
++  const parsed = DeletePartnerOptionRequestSchema.safeParse(request.data)
++  if (!parsed.success) throw new HttpsError('invalid-argument', 'オプションIDが正しくありません')
++  const { option_id: optionId } = parsed.data
++  await getFirestore().runTransaction(async (transaction) => {
++    // 参照追加側と同じドキュメントを読む。キャッシュに無いメニューも解除対象にする。
++    await partner.getOption(optionId, transaction)
++    const menus = await partner.getMenusUsingOption(optionId, transaction)
++    const options = await partner.getOptions(transaction)
++    const remainingOptions = options.filter((option) => option.id !== optionId)
++    for (const menu of menus) {
++      menu.option_ids = menu.option_ids.filter((id) => id !== optionId)
++      if (!menu.is_deleted) assertMenuOptions(menu, remainingOptions)
++    }
++    // store 内では同じ transaction に write を追加し、全件を一度に commit する。
++    await Promise.all(menus.map((menu) => partner.saveMenu(menu, transaction)))
++    partner.deleteOption(optionId, transaction)
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 参照メニューを全件 `transaction.set` したうえでオプション本体を1件書き込むため、参照するメニューが500件以上あると Firestore のトランザクション書き込み上限（500件）を超えて削除が常に失敗します。オプションは複数メニューで共有でき、参照数の上限もこのAPIにないため、削除可能件数を明示的に拒否するか、原子性要件を含めて分割・非同期化を設計してください。
+
+**コメント要約**: 参照500件超の削除がトランザクション上限で失敗する
+§5.4 は全体失敗を許容。明示拒否か分割かの選択が残る
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 削除は参照メニューごとの `saveMenu` とオプション削除を同一トランザクションに載せる。500 書込を超えると Firestore が拒否し、部分更新は残らない。仕様 §5.4 は「トランザクション上限超過時は全体を失敗させる」と明記しており、サイレントな不整合ではない。並び替え（RC-56 で併記）も `menu_ids` の件数上限が無く同じ上限に当たる。明示的な `failed-precondition` にするか、原子性を保った分割にするかは方針選択であり、工数 M のため自動修正しない。
+
+---
+
+**識別子**: RC-60（GitHub id: 4152199773）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `partner/src/components/OptionEditCard.vue:130`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・51 行）
++
++const handleSubmit = () => {
++  if (!isValid.value || !option.value.isValidForDatabase()) {
++    return
++  }
++  emit('save', option.value)
++}
++</script>
++
++<template>
++  <v-form v-model="isValid" @submit.prevent="handleSubmit">
++    <v-card class="pa-4">
++      <template #title>
++        <div class="text-h4">
++          <slot name="title" />
++        </div>
++      </template>
++      <v-card-text class="d-flex flex-column ga-4">
++        <v-text-field
++          v-model="option.option_name"
++          :label="$t('option_edit_card.name')"
++          :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40)]"
++        />
++        <v-textarea
++          v-model="option.option_description"
++          :label="$t('option_edit_card.description')"
++          :rules="[(v: string) => maxLengthValidator(v ?? '', 200)]"
++          rows="2"
++        />
++        <div>
++          <v-radio-group v-model="option.selection" :label="$t('option_edit_card.selection')" inline hide-details>
++            <v-radio :label="$t('option_edit_card.selection_single')" value="single" />
++            <v-radio :label="$t('option_edit_card.selection_multiple')" value="multiple" />
++          </v-radio-group>
++          <p class="option-edit-card__hint option-edit-card__hint--lines">
++            {{ $t('option_edit_card.selection_hint') }}
++          </p>
++        </div>
++        <div>
++          <v-switch v-model="option.required" :label="$t('option_edit_card.required')" color="primary" hide-details />
++          <p class="option-edit-card__hint">{{ $t('option_edit_card.required_hint') }}</p>
++        </div>
++        <div>
++          <div class="text-subtitle-2 mb-2">{{ $t('option_edit_card.items') }}</div>
++          <div
++            v-for="item in option.option_items"
++            :key="item.item_id"
++            class="option-edit-card__item d-flex align-start ga-2 mb-2"
++          >
++            <v-text-field
++              v-model="item.name"
++              class="option-edit-card__item-name"
++              :label="$t('option_edit_card.item_name')"
++              :rules="[requiredValidator, (v: string) => maxLengthValidator(v, 40), uniqueItemNameRule]"
++              density="compact"
++            />
++            <v-text-field
++              v-model.number="item.price_delta"
++              class="option-edit-card__price-delta"
++              type="number"
++              :label="$t('option_edit_card.price_delta')"
++              :min="PRICE_DELTA_MIN"
++              :max="PRICE_DELTA_MAX"
++              :rules="[priceDeltaRule]"
++              density="compact"
++            />
++            <v-btn class="flex-shrink-0" variant="text" @click="removeItem(item.item_id)">
++              {{ $t('option_edit_card.remove_item') }}
++            </v-btn>
++          </div>
++          <v-btn variant="tonal" :disabled="option.option_items.length >= 20" @click="addItem">
++            {{ $t('option_edit_card.add_item') }}
++          </v-btn>
++          <p class="text-caption text-medium-emphasis mt-2">{{ itemCountRule() === true ? '' : itemCountRule() }}</p>
++        </div>
++      </v-card-text>
++      <template #actions>
++        <v-spacer />
++        <v-btn variant="plain" @click="$emit('cancel')">{{ $t('option_edit_card.close') }}</v-btn>
++        <v-btn type="submit" :disabled="!isValid || !option.isValidForDatabase()" variant="tonal">
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  保存中はオプションフォームの再送信を防ぐ**
+
+新規オプションの保存通信中も送信ボタンが有効なため、ダブルクリックすると同じ ID と `create: true` で Callable が2回実行されます。先に完了した処理で作成された後、もう一方は `already-exists` になり、実際には保存済みなのに汎用の保存エラーが表示されるため、保存完了までボタンを loading/disabled にして再送信を防いでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 保存中も送信でき、二重作成で誤エラーになる
+保存完了まで loading で再送信できない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 送信開始で `isSaving` を立て、完了まで保存ボタンを loading/disabled にする。Enter による再送信も `handleSubmit` で止める。失敗時はフラグを戻して再保存できる。メニュー編集も同じにした。
+
+---
+
+## 評価セッション（2026-10-01 15:13・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 15:13 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **新規 RC なし**: Copilot overview（GitHub id: 5375385918、RC-55）の Open 9 件は、いずれも既存 RC と同一 GitHub id。`created_at` が 2026-10-01 15:10 セッションより新しいコメントは 0 件。現行コードで再確認した。
+- **手順 4a 自動修正**: なし（新規の自動修正対象なし。未着手は RC-57 / RC-58 / RC-59 / RC-60 のまま）
+
+### Open 9 件の再確認
+
+| Copilot の項目 | GitHub id | 既存 RC | 現行の判断 |
+| :--- | :--- | :--- | :--- |
+| 参照メニュー500件超で Firestore トランザクションが失敗する | 4152199895 | RC-59 | 🟡 未着手。§5.4 は全体失敗を許容。明示拒否か分割かは未決 |
+| 0円事前決済注文が確定できない支払い方式の不整合 | 4144224625 | RC-46 | ✅ 対応済み。`user_advance` かつ支払合計 0 円だけ `confirmOrder` で確定する |
+| オプション削除と参照解除が原子的に実行されない | 4114702139 | RC-32 | ✅ 対応済み。参照解除と本体削除は同一トランザクション |
+| Stripe 商品名が長さ制限を超えて決済に失敗する | 4114702125 | RC-31 | ✅ 対応済み。`formatStripeProductName` が 250 コードポイントで切る |
+| EventMenu と Functions の独立デプロイで互換性が崩れる | 4114702108 | RC-29 | 👌 修正不要。メンテナンス中の同時反映 |
+| 新 API 拡張が旧 Functions と後方互換になっていない | 4114702084 | RC-29 | 👌 修正不要。同上 |
+| デプロイ順序の不整合でカート金額と注文可否が変わる | 4114702066 | RC-29 | 👌 修正不要。同上 |
+| Callable 入力の未検証で TypeError が 500 エラーになる | 4110466923 | RC-23 | ✅ 対応済み。`selected_items` は配列・要素を見て `invalid-argument` |
+| 画像アップロード先行により失敗編集の画像が公開される | 4152199953 | RC-57 | 🚨 未着手。`updateMenu` は今も Callable の前に固定パスへ上書きする |
+
+GitHub 上で Open のままなのは、スレッドが Resolve されていないため。コード未対応なのは RC-57 と RC-59（および概要外の RC-58）。RC-60 は保存中の再送信防止を実装済み。
+
+---
