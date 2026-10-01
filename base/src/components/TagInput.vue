@@ -193,10 +193,13 @@ const onEnter = (event: KeyboardEvent): void => {
       </v-btn>
     </div>
 
-    <p v-if="isSearching && visibleTags.length === 0" class="text-body-2 text-medium-emphasis my-3">
+    <p
+      v-if="isSearching && !isBrowsingGenres && visibleTags.length === 0"
+      class="text-body-2 text-medium-emphasis my-3"
+    >
       {{ $t('user_tags.no_results') }}
     </p>
-    <div v-if="isSearching && hasMore" class="text-center mt-3">
+    <div v-if="isSearching && !isBrowsingGenres && hasMore" class="text-center mt-3">
       <v-btn variant="text" size="small" color="secondary" @click="page += 1">
         {{ $t('user_tags.more_results') }}
       </v-btn>

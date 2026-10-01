@@ -19,8 +19,10 @@ const isUpdating = ref(false)
 const tagsReady = ref(false)
 const tags = ref<string[]>([])
 const baselineTags = ref<string[]>([])
-/** 保存成功後、Firestore 購読が同じ配列を返すまで次回オープンの初期値にする */
+/** 保存成功後、購読が保存配列に追いつくまでの次回オープン初期値 */
 const savedTagsAwaitingSnapshot = ref<string[] | null>(null)
+/** 保存開始時の購読値。これと違うスナップショットが来たら待機を捨てる */
+const tagsObservedBeforeSave = ref<string[] | null>(null)
 
 const sameTagList = (left: readonly string[] | undefined, right: readonly string[]): boolean => {
   const current = left ?? []
@@ -36,11 +38,16 @@ watch(
     const user = currentUserStore.user
     if (user == null) {
       savedTagsAwaitingSnapshot.value = null
-    } else if (
-      savedTagsAwaitingSnapshot.value != null &&
-      sameTagList(user.user_tags, savedTagsAwaitingSnapshot.value)
-    ) {
-      savedTagsAwaitingSnapshot.value = null
+      tagsObservedBeforeSave.value = null
+    } else if (savedTagsAwaitingSnapshot.value != null) {
+      const snapshot = user.user_tags ?? []
+      const matchedSave = sameTagList(snapshot, savedTagsAwaitingSnapshot.value)
+      const movedPastStart =
+        tagsObservedBeforeSave.value != null && !sameTagList(snapshot, tagsObservedBeforeSave.value)
+      if (matchedSave || movedPastStart) {
+        savedTagsAwaitingSnapshot.value = null
+        tagsObservedBeforeSave.value = null
+      }
     }
     if (isOpen && (openedNow || user == null)) {
       tagsReady.value = false
@@ -66,10 +73,19 @@ const saveTags = async (): Promise<void> => {
   errorMessage.value = ''
   try {
     const savedTags = normalizeTagList([...tags.value])
+    const tagsBeforeSave = [...(currentUserStore.user?.user_tags ?? [])]
     const response = await updateUserTags(savedTags)
     if (!response.data.success) throw new Error(response.data.message)
-    const currentTags = currentUserStore.user?.user_tags
-    savedTagsAwaitingSnapshot.value = currentTags != null && sameTagList(currentTags, savedTags) ? null : savedTags
+    const snapshotTags = currentUserStore.user?.user_tags ?? []
+    const snapshotMatchesSaved = sameTagList(snapshotTags, savedTags)
+    const snapshotMoved = !sameTagList(snapshotTags, tagsBeforeSave)
+    if (snapshotMatchesSaved || snapshotMoved) {
+      savedTagsAwaitingSnapshot.value = null
+      tagsObservedBeforeSave.value = null
+    } else {
+      savedTagsAwaitingSnapshot.value = savedTags
+      tagsObservedBeforeSave.value = tagsBeforeSave
+    }
     model.value = false
   } catch (error: unknown) {
     errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
