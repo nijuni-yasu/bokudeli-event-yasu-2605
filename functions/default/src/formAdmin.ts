@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/https'
+import { getFirestore } from 'firebase-admin/firestore'
 import { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
 import { EventFormConfig, cloneFormFields } from '@shokujii/common/schemas/EventFormConfig.js'
 import {
@@ -32,6 +33,7 @@ import {
 } from '@shokujii/common/apis/form.js'
 import { formatFormAnswerDisplay } from '@shokujii/common/utils/validateFormAnswers.js'
 import { normalizeFormFields } from '@shokujii/common/utils/normalizeFormFields.js'
+import { FORM_FIELD_LIMITS } from '@shokujii/common/schemas/formFields.js'
 import { createModuleLogger } from './utils/logger.js'
 import {
   assertEventFormEditable,
@@ -44,7 +46,7 @@ import {
 import { getEventEnterpriseId } from './utils/enterpriseSubsidyOrders.js'
 import { getEventInCommunity } from './stores/event.js'
 import { getOrders } from './stores/memberOrder.js'
-import { getUser } from './stores/user.js'
+import { getUsersByUserIds } from './stores/user.js'
 import {
   createCommunityForm as createCommunityFormDoc,
   deleteEventFormConfig,
@@ -58,6 +60,15 @@ import {
 } from './stores/form.js'
 
 const logger = createModuleLogger('formAdmin')
+const db = getFirestore()
+const DUPLICATE_FORM_NAME_SUFFIX = ' のコピー'
+
+function duplicateFormName(name: string): string {
+  if (name.length + DUPLICATE_FORM_NAME_SUFFIX.length <= FORM_FIELD_LIMITS.maxName) {
+    return `${name}${DUPLICATE_FORM_NAME_SUFFIX}`
+  }
+  return `${name.slice(0, FORM_FIELD_LIMITS.maxName - DUPLICATE_FORM_NAME_SUFFIX.length)}${DUPLICATE_FORM_NAME_SUFFIX}`
+}
 
 function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
   try {
@@ -156,7 +167,7 @@ export const duplicateCommunityForm = onCall(async (request): Promise<DuplicateC
   }
   const duplicated = new CommunityForm('', {
     community_id,
-    name: `${existing.name} のコピー`,
+    name: duplicateFormName(existing.name),
     description: existing.description,
     purpose: existing.purpose,
     fields: cloneFormFields(existing.fields),
@@ -213,14 +224,17 @@ export const setEventFormFromCommunity = onCall(async (request): Promise<SetEven
   if (form == null || form.archived) {
     throw new HttpsError('not-found', 'フォームが見つかりません')
   }
-  const existing = await getEventFormConfig(community_id, event_id)
-  const config = new EventFormConfig('current', {
-    source_form_id: form.id,
-    definition_version: (existing?.definition_version ?? 0) + 1,
-    purpose: form.purpose,
-    fields: cloneFormFields(form.fields),
+  const config = await db.runTransaction(async (transaction) => {
+    const existing = await getEventFormConfig(community_id, event_id, transaction)
+    const next = new EventFormConfig('current', {
+      source_form_id: form.id,
+      definition_version: (existing?.definition_version ?? 0) + 1,
+      purpose: form.purpose,
+      fields: cloneFormFields(form.fields),
+    })
+    await saveEventFormConfig(community_id, event_id, next, transaction)
+    return next
   })
-  await saveEventFormConfig(community_id, event_id, config)
   logger.info('イベントへフォームを設定した', {
     communityId: community_id,
     eventId: event_id,
@@ -236,21 +250,24 @@ export const updateEventFormConfig = onCall(async (request): Promise<UpdateEvent
   await requireCommunityManager(data.community_id, uid)
   const event = await requirePfEventForForm(data.community_id, data.event_id)
   assertEventFormEditable(event)
-  const existing = await getEventFormConfig(data.community_id, data.event_id)
-  if (existing == null) {
-    throw new HttpsError('not-found', 'イベントにフォームが設定されていません')
-  }
-  const normalized = normalizeFormFields(data.fields, existing.fields)
-  if (!normalized.ok) {
-    throw new HttpsError('invalid-argument', normalized.message)
-  }
-  const config = new EventFormConfig('current', {
-    ...existing,
-    purpose: data.purpose ?? existing.purpose,
-    fields: normalized.fields,
-    definition_version: existing.definition_version + 1,
+  const config = await db.runTransaction(async (transaction) => {
+    const existing = await getEventFormConfig(data.community_id, data.event_id, transaction)
+    if (existing == null) {
+      throw new HttpsError('not-found', 'イベントにフォームが設定されていません')
+    }
+    const normalized = normalizeFormFields(data.fields, existing.fields)
+    if (!normalized.ok) {
+      throw new HttpsError('invalid-argument', normalized.message)
+    }
+    const next = new EventFormConfig('current', {
+      ...existing,
+      purpose: data.purpose ?? existing.purpose,
+      fields: normalized.fields,
+      definition_version: existing.definition_version + 1,
+    })
+    await saveEventFormConfig(data.community_id, data.event_id, next, transaction)
+    return next
   })
-  await saveEventFormConfig(data.community_id, data.event_id, config)
   return { config: toEventFormConfigDto(config) }
 })
 
@@ -290,11 +307,11 @@ async function buildResponseItems(communityId: string, eventId: string): Promise
   ])
   const orderedUsers = new Set(ordered.map((order) => order.user_id))
   const canceledUsers = new Set(canceled.map((order) => order.user_id))
-  const users = await Promise.all(responses.map((response) => getUser(response.user_id, false)))
+  const usersById = await getUsersByUserIds(responses.map((response) => response.user_id))
   return responses
-    .map((response, index) => {
+    .map((response) => {
       const participation = orderedUsers.has(response.user_id) ? 'confirmed' : 'canceled'
-      const user = users[index]
+      const user = usersById.get(response.user_id)
       return toResponseItem(
         response.user_id,
         user?.user_name ?? response.user_id,

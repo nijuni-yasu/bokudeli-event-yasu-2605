@@ -20,6 +20,7 @@ import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
 
 const props = defineProps<{
   eventId: string
+  communityAccount: string
   resolveOrdersPath: ResolveOrdersPathFn
   resolveCartPath: () => string
 }>()
@@ -43,7 +44,11 @@ const showAlert = (message: string) => {
   isOpenAlert.value = true
 }
 
-const cartItem = computed(() => cart.value?.find((item) => item.event.event_id === props.eventId))
+const cartItem = computed(() =>
+  cart.value?.find(
+    (item) => item.event.event_id === props.eventId && item.event.community_account === props.communityAccount,
+  ),
+)
 const fields = computed<FormField[]>(() => form.value?.fields ?? [])
 
 const needsStripe = computed(() => {

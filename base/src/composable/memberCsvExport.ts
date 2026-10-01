@@ -133,21 +133,26 @@ export type EventFormResponseCsvRow = {
   answered_at: string
   updated_at: string
   answers: Array<{
+    field_id: string
     field_label: string
     display_value: string
   }>
 }
 
 export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): string => {
-  const labels: string[] = []
+  const columns: Array<{ field_id: string; field_label: string }> = []
   const seen = new Set<string>()
   for (const row of rows) {
     for (const answer of row.answers) {
-      if (!seen.has(answer.field_label)) {
-        seen.add(answer.field_label)
-        labels.push(answer.field_label)
+      if (!seen.has(answer.field_id)) {
+        seen.add(answer.field_id)
+        columns.push({ field_id: answer.field_id, field_label: answer.field_label })
       }
     }
+  }
+  const labelCounts = new Map<string, number>()
+  for (const column of columns) {
+    labelCounts.set(column.field_label, (labelCounts.get(column.field_label) ?? 0) + 1)
   }
   const headers = [
     'ユーザーID',
@@ -155,17 +160,21 @@ export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): stri
     '参加状態',
     '回答日時',
     '更新日時',
-    ...labels.map((label) => `設問:${label}`),
+    ...columns.map((column) =>
+      (labelCounts.get(column.field_label) ?? 0) > 1
+        ? `設問:${column.field_label} (${column.field_id})`
+        : `設問:${column.field_label}`,
+    ),
   ]
   const csvRows = rows.map((row) => {
-    const byLabel = new Map(row.answers.map((answer) => [answer.field_label, answer.display_value]))
+    const byFieldId = new Map(row.answers.map((answer) => [answer.field_id, answer.display_value]))
     return [
       row.user_id,
       row.display_name,
       row.participation_label,
       row.answered_at,
       row.updated_at,
-      ...labels.map((label) => byLabel.get(label) ?? ''),
+      ...columns.map((column) => byFieldId.get(column.field_id) ?? ''),
     ]
   })
   return buildCsvContent(headers, csvRows)

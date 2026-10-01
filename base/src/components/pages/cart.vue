@@ -452,36 +452,39 @@ const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined 
   enrichedCart.value?.find((item) => item.event.event_id === cartItem.event.event_id)
 
 type FormPresence = 'loading' | 'yes' | 'no' | 'error'
-const formPresenceByEventId = ref<Record<string, FormPresence>>({})
+const formPresenceByKey = ref<Record<string, FormPresence>>({})
+
+const formPresenceKey = (communityId: string, eventId: string): string => `${communityId}\u0000${eventId}`
 
 const isPfEvent = (event: BokudeliEvent): boolean => event.enterprise_id == null || event.enterprise_id === ''
 
 const loadFormPresence = async (event: BokudeliEvent) => {
-  const eventId = event.event_id
+  const key = formPresenceKey(event.community_id, event.event_id)
   if (!isPfEvent(event) || props.resolveFormAnswerPath == null) {
-    formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'no' }
+    formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'no' }
     return
   }
-  if (formPresenceByEventId.value[eventId] === 'yes' || formPresenceByEventId.value[eventId] === 'no') {
+  if (formPresenceByKey.value[key] === 'yes' || formPresenceByKey.value[key] === 'no') {
     return
   }
-  formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'loading' }
+  formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'loading' }
   try {
     const response = await getEventFormPresence({
       community_id: event.community_id,
-      event_id: eventId,
+      event_id: event.event_id,
     })
-    formPresenceByEventId.value = {
-      ...formPresenceByEventId.value,
-      [eventId]: response.data.has_form ? 'yes' : 'no',
+    formPresenceByKey.value = {
+      ...formPresenceByKey.value,
+      [key]: response.data.has_form ? 'yes' : 'no',
     }
   } catch {
-    formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'error' }
+    formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'error' }
   }
 }
 
 watch(
-  () => enrichedCart.value?.map((item) => item.event.event_id).join(',') ?? '',
+  () =>
+    enrichedCart.value?.map((item) => formPresenceKey(item.event.community_id, item.event.event_id)).join(',') ?? '',
   () => {
     for (const item of enrichedCart.value ?? []) {
       void loadFormPresence(item.event)
@@ -490,17 +493,18 @@ watch(
   { immediate: true },
 )
 
-const formPresenceOf = (eventId: string): FormPresence => formPresenceByEventId.value[eventId] ?? 'loading'
+const formPresenceOf = (event: BokudeliEvent): FormPresence =>
+  formPresenceByKey.value[formPresenceKey(event.community_id, event.event_id)] ?? 'loading'
 
 const primaryCartButtonLabel = (item: EnrichedCartItem): string => {
-  if (formPresenceOf(item.event.event_id) === 'yes') {
+  if (formPresenceOf(item.event) === 'yes') {
     return $t('cart.answer_pre_event_form')
   }
   return needsStripeCheckoutForItem(item) ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event')
 }
 
 const onPrimaryCartButton = async (item: EnrichedCartItem) => {
-  const presence = formPresenceOf(item.event.event_id)
+  const presence = formPresenceOf(item.event)
   if (presence === 'loading') {
     return
   }
@@ -1228,7 +1232,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
               class="mt-8 text-md-h4 text-h5"
               color="grey-900"
               size="x-large"
-              :loading="isOrderProcessing || formPresenceOf(cartItem.event.event_id) === 'loading'"
+              :loading="isOrderProcessing || formPresenceOf(cartItem.event) === 'loading'"
               rounded="pill"
               elevation="5"
               width="85%"

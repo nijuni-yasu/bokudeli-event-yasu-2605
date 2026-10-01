@@ -200,13 +200,31 @@ describe('buildEventFormResponseCsv', () => {
         answered_at: '2026/01/01 12:00',
         updated_at: '2026/01/02 12:00',
         answers: [
-          { field_label: '氏名', display_value: '山田' },
-          { field_label: '希望', display_value: '昼、夜' },
+          { field_id: 'f1', field_label: '氏名', display_value: '山田' },
+          { field_id: 'f2', field_label: '希望', display_value: '昼、夜' },
         ],
       },
     ])
     expect(csv).toContain('"設問:氏名","設問:希望"')
     expect(csv).toContain('"u1","太郎","参加確定","2026/01/01 12:00","2026/01/02 12:00","山田","昼、夜"')
+  })
+
+  it('同じラベルの別設問は field_id で列を分ける', () => {
+    const csv = buildEventFormResponseCsv([
+      {
+        user_id: 'u1',
+        display_name: '太郎',
+        participation_label: '参加確定',
+        answered_at: '2026/01/01 12:00',
+        updated_at: '2026/01/02 12:00',
+        answers: [
+          { field_id: 'f1', field_label: '備考', display_value: 'A' },
+          { field_id: 'f2', field_label: '備考', display_value: 'B' },
+        ],
+      },
+    ])
+    expect(csv).toContain('"設問:備考 (f1)","設問:備考 (f2)"')
+    expect(csv).toContain('"A","B"')
   })
 })
 

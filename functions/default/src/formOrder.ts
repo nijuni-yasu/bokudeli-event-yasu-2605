@@ -5,7 +5,13 @@ import {
   type GetOrderFormForCartResponse,
   type SaveOrderFormAttemptResponse,
 } from '@shokujii/common/apis/form.js'
-import { answersToInputs, validateFormAnswers } from '@shokujii/common/utils/validateFormAnswers.js'
+import {
+  answersToInputs,
+  validateFormAnswers,
+  type FormAnswerInput,
+} from '@shokujii/common/utils/validateFormAnswers.js'
+import type { FormField } from '@shokujii/common/schemas/formFields.js'
+import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import { createModuleLogger } from './utils/logger.js'
 import { requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
 import { getOrdersInCart } from './stores/memberOrder.js'
@@ -24,6 +30,31 @@ function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown
   } catch {
     throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
   }
+}
+
+function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: FormField[]): FormAnswerInput[] {
+  const fieldById = new Map(fields.map((field) => [field.field_id, field]))
+  return answersToInputs(answers).flatMap((answer) => {
+    const field = fieldById.get(answer.field_id)
+    if (field == null) {
+      return []
+    }
+    if (field.type === 'checkbox') {
+      const allowed = new Set(
+        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
+      )
+      return [{ ...answer, option_ids: (answer.option_ids ?? []).filter((id) => allowed.has(id)) }]
+    }
+    if (field.type === 'radio' || field.type === 'select') {
+      const allowed = new Set(
+        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
+      )
+      if (answer.option_id != null && !allowed.has(answer.option_id)) {
+        return [{ field_id: answer.field_id }]
+      }
+    }
+    return [answer]
+  })
 }
 
 async function requireInCart(communityId: string, eventId: string, userId: string): Promise<void> {
@@ -60,7 +91,7 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
       purpose: config.purpose,
       definition_version: config.definition_version,
       fields,
-      initial_answers: answersToInputs(latestPending.answers),
+      initial_answers: initialAnswersForVisibleFields(latestPending.answers, fields),
       source: 'attempt',
     }
   }
@@ -71,7 +102,7 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
       purpose: config.purpose,
       definition_version: config.definition_version,
       fields,
-      initial_answers: answersToInputs(confirmed.answers),
+      initial_answers: initialAnswersForVisibleFields(confirmed.answers, fields),
       source: 'confirmed',
     }
   }

@@ -338,11 +338,14 @@ export const createStripeCheckoutSession = onCall<
     const session = await stripe.checkout.sessions.create(sessionParams)
 
     if (frozenFormAttemptId != null) {
-      const attempt = await getFormCheckoutAttempt(community_id, event_id, frozenFormAttemptId)
-      if (attempt != null) {
+      await db.runTransaction(async (transaction) => {
+        const attempt = await getFormCheckoutAttempt(community_id, event_id, frozenFormAttemptId, transaction)
+        if (attempt == null || attempt.status === 'consumed') {
+          return
+        }
         attempt.stripe_session_id = session.id
-        await saveFormCheckoutAttempt(community_id, event_id, attempt)
-      }
+        await saveFormCheckoutAttempt(community_id, event_id, attempt, transaction)
+      })
     }
 
     logger.info('Checkout セッション作成', {

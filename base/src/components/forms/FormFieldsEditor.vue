@@ -74,14 +74,11 @@ const removeOption = (fieldIndex: number, optionIndex: number) => {
 }
 
 const onTypeChange = (index: number, type: FormFieldInput['type']) => {
-  if (isChoiceFieldType(type)) {
-    updateField(index, {
-      type,
-      options: props.modelValue[index].options ?? [{ label: '', hidden_for_new: false }],
-    })
-    return
-  }
-  updateField(index, { type, options: undefined })
+  updateField(index, {
+    type,
+    field_id: undefined,
+    options: isChoiceFieldType(type) ? [{ label: '', hidden_for_new: false }] : undefined,
+  })
 }
 </script>
 

@@ -21,9 +21,13 @@ const selected = ref<EventFormResponseListItem | null>(null)
 
 const load = async () => {
   if (props.event.enterprise_id != null && props.event.enterprise_id !== '') {
+    responses.value = []
+    selected.value = null
     return
   }
   loading.value = true
+  responses.value = []
+  selected.value = null
   try {
     const response = await listEventFormResponses({
       community_id: props.event.community_id,
@@ -58,6 +62,7 @@ const download = () => {
       answered_at: convertToDatetime(item.answered_at),
       updated_at: convertToDatetime(item.updated_at),
       answers: item.answers.map((answer) => ({
+        field_id: answer.field_id,
         field_label: answer.field_label,
         display_value: answer.display_value,
       })),
