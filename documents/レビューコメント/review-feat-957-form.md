@@ -33,6 +33,28 @@
 | [ ] | RC-27 | 4153874807 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 📋 仕様追加 | M | 解除後の再設定で definition_version が 1 に戻る<br>世代の持ち方は仕様判断が必要なため自動修正しない |
 | [ ] | RC-28 | 4153874814 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📋 仕様追加 | M | revision_basis だけでは試行の新旧が決まらない<br>世代割当は仕様判断が必要なため自動修正しない |
 | [x] | RC-29 | 4153874818 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 複製名が 100 文字を超えて失敗する<br>接尾辞込みで maxName に収まるよう切り詰めた |
+| [x] | RC-30 | 4153960889 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 回答画面が communityAccount を捨てている<br>RC-13 で props とカート照合にコミュニティを追加済み |
+| [ ] | RC-31 | 4153960971 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 👤 UX, 🔒 セキュリティ | 📋 仕様追加 | M | フォーム経路が showConfirm のプロフィール確認を迂回する<br>共通化は仕様・UX・セキュリティ影響確認が必要なため自動修正しない |
+| [x] | RC-32 | 4153961037 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | user_advance を常に Stripe 扱いにしている<br>支払合計が正のときだけ Checkout へ進むよう揃えた |
+| [x] | RC-33 | 4153961111 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 🔧 微修正 | S | 削除済み設問が initial_answers に残る<br>RC-20 で表示可能な設問・選択肢へ絞り込済み |
+| [x] | RC-34 | 4153961178 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 試行クエリが status を絞らず全履歴を読む<br>pending/frozen を Firestore 側で絞り複合インデックスを追加した |
+| [x] | RC-35 | 5377550104 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（09:37）は個別指摘の要約<br>実体は RC-30 以降のインラインで扱う |
+| [x] | RC-36 | 5928841169 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再依頼スレッドに旧指摘を再掲している<br>複合キー・Transaction・ID再採番等は RC-10〜18 で対応済み |
+| [x] | RC-37 | 4154073678 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 回答形が設問タイプと違っても受理される<br>型不一致を type として拒否するよう検証した |
+| [ ] | RC-38 | 4154073753 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 📋 仕様追加 | M | 試行回答に TTL や削除手段が無い<br>保持期間は仕様判断が必要なため自動修正しない |
+| [x] | RC-39 | 4154073807 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CartFormAnswer が @/router/utils を直接 import している<br>ResolveEventPathFn を props 注入した |
+| [x] | RC-40 | 4154073893 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CommunityFormEditor が @/router/utils を直接 import している<br>一覧パス resolver を props 注入した |
+| [x] | RC-41 | 4154073944 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CommunityFormsPanel が @/router/utils を直接 import している<br>新規・編集パス resolver を props 注入した |
+| [x] | RC-42 | 5377683596 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（09:50）は個別指摘の要約<br>実体は RC-37〜41 のインラインで扱う |
+| [x] | RC-43 | 5928905072 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 回答一覧 watch に community_id が無い<br>監視キーへ community_id を追加した。他残件は個別 RC |
+| [x] | RC-44 | 4154080587 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 0円の事前決済を Stripe に送っている<br>RC-32 と同じ修正で対応済み |
+| [x] | RC-45 | 4154080601 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 同じ field_id のラベル変更前後が CSV 1 列に潰れる<br>列キーを field_id と確定時ラベルの組にした |
+| [ ] | RC-46 | 4154080609 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | フォーム API が中止・期限を検証しない<br>受付条件の置き場所は仕様判断のため自動修正しない |
+| [x] | RC-47 | 4154080620 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 必須選択設問で表示選択肢が無くても保存できる<br>表示可能な選択肢を1件以上要求するよう正規化した |
+| [ ] | RC-48 | 4154080629 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 回答一覧の並行 load が古い結果で上書きしうる<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-49 | 4154080641 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未確定試行だけを Firestore クエリで取得する<br>RC-34 の status in クエリで対応済み |
+| [x] | RC-50 | 4154080654 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 空白だけの設問ラベルを保存できてしまう<br>入力スキーマと正規化で trim 後に拒否した |
+| [x] | RC-51 | 5377692040 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-44〜50 のインラインで扱う |
 
 ---
 
@@ -2437,4 +2459,1757 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: 上限付近の複製が Zod で落ちる。📌 S 🔧 で接尾辞込み切り詰めを入れた。
+
+
+## 評価セッション（2026-10-01 18:56・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 18:56 JST
+- **評価者**: Cursor Agent（review-comments-evaluate / auto）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **REVIEW_REQUEST_SINCE**: 2026-10-01T09:30:24Z
+- **partial**: true（Codex が sentinel 時刻付近に到着）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 4（依頼定型 5928674422 / 5928860291、Copilot エラー 5928677107、Codex unknown error 5928813203）
+- **手順 4a 自動修正**: RC-32 / RC-34 / RC-37 / RC-39 / RC-40 / RC-41 / RC-43 / RC-44 / RC-47（🚨 9件）と RC-45 / RC-49 / RC-50（🟡 3件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-30 | 4153960889 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 回答画面が communityAccount を捨てている<br>RC-13 で props とカート照合にコミュニティを追加済み |
+| [ ] | RC-31 | 4153960971 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 👤 UX, 🔒 セキュリティ | 📋 仕様追加 | M | フォーム経路が showConfirm のプロフィール確認を迂回する<br>共通化は仕様・UX・セキュリティ影響確認が必要なため自動修正しない |
+| [x] | RC-32 | 4153961037 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | user_advance を常に Stripe 扱いにしている<br>支払合計が正のときだけ Checkout へ進むよう揃えた |
+| [x] | RC-33 | 4153961111 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 🔧 微修正 | S | 削除済み設問が initial_answers に残る<br>RC-20 で表示可能な設問・選択肢へ絞り込済み |
+| [x] | RC-34 | 4153961178 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 試行クエリが status を絞らず全履歴を読む<br>pending/frozen を Firestore 側で絞り複合インデックスを追加した |
+| [x] | RC-35 | 5377550104 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（09:37）は個別指摘の要約<br>実体は RC-30 以降のインラインで扱う |
+| [x] | RC-36 | 5928841169 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再依頼スレッドに旧指摘を再掲している<br>複合キー・Transaction・ID再採番等は RC-10〜18 で対応済み |
+| [x] | RC-37 | 4154073678 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 回答形が設問タイプと違っても受理される<br>型不一致を type として拒否するよう検証した |
+| [ ] | RC-38 | 4154073753 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 📋 仕様追加 | M | 試行回答に TTL や削除手段が無い<br>保持期間は仕様判断が必要なため自動修正しない |
+| [x] | RC-39 | 4154073807 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CartFormAnswer が @/router/utils を直接 import している<br>ResolveEventPathFn を props 注入した |
+| [x] | RC-40 | 4154073893 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CommunityFormEditor が @/router/utils を直接 import している<br>一覧パス resolver を props 注入した |
+| [x] | RC-41 | 4154073944 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CommunityFormsPanel が @/router/utils を直接 import している<br>新規・編集パス resolver を props 注入した |
+| [x] | RC-42 | 5377683596 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（09:50）は個別指摘の要約<br>実体は RC-37〜41 のインラインで扱う |
+| [x] | RC-43 | 5928905072 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 回答一覧 watch に community_id が無い<br>監視キーへ community_id を追加した。他残件は個別 RC |
+| [x] | RC-44 | 4154080587 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 0円の事前決済を Stripe に送っている<br>RC-32 と同じ修正で対応済み |
+| [x] | RC-45 | 4154080601 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 同じ field_id のラベル変更前後が CSV 1 列に潰れる<br>列キーを field_id と確定時ラベルの組にした |
+| [ ] | RC-46 | 4154080609 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 👤 UX | 📋 仕様追加 | M | フォーム API が中止・期限を検証しない<br>受付条件の置き場所は仕様判断のため自動修正しない |
+| [x] | RC-47 | 4154080620 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 必須選択設問で表示選択肢が無くても保存できる<br>表示可能な選択肢を1件以上要求するよう正規化した |
+| [ ] | RC-48 | 4154080629 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 回答一覧の並行 load が古い結果で上書きしうる<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-49 | 4154080641 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未確定試行だけを Firestore クエリで取得する<br>RC-34 の status in クエリで対応済み |
+| [x] | RC-50 | 4154080654 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 空白だけの設問ラベルを保存できてしまう<br>入力スキーマと正規化で trim 後に拒否した |
+| [x] | RC-51 | 5377692040 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-44〜50 のインラインで扱う |
+
+---
+
+**識別子**: RC-30（GitHub id: 4153960889）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,233 @@
++<script setup lang="ts">
++import { storeToRefs } from 'pinia'
++import { FirebaseError } from 'firebase/app'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
++import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
++import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
++import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
++import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
++import { getAuth } from 'firebase/auth'
++import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
++import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
++import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
++import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
++import { getEventPath } from '@/router/utils'
++import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
++import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
++import type { FormField } from '@shokujii/common/schemas/formFields.js'
++import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
++
++const props = defineProps<{
++  eventId: string
++  resolveOrdersPath: ResolveOrdersPathFn
++  resolveCartPath: () => string
++}>()
++
++const { t: $t } = useI18n()
++const router = useRouter()
++const { cart } = storeToRefs(useCurrentUserStore())
++
++const loading = ref(true)
++const saving = ref(false)
++const form = ref<GetOrderFormForCartResponse | null>(null)
++const answers = ref<FormAnswerInput[]>([])
++const issues = ref<FormValidationIssue[]>([])
++const alertMessage = ref('')
++const isOpenAlert = ref(false)
++const openConfirmOrder = ref(false)
++const confirmDialogMessage = ref('')
++
++const showAlert = (message: string) => {
++  alertMessage.value = message
++  isOpenAlert.value = true
++}
++
++const cartItem = computed(() => cart.value?.find((item) => item.event.event_id === props.eventId))
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 回答画面ではカート項目を `event_id` だけで選んでいるため、別コミュニティに同じ ID のイベントがあると、URL の `communityAccount` と異なる注文へ回答・確定します。ルートに既に含まれる communityAccount も props で渡し、`community_account` と `event_id` の両方で照合してください。
+
+**コメント要約**: 回答画面が communityAccount を捨てている
+RC-13 で props とカート照合にコミュニティを追加済み
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同一指摘は RC-13 で対応済み。今回の Files changed でも communityAccount 照合が残っている。
+---
+
+**識別子**: RC-31（GitHub id: 4153960971）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/pages/cart.vue:519`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -447,6 +451,75 @@ const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
+ const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined =>
+   enrichedCart.value?.find((item) => item.event.event_id === cartItem.event.event_id)
+ 
++type FormPresence = 'loading' | 'yes' | 'no' | 'error'
++const formPresenceByEventId = ref<Record<string, FormPresence>>({})
++
++const isPfEvent = (event: BokudeliEvent): boolean => event.enterprise_id == null || event.enterprise_id === ''
++
++const loadFormPresence = async (event: BokudeliEvent) => {
++  const eventId = event.event_id
++  if (!isPfEvent(event) || props.resolveFormAnswerPath == null) {
++    formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'no' }
++    return
++  }
++  if (formPresenceByEventId.value[eventId] === 'yes' || formPresenceByEventId.value[eventId] === 'no') {
++    return
++  }
++  formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'loading' }
++  try {
++    const response = await getEventFormPresence({
++      community_id: event.community_id,
++      event_id: eventId,
++    })
++    formPresenceByEventId.value = {
++      ...formPresenceByEventId.value,
++      [eventId]: response.data.has_form ? 'yes' : 'no',
++    }
++  } catch {
++    formPresenceByEventId.value = { ...formPresenceByEventId.value, [eventId]: 'error' }
++  }
++}
++
++watch(
++  () => enrichedCart.value?.map((item) => item.event.event_id).join(',') ?? '',
++  () => {
++    for (const item of enrichedCart.value ?? []) {
++      void loadFormPresence(item.event)
++    }
++  },
++  { immediate: true },
++)
++
++const formPresenceOf = (eventId: string): FormPresence => formPresenceByEventId.value[eventId] ?? 'loading'
++
++const primaryCartButtonLabel = (item: EnrichedCartItem): string => {
++  if (formPresenceOf(item.event.event_id) === 'yes') {
++    return $t('cart.answer_pre_event_form')
++  }
++  return needsStripeCheckoutForItem(item) ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event')
++}
++
++const onPrimaryCartButton = async (item: EnrichedCartItem) => {
++  const presence = formPresenceOf(item.event.event_id)
++  if (presence === 'loading') {
++    return
++  }
++  if (presence === 'error') {
++    alertBody.value = $t('cart.form_presence_failed')
++    return
++  }
++  if (presence === 'yes') {
++    const path = props.resolveFormAnswerPath
++    if (path == null) {
++      alertBody.value = $t('cart.form_presence_failed')
++      return
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] フォームありの場合は既存の `showConfirm` を通らず遷移するため、同関数が必須としているユーザー名・画像・メールの確認（`cart.vue:708-723`）がすべて迂回されます。フォーム回答後にも同じ事前条件を適用できる共通処理へ切り出し、未登録ユーザーがこの経路だけ注文できないようにしてください。
+
+**コメント要約**: フォーム経路が showConfirm のプロフィール確認を迂回する
+共通化は仕様・UX・セキュリティ影響確認が必要なため自動修正しない
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 🔒 セキュリティ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 指摘は妥当。未登録プロフィールでの注文防止は既存カート経路との共通化が必要で、UX/セキュリティの影響確認が要る。自動修正対象外。
+---
+
+**識別子**: RC-32（GitHub id: 4153961037）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:61`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,233 @@
++<script setup lang="ts">
++import { storeToRefs } from 'pinia'
++import { FirebaseError } from 'firebase/app'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
++import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
++import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
++import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
++import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
++import { getAuth } from 'firebase/auth'
++import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
++import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
++import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
++import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
++import { getEventPath } from '@/router/utils'
++import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
++import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
++import type { FormField } from '@shokujii/common/schemas/formFields.js'
++import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
++
++const props = defineProps<{
++  eventId: string
++  resolveOrdersPath: ResolveOrdersPathFn
++  resolveCartPath: () => string
++}>()
++
++const { t: $t } = useI18n()
++const router = useRouter()
++const { cart } = storeToRefs(useCurrentUserStore())
++
++const loading = ref(true)
++const saving = ref(false)
++const form = ref<GetOrderFormForCartResponse | null>(null)
++const answers = ref<FormAnswerInput[]>([])
++const issues = ref<FormValidationIssue[]>([])
++const alertMessage = ref('')
++const isOpenAlert = ref(false)
++const openConfirmOrder = ref(false)
++const confirmDialogMessage = ref('')
++
++const showAlert = (message: string) => {
++  alertMessage.value = message
++  isOpenAlert.value = true
++}
++
++const cartItem = computed(() => cart.value?.find((item) => item.event.event_id === props.eventId))
++const fields = computed<FormField[]>(() => form.value?.fields ?? [])
++
++const needsStripe = computed(() => {
++  const item = cartItem.value
++  if (item == null) {
++    return false
++  }
++  if (item.event.event_payment === 'user_advance') {
++    return true
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `user_advance` を常に Stripe 扱いにすると、0円の事前決済イベントまで Checkout に送られ、既存カートの `confirmOrder` 経路（`cart.vue:523-528`）と挙動が変わります。0円注文は既存のエミュレータテストでも `confirmOrder` 対象です。支払合計が正のときだけ Stripe を使ってください。
+
+**コメント要約**: user_advance を常に Stripe 扱いにしている
+支払合計が正のときだけ Checkout へ進むよう揃えた
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 0円の事前決済は既存カートが confirmOrder へ進む。フォーム画面も computeTotalPayment > 0 に揃えた。
+---
+
+**識別子**: RC-33（GitHub id: 4153961111）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/formOrder.ts:102`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,124 @@
++import { onCall, HttpsError } from 'firebase-functions/https'
++import {
++  GetOrderFormForCartRequestSchema,
++  SaveOrderFormAttemptRequestSchema,
++  type GetOrderFormForCartResponse,
++  type SaveOrderFormAttemptResponse,
++} from '@shokujii/common/apis/form.js'
++import { answersToInputs, validateFormAnswers } from '@shokujii/common/utils/validateFormAnswers.js'
++import { createModuleLogger } from './utils/logger.js'
++import { requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
++import { getOrdersInCart } from './stores/memberOrder.js'
++import {
++  createFormCheckoutAttempt,
++  getEventFormConfig,
++  getFormResponse,
++  listPendingFormCheckoutAttemptsForUser,
++} from './stores/form.js'
++
++const logger = createModuleLogger('formOrder')
++
++function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
++  try {
++    return schema.parse(data)
++  } catch {
++    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
++  }
++}
++
++async function requireInCart(communityId: string, eventId: string, userId: string): Promise<void> {
++  const cartOrders = await getOrdersInCart(communityId, eventId, userId)
++  if (cartOrders.length === 0) {
++    throw new HttpsError('failed-precondition', 'カートに注文があるときだけ回答できます')
++  }
++}
++
++export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormForCartResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, event_id } = parseOrThrow(GetOrderFormForCartRequestSchema, request.data)
++  const event = await requirePfEventForForm(community_id, event_id)
++  await requireInCart(community_id, event_id, uid)
++
++  const config = await getEventFormConfig(community_id, event_id)
++  if (config == null) {
++    return { has_form: false, community_name: event.community_name, purpose: '' }
++  }
++
++  const [pendingAttempts, confirmed] = await Promise.all([
++    listPendingFormCheckoutAttemptsForUser(community_id, event_id, uid),
++    getFormResponse(community_id, event_id, uid),
++  ])
++  const latestPending = pendingAttempts
++    .filter((attempt) => attempt.definition_version === config.definition_version)
++    .sort((a, b) => b.updated_at - a.updated_at)[0]
++
++  const fields = visibleFieldsForNewAnswers(config.fields)
++  if (latestPending != null) {
++    return {
++      has_form: true,
++      community_name: event.community_name,
++      purpose: config.purpose,
++      definition_version: config.definition_version,
++      fields,
++      initial_answers: answersToInputs(latestPending.answers),
++      source: 'attempt',
++    }
++  }
++  if (confirmed != null) {
++    return {
++      has_form: true,
++      community_name: event.community_name,
++      purpose: config.purpose,
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 既存回答を定義バージョンに関係なく返すと、設問削除後は未知の field_id、選択肢非表示後は未知の option_id が `saveOrderFormAttempt` に再送され、回答画面を編集しても保存できません。現在の可視設問・選択肢に適用できる値だけへ正規化するか、バージョン不一致時の復元方針を明示して処理してください。
+
+**コメント要約**: 削除済み設問が initial_answers に残る
+RC-20 で表示可能な設問・選択肢へ絞り込済み
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同一指摘は RC-20 で対応済み。
+---
+
+**識別子**: RC-34（GitHub id: 4153961178）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/stores/form.ts:241`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・242 行）
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormResponse | undefined> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(userId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const listFormResponses = async (communityId: string, eventId: string): Promise<FormResponse[]> => {
++  const snapshot = await formResponsesCollection(communityId, eventId).get()
++  return snapshot.docs.map((doc) => doc.data())
++}
++
++export const saveFormResponse = async (
++  communityId: string,
++  eventId: string,
++  response: FormResponse,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(response.id)
++  if (transaction === undefined) {
++    await ref.set(response)
++  } else {
++    transaction.set(ref, response)
++  }
++}
++
++export const createFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  src: Partial<FormCheckoutAttempt>,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc()
++  const attempt = new FormCheckoutAttempt(ref.id, src)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++  return attempt
++}
++
++export const getFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attemptId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt | undefined> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attemptId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const saveFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attempt: FormCheckoutAttempt,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attempt.id)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++}
++
++export const listPendingFormCheckoutAttemptsForUser = async (
++  communityId: string,
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt[]> => {
++  const query = formAttemptsCollection(communityId, eventId).where('user_id', '==', userId)
++  const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
++  return snapshot.docs
++    .map((doc) => doc.data())
++    .filter((attempt) => attempt.status === 'pending' || attempt.status === 'frozen')
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] このクエリは status を Firestore 側で絞らず、消費済み試行も含む全履歴を毎回読み込んでからメモリで除外します。試行は削除されず保存操作ごとに増えるため、再注文を重ねるほど読み取り件数と遅延が無制限に増えます。pending/frozen のみを updated_at 降順・limit(1) で取得してください。
+
+**コメント要約**: 試行クエリが status を絞らず全履歴を読む
+pending/frozen を Firestore 側で絞り複合インデックスを追加した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 消費済みを毎回読むのは妥当。limit(1) は現行の版一致探索と合わないため入れず、status in クエリにした。
+---
+
+**識別子**: RC-35（GitHub id: 5377550104）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR トップレベル（Copilot overview）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+0円注文の決済経路、旧回答の復元、複合イベント識別、CSV欠落、デプロイ順序などに未解決の問題があります。
+
+**Review effort:** Balanced  
+**Findings:** 6 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 8 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (15)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [communityAccountとevent_idの複合条件で回答対象を照合する](#discussion_r4153960889) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [communityAccount欠落による別コミュニティのカート項目誤選択](#discussion_r4153855187)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Webhook更新とセッション作成の競合による状態上書き](#discussion_r4153855119)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [definition_version更新の競合による版番号重複](#discussion_r4153855054)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [event_id単独キーによる別コミュニティ間のフォーム状態混同](#discussion_r4153854964)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [0円注文ではStripeを使わず既存のconfirmOrder経路を維持する](#discussion_r4153961037) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [定義バージョンに応じて既存回答を有効な値へ正規化する](#discussion_r4153961111) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [回答者ごとのgetUser呼び出しによるN+1読取](#discussion_r4153855465)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問ラベル重複と版変更による回答列の上書き](#discussion_r4153855410)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [取得失敗時に前回の回答一覧が残る](#discussion_r4153855298)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問タイプ変更時に既存field_idが残り保存できない](#discussion_r4153855235)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+**コメント要約**: Copilot overview（09:37）は個別指摘の要約
+実体は RC-30 以降のインラインで扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview のみ。個別指摘はインライン RC で評価する。
+---
+
+**識別子**: RC-36（GitHub id: 5928841169）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR トップレベル（再依頼スレッド）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行の Files changed を確認しました。この環境には新規インライン review comment を作成する操作がないため、該当箇所を明記して本スレッドに報告します。
+
+🚨 **必須修正** [🔧微修正/M]: カートのフォーム有無キャッシュと回答画面のカート項目検索が `event_id` 単独です。同じIDを持つ異なるコミュニティのイベントがある場合、フォーム有無・設問・回答対象が混線します。`community_id` と `event_id` でキャッシュ・watch・参照を統一し、回答画面にもコミュニティを渡してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/pages/cart.vue:451-493`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/forms/CartFormAnswer.vue:21-46`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/user/src/pages/cart/form/[communityAccount]/[eventId].vue:5-9`
+
+🚨 **必須修正** [🔧微修正/M]: イベント設定の `definition_version` をトランザクション外で読み、加算して保存しています。同時更新で同じ版が発行され、試行回答が別定義に対して版一致扱いになります。設定・更新の両経路で読取と版加算・保存をトランザクションに含めてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/formAdmin.ts:216-223,239-253`
+
+🚨 **必須修正** [🔧微修正/M]: Stripe セッション作成後の attempt 読取・全体 set が非トランザクションです。Webhook が先に `consumed` にした後、古い `frozen` を書き戻す競合が残ります。状態を維持したまま session ID を記録するトランザクション更新にし、競合時は再読込してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/stripe.ts:340-345`
+
+🚨 **必須修正** [🔧微修正/S]: 設問種別を変えても既存 `field_id` が残ります。`normalizeFormFields` は同じIDの種別変更を拒否するため、既存設問の種別変更を含むフォームは保存できません。種別変更時はIDを外して新設問として採番してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/forms/FormFieldsEditor.vue:76-85`
+
+🚨 **必須修正** [🔧微修正/S]: 回答一覧の再取得失敗時に前回の `responses` と `selected` が残ります。フィルター・イベント変更後に取得が失敗すると旧条件の回答を新条件の結果として表示・CSV出力でき、詳細も古いままです。load 開始時に両方をクリアし、イベント監視には `community_id` も含めてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/manage/event/EventFormResponsesPanel.vue:17-46`
+
+🚨 **必須修正** [🔧微修正/S]: CSV列の重複排除・行内Mapが `field_label` だけをキーにしています。同じラベルの別設問は1列に潰れ、回答値は後勝ちで欠落します。また版ごとにラベルが違う同一設問も別列化されます。APIから `field_id` を保持し、列キーを `field_id` と確定時ラベルの組にしてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/composable/memberCsvExport.ts:129-169`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/manage/event/EventFormResponsesPanel.vue:52-65`
+
+🚨 **必須修正** [🔧微修正/M]: 新 Callable の Functions デプロイ完了前に user/base が先行デプロイされる可能性が残っています。PF カートは `getEventFormPresence` の失敗を `error` として注文停止するため、その時間帯はフォーム有無に関係なく注文不能になります。既存 `deploy_functions` と `deploy_user` は同じ push で独立起動するため、Functions 成功後だけ新 UI を有効化する等、順序を保証する移行策が必要です。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/pages/cart.vue:469-480`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/.github/workflows/deploy_functions.yml:7-20,76-88`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/.github/workflows/deploy_user.yml:3-11`
+
+🟡 **修正提案** [📐リファクタ/M]: `formConfirm.ts` の新しい確定・再利用・版不一致・revision競合の分岐を検証する Functions 側テストがありません。注文確定のデータ整合性を担うため、状態遷移・再送・競合時に既存回答を上書きしないケースを追加してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/utils/formConfirm.ts:26-125`
+
+🟡 **修正提案** [📐リファクタ/S]: 一覧取得で回答ごとに `getUser` を発行しています。回答数に比例する読み取りになるため、既存の `getUsersByUserIds` でまとめて取得する形を検討してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/formAdmin.ts:285-310`
+
+確認できた点: Firestore Rules は新規フォームコレクションへのクライアント直アクセスを拒否しており、申込者向け Callable はイベント側の `form_config` を参照しています。confirmOrder と Webhook の回答確定はそれぞれ注文確定トランザクション内にあり、参加状態は ordered 注文から導出されています。PR verify と Firestore Rules の最新 run は成功、PR verify の failed jobs はありませんでした。
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+レビュー結果は再依頼コメント #5928674422 のスレッドに、該当ファイル・行とともにまとめて返信しました。この環境では新規インライン review comment を作成できないため、依頼コメントへの返信で報告しています。
+
+**コメント要約**: 再依頼スレッドに旧指摘を再掲している
+複合キー・Transaction・ID再採番等は RC-10〜18 で対応済み
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: スレッドまとめ。新規の固有指摘は後続インライン / RC-43 で扱う。
+---
+
+**識別子**: RC-37（GitHub id: 4154073678）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/validateFormAnswers.ts:80`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・81 行）
++import { DateTime } from 'luxon'
++import { isValidEmail, isValidPhone } from './contactFormat.js'
++import { FORM_DATE_ANSWER_PATTERN, FORM_FIELD_LIMITS, type FormField, type FormOption } from '../schemas/formFields.js'
++import type { FormAnswerSnapshot } from '../schemas/FormResponse.js'
++
++export type FormAnswerInput = {
++  field_id: string
++  text_value?: string
++  option_id?: string
++  option_ids?: string[]
++}
++
++export type FormValidationIssue = {
++  field_id?: string
++  code:
++    | 'required'
++    | 'type'
++    | 'unknown_field'
++    | 'unknown_option'
++    | 'too_long'
++    | 'invalid_email'
++    | 'invalid_phone'
++    | 'invalid_date'
++    | 'version_mismatch'
++}
++
++export type FormValidationResult =
++  | { ok: true; answers: FormAnswerSnapshot[] }
++  | { ok: false; issues: FormValidationIssue[] }
++
++function isBlank(value: string | undefined): boolean {
++  return value == null || value.trim() === ''
++}
++
++function visibleFields(fields: FormField[]): FormField[] {
++  return fields.filter((field) => !field.hidden_for_new)
++}
++
++function visibleOptions(options: FormOption[]): FormOption[] {
++  return options.filter((option) => !option.hidden_for_new)
++}
++
++function isValidDateString(value: string): boolean {
++  if (!FORM_DATE_ANSWER_PATTERN.test(value)) {
++    return false
++  }
++  const parsed = DateTime.fromISO(value, { zone: 'utc' })
++  return parsed.isValid && parsed.toISODate() === value
++}
++
++function findAnswer(answers: FormAnswerInput[], fieldId: string): FormAnswerInput | undefined {
++  return answers.find((answer) => answer.field_id === fieldId)
++}
++
++export function validateFormAnswers(params: {
++  fields: FormField[]
++  answers: FormAnswerInput[]
++  definitionVersion: number
++  expectedDefinitionVersion?: number
++}): FormValidationResult {
++  const issues: FormValidationIssue[] = []
++  if (params.expectedDefinitionVersion != null && params.expectedDefinitionVersion !== params.definitionVersion) {
++    issues.push({ code: 'version_mismatch' })
++    return { ok: false, issues }
++  }
++
++  const knownIds = new Set(params.fields.map((field) => field.field_id))
++  for (const answer of params.answers) {
++    if (!knownIds.has(answer.field_id)) {
++      issues.push({ field_id: answer.field_id, code: 'unknown_field' })
++    }
++  }
++
++  const snapshots: FormAnswerSnapshot[] = []
++  for (const field of visibleFields(params.fields)) {
++    const answer = findAnswer(params.answers, field.field_id)
++    if (field.type === 'checkbox' || field.type === 'radio' || field.type === 'select') {
++      const options = visibleOptions(field.options)
++      if (field.type === 'checkbox') {
++        const optionIds = answer?.option_ids ?? []
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 回答値の形が設問タイプと一致するかを検証していません。例えば任意の checkbox に `{ field_id, text_value: 'x' }` を送ると `option_ids` が空として扱われ、`ok: true` で黙って受理されます。`FormValidationIssue` に `type` が定義済みなので、選択式では対応する option 値だけ、自由入力式では `text_value` だけを許可し、不一致を `type` として拒否してください。
+
+**コメント要約**: 回答形が設問タイプと違っても受理される
+型不一致を type として拒否するよう検証した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 任意 checkbox に text_value だけ送ると空回答扱いで通るのは不具合。shape 検査を追加した。
+---
+
+**識別子**: RC-38（GitHub id: 4154073753）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/schemas/FormCheckoutAttempt.ts:16`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,77 @@
++import { z } from 'zod'
++import { EpochMillisSchema, NonEmptyStringSchema, TimestampSchema } from './firebase/index.js'
++import { FormAnswerSnapshotSchema, type FormAnswerSnapshot } from './FormResponse.js'
++
++export const FORM_CHECKOUT_ATTEMPT_STATUS_VALUES = ['pending', 'frozen', 'consumed'] as const
++export type FormCheckoutAttemptStatus = (typeof FORM_CHECKOUT_ATTEMPT_STATUS_VALUES)[number]
++
++const FormCheckoutAttemptDbSchema = z.object({
++  user_id: z.string().min(1),
++  definition_version: z.number().int().positive(),
++  revision_basis: z.number().int().nonnegative(),
++  answers: z.array(FormAnswerSnapshotSchema),
++  status: z.enum(FORM_CHECKOUT_ATTEMPT_STATUS_VALUES),
++  stripe_session_id: NonEmptyStringSchema.optional(),
++  created_at: TimestampSchema,
++  updated_at: TimestampSchema,
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `form_checkout_attempts` にはアンケートの個人情報が保存されますが、作成日時だけで失効時刻や削除処理がなく、決済離脱・失敗の試行が無期限に蓄積します。同PRの仕様案でも未決済回答の保持・削除手段を公開前に決めるとしているため、保持期間を確定し、TTL用フィールドまたは定期削除と必要な設定を追加してください。
+
+**コメント要約**: 試行回答に TTL や削除手段が無い
+保持期間は仕様判断が必要なため自動修正しない
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🔒 セキュリティ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 個人情報の保持は公開前に決める項目。TTL フィールドや定期削除は仕様追加であり自動修正しない。
+---
+
+**識別子**: RC-39（GitHub id: 4154073807）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:16`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,238 @@
++<script setup lang="ts">
++import { storeToRefs } from 'pinia'
++import { FirebaseError } from 'firebase/app'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
++import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
++import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
++import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
++import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
++import { getAuth } from 'firebase/auth'
++import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
++import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
++import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
++import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
++import { getEventPath } from '@/router/utils'
++import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 注文履歴・カートの遷移先は props で注入している一方、フォールバック先だけ `@/router/utils` を直接 import しており、`base` が user のルートへ依存しています。`ResolveEventPathFn` を props に追加し、user の回答ページから `getEventPath` を渡してください。
+
+**コメント要約**: CartFormAnswer が @/router/utils を直接 import している
+ResolveEventPathFn を props 注入した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: base が user ルートへ依存するのは規約違反。既存の path resolver 注入に揃えた。
+---
+
+**識別子**: RC-40（GitHub id: 4154073893）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormEditor.vue:14`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,186 @@
++<script setup lang="ts">
++import FormFieldsEditor from '@shokujii/base/components/forms/FormFieldsEditor.vue'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
++import { useNotification } from '@shokujii/base/composable/notification.js'
++import { createCommunityForm, getCommunityForm, updateCommunityForm } from '@shokujii/base/apis/form.js'
++import type { FormFieldInput } from '@shokujii/common/apis/form.js'
++import {
++  FORM_FIELD_LIMITS,
++  FormFieldSchema,
++  isChoiceFieldType,
++  type FormField,
++} from '@shokujii/common/schemas/formFields.js'
++import { getManageCommunityFormsPath } from '@/router/utils'
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この `base` コンポーネントも user の `@/router/utils` へ直接依存しています。共有層の依存方向を維持するため、一覧へ戻る resolver を props で受け取り、ページ shell から渡してください（既存例: `base/src/types/profilePathResolvers.ts:3-10`）。
+
+**コメント要約**: CommunityFormEditor が @/router/utils を直接 import している
+一覧パス resolver を props 注入した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 共有層の依存方向を維持するため、ページ shell からパスを渡す。
+---
+
+**識別子**: RC-41（GitHub id: 4154073944）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormsPanel.vue:7`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,113 @@
++<script setup lang="ts">
++import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
++import { useNotification } from '@shokujii/base/composable/notification.js'
++import { archiveCommunityForm, duplicateCommunityForm, listCommunityForms } from '@shokujii/base/apis/form.js'
++import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import { getManageCommunityFormEditPath, getManageCommunityFormNewPath } from '@/router/utils'
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `base` コンポーネントから app 固有の `@/router/utils` を直接参照しており、共有層が user のルート構成へ依存しています。`base/src/types/profilePathResolvers.ts:3-10` の既存パターンどおり、新規・編集パスの resolver を props で受け取り、user 側の shell から注入してください。
+
+**コメント要約**: CommunityFormsPanel が @/router/utils を直接 import している
+新規・編集パス resolver を props 注入した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-39 / RC-40 と同じ規約違反。user のコミュニティ管理画面から渡す。
+---
+
+**識別子**: RC-42（GitHub id: 5377683596）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR トップレベル（Copilot overview）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+0円注文の失敗、回答型検証の不足、個人情報を含む試行回答の保持問題が残っています。
+
+**Review effort:** Balanced  
+**Findings:** 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 4 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (11)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [設問タイプと異なる回答形式を検証せず受理している](#discussion_r4154073678) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [0円注文ではStripeを使わず既存のconfirmOrder経路を維持する](#discussion_r4153961037)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問ラベル重複と版変更による回答列の上書き](#discussion_r4153855410)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [イベント遷移のフォールバックがuserのルーターへ直接依存している](#discussion_r4154073807) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [baseコンポーネントが一覧遷移でuserのルーターへ直接依存している](#discussion_r4154073893) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [baseコンポーネントがuserのルーターへ直接依存している](#discussion_r4154073944) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (9)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [communityAccountとevent_idの複合条件で回答対象を照合する](#discussion_r4153960889)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [communityAccount欠落による別コミュニティのカート項目誤選択](#discussion_r4153855187)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Webhook更新とセッション作成の競合による状態上書き](#discussion_r4153855119)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [definition_version更新の競合による版番号重複](#discussion_r4153855054)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [event_id単独キーによる別コミュニティ間のフォーム状態混同](#discussion_r4153854964)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [定義バージョンに応じて既存回答を有効な値へ正規化する](#discussion_r4153961111)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [回答者ごとのgetUser呼び出しによるN+1読取](#discussion_r4153855465)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [取得失敗時に前回の回答一覧が残る](#discussion_r4153855298)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問タイプ変更時に既存field_idが残り保存できない](#discussion_r4153855235)
+</details>
+
+**コメント要約**: Copilot overview（09:50）は個別指摘の要約
+実体は RC-37〜41 のインラインで扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview のみ。
+---
+
+**識別子**: RC-43（GitHub id: 5928905072）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR トップレベル（再依頼スレッド）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+8コミット時点の Files changed を確認しました。前回指摘のうち、フォーム有無の複合キー、版更新とStripe attempt更新のTransaction、設問種別変更時のID再採番、一覧ロード時クリア、communityAccountの照合、初期回答の絞り込み、ユーザー一括取得、重複ラベルのCSV列分離は反映されています。
+
+この環境では新規インライン review comment を作成する操作がないため、残件を該当箇所付きで報告します。
+
+🚨 **必須修正** [🔧微修正/S]: フォーム回答画面では `user_advance` を金額に関係なく Stripe Checkout に送ります。一方、`createStripeCheckoutSession` は支払額0円を拒否するため、0円の事前決済イベントでフォーム付き注文を確定できません。共有カートと同様に支払合計が正のときだけ Stripe を使い、0円は `confirmOrder` に進めてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/forms/CartFormAnswer.vue:54-65`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/stripe.ts:229-235`
+
+🚨 **必須修正** [🔧微修正/M]: フォームありイベントではカートの `showConfirm` を通らず回答画面へ進み、回答送信後に直接注文確定できます。`showConfirm` が確認しているユーザー名・画像・メールの必須条件をこの経路は確認していません。注文確定前にも同じ条件を適用し、未登録プロフィールでフォーム経由だけ注文できる状態を防いでください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/pages/cart.vue:515-524,712-729`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/forms/CartFormAnswer.vue:179-211`
+
+🚨 **必須修正** [🔧微修正/M]: Functions と user hosting は同一 push で独立起動します。`deploy_functions` の成功後にアプリを dispatch する処理があっても、`deploy_user` の push 起動自体は止まらないため、新Callableのデプロイ前に新UIが公開され得ます。その時間帯はCallable失敗をフォーム取得エラーとして扱い、PF注文を停止します。Functions成功後だけアプリを公開するなど、初回デプロイを直列化してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/.github/workflows/deploy_functions.yml:7-20,76-88`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/.github/workflows/deploy_user.yml:3-11`、`/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/pages/cart.vue:471-482`
+
+🚨 **必須修正** [🔧微修正/S]: CSV列を `field_id` だけで統合し、ヘッダーの設問文言は最初に出た回答のラベルだけを使います。同じ設問のラベル変更前後の確定回答が混在すると、過去回答まで新旧どちらか一方の文言の列に入り、回答時点のスナップショットをCSVで識別できません。列識別を `field_id` と確定時 `field_label` の組にしてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/composable/memberCsvExport.ts:142-177`
+
+🚨 **必須修正** [🔧微修正/S]: 回答一覧パネルの再取得監視が `event_id` とフィルターだけで、`community_id` を含みません。同一 `event_id` の別コミュニティに切り替わっても再取得されず、前のイベントの回答が残る可能性があります。監視キーに `community_id` も加えてください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/base/src/components/manage/event/EventFormResponsesPanel.vue:22-50`
+
+🟡 **修正提案** [📐リファクタ/S]: `listPendingFormCheckoutAttemptsForUser` はユーザーの全試行履歴を読み込んでから、メモリ上で pending/frozen を抽出しています。試行は保存のたびに蓄積するため、継続利用で読み取り件数が増え続けます。状態をFirestoreクエリで絞り、最新の必要件数だけを取得する方法を検討してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/stores/form.ts:231-242`
+
+🟡 **修正提案** [📐リファクタ/M]: 注文確定を担う `formConfirm.ts` に、consumed・版不一致・revision競合・既存回答再利用および再送時のテストが見当たりません。状態遷移ごとのテスト追加を検討してください。対象: `/home/runner/work/bokudeli-event-new/bokudeli-event-new/functions/default/src/utils/formConfirm.ts:26-125`
+
+確認状況: Firestore Rules テストは最新コミットで成功。最新PR verify は確認時点で実行中（lint・format・Functions deploy verifier は成功、typecheck以降は未完了）です。
+
+**コメント要約**: 回答一覧 watch に community_id が無い
+監視キーへ community_id を追加した。他残件は個別 RC
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 残件まとめのうち、community_id 監視はこのコメント固有。0円は RC-32、showConfirm は RC-31、デプロイ順は RC-16、CSV 世代は RC-45、試行クエリは RC-34。
+---
+
+**識別子**: RC-44（GitHub id: 4154080587）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:61`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,238 @@
++<script setup lang="ts">
++import { storeToRefs } from 'pinia'
++import { FirebaseError } from 'firebase/app'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
++import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
++import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
++import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
++import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
++import { getAuth } from 'firebase/auth'
++import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
++import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
++import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
++import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
++import { getEventPath } from '@/router/utils'
++import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
++import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
++import type { FormField } from '@shokujii/common/schemas/formFields.js'
++import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
++
++const props = defineProps<{
++  eventId: string
++  communityAccount: string
++  resolveOrdersPath: ResolveOrdersPathFn
++  resolveCartPath: () => string
++}>()
++
++const { t: $t } = useI18n()
++const router = useRouter()
++const { cart } = storeToRefs(useCurrentUserStore())
++
++const loading = ref(true)
++const saving = ref(false)
++const form = ref<GetOrderFormForCartResponse | null>(null)
++const answers = ref<FormAnswerInput[]>([])
++const issues = ref<FormValidationIssue[]>([])
++const alertMessage = ref('')
++const isOpenAlert = ref(false)
++const openConfirmOrder = ref(false)
++const confirmDialogMessage = ref('')
++
++const showAlert = (message: string) => {
++  alertMessage.value = message
++  isOpenAlert.value = true
++}
++
++const cartItem = computed(() =>
++  cart.value?.find(
++    (item) => item.event.event_id === props.eventId && item.event.community_account === props.communityAccount,
++  ),
++)
++const fields = computed<FormField[]>(() => form.value?.fields ?? [])
++
++const needsStripe = computed(() => {
++  const item = cartItem.value
++  if (item == null) {
++    return false
++  }
++  if (item.event.event_payment === 'user_advance') {
++    return true
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  0円の事前決済注文を通常の確定処理へ戻す**
+
+`user_advance` を金額に関係なく Stripe 扱いにしているため、無料メニューだけのフォーム付きイベントでも `createStripeCheckoutSession` が呼ばれます。同 API は支払額が 0 円なら拒否する一方、通常カートは `totalPrice > 0` の場合だけ Stripe を使うため、このケースでは利用者が回答後の注文を完了できません。合計額も含めて判定し、0円なら `confirmOrder` へ進めてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 0円の事前決済を Stripe に送っている
+RC-32 と同じ修正で対応済み
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Copilot RC-32 と同一。支払合計が正のときだけ Stripe。
+---
+
+**識別子**: RC-45（GitHub id: 4154080601）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/composable/memberCsvExport.ts:150`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -125,3 +125,57 @@ export const buildEventMemberCsv = (
+ export const downloadMemberCsv = (filename: string, content: string): void => {
+   downloadCsv(filename, content)
+ }
++
++export type EventFormResponseCsvRow = {
++  user_id: string
++  display_name: string
++  participation_label: string
++  answered_at: string
++  updated_at: string
++  answers: Array<{
++    field_id: string
++    field_label: string
++    display_value: string
++  }>
++}
++
++export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): string => {
++  const columns: Array<{ field_id: string; field_label: string }> = []
++  const seen = new Set<string>()
++  for (const row of rows) {
++    for (const answer of row.answers) {
++      if (!seen.has(answer.field_id)) {
++        seen.add(answer.field_id)
++        columns.push({ field_id: answer.field_id, field_label: answer.field_label })
++      }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  ラベル変更前後の回答をCSVの別列として保持する**
+
+既存指摘の「同名だが別IDの設問」は修正されていますが、同じ `field_id` のラベルを受付中に変更できる今回の仕様では、変更前後の回答スナップショットが異なる `field_label` を持ちます。ここで `field_id` だけを重複排除すると最初のラベルしかヘッダーに残らず、変更後の回答が別の設問文の列へ出力されて確定時の文言を判別できません。列の識別にラベルまたは定義世代も含めてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 同じ field_id のラベル変更前後が CSV 1 列に潰れる
+列キーを field_id と確定時ラベルの組にした
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: P2 だが確定時スナップショットを識別できない実害がある。📌 S 🔧 で列キーを組に変更した。
+---
+
+**識別子**: RC-46（GitHub id: 4154080609）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/formOrder.ts:64`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,155 @@
++import { onCall, HttpsError } from 'firebase-functions/https'
++import {
++  GetOrderFormForCartRequestSchema,
++  SaveOrderFormAttemptRequestSchema,
++  type GetOrderFormForCartResponse,
++  type SaveOrderFormAttemptResponse,
++} from '@shokujii/common/apis/form.js'
++import {
++  answersToInputs,
++  validateFormAnswers,
++  type FormAnswerInput,
++} from '@shokujii/common/utils/validateFormAnswers.js'
++import type { FormField } from '@shokujii/common/schemas/formFields.js'
++import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
++import { createModuleLogger } from './utils/logger.js'
++import { requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
++import { getOrdersInCart } from './stores/memberOrder.js'
++import {
++  createFormCheckoutAttempt,
++  getEventFormConfig,
++  getFormResponse,
++  listPendingFormCheckoutAttemptsForUser,
++} from './stores/form.js'
++
++const logger = createModuleLogger('formOrder')
++
++function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
++  try {
++    return schema.parse(data)
++  } catch {
++    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
++  }
++}
++
++function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: FormField[]): FormAnswerInput[] {
++  const fieldById = new Map(fields.map((field) => [field.field_id, field]))
++  return answersToInputs(answers).flatMap((answer) => {
++    const field = fieldById.get(answer.field_id)
++    if (field == null) {
++      return []
++    }
++    if (field.type === 'checkbox') {
++      const allowed = new Set(
++        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
++      )
++      return [{ ...answer, option_ids: (answer.option_ids ?? []).filter((id) => allowed.has(id)) }]
++    }
++    if (field.type === 'radio' || field.type === 'select') {
++      const allowed = new Set(
++        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
++      )
++      if (answer.option_id != null && !allowed.has(answer.option_id)) {
++        return [{ field_id: answer.field_id }]
++      }
++    }
++    return [answer]
++  })
++}
++
++async function requireInCart(communityId: string, eventId: string, userId: string): Promise<void> {
++  const cartOrders = await getOrdersInCart(communityId, eventId, userId)
++  if (cartOrders.length === 0) {
++    throw new HttpsError('failed-precondition', 'カートに注文があるときだけ回答できます')
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  フォームAPIでもイベントの注文受付条件を検証する**
+
+イベント中止後や注文期限経過後でも `in_cart` の注文が残っている場合、この関数は通過するため、`getOrderFormForCart` で過去回答を取得し、`saveOrderFormAttempt` で新しい試行も保存できます。最終的な注文確定は別処理で拒否されるため、利用者は完了不能な回答画面へ進めてしまい、注文フロー中だけ取得・編集を許す制約も満たしません。カート存在に加えて中止状態と注文期限などの受付条件を両APIで検証してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: フォーム API が中止・期限を検証しない
+受付条件の置き場所は仕様判断のため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 👤 UX
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 最終確定は別処理で拒否される。回答画面の受付条件をどこまで揃えるかは仕様判断。自動修正対象外。
+---
+
+**識別子**: RC-47（GitHub id: 4154080620）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/utils/normalizeFormFields.ts:54`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,103 @@
++import {
++  FORM_FIELD_LIMITS,
++  FormFieldSchema,
++  isChoiceFieldType,
++  type FormField,
++  type FormOption,
++} from '../schemas/formFields.js'
++import type { FormFieldInput } from '../apis/form.js'
++
++export type NormalizeFormFieldsResult = { ok: true; fields: FormField[] } | { ok: false; message: string }
++
++function createEntityId(prefix: string): string {
++  const bytes = new Uint8Array(8)
++  if (typeof globalThis.crypto?.getRandomValues === 'function') {
++    globalThis.crypto.getRandomValues(bytes)
++  } else {
++    for (let i = 0; i < bytes.length; i++) {
++      bytes[i] = Math.floor(Math.random() * 256)
++    }
++  }
++  return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`
++}
++
++function existingTypeById(existing: FormField[] | undefined): Map<string, FormField['type']> {
++  const map = new Map<string, FormField['type']>()
++  for (const field of existing ?? []) {
++    map.set(field.field_id, field.type)
++  }
++  return map
++}
++
++export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormField[]): NormalizeFormFieldsResult {
++  if (inputs.length > FORM_FIELD_LIMITS.maxFields) {
++    return { ok: false, message: `設問は${FORM_FIELD_LIMITS.maxFields}件までです` }
++  }
++
++  const usedFieldIds = new Set<string>()
++  const typeById = existingTypeById(existing)
++  const fields: FormField[] = []
++
++  for (const input of inputs) {
++    let fieldId = input.field_id
++    if (fieldId != null && typeById.has(fieldId) && typeById.get(fieldId) !== input.type) {
++      return { ok: false, message: '同じ設問IDの項目タイプは変更できません' }
++    }
++    if (fieldId == null || fieldId === '' || usedFieldIds.has(fieldId)) {
++      fieldId = createEntityId('fld')
++    }
++    usedFieldIds.add(fieldId)
++
++    if (isChoiceFieldType(input.type)) {
++      const optionInputs = input.options ?? []
++      if (optionInputs.length === 0) {
++        return { ok: false, message: '選択肢を1件以上入力してください' }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  必須選択設問に表示可能な選択肢を要求する**
+
+ここでは選択肢の総数しか検証しないため、必須のチェックボックス・ラジオ・プルダウンで全選択肢を `hidden_for_new` にしたフォームも保存できます。この設定では回答画面に選択肢が一つも出ない一方、`validateFormAnswers` は必須未回答として常に拒否するため、そのイベントでは全利用者が注文を完了できません。新規回答に表示する必須選択設問には少なくとも1件の表示可能な選択肢があることを保存時に検証してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 必須選択設問で表示選択肢が無くても保存できる
+表示可能な選択肢を1件以上要求するよう正規化した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 全 hidden だと利用者が注文できない。保存時検証を追加した。
+---
+
+**識別子**: RC-48（GitHub id: 4154080629）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/manage/event/EventFormResponsesPanel.vue:37`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,132 @@
++<script setup lang="ts">
++import { useNotification } from '@shokujii/base/composable/notification.js'
++import { listEventFormResponses } from '@shokujii/base/apis/form.js'
++import { buildEventFormResponseCsv, downloadMemberCsv } from '@shokujii/base/composable/memberCsvExport.js'
++import type { EventFormResponseFilter, EventFormResponseListItem } from '@shokujii/common/apis/form.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
++import { mdiDownload } from '@mdi/js'
++
++const props = defineProps<{
++  event: BokudeliEvent
++}>()
++
++const { t: $t } = useI18n()
++const notification = useNotification()
++
++const filter = ref<EventFormResponseFilter>('confirmed')
++const responses = ref<EventFormResponseListItem[]>([])
++const loading = ref(false)
++const selected = ref<EventFormResponseListItem | null>(null)
++
++const load = async () => {
++  if (props.event.enterprise_id != null && props.event.enterprise_id !== '') {
++    responses.value = []
++    selected.value = null
++    return
++  }
++  loading.value = true
++  responses.value = []
++  selected.value = null
++  try {
++    const response = await listEventFormResponses({
++      community_id: props.event.community_id,
++      event_id: props.event.event_id,
++      filter: filter.value,
++    })
++    responses.value = response.data.responses
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  最新のフィルター要求だけを回答一覧へ反映する**
+
+参加確定と全取消を素早く切り替えた場合���イベントが切り替わった場合、複数の `load` が並行し、古いリクエストが後から完了すると現在のフィルターとは異なる回答で `responses` を上書きします。その状態では表示中のタブと一覧が食い違い、CSVも意図しない参加状態の回答を出力できます。要求時のイベントIDとフィルターを保持し、完了時点でも一致する最新リクエストだけを反映してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 回答一覧の並行 load が古い結果で上書きしうる
+UX ラベルのため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: レースは妥当だがリクエスト世代管理は UX ラベル付き 🟡 のため自動修正しない。
+---
+
+**識別子**: RC-49（GitHub id: 4154080641）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/stores/form.ts:241`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・242 行）
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormResponse | undefined> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(userId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const listFormResponses = async (communityId: string, eventId: string): Promise<FormResponse[]> => {
++  const snapshot = await formResponsesCollection(communityId, eventId).get()
++  return snapshot.docs.map((doc) => doc.data())
++}
++
++export const saveFormResponse = async (
++  communityId: string,
++  eventId: string,
++  response: FormResponse,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(response.id)
++  if (transaction === undefined) {
++    await ref.set(response)
++  } else {
++    transaction.set(ref, response)
++  }
++}
++
++export const createFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  src: Partial<FormCheckoutAttempt>,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc()
++  const attempt = new FormCheckoutAttempt(ref.id, src)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++  return attempt
++}
++
++export const getFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attemptId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt | undefined> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attemptId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const saveFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attempt: FormCheckoutAttempt,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attempt.id)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++}
++
++export const listPendingFormCheckoutAttemptsForUser = async (
++  communityId: string,
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt[]> => {
++  const query = formAttemptsCollection(communityId, eventId).where('user_id', '==', userId)
++  const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
++  return snapshot.docs
++    .map((doc) => doc.data())
++    .filter((attempt) => attempt.status === 'pending' || attempt.status === 'frozen')
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  未確定試行だけをFirestoreクエリで取得する**
+
+関数名とは異なり、クエリは `user_id` だけで全試行を読み、その後に `pending` と `frozen` をメモリ上で抽出しています。試行は回答保存のたびに新規ドキュメントとして作成され、消費済み試行を削除する処理もないため、追加注文や決済再試行を重ねた利用者ほど回答画面を開くたびに全履歴を読み続け、レイテンシとFirestore読み取り料金が増加します。`status` をクエリ条件に含め、必要なら対応する複合インデックスを追加してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 未確定試行だけを Firestore クエリで取得する
+RC-34 の status in クエリで対応済み
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: P2 だが RC-34 と同じ読み取り肥大化。status 絞り込みで解消した。
+---
+
+**識別子**: RC-50（GitHub id: 4154080654）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/apis/form.ts:17`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,224 @@
++import { z } from 'zod'
++import { FORM_FIELD_LIMITS, FORM_FIELD_TYPE_VALUES } from '../schemas/formFields.js'
++import type { FormField } from '../schemas/formFields.js'
++import type { FormAnswerInput, FormValidationIssue } from '../utils/validateFormAnswers.js'
++import type { FormAnswerSnapshot } from '../schemas/FormResponse.js'
++
++export const FormOptionInputSchema = z.object({
++  option_id: z.string().min(1).optional(),
++  label: z.string().min(1).max(FORM_FIELD_LIMITS.maxLabel),
++  hidden_for_new: z.boolean().optional(),
++})
++
++export const FormFieldInputSchema = z.object({
++  field_id: z.string().min(1).optional(),
++  type: z.enum(FORM_FIELD_TYPE_VALUES),
++  label: z.string().min(1).max(FORM_FIELD_LIMITS.maxLabel),
++  description: z.string().max(FORM_FIELD_LIMITS.maxDescription).optional(),
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  空白だけの設問ラベルを保存前に拒否する**
+
+`z.string().min(1)` は空白文字だけのラベルを有効とみなし、エディタも設問ラベルを trim せず送信するため、通常の画面操作で表示上は無題の設問を保存できます。プレビュー側は `field.label.trim() === ''` の設問を除外する一方、実際の回答画面ではその設問が表示されるため、管理者はプレビューで確認できなかった無題の必須入力を申込者へ要求でき、CSVの列名も判別不能になります。スキーマまたは正規化処理で trim 後の非空文字列を要求してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 空白だけの設問ラベルを保存できてしまう
+入力スキーマと正規化で trim 後に拒否した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 📌 S 🔧 で方針が一意。Zod trim と normalize の空文字拒否を入れた。
+---
+
+**識別子**: RC-51（GitHub id: 5377692040）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `PR トップレベル（Codex overview）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `31f29be2be`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+**コメント要約**: Codex overview は個別指摘の要約
+実体は RC-44〜50 のインラインで扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview / wrapper。個別指摘はインライン RC で評価する。
 

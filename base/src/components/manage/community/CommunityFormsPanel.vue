@@ -4,8 +4,16 @@ import { useNotification } from '@shokujii/base/composable/notification.js'
 import { archiveCommunityForm, duplicateCommunityForm, listCommunityForms } from '@shokujii/base/apis/form.js'
 import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
-import { getManageCommunityFormEditPath, getManageCommunityFormNewPath } from '@/router/utils'
+import type {
+  ResolveManageCommunityFormEditPathFn,
+  ResolveManageCommunityFormNewPathFn,
+} from '@shokujii/base/types/profilePathResolvers.js'
 import { mdiPlus } from '@mdi/js'
+
+const props = defineProps<{
+  resolveFormNewPath: ResolveManageCommunityFormNewPathFn
+  resolveFormEditPath: ResolveManageCommunityFormEditPathFn
+}>()
 
 const { t: $t } = useI18n()
 const router = useRouter()
@@ -41,18 +49,18 @@ watch(
 )
 
 const goNew = () => {
-  void router.push(getManageCommunityFormNewPath(communityAccount))
+  void router.push(props.resolveFormNewPath(communityAccount))
 }
 
 const goEdit = (formId: string) => {
-  void router.push(getManageCommunityFormEditPath(communityAccount, formId))
+  void router.push(props.resolveFormEditPath(communityAccount, formId))
 }
 
 const duplicate = async (formId: string) => {
   try {
     const response = await duplicateCommunityForm({ community_id: communityId.value, form_id: formId })
     notification.show($t('manage.forms.saved'), 'success')
-    void router.push(getManageCommunityFormEditPath(communityAccount, response.data.form.form_id))
+    void router.push(props.resolveFormEditPath(communityAccount, response.data.form.form_id))
   } catch {
     notification.show($t('manage.forms.save_failed'), 'error')
   }

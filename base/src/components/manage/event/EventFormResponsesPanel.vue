@@ -43,7 +43,7 @@ const load = async () => {
 }
 
 watch(
-  () => [props.event.event_id, filter.value],
+  () => [props.event.community_id, props.event.event_id, filter.value],
   () => {
     void load()
   },

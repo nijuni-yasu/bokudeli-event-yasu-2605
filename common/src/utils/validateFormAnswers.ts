@@ -52,6 +52,19 @@ function findAnswer(answers: FormAnswerInput[], fieldId: string): FormAnswerInpu
   return answers.find((answer) => answer.field_id === fieldId)
 }
 
+function hasMismatchedAnswerShape(field: FormField, answer: FormAnswerInput | undefined): boolean {
+  if (answer == null) {
+    return false
+  }
+  if (field.type === 'checkbox') {
+    return answer.text_value != null || answer.option_id != null
+  }
+  if (field.type === 'radio' || field.type === 'select') {
+    return answer.text_value != null || answer.option_ids != null
+  }
+  return answer.option_id != null || answer.option_ids != null
+}
+
 export function validateFormAnswers(params: {
   fields: FormField[]
   answers: FormAnswerInput[]
@@ -74,6 +87,10 @@ export function validateFormAnswers(params: {
   const snapshots: FormAnswerSnapshot[] = []
   for (const field of visibleFields(params.fields)) {
     const answer = findAnswer(params.answers, field.field_id)
+    if (hasMismatchedAnswerShape(field, answer)) {
+      issues.push({ field_id: field.field_id, code: 'type' })
+      continue
+    }
     if (field.type === 'checkbox' || field.type === 'radio' || field.type === 'select') {
       const options = visibleOptions(field.options)
       if (field.type === 'checkbox') {

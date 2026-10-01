@@ -6,14 +6,14 @@ import type { FormAnswerSnapshot } from '../schemas/FormResponse.js'
 
 export const FormOptionInputSchema = z.object({
   option_id: z.string().min(1).optional(),
-  label: z.string().min(1).max(FORM_FIELD_LIMITS.maxLabel),
+  label: z.string().trim().min(1).max(FORM_FIELD_LIMITS.maxLabel),
   hidden_for_new: z.boolean().optional(),
 })
 
 export const FormFieldInputSchema = z.object({
   field_id: z.string().min(1).optional(),
   type: z.enum(FORM_FIELD_TYPE_VALUES),
-  label: z.string().min(1).max(FORM_FIELD_LIMITS.maxLabel),
+  label: z.string().trim().min(1).max(FORM_FIELD_LIMITS.maxLabel),
   description: z.string().max(FORM_FIELD_LIMITS.maxDescription).optional(),
   required: z.boolean(),
   hidden_for_new: z.boolean().optional(),

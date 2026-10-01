@@ -11,10 +11,11 @@ import {
   isChoiceFieldType,
   type FormField,
 } from '@shokujii/common/schemas/formFields.js'
-import { getManageCommunityFormsPath } from '@/router/utils'
+import type { ResolveManageCommunityFormsPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 
 const props = defineProps<{
   formId?: string
+  resolveFormsPath: ResolveManageCommunityFormsPathFn
 }>()
 
 const { t: $t } = useI18n()
@@ -116,7 +117,7 @@ const save = async () => {
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
-      void router.replace(getManageCommunityFormsPath(communityAccount))
+      void router.replace(props.resolveFormsPath(communityAccount))
     } else {
       await updateCommunityForm({
         community_id: communityId.value,
@@ -127,7 +128,7 @@ const save = async () => {
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
-      void router.push(getManageCommunityFormsPath(communityAccount))
+      void router.push(props.resolveFormsPath(communityAccount))
     }
   } catch {
     notification.show($t('manage.forms.save_failed'), 'error')
@@ -137,7 +138,7 @@ const save = async () => {
 }
 
 const back = () => {
-  void router.push(getManageCommunityFormsPath(communityAccount))
+  void router.push(props.resolveFormsPath(communityAccount))
 }
 </script>
 

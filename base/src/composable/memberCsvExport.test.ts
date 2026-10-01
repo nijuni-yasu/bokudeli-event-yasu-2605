@@ -226,6 +226,30 @@ describe('buildEventFormResponseCsv', () => {
     expect(csv).toContain('"設問:備考 (f1)","設問:備考 (f2)"')
     expect(csv).toContain('"A","B"')
   })
+
+  it('同じ field_id でもラベルが違う列は分ける', () => {
+    const csv = buildEventFormResponseCsv([
+      {
+        user_id: 'u1',
+        display_name: '太郎',
+        participation_label: '参加確定',
+        answered_at: '2026/01/01 12:00',
+        updated_at: '2026/01/02 12:00',
+        answers: [{ field_id: 'f1', field_label: '旧氏名', display_value: '山田' }],
+      },
+      {
+        user_id: 'u2',
+        display_name: '花子',
+        participation_label: '参加確定',
+        answered_at: '2026/01/01 13:00',
+        updated_at: '2026/01/02 13:00',
+        answers: [{ field_id: 'f1', field_label: '氏名', display_value: '佐藤' }],
+      },
+    ])
+    expect(csv).toContain('"設問:旧氏名","設問:氏名"')
+    expect(csv).toContain('"山田",""')
+    expect(csv).toContain('"","佐藤"')
+  })
 })
 
 describe('buildCsvContent', () => {

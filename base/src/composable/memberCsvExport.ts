@@ -139,13 +139,16 @@ export type EventFormResponseCsvRow = {
   }>
 }
 
+const formResponseColumnKey = (fieldId: string, fieldLabel: string): string => `${fieldId}\0${fieldLabel}`
+
 export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): string => {
   const columns: Array<{ field_id: string; field_label: string }> = []
   const seen = new Set<string>()
   for (const row of rows) {
     for (const answer of row.answers) {
-      if (!seen.has(answer.field_id)) {
-        seen.add(answer.field_id)
+      const key = formResponseColumnKey(answer.field_id, answer.field_label)
+      if (!seen.has(key)) {
+        seen.add(key)
         columns.push({ field_id: answer.field_id, field_label: answer.field_label })
       }
     }
@@ -167,14 +170,16 @@ export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): stri
     ),
   ]
   const csvRows = rows.map((row) => {
-    const byFieldId = new Map(row.answers.map((answer) => [answer.field_id, answer.display_value]))
+    const byColumn = new Map(
+      row.answers.map((answer) => [formResponseColumnKey(answer.field_id, answer.field_label), answer.display_value]),
+    )
     return [
       row.user_id,
       row.display_name,
       row.participation_label,
       row.answered_at,
       row.updated_at,
-      ...columns.map((column) => byFieldId.get(column.field_id) ?? ''),
+      ...columns.map((column) => byColumn.get(formResponseColumnKey(column.field_id, column.field_label)) ?? ''),
     ]
   })
   return buildCsvContent(headers, csvRows)

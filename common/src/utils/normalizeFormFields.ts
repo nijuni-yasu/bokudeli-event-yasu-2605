@@ -48,6 +48,11 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
     }
     usedFieldIds.add(fieldId)
 
+    const label = input.label.trim()
+    if (label === '') {
+      return { ok: false, message: '設問名を入力してください' }
+    }
+
     if (isChoiceFieldType(input.type)) {
       const optionInputs = input.options ?? []
       if (optionInputs.length === 0) {
@@ -57,22 +62,30 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
         return { ok: false, message: `選択肢は${FORM_FIELD_LIMITS.maxOptions}件までです` }
       }
       const usedOptionIds = new Set<string>()
-      const options: FormOption[] = optionInputs.map((option) => {
+      const options: FormOption[] = []
+      for (const option of optionInputs) {
+        const optionLabel = option.label.trim()
+        if (optionLabel === '') {
+          return { ok: false, message: '選択肢名を入力してください' }
+        }
         let optionId = option.option_id
         if (optionId == null || optionId === '' || usedOptionIds.has(optionId)) {
           optionId = createEntityId('opt')
         }
         usedOptionIds.add(optionId)
-        return {
+        options.push({
           option_id: optionId,
-          label: option.label,
+          label: optionLabel,
           hidden_for_new: option.hidden_for_new ?? false,
-        }
-      })
+        })
+      }
+      if (input.required && options.every((option) => option.hidden_for_new)) {
+        return { ok: false, message: '必須の選択式設問には表示する選択肢を1件以上設定してください' }
+      }
       const parsed = FormFieldSchema.safeParse({
         field_id: fieldId,
         type: input.type,
-        label: input.label,
+        label,
         description: input.description ?? '',
         required: input.required,
         hidden_for_new: input.hidden_for_new ?? false,
@@ -88,7 +101,7 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
     const parsed = FormFieldSchema.safeParse({
       field_id: fieldId,
       type: input.type,
-      label: input.label,
+      label,
       description: input.description ?? '',
       required: input.required,
       hidden_for_new: input.hidden_for_new ?? false,

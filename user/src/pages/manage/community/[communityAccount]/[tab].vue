@@ -17,6 +17,8 @@ import CommunityFormsPanel from '@shokujii/base/components/manage/community/Comm
 import {
   getCommunityPath,
   getEventCreatePath,
+  getManageCommunityFormEditPath,
+  getManageCommunityFormNewPath,
   getManageCommunitySettingsPath,
   getManageEventPath,
   getManagePath,
@@ -96,7 +98,10 @@ const onManagerSelfRemoved = () => {
             <CommunitySlackSetting />
           </v-tabs-window-item>
           <v-tabs-window-item value="forms">
-            <CommunityFormsPanel />
+            <CommunityFormsPanel
+              :resolve-form-new-path="getManageCommunityFormNewPath"
+              :resolve-form-edit-path="getManageCommunityFormEditPath"
+            />
           </v-tabs-window-item>
           <v-tabs-window-item value="settings">
             <CommunitySettings />

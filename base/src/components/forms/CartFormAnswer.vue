@@ -12,8 +12,7 @@ import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBill
 import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
-import { getEventPath } from '@/router/utils'
-import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import type { ResolveEventHrefFn, ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
@@ -23,6 +22,7 @@ const props = defineProps<{
   communityAccount: string
   resolveOrdersPath: ResolveOrdersPathFn
   resolveCartPath: () => string
+  resolveEventPath: ResolveEventHrefFn
 }>()
 
 const { t: $t } = useI18n()
@@ -57,7 +57,7 @@ const needsStripe = computed(() => {
     return false
   }
   if (item.event.event_payment === 'user_advance') {
-    return true
+    return computeTotalPayment(item.orders) > 0
   }
   if (item.event.event_payment === 'community_bill' && item.event.community_bill_settings?.type === 'discount') {
     return computeTotalPayment(item.orders) > 0
@@ -148,7 +148,8 @@ const startOrder = async (attemptId: string) => {
         origin: window.location.origin,
         form_attempt_id: attemptId,
       })
-      window.location.href = response.data.url ?? getEventPath(item.event.community_account, item.event.event_id)
+      window.location.href =
+        response.data.url ?? props.resolveEventPath(item.event.community_account, item.event.event_id)
     } catch (error) {
       showAlert(getOrderErrorMessage(error) ?? $t('cart.payment_failed'))
     }
