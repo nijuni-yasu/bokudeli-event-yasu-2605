@@ -3,6 +3,8 @@ import type { Transaction } from 'firebase-admin/firestore'
 import { FormResponse } from '@shokujii/common/schemas/FormResponse.js'
 import type { FormCheckoutAttempt } from '@shokujii/common/schemas/FormCheckoutAttempt.js'
 import type { EventFormConfig } from '@shokujii/common/schemas/EventFormConfig.js'
+import type { FormField } from '@shokujii/common/schemas/formFields.js'
+import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import {
   getEventFormConfig,
   getFormCheckoutAttempt,
@@ -83,6 +85,19 @@ export async function planFormConfirmation(params: {
   throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
 }
 
+function mergeAttemptAnswersWithHiddenExisting(
+  attemptAnswers: FormAnswerSnapshot[],
+  existingAnswers: FormAnswerSnapshot[] | undefined,
+  fields: FormField[],
+): FormAnswerSnapshot[] {
+  const hiddenIds = new Set(fields.filter((field) => field.hidden_for_new).map((field) => field.field_id))
+  const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
+  const kept = (existingAnswers ?? []).filter(
+    (answer) => hiddenIds.has(answer.field_id) && !attemptIds.has(answer.field_id),
+  )
+  return [...kept, ...attemptAnswers]
+}
+
 export async function applyAttemptToConfirmedResponse(params: {
   event: ShokujiiEvent
   userId: string
@@ -111,11 +126,12 @@ export async function applyAttemptToConfirmedResponse(params: {
 
   const now = Date.now()
   const nextRevision = (existing?.revision ?? 0) + 1
+  const config = await getEventFormConfig(params.event.community_id, params.event.id, params.transaction)
   const confirmed = new FormResponse(params.userId, {
     user_id: params.userId,
     definition_version: params.attempt.definition_version,
     revision: nextRevision,
-    answers: params.attempt.answers,
+    answers: mergeAttemptAnswersWithHiddenExisting(params.attempt.answers, existing?.answers, config?.fields ?? []),
     answered_at: existing?.answered_at ?? now,
     updated_at: now,
   })

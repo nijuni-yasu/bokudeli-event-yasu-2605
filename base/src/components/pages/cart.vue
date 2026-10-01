@@ -458,13 +458,13 @@ const formPresenceKey = (communityId: string, eventId: string): string => `${com
 
 const isPfEvent = (event: BokudeliEvent): boolean => event.enterprise_id == null || event.enterprise_id === ''
 
-const loadFormPresence = async (event: BokudeliEvent) => {
+const loadFormPresence = async (event: BokudeliEvent, force = false) => {
   const key = formPresenceKey(event.community_id, event.event_id)
   if (!isPfEvent(event) || props.resolveFormAnswerPath == null) {
     formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'no' }
     return
   }
-  if (formPresenceByKey.value[key] === 'yes' || formPresenceByKey.value[key] === 'no') {
+  if (!force && (formPresenceByKey.value[key] === 'yes' || formPresenceByKey.value[key] === 'no')) {
     return
   }
   formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'loading' }
@@ -512,7 +512,18 @@ const onPrimaryCartButton = async (item: EnrichedCartItem) => {
     alertBody.value = $t('cart.form_presence_failed')
     return
   }
-  if (presence === 'yes') {
+  if (presence === 'no') {
+    await loadFormPresence(item.event, true)
+  }
+  const latestPresence = formPresenceOf(item.event)
+  if (latestPresence === 'loading') {
+    return
+  }
+  if (latestPresence === 'error') {
+    alertBody.value = $t('cart.form_presence_failed')
+    return
+  }
+  if (latestPresence === 'yes') {
     const path = props.resolveFormAnswerPath
     if (path == null) {
       alertBody.value = $t('cart.form_presence_failed')

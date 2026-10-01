@@ -91,7 +91,7 @@ const load = async () => {
 }
 
 watch(
-  cartItem,
+  () => (cartItem.value == null ? '' : `${cartItem.value.event.community_id}\0${cartItem.value.event.event_id}`),
   () => {
     void load()
   },
@@ -169,11 +169,16 @@ const startOrder = async (attemptId: string) => {
       order_ids: orderIds,
       form_attempt_id: attemptId,
     })
+  } catch (error) {
+    showAlert(getOrderErrorMessage(error) ?? $t('cart.order_failed'))
+    return
+  }
+  try {
     await router.push(
       props.resolveOrdersPath({ eventId: item.event.event_id, communityAccount: item.event.community_account }),
     )
-  } catch (error) {
-    showAlert(getOrderErrorMessage(error) ?? $t('cart.order_failed'))
+  } catch {
+    // 注文は確定済み。遷移失敗は注文失敗として扱わない
   }
 }
 

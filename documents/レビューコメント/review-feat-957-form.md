@@ -55,6 +55,14 @@
 | [x] | RC-49 | 4154080641 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未確定試行だけを Firestore クエリで取得する<br>RC-34 の status in クエリで対応済み |
 | [x] | RC-50 | 4154080654 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 空白だけの設問ラベルを保存できてしまう<br>入力スキーマと正規化で trim 後に拒否した |
 | [x] | RC-51 | 5377692040 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-44〜50 のインラインで扱う |
+| [ ] | RC-52 | 4154240363 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 📋 仕様追加 | M | アカウント削除時にフォーム回答が残る<br>匿名化範囲はセキュリティ影響確認が必要なため自動修正しない |
+| [ ] | RC-53 | 4154240377 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 👤 UX | 🆕 新機能 | M | 設問・選択肢の並べ替えUIが無い<br>MVPの並べ替えは仕様・UX付きのため自動修正しない |
+| [x] | RC-54 | 4154240386 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | confirmOrder 成功後の遷移失敗を注文失敗と表示する<br>確定と遷移の try を分けた |
+| [x] | RC-55 | 4154240400 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォームなしキャッシュが永続し後から追加したフォームを見落とす<br>注文ボタン押下時に no なら再取得する |
+| [x] | RC-56 | 4154240407 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | カート購読のオブジェクト更新で入力中回答が消える<br>community_id と event_id だけを watch する |
+| [x] | RC-57 | 4154240414 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 追加注文確定で hidden_for_new の過去回答が消える<br>非表示設問のスナップショットを既存回答から引き継ぐ |
+| [x] | RC-58 | 5929156777 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再依頼スレッドの残件まとめ<br>showConfirm は RC-31、版リセットは RC-27、revision_basis は RC-28、TTL は RC-38 |
+| [x] | RC-59 | 5377884131 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-52〜57 のインラインで扱う |
 
 ---
 
@@ -4212,4 +4220,737 @@ Codex can also answer questions or update the PR. Try commenting "@codex address
 **想定工数**: —
 
 **判断理由**: overview / wrapper。個別指摘はインライン RC で評価する。
+
+
+## 評価セッション（2026-10-01 19:14・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 19:14 JST
+- **評価者**: Cursor Agent（review-comments-evaluate / auto）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **REVIEW_REQUEST_SINCE**: 2026-10-01T09:59:51Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（依頼定型 5929109852）
+- **手順 4a 自動修正**: RC-57（🚨 1件）と RC-54 / RC-55 / RC-56（🟡 3件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-52 | 4154240363 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 📋 仕様追加 | M | アカウント削除時にフォーム回答が残る<br>匿名化範囲はセキュリティ影響確認が必要なため自動修正しない |
+| [ ] | RC-53 | 4154240377 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 👤 UX | 🆕 新機能 | M | 設問・選択肢の並べ替えUIが無い<br>MVPの並べ替えは仕様・UX付きのため自動修正しない |
+| [x] | RC-54 | 4154240386 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | confirmOrder 成功後の遷移失敗を注文失敗と表示する<br>確定と遷移の try を分けた |
+| [x] | RC-55 | 4154240400 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォームなしキャッシュが永続し後から追加したフォームを見落とす<br>注文ボタン押下時に no なら再取得する |
+| [x] | RC-56 | 4154240407 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | カート購読のオブジェクト更新で入力中回答が消える<br>community_id と event_id だけを watch する |
+| [x] | RC-57 | 4154240414 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 追加注文確定で hidden_for_new の過去回答が消える<br>非表示設問のスナップショットを既存回答から引き継ぐ |
+| [x] | RC-58 | 5929156777 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再依頼スレッドの残件まとめ<br>showConfirm は RC-31、版リセットは RC-27、revision_basis は RC-28、TTL は RC-38 |
+| [x] | RC-59 | 5377884131 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-52〜57 のインラインで扱う |
+
+---
+
+**識別子**: RC-52（GitHub id: 4154240363）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/stores/form.ts:184`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・185 行）
++  const created = new CommunityForm(ref.id, form)
++  await ref.set(created)
++  return created
++}
++
++export const saveCommunityForm = async (
++  communityId: string,
++  form: CommunityForm,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formsCollection(communityId).doc(form.id)
++  if (transaction === undefined) {
++    await ref.set(form)
++  } else {
++    transaction.set(ref, form)
++  }
++}
++
++export const getEventFormConfig = async (
++  communityId: string,
++  eventId: string,
++  transaction?: Transaction,
++): Promise<EventFormConfig | undefined> => {
++  const ref = eventFormConfigRef(communityId, eventId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const saveEventFormConfig = async (
++  communityId: string,
++  eventId: string,
++  config: EventFormConfig,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = eventFormConfigRef(communityId, eventId)
++  if (transaction === undefined) {
++    await ref.set(config)
++  } else {
++    transaction.set(ref, config)
++  }
++}
++
++export const deleteEventFormConfig = async (
++  communityId: string,
++  eventId: string,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = eventFormConfigRef(communityId, eventId)
++  if (transaction === undefined) {
++    await ref.delete()
++  } else {
++    transaction.delete(ref)
++  }
++}
++
++export const getFormResponse = async (
++  communityId: string,
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormResponse | undefined> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(userId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const listFormResponses = async (communityId: string, eventId: string): Promise<FormResponse[]> => {
++  const snapshot = await formResponsesCollection(communityId, eventId).get()
++  return snapshot.docs.map((doc) => doc.data())
++}
++
++export const saveFormResponse = async (
++  communityId: string,
++  eventId: string,
++  response: FormResponse,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(response.id)
++  if (transaction === undefined) {
++    await ref.set(response)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  アカウント削除時にフォーム回答も匿名化する**
+
+回答者がアカウント削除を実行しても、ここで保存した `form_responses` には UID と自由入力・メール・電話などの回答スナップショットが残り続けます。リポジトリ全体を検索した範囲では `deleteUserAccount` は `users` と個人情報を匿名化するだけでこの新規コレクションを処理しないため、削除後もコミュニティ管理者が `listEventFormResponses` 経由で本人の回答を閲覧できます。Auth アカウントを削除する前に、このユーザーの確定回答と未確定試行を削除または不可逆に匿名化してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: アカウント削除時にフォーム回答が残る
+匿名化範囲はセキュリティ影響確認が必要なため自動修正しない
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🔒 セキュリティ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: deleteUserAccount への form_responses / attempts 処理追加は個人情報削除の影響確認が要る。自動修正対象外。
+---
+
+**識別子**: RC-53（GitHub id: 4154240377）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/forms/FormFieldsEditor.vue:35`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,184 @@
++<script setup lang="ts">
++import { FORM_FIELD_LIMITS, FORM_FIELD_TYPE_VALUES, isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
++import type { FormFieldInput } from '@shokujii/common/apis/form.js'
++import { mdiDelete, mdiPlus } from '@mdi/js'
++
++const props = defineProps<{
++  modelValue: FormFieldInput[]
++}>()
++
++const emit = defineEmits<{
++  'update:modelValue': [value: FormFieldInput[]]
++}>()
++
++const { t: $t } = useI18n()
++
++const typeItems = FORM_FIELD_TYPE_VALUES.map((value) => ({
++  value,
++  title: $t(`manage.forms.types.${value}`),
++}))
++
++const updateField = (index: number, patch: Partial<FormFieldInput>) => {
++  emit(
++    'update:modelValue',
++    props.modelValue.map((field, fieldIndex) => (fieldIndex === index ? { ...field, ...patch } : field)),
++  )
++}
++
++const addField = () => {
++  if (props.modelValue.length >= FORM_FIELD_LIMITS.maxFields) {
++    return
++  }
++  emit('update:modelValue', [
++    ...props.modelValue,
++    {
++      type: 'text',
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  設問と選択肢を並べ替えられる操作を追加する**
+
+今回追加された仕様書のMVP範囲では設問設定に「並べ替え」が含まれていますが、このエディタは末尾への追加と削除・編集しか提供しておらず、リポジトリ全体を検索してもフォーム用の並べ替え処理はありません。作成後に設問や選択肢の順序を修正できず、削除して作り直すと不変であるべきIDまで変わるため、ドラッグ操作または上下移動で配列順を更新できるようにしてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 設問・選択肢の並べ替えUIが無い
+MVPの並べ替えは仕様・UX付きのため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 👤 UX
+
+**変更種別**: 🆕 新機能
+
+**想定工数**: M
+
+**判断理由**: 仕様書に並べ替えはあるがドラッグ/上下移動の追加は新機能。自動修正対象外。
+---
+
+**識別子**: RC-54（GitHub id: 4154240386）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:178`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・179 行）
++)
++
++const getOrderErrorMessage = (error: unknown): string | null => {
++  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
++    return getUserFacingFailedPreconditionMessage(error.message)
++  }
++  if (error instanceof Error) {
++    return getUserFacingFailedPreconditionMessage(error.message)
++  }
++  return null
++}
++
++const persistAttempt = async (): Promise<string | null> => {
++  const item = cartItem.value
++  const current = form.value
++  if (item == null || current?.definition_version == null) {
++    return null
++  }
++  const response = await saveOrderFormAttempt({
++    community_id: item.event.community_id,
++    event_id: item.event.event_id,
++    definition_version: current.definition_version,
++    answers: answers.value,
++  })
++  if (response.data.issues != null && response.data.issues.length > 0) {
++    issues.value = response.data.issues
++    return null
++  }
++  issues.value = []
++  return response.data.attempt_id
++}
++
++const startOrder = async (attemptId: string) => {
++  const item = cartItem.value
++  if (item == null) {
++    return
++  }
++  if (!isWithinOrderDeadline(item.event.event_deadline_datetime)) {
++    showAlert($t('cart.cannot_order_deadline'))
++    return
++  }
++  const orderIds = sortOrderIdsForEnterpriseSubsidyReplay(item.orders)
++  if (needsStripe.value) {
++    try {
++      const response = await createStripeCheckoutSession({
++        community_id: item.event.community_id,
++        event_id: item.event.event_id,
++        order_ids: orderIds,
++        isPosted: false,
++        origin: window.location.origin,
++        form_attempt_id: attemptId,
++      })
++      window.location.href =
++        response.data.url ?? props.resolveEventPath(item.event.community_account, item.event.event_id)
++    } catch (error) {
++      showAlert(getOrderErrorMessage(error) ?? $t('cart.payment_failed'))
++    }
++    return
++  }
++  try {
++    const auth = getAuth()
++    const user = auth.currentUser
++    const token = user == null ? undefined : await user.getIdTokenResult()
++    const eventStore = useEventStore(
++      item.event.event_id,
++      buildEventStoreOptions(token?.claims.enterprise_id as string | undefined),
++    )
++    await eventStore.confirmOrder({
++      community_id: item.event.community_id,
++      event_id: item.event.event_id,
++      order_ids: orderIds,
++      form_attempt_id: attemptId,
++    })
++    await router.push(
++      props.resolveOrdersPath({ eventId: item.event.event_id, communityAccount: item.event.community_account }),
++    )
++  } catch (error) {
++    showAlert(getOrderErrorMessage(error) ?? $t('cart.order_failed'))
++  }
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  注文確定後の遷移失敗を注文失敗として扱わない**
+
+非Stripe注文では `confirmOrder` の成功後に `router.push` が例外を投げた場合も同じ `catch` に入り、「注文処理に失敗しました」と表示されます。この時点で注文とフォーム回答は既にサーバー上で確定済みなので、利用者は未確定だと誤認して再試行し、消費済み回答などの別エラーに遭遇します。注文APIと画面遷移のエラー処理を分け、遷移失敗を注文失敗として表示しないでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: confirmOrder 成功後の遷移失敗を注文失敗と表示する
+確定と遷移の try を分けた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 注文は成功しているのに失敗表示になる。📌 S 🔧 で catch を分離した。
+---
+
+**識別子**: RC-55（GitHub id: 4154240400）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/pages/cart.vue:469`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -447,6 +451,79 @@ const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
+ const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined =>
+   enrichedCart.value?.find((item) => item.event.event_id === cartItem.event.event_id)
+ 
++type FormPresence = 'loading' | 'yes' | 'no' | 'error'
++const formPresenceByKey = ref<Record<string, FormPresence>>({})
++
++const formPresenceKey = (communityId: string, eventId: string): string => `${communityId}\^@${eventId}`
++
++const isPfEvent = (event: BokudeliEvent): boolean => event.enterprise_id == null || event.enterprise_id === ''
++
++const loadFormPresence = async (event: BokudeliEvent) => {
++  const key = formPresenceKey(event.community_id, event.event_id)
++  if (!isPfEvent(event) || props.resolveFormAnswerPath == null) {
++    formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'no' }
++    return
++  }
++  if (formPresenceByKey.value[key] === 'yes' || formPresenceByKey.value[key] === 'no') {
++    return
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  フォーム未設定のキャッシュを注文前に再検証する**
+
+カートを開いた時点でフォームが未設定だと `no` を永続的にキャッシュするため、その後管理者が受付中イベントへフォームを追加しても再取得されません。この状態で利用者が従来の注文ボタンを押すと、確定APIは回答必須として拒否しますが、画面には回答ページへ進む導線が現れず、再読み込みするまで注文できません。フォーム追加が受付中にも許可される仕様なので、注文ボタン押下時に再検証するか、少なくとも `no` を失効可能なキャッシュにしてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: フォームなしキャッシュが永続し後から追加したフォームを見落とす
+注文ボタン押下時に no なら再取得する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 受付中にフォームを足すとカートの no キャッシュで回答を飛ばす。クリック時に再検証した。
+---
+
+**識別子**: RC-56（GitHub id: 4154240407）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:98`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・99 行）
++
++const props = defineProps<{
++  eventId: string
++  communityAccount: string
++  resolveOrdersPath: ResolveOrdersPathFn
++  resolveCartPath: () => string
++  resolveEventPath: ResolveEventHrefFn
++}>()
++
++const { t: $t } = useI18n()
++const router = useRouter()
++const { cart } = storeToRefs(useCurrentUserStore())
++
++const loading = ref(true)
++const saving = ref(false)
++const form = ref<GetOrderFormForCartResponse | null>(null)
++const answers = ref<FormAnswerInput[]>([])
++const issues = ref<FormValidationIssue[]>([])
++const alertMessage = ref('')
++const isOpenAlert = ref(false)
++const openConfirmOrder = ref(false)
++const confirmDialogMessage = ref('')
++
++const showAlert = (message: string) => {
++  alertMessage.value = message
++  isOpenAlert.value = true
++}
++
++const cartItem = computed(() =>
++  cart.value?.find(
++    (item) => item.event.event_id === props.eventId && item.event.community_account === props.communityAccount,
++  ),
++)
++const fields = computed<FormField[]>(() => form.value?.fields ?? [])
++
++const needsStripe = computed(() => {
++  const item = cartItem.value
++  if (item == null) {
++    return false
++  }
++  if (item.event.event_payment === 'user_advance') {
++    return computeTotalPayment(item.orders) > 0
++  }
++  if (item.event.event_payment === 'community_bill' && item.event.community_bill_settings?.type === 'discount') {
++    return computeTotalPayment(item.orders) > 0
++  }
++  return false
++})
++
++const load = async () => {
++  const item = cartItem.value
++  if (item == null) {
++    loading.value = false
++    showAlert($t('cart.form_load_failed'))
++    return
++  }
++  loading.value = true
++  try {
++    const response = await getOrderFormForCart({
++      community_id: item.event.community_id,
++      event_id: item.event.event_id,
++    })
++    form.value = response.data
++    answers.value = response.data.initial_answers ?? []
++    if (!response.data.has_form) {
++      void router.replace(props.resolveCartPath())
++    }
++  } catch {
++    showAlert($t('cart.form_load_failed'))
++  } finally {
++    loading.value = false
++  }
++}
++
++watch(
++  cartItem,
++  () => {
++    void load()
++  },
++  { immediate: true },
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  カート更新時に入力中の回答を上書きしない**
+
+回答中に同じイベントのカート注文が別タブなどで追加・削除されると、Firestore購読が新しい `CartItem` オブジェクトを生成するため、この watch が再発火して `load()` 内で `answers` を保存済み初期値へ戻します。利用者が入力していた未送信の内容が警告なしで失われるので、初回のカート読込だけを待つか、安定したイベント識別子だけを監視し、編集開始後は回答を再初期化しないでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: カート購読のオブジェクト更新で入力中回答が消える
+community_id と event_id だけを watch する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: CartItem 再生成で load が走り answers を初期化する。安定キー監視に変えた。
+---
+
+**識別子**: RC-57（GitHub id: 4154240414）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:118`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・119 行）
++    params.attemptId,
++    params.transaction,
++  )
++  if (attempt == null || attempt.user_id !== params.userId) {
++    throw new HttpsError('failed-precondition', '事前アンケートの回答が見つかりません')
++  }
++  if (attempt.status === 'consumed') {
++    throw new HttpsError('failed-precondition', 'この回答はすでに使用されています')
++  }
++  if (attempt.definition_version !== params.config.definition_version) {
++    throw new HttpsError('failed-precondition', '設問が更新されています。回答画面でやり直してください')
++  }
++  return attempt
++}
++
++export type FormConfirmPlan =
++  | { kind: 'none' }
++  | { kind: 'reuse'; existing: FormResponse }
++  | { kind: 'apply'; attempt: FormCheckoutAttempt; existing?: FormResponse }
++
++export async function planFormConfirmation(params: {
++  event: ShokujiiEvent
++  userId: string
++  attemptId: string | undefined
++  transaction: Transaction
++}): Promise<FormConfirmPlan> {
++  const config = await loadEventFormConfigIfPf(params.event, params.transaction)
++  if (config == null) {
++    return { kind: 'none' }
++  }
++  const existing = await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction)
++  if (params.attemptId != null && params.attemptId !== '') {
++    const attempt = await requireAttemptForLatestForm({
++      event: params.event,
++      userId: params.userId,
++      attemptId: params.attemptId,
++      config,
++      transaction: params.transaction,
++    })
++    return { kind: 'apply', attempt, existing }
++  }
++  if (existing != null && existing.definition_version === config.definition_version) {
++    return { kind: 'reuse', existing }
++  }
++  throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
++}
++
++export async function applyAttemptToConfirmedResponse(params: {
++  event: ShokujiiEvent
++  userId: string
++  attempt: FormCheckoutAttempt
++  transaction: Transaction
++  existing?: FormResponse
++  ignoreDefinitionMismatch?: boolean
++}): Promise<void> {
++  const existing =
++    params.existing ??
++    (await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction))
++  if (existing != null && existing.revision > params.attempt.revision_basis) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
++  }
++  if (
++    params.ignoreDefinitionMismatch !== true &&
++    existing != null &&
++    existing.definition_version > params.attempt.definition_version
++  ) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
++  }
++
++  const now = Date.now()
++  const nextRevision = (existing?.revision ?? 0) + 1
++  const confirmed = new FormResponse(params.userId, {
++    user_id: params.userId,
++    definition_version: params.attempt.definition_version,
++    revision: nextRevision,
++    answers: params.attempt.answers,
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  非表示設問の確定済み回答を引き継ぐ**
+
+既存回答者が追加注文する際、`hidden_for_new` にした設問は試行回答から除外されますが、ここでは確定済み回答全体を試行の `answers` だけで置き換えています。そのため追加注文が確定した瞬間に、非表示設問への過去回答が `form_responses` から永久に消え、回答一覧とCSVからも欠落します。仕様で求めている「新規では出さなくしても確定済み回答を一覧・CSVに残す」を満たすため、現在表示されない設問のスナップショットは既存回答から引き継いだうえで、今回編集可能だった設問だけを更新してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 追加注文確定で hidden_for_new の過去回答が消える
+非表示設問のスナップショットを既存回答から引き継ぐ
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 仕様どおり非表示設問は一覧・CSVに残す。確定時に hidden 回答をマージした。
+---
+
+**識別子**: RC-58（GitHub id: 5929156777）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR トップレベル（再依頼スレッド）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行ツールでは新規インライン review comment を作成できないため、該当箇所を明記して報告します。
+
+🚨 **必須修正** [🔧微修正/M]: フォーム回答画面は `showConfirm` を通さず `startOrder` から注文・決済へ進むため、ユーザー名・画像・メールの必須確認を迂回できます。フォームなし経路と同じ事前条件を注文開始前にも適用してください。対象: `base/src/components/forms/CartFormAnswer.vue:180-212`（確認元: `base/src/components/pages/cart.vue:712-727`）。
+
+🚨 **必須修正** [💾データ/🔒セキュリティ・仕様追加/M]: `clearEventFormConfig` は設定だけを削除し、再設定時の版番号は `1` に戻ります。削除前の試行は残るため、新定義も版 `1` になると古い回答が版一致として取得・確定され得ます。設定削除後も世代を単調増加させるか、旧試行を無効化してください。対象: `functions/default/src/formAdmin.ts:227-235,274-281`。
+
+🚨 **必須修正** [💾データ/🔧微修正/M]: 複数の試行を同じ確定回答リビジョンから作ると、全て同じ `revision_basis` になります。先に確定した試行が回答リビジョンを進めると、後から完了した試行は `existing.revision > revision_basis` で破棄されるため、後発の決済でも新しい回答が反映されません。試行の新旧を識別する世代を付けるか、同一ユーザー・イベントで有効試行を一つに制限してください。対象: `functions/default/src/formOrder.ts:140-147`、`functions/default/src/utils/formConfirm.ts:97-101`。
+
+🚨 **必須修正** [💾データ/🔒セキュリティ・仕様追加/M]: `form_checkout_attempts` に回答本文を保存しますが、`expires_at` 等の期限・削除処理がなく、決済離脱や失敗の試行が無期限に残ります。保持期間と削除方法を確定し、TTL または定期削除を実装してください。対象: `common/src/schemas/FormCheckoutAttempt.ts:8-17`、`functions/default/src/formOrder.ts:140-147`。
+
+**コメント要約**: 再依頼スレッドの残件まとめ
+showConfirm は RC-31、版リセットは RC-27、revision_basis は RC-28、TTL は RC-38
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 個別指摘は既存 RC で記録済み。
+---
+
+**識別子**: RC-59（GitHub id: 5377884131）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `PR トップレベル（Codex overview）`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `4e7ddafcb9`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+**コメント要約**: Codex overview は個別指摘の要約
+実体は RC-52〜57 のインラインで扱う
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview / wrapper。
 
