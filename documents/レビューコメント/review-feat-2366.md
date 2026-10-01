@@ -66,6 +66,8 @@
 | [ ] | RC-58 | 4152199771 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 末尾空白違いの項目名を別物として通す<br>trim 後の長さと重複検証が必要。表示の扱いのため未修正 |
 | [ ] | RC-59 | 4152199895 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | 参照500件超の削除がトランザクション上限で失敗する<br>§5.4 は全体失敗を許容。明示拒否か分割かの選択が残る |
 | [x] | RC-60 | 4152199773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 保存中も送信でき、二重作成で誤エラーになる<br>保存完了まで loading で再送信できない |
+| [x] | RC-61 | 4152662508 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | NUL 連結の選択キーが別項目を加算する<br>option_id ごとの Set で照合する |
+| [ ] | RC-62 | 4152662502 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 名札のメニュー名を UTF-16 単位で切る<br>絵文字境界で孤立サロゲートになる |
 
 ---
 
@@ -3970,5 +3972,267 @@ Useful? React with 👍 / 👎.
 | 画像アップロード先行により失敗編集の画像が公開される | 4152199953 | RC-57 | 🚨 未着手。`updateMenu` は今も Callable の前に固定パスへ上書きする |
 
 GitHub 上で Open のままなのは、スレッドが Resolve されていないため。コード未対応なのは RC-57 と RC-59（および概要外の RC-58）。RC-60 は保存中の再送信防止を実装済み。
+
+---
+
+---
+
+## 評価セッション（2026-10-01 16:05・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 16:05 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **since**: 2026-10-01T06:47:13Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 GitHub id 5926216735、Codex 接続案内 GitHub id 5375925183）
+- **同一指摘のため RC 採番しない**: Copilot 返信 5926250156、Copilot overview 5375898003、インライン 4152639336（RC-58）、4152639410（RC-59）、4152662493（RC-57）
+- **手順 4a 自動修正**: RC-61（🚨 1件）。RC-62 は 👤 UX のため自動修正しない
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-61 | 4152662508 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | NUL 連結の選択キーが別項目を加算する<br>option_id ごとの Set で照合する |
+| [ ] | RC-62 | 4152662502 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 名札のメニュー名を UTF-16 単位で切る<br>絵文字境界で孤立サロゲートになる |
+
+---
+
+**識別子**: RC-61（GitHub id: 4152662508）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `common/src/utils/menuOption.ts:133`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・54 行）
++export function computeMenuMinTotal(menuPrice: number, options: readonly MenuOptionDefinition[]): number {
++  return menuPrice + options.reduce((sum, option) => sum + computeOptionMinDelta(option), 0)
++}
++
++export function isMenuMinTotalValid(menuPrice: number, options: readonly MenuOptionDefinition[]): boolean {
++  return computeMenuMinTotal(menuPrice, options) >= MENU_OPTION_MIN_TOTAL
++}
++
++export function getSelectedOptionsForGroupKey(
++  selectedOptions?: readonly SelectedOptionType[] | null,
++): SelectedOptionType[] {
++  if (selectedOptions == null || selectedOptions.length === 0) {
++    return []
++  }
++  return [...selectedOptions].sort((a, b) => {
++    if (a.option_id === b.option_id) {
++      return a.item_id > b.item_id ? 1 : a.item_id < b.item_id ? -1 : 0
++    }
++    return a.option_id > b.option_id ? 1 : -1
++  })
++}
++
++export function getOrderMenuGroupKey(order: OrderMenuGroupInput): string {
++  const selected = getSelectedOptionsForGroupKey(order.selected_options)
++  const selectedPart = JSON.stringify(selected.map((item) => [item.option_id, item.item_id]))
++  return `${order.menu_id}\u0000${selectedPart}\u0000${order.menu_price}`
++}
++
++export function getStripeLineItemGroupKey(order: OrderMenuGroupInput, selfPayUnitAmount: number): string {
++  return `${getOrderMenuGroupKey(order)}\u0000${selfPayUnitAmount}`
++}
++
++export function sumSelectedPriceDelta(selectedOptions: readonly SelectedOptionType[]): number {
++  return selectedOptions.reduce((sum, item) => sum + item.price_delta, 0)
++}
++
++export type MenuPriceSplit = {
++  basePrice: number
++  optionPrice: number
++}
++
++/** 注文に保存された込み単価を、当時の本体とオプション差額合計に分ける。選択が無いときはオプション 0。 */
++export function splitMenuPrice(
++  menuPrice: number,
++  selectedOptions?: readonly SelectedOptionType[] | null,
++): MenuPriceSplit {
++  const optionPrice = sumSelectedPriceDelta(selectedOptions ?? [])
++  return { basePrice: menuPrice - optionPrice, optionPrice }
++}
++
++export type MenuPriceLine = {
++  name: string
++  amount: number
++}
++
++/** 選択があるとき、メニュー本体と各項目の金額行を定義順で返す。選択が無いときは空。 */
++export function buildMenuPriceLines(
++  menuName: string,
++  menuPrice: number,
++  selectedOptions?: readonly SelectedOptionType[] | null,
++): MenuPriceLine[] {
++  if (selectedOptions == null || selectedOptions.length === 0) {
++    return []
++  }
++  const split = splitMenuPrice(menuPrice, selectedOptions)
++  return [
++    { name: menuName, amount: split.basePrice },
++    ...selectedOptions.map((item) => ({ name: item.item_name, amount: item.price_delta })),
++  ]
++}
++
++export function buildSelectedOptionsInDefinitionOrder(
++  optionDefs: readonly MenuOptionDefinition[],
++  selectedItems: readonly CartSelectedItemType[],
++): SelectedOptionType[] {
++  const selected = new Set(selectedItems.map((item) => `${item.option_id}\u0000${item.item_id}`))
++  const result: SelectedOptionType[] = []
++  for (const option of optionDefs) {
++    for (const item of option.option_items) {
++      if (selected.has(`${option.option_id}\u0000${item.item_id}`)) {
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  選択キーを区切り文字の連結で生成しない**
+
+`option_id` と `item_id` はどちらも `\u0000` を拒否していないため、例えば選択した組 `('a', 'b\u0000c')` と未選択の組 `('a\u0000b', 'c')` が同じキーになります。この定義で前者だけを選んでも `buildSelectedOptionsInDefinitionOrder` が後者まで `selected_options` に追加し、その `price_delta` も請求額へ加算します。タプルをJSON化するか、オプションIDごとの入れ子のSetで選択を照合してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: NUL 連結の選択キーが別項目を加算する。
+option_id ごとの Set で照合する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: スキーマは option_id と item_id に NUL を許す。連結した文字列を Set にすると、選択した組と別定義の組が同じキーになり、選んでいない項目の price_delta が加算される。option_id をキーにした item_id の Set で照合し、衝突する ID のテストを追加した。
+
+---
+
+**識別子**: RC-62（GitHub id: 4152662502）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `common/src/utils/menuOption.ts:219`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・140 行）
++        })
++      }
++    }
++  }
++  return result
++}
++
++export type CartOptionValidationResult =
++  | { ok: true; selected_options: SelectedOptionType[]; price_delta: number }
++  | { ok: false; reason: string }
++
++export function validateCartOptionSelection(
++  optionDefs: readonly MenuOptionDefinition[],
++  selectedItems: readonly CartSelectedItemType[],
++): CartOptionValidationResult {
++  if (selectedItems.length > CART_SELECTED_ITEMS_MAX) {
++    return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++  }
++  const optionById = new Map(optionDefs.map((option) => [option.option_id, option]))
++  for (const selected of selectedItems) {
++    const option = optionById.get(selected.option_id)
++    if (option == null) {
++      return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++    }
++    if (!option.option_items.some((item) => item.item_id === selected.item_id)) {
++      return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++    }
++  }
++
++  for (const option of optionDefs) {
++    const chosen = selectedItems.filter((item) => item.option_id === option.option_id)
++    const uniqueItemIds = new Set(chosen.map((item) => item.item_id))
++    if (uniqueItemIds.size !== chosen.length) {
++      return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++    }
++    if (option.selection === 'single' && chosen.length > 1) {
++      return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++    }
++    if (option.required && chosen.length === 0) {
++      return { ok: false, reason: INVALID_OPTION_SELECTION_MESSAGE }
++    }
++  }
++
++  const selected_options = buildSelectedOptionsInDefinitionOrder(optionDefs, selectedItems)
++  return { ok: true, selected_options, price_delta: sumSelectedPriceDelta(selected_options) }
++}
++
++export function computeOrderMenuPrice(basePrice: number, selectedOptions: readonly SelectedOptionType[]): number {
++  return basePrice + sumSelectedPriceDelta(selectedOptions)
++}
++
++export const NAMES_PRINT_MAX_MENU_LABEL_LENGTH = 32
++
++/** 名札のユーザー名。2行に収まる文字数で、超えた分は末尾を … にする */
++export const NAMES_PRINT_MAX_USER_NAME_LENGTH = 13
++
++export function formatNamesPrintUserName(userName: string, maxLength = NAMES_PRINT_MAX_USER_NAME_LENGTH): string {
++  const normalized = userName.normalize('NFKC')
++  if (normalized.length <= maxLength) {
++    return normalized
++  }
++  const ellipsis = '…'
++  return `${normalized.slice(0, Math.max(0, maxLength - ellipsis.length))}${ellipsis}`
++}
++
++export function formatSelectedOptionItemNames(selectedOptions?: readonly SelectedOptionType[] | null): string {
++  if (selectedOptions == null || selectedOptions.length === 0) {
++    return ''
++  }
++  return selectedOptions.map((item) => item.item_name).join('、')
++}
++
++export function formatNamesPrintMenuLabel(
++  menuName: string,
++  selectedOptions?: readonly SelectedOptionType[] | null,
++  maxLength = NAMES_PRINT_MAX_MENU_LABEL_LENGTH,
++): string {
++  const normalizedName = menuName.normalize('NFKC')
++  if (normalizedName.length >= maxLength) {
++    return normalizedName.slice(0, maxLength)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Unicode 文字をコードポイント単位で切り詰める**
+
+メニュー名の32文字境界に絵文字などのサロゲートペアが掛かる場合、UTF-16コードユニット単位の `slice` がペアの途中で文字列を切断します。例えば「あ」31文字の後に絵文字がある名前は末尾が孤立した高位サロゲートになり、お名前シートで置換文字や不正な表示になります。`Array.from(normalizedName)` などでコードポイント配列にしてから上限まで切り詰めてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 名札のメニュー名を UTF-16 単位で切る。
+絵文字境界で孤立サロゲートになる
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: formatNamesPrintMenuLabel は String.length と slice で切るため、絵文字が 32 文字境界に掛かると高位サロゲートだけが残る。formatNamesPrintUserName も同じ切り方である。名札の見た目の切り詰めは 👤 UX のため自動修正しない。直すならコードポイント配列で切る。
 
 ---
