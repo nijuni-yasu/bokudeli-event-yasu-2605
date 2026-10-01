@@ -69,10 +69,7 @@ const saveTags = async (): Promise<void> => {
       <header class="tag-settings-dialog__header">
         <div>
           <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.section_title') }}</p>
-          <h2 class="tag-settings-dialog__title">
-            <span>{{ $t('user_tags.dialog_title_lead') }}</span
-            ><span>{{ $t('user_tags.dialog_title_end') }}</span>
-          </h2>
+          <h2 class="tag-settings-dialog__title">{{ $t('user_tags.dialog_title') }}</h2>
           <p class="text-body-2 text-medium-emphasis mt-2">{{ $t('user_tags.dialog_hint') }}</p>
         </div>
         <v-btn
@@ -131,10 +128,6 @@ const saveTags = async (): Promise<void> => {
   font-size: 1.5rem;
   line-height: 1.5;
   font-weight: 600;
-
-  span {
-    display: inline-block;
-  }
 }
 
 .tag-settings-dialog__body.v-card-text {
