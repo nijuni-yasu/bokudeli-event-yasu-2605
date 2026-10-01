@@ -658,19 +658,11 @@ export const TAG_GENRES = [
   },
   {
     genre: 'マッチング／出会い',
-    tags: [
-      '街コン',
-      '婚活',
-      '友だちづくり',
-    ] as const,
+    tags: ['街コン', '婚活', '友だちづくり'] as const,
   },
   {
     genre: 'マネー/資産形成',
-    tags: [
-      '家計',
-      '資産運用',
-      '投資',
-    ] as const,
+    tags: ['家計', '資産運用', '投資'] as const,
   },
 ] as const
 
@@ -687,4 +679,3 @@ for (const g of TAG_GENRES) {
 export function isMasterTagLabel(label: string): boolean {
   return _masterTagSet.has(label)
 }
-

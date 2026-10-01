@@ -69,8 +69,7 @@ const saveTags = async (): Promise<void> => {
     const response = await updateUserTags(savedTags)
     if (!response.data.success) throw new Error(response.data.message)
     const currentTags = currentUserStore.user?.user_tags
-    savedTagsAwaitingSnapshot.value =
-      currentTags != null && sameTagList(currentTags, savedTags) ? null : savedTags
+    savedTagsAwaitingSnapshot.value = currentTags != null && sameTagList(currentTags, savedTags) ? null : savedTags
     model.value = false
   } catch (error: unknown) {
     errorMessage.value = error instanceof Error ? error.message : $t('user_tags.save_failed')
