@@ -56,6 +56,18 @@ describe('escapeCsvCell', () => {
   it('ダブルクォートをエスケープする', () => {
     expect(escapeCsvCell('a"b')).toBe('"a""b"')
   })
+
+  it.each(['=', '+', '-', '@', '\t', '\r'])('先頭が %j のとき単一引用符を前置する', (prefix) => {
+    expect(escapeCsvCell(`${prefix}1+1`)).toBe(`"'${prefix}1+1"`)
+  })
+
+  it('先頭以外の数式文字はそのまま引用符で囲む', () => {
+    expect(escapeCsvCell('合計=1')).toBe('"合計=1"')
+  })
+
+  it('数式先頭と引用符を同時に処理する', () => {
+    expect(escapeCsvCell('=a"b')).toBe('"\'=a""b"')
+  })
 })
 
 describe('buildCommunityMemberCsvRows', () => {
@@ -139,6 +151,15 @@ describe('buildEventMemberCsv', () => {
     expect(rows[0]).toHaveLength(headers.length)
     expect(headers.slice(-2)).toEqual(['プロフィール', 'タグ'])
     expect(rows[0].slice(-2)).toEqual(['bio', 'ランチ / 交流'])
+  })
+
+  it('プロフィールやタグの先頭が数式文字なら単一引用符を付ける', () => {
+    const member = sampleUser({
+      user_description: '=1+1',
+      user_tags: ['+tag', '-tag'],
+    })
+    const csv = buildEventMemberCsv([{ order: sampleOrder(), member, statusLabel: '注文済' }], eventHeaders)
+    expect(csv).toContain('"\'=1+1","\'+tag / -tag"\n')
   })
 
   it('プロフィールやタグの改行・カンマ・引用符をCSVのセル内に保持する', () => {

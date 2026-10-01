@@ -7,7 +7,13 @@ import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 
 const formatCsvAmount = (amount: number): string => convertNumberToYen(amount).replace('￥', '¥')
 
-export const escapeCsvCell = (value: string): string => `"${value.replace(/"/g, '""')}"`
+/** 表計算ソフトがセル先頭で数式・コマンドとみなす文字。 */
+const SPREADSHEET_FORMULA_PREFIX = /^[=+\-@\t\r]/
+
+export const escapeCsvCell = (value: string): string => {
+  const text = SPREADSHEET_FORMULA_PREFIX.test(value) ? `'${value}` : value
+  return `"${text.replace(/"/g, '""')}"`
+}
 
 export const buildCsvContent = (headers: string[], rows: string[][]): string => {
   const lines = [headers.map(escapeCsvCell).join(','), ...rows.map((row) => row.map(escapeCsvCell).join(','))]
