@@ -114,7 +114,6 @@ const allOrderRows = computed((): EventMemberCsvRowInput[] =>
       order,
       member,
       statusLabel: $t(`manage.member.${order.status}`),
-      dateLabel: getDateString(order) ?? '',
     }),
   ),
 )
@@ -129,6 +128,9 @@ const downloadCsvFile = () => {
     menuPriceLabel: $t('manage.member.menu_price'),
     communityBillOffLabel: $t('manage.member.community_bill_off_amount'),
     dateOrderedLabel: $t('manage.member.date.ordered'),
+    emptyDateLabel: $t('manage.member.csv_empty_date'),
+    profileLabel: $t('manage.member.csv_profile'),
+    tagsLabel: $t('manage.member.csv_tags'),
   })
   downloadMemberCsv('event_member.csv', csv)
 }

@@ -5,21 +5,52 @@ import {
   buildCsvContent,
   buildEventMemberCsv,
   buildEventMemberCsvHeaders,
+  buildEventMemberCsvRows,
   escapeCsvCell,
+  type BuildEventMemberCsvHeadersOptions,
 } from './memberCsvExport.js'
-import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
-import type { User } from '@shokujii/common/schemas/User.js'
+import { EventMemberOrder, EVENT_MEMBER_ORDER_STATUS_VALUES } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { User } from '@shokujii/common/schemas/User.js'
 
 const sampleUser = (overrides: Partial<User> = {}): User =>
-  ({
-    user_id: 'u1',
+  new User('u1', {
     user_name: 'Alice "Test"',
     user_sns_twitter: 'alice',
     user_sns_facebook: '',
     user_sns_instagram: '',
     user_description: 'bio',
+    user_tags: ['ランチ', '交流'],
     ...overrides,
-  }) as User
+  })
+
+const sampleOrder = (overrides: Partial<EventMemberOrder> = {}): EventMemberOrder =>
+  new EventMemberOrder('o1', {
+    order_id: 'o1',
+    user_id: 'u1',
+    event_id: 'e1',
+    community_id: 'c1',
+    menu_id: 'm1',
+    menu_name: 'ランチ',
+    menu_price: 1000,
+    pay_community_bill_off_amount: 200,
+    status: 'ordered',
+    ordered_at: 1_700_000_000_000,
+    updated_at: 1_700_003_600_000,
+    ...overrides,
+  })
+
+const eventHeaders: BuildEventMemberCsvHeadersOptions = {
+  includeCommunityBill: true,
+  statusLabel: 'ステータス',
+  nameLabel: '名前',
+  orderLabel: '注文内容',
+  menuPriceLabel: 'メニュー金額',
+  communityBillOffLabel: 'おごり金額',
+  dateOrderedLabel: '注文日時',
+  emptyDateLabel: 'ー',
+  profileLabel: 'プロフィール',
+  tagsLabel: 'タグ',
+}
 
 describe('escapeCsvCell', () => {
   it('ダブルクォートをエスケープする', () => {
@@ -45,67 +76,78 @@ describe('buildCommunityMemberCsv', () => {
 })
 
 describe('buildEventMemberCsv', () => {
-  it('community_bill 列を含められる', () => {
-    const order = {
-      order_id: 'o1',
-      menu_name: 'ランチ',
-      menu_price: 1000,
-      pay_community_bill_off_amount: 200,
-      status: 'ordered',
-    } as EventMemberOrder
-    const headers = buildEventMemberCsvHeaders({
-      includeCommunityBill: true,
-      statusLabel: '確定',
-      nameLabel: '名前',
-      orderLabel: '注文',
-      menuPriceLabel: '単価',
-      communityBillOffLabel: '割引',
-      dateOrderedLabel: '日時',
-    })
-    expect(headers).toHaveLength(9)
-    const csv = buildEventMemberCsv([{ order, member: sampleUser(), statusLabel: '確定', dateLabel: '2026-01-01' }], {
-      includeCommunityBill: true,
-      statusLabel: '確定',
-      nameLabel: '名前',
-      orderLabel: '注文',
-      menuPriceLabel: '単価',
-      communityBillOffLabel: '割引',
-      dateOrderedLabel: '日時',
-    })
-    expect(csv).toContain('"200"')
-    expect(csv).toContain('"ランチ"')
+  it('注文情報の後にSNS・プロフィール・タグを出力し、更新日時ではなく注文日時を使う', () => {
+    const csv = buildEventMemberCsv(
+      [{ order: sampleOrder(), member: sampleUser(), statusLabel: '注文済' }],
+      eventHeaders,
+    )
+    expect(csv).toBe(
+      '"ステータス","名前","注文内容","メニュー金額","おごり金額","注文日時","X","Facebook","Instagram","プロフィール","タグ"\n' +
+        '"注文済","Alice ""Test""","ランチ","¥1,000","¥200","2023/11/15 7:13","https://twitter.com/alice","","","bio","ランチ / 交流"\n',
+    )
   })
 
   it('includeSnsColumns: false のとき SNS 列を省略する', () => {
-    const order = {
-      order_id: 'o1',
-      menu_name: 'ランチ',
-      menu_price: 1000,
-      status: 'ordered',
-    } as EventMemberOrder
-    const headers = buildEventMemberCsvHeaders({
+    const options = {
+      ...eventHeaders,
       includeCommunityBill: false,
       includeSnsColumns: false,
-      statusLabel: '確定',
-      nameLabel: '名前',
-      orderLabel: '注文',
-      menuPriceLabel: '単価',
-      communityBillOffLabel: '割引',
-      dateOrderedLabel: '日時',
+    }
+    const csv = buildEventMemberCsv([{ order: sampleOrder(), member: sampleUser(), statusLabel: '注文済' }], options)
+    expect(csv).toBe(
+      '"ステータス","名前","注文内容","メニュー金額","注文日時","プロフィール","タグ"\n' +
+        '"注文済","Alice ""Test""","ランチ","¥1,000","2023/11/15 7:13","bio","ランチ / 交流"\n',
+    )
+  })
+
+  it.each(EVENT_MEMBER_ORDER_STATUS_VALUES.filter((status) => status !== 'ordered'))(
+    '%s の行を残し、過去のordered_atがあっても注文日時を「ー」にする',
+    (status) => {
+      const rows = buildEventMemberCsvRows(
+        [{ order: sampleOrder({ status }), member: sampleUser(), statusLabel: status }],
+        { includeCommunityBill: false, includeSnsColumns: false, emptyDateLabel: 'ー' },
+      )
+      expect(rows).toEqual([[status, 'Alice "Test"', 'ランチ', '¥1,000', 'ー', 'bio', 'ランチ / 交流']])
+    },
+  )
+
+  it('ordered_atが未設定なら「ー」、プロフィール・タグが未設定なら空欄にする', () => {
+    const rows = buildEventMemberCsvRows(
+      [
+        {
+          order: sampleOrder({ ordered_at: undefined }),
+          member: new User('u1', { user_name: 'Alice' }),
+          statusLabel: '注文済',
+        },
+      ],
+      { includeCommunityBill: false, includeSnsColumns: false, emptyDateLabel: 'ー' },
+    )
+    expect(rows).toEqual([['注文済', 'Alice', 'ランチ', '¥1,000', 'ー', '', '']])
+  })
+
+  it.each([
+    { includeCommunityBill: true, includeSnsColumns: true },
+    { includeCommunityBill: true, includeSnsColumns: false },
+    { includeCommunityBill: false, includeSnsColumns: true },
+    { includeCommunityBill: false, includeSnsColumns: false },
+  ])('任意列の有無で見出しと値の列数がずれない: %j', (options) => {
+    const headers = buildEventMemberCsvHeaders({ ...eventHeaders, ...options })
+    const rows = buildEventMemberCsvRows([{ order: sampleOrder(), member: sampleUser(), statusLabel: '注文済' }], {
+      ...options,
+      emptyDateLabel: 'ー',
     })
-    expect(headers).toEqual(['確定', '名前', '注文', '単価', '日時'])
-    const csv = buildEventMemberCsv([{ order, member: sampleUser(), statusLabel: '確定', dateLabel: '2026-01-01' }], {
-      includeCommunityBill: false,
-      includeSnsColumns: false,
-      statusLabel: '確定',
-      nameLabel: '名前',
-      orderLabel: '注文',
-      menuPriceLabel: '単価',
-      communityBillOffLabel: '割引',
-      dateOrderedLabel: '日時',
+    expect(rows[0]).toHaveLength(headers.length)
+    expect(headers.slice(-2)).toEqual(['プロフィール', 'タグ'])
+    expect(rows[0].slice(-2)).toEqual(['bio', 'ランチ / 交流'])
+  })
+
+  it('プロフィールやタグの改行・カンマ・引用符をCSVのセル内に保持する', () => {
+    const member = sampleUser({
+      user_description: 'こんにちは, "Alice"です\nよろしく',
+      user_tags: ['食事,交流', '"和食"'],
     })
-    expect(csv).not.toContain('twitter.com')
-    expect(csv).toContain('"ランチ"')
+    const csv = buildEventMemberCsv([{ order: sampleOrder(), member, statusLabel: '注文済' }], eventHeaders)
+    expect(csv).toContain('"こんにちは, ""Alice""です\nよろしく","食事,交流 / ""和食"""\n')
   })
 })
 

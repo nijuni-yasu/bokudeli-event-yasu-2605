@@ -963,6 +963,9 @@ export default {
       menu_price: 'メニュー金額',
       community_bill_off_amount: 'おごり金額',
       csv_download: 'CSV ダウンロード',
+      csv_profile: 'プロフィール',
+      csv_tags: 'タグ',
+      csv_empty_date: 'ー',
       invite_manager: '管理者を招待する',
       date: {
         ordered: '注文日時',

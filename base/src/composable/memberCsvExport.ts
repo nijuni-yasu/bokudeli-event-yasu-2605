@@ -2,6 +2,10 @@ import { buildFacebookUrl, buildTwitterUrl, buildInstagramUrl } from '@shokujii/
 import { downloadCsv } from '@shokujii/base/utils/downloadCsv.js'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import type { User } from '@shokujii/common/schemas/User.js'
+import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
+import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
+
+const formatCsvAmount = (amount: number): string => convertNumberToYen(amount).replace('￥', '¥')
 
 export const escapeCsvCell = (value: string): string => `"${value.replace(/"/g, '""')}"`
 
@@ -28,7 +32,6 @@ export type EventMemberCsvRowInput = {
   order: EventMemberOrder
   member: User
   statusLabel: string
-  dateLabel: string
 }
 
 export type BuildEventMemberCsvHeadersOptions = {
@@ -40,29 +43,41 @@ export type BuildEventMemberCsvHeadersOptions = {
   menuPriceLabel: string
   communityBillOffLabel: string
   dateOrderedLabel: string
+  emptyDateLabel: string
+  profileLabel: string
+  tagsLabel: string
 }
 
 export const buildEventMemberCsvHeaders = (options: BuildEventMemberCsvHeadersOptions): string[] => {
   const includeSnsColumns = options.includeSnsColumns !== false
-  const headers = [options.statusLabel, options.nameLabel]
-  if (includeSnsColumns) {
-    headers.push('X', 'Facebook', 'Instagram')
-  }
-  headers.push(options.orderLabel, options.menuPriceLabel)
+  const headers = [options.statusLabel, options.nameLabel, options.orderLabel, options.menuPriceLabel]
   if (options.includeCommunityBill) {
     headers.push(options.communityBillOffLabel)
   }
   headers.push(options.dateOrderedLabel)
+  if (includeSnsColumns) {
+    headers.push('X', 'Facebook', 'Instagram')
+  }
+  headers.push(options.profileLabel, options.tagsLabel)
   return headers
 }
 
 export const buildEventMemberCsvRows = (
   rows: EventMemberCsvRowInput[],
-  options: Pick<BuildEventMemberCsvHeadersOptions, 'includeCommunityBill' | 'includeSnsColumns'>,
+  options: Pick<BuildEventMemberCsvHeadersOptions, 'includeCommunityBill' | 'includeSnsColumns' | 'emptyDateLabel'>,
 ): string[][] =>
-  rows.map(({ order, member, statusLabel, dateLabel }) => {
+  rows.map(({ order, member, statusLabel }) => {
     const includeSnsColumns = options.includeSnsColumns !== false
-    const row = [statusLabel, member.user_name]
+    const row = [statusLabel, member.user_name, order.menu_name, formatCsvAmount(order.menu_price)]
+    if (options.includeCommunityBill) {
+      row.push(formatCsvAmount(order.pay_community_bill_off_amount ?? 0))
+    }
+    // 注文確定前・キャンセル済みの日時を「注文日時」として扱わない。
+    row.push(
+      order.status === 'ordered' && order.ordered_at != null
+        ? convertToDatetime(order.ordered_at)
+        : options.emptyDateLabel,
+    )
     if (includeSnsColumns) {
       row.push(
         member.user_sns_twitter !== '' ? buildTwitterUrl(member.user_sns_twitter) : '',
@@ -70,11 +85,7 @@ export const buildEventMemberCsvRows = (
         member.user_sns_instagram !== '' ? buildInstagramUrl(member.user_sns_instagram) : '',
       )
     }
-    row.push(order.menu_name, String(order.menu_price))
-    if (options.includeCommunityBill) {
-      row.push(String(order.pay_community_bill_off_amount ?? 0))
-    }
-    row.push(dateLabel)
+    row.push(member.user_description, member.user_tags.join(' / '))
     return row
   })
 
@@ -87,6 +98,7 @@ export const buildEventMemberCsv = (
     buildEventMemberCsvRows(rows, {
       includeCommunityBill: headerOptions.includeCommunityBill,
       includeSnsColumns: headerOptions.includeSnsColumns,
+      emptyDateLabel: headerOptions.emptyDateLabel,
     }),
   )
 
