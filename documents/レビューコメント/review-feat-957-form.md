@@ -63,6 +63,17 @@
 | [x] | RC-57 | 4154240414 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 追加注文確定で hidden_for_new の過去回答が消える<br>非表示設問のスナップショットを既存回答から引き継ぐ |
 | [x] | RC-58 | 5929156777 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再依頼スレッドの残件まとめ<br>showConfirm は RC-31、版リセットは RC-27、revision_basis は RC-28、TTL は RC-38 |
 | [x] | RC-59 | 5377884131 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex overview は個別指摘の要約<br>実体は RC-52〜57 のインラインで扱う |
+| [x] | RC-60 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CartFormAnswer が getAuth + `as` で useEventStore を直接呼ぶ<br>setup の useCreateAppEventStore クロージャに置き換えた |
+| [x] | RC-61 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 電話番号設問の input type が `phone` になる<br>`tel` に変換するヘルパーを通した |
+| [ ] | RC-62 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | フォーム名が空のとき保存が無言で何もしない<br>UX ラベルのため自動修正せず未着手 |
+| [ ] | RC-63 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 「別のフォームに差し替える」に確認ダイアログが無い<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-64 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | イベント設問の利用目的に maxlength が無く上限超過が invalid-argument になる<br>`FORM_FIELD_LIMITS.maxPurpose` を付けた |
+| [x] | RC-65 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 未参照の i18n キー `cart.form_submit_and_continue` が残る<br>削除した |
+| [x] | RC-66 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `parseOrThrow` が formAdmin / formOrder に重複<br>`utils/formAccess.ts` へ集約した |
+| [ ] | RC-67 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | getEventFormResponse が 1 件のために全回答・全注文・全ユーザーを読む<br>リファクタ / M のため自動修正しない |
+| [ ] | RC-68 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | S | applyAttemptToConfirmedResponse が plan 済みの form_configs を再読込する<br>リファクタ種別のため自動修正しない |
+| [ ] | RC-69 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 📐 リファクタ | S | 回答一覧パネルが参加者タブと事前アンケートタブの両方に出る<br>配置の判断が要るため自動修正しない |
+| [x] | RC-70 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | イベントページの watch が event オブジェクト参照で発火し Callable を再呼び出しする<br>ID の組を監視し stale 応答を捨てるようにした |
 
 ---
 
@@ -4954,3 +4965,461 @@ Codex can also answer questions or update the PR. Try commenting "@codex address
 
 **判断理由**: overview / wrapper。
 
+
+---
+
+## 評価セッション（2026-10-01 19:27・shokujii-code-review）
+
+- **評価日時**: 2026-10-01 19:27 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **対象**: `git diff origin/development...HEAD`（コミット済み全差分。`d75ab919b` まで）
+- **Outdated 除外件数**: 該当なし
+- **レビュー非該当スキップ件数**: 該当なし
+- **手順 3a/3b 自動修正**: RC-60（🚨 1件）と RC-61 / RC-64 / RC-65 / RC-66 / RC-70（🟡 5件）。RC-62 / RC-63 / RC-69 は 👤 UX、RC-67 / RC-68 は 📐 リファクタのため対象外
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-60 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | CartFormAnswer が getAuth + `as` で useEventStore を直接呼ぶ<br>setup の useCreateAppEventStore クロージャに置き換えた |
+| [x] | RC-61 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 電話番号設問の input type が `phone` になる<br>`tel` に変換するヘルパーを通した |
+| [ ] | RC-62 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | フォーム名が空のとき保存が無言で何もしない<br>UX ラベルのため自動修正せず未着手 |
+| [ ] | RC-63 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 「別のフォームに差し替える」に確認ダイアログが無い<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-64 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | イベント設問の利用目的に maxlength が無く上限超過が invalid-argument になる<br>`FORM_FIELD_LIMITS.maxPurpose` を付けた |
+| [x] | RC-65 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 未参照の i18n キー `cart.form_submit_and_continue` が残る<br>削除した |
+| [x] | RC-66 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `parseOrThrow` が formAdmin / formOrder に重複<br>`utils/formAccess.ts` へ集約した |
+| [ ] | RC-67 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | getEventFormResponse が 1 件のために全回答・全注文・全ユーザーを読む<br>リファクタ / M のため自動修正しない |
+| [ ] | RC-68 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | S | applyAttemptToConfirmedResponse が plan 済みの form_configs を再読込する<br>リファクタ種別のため自動修正しない |
+| [ ] | RC-69 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 📐 リファクタ | S | 回答一覧パネルが参加者タブと事前アンケートタブの両方に出る<br>配置の判断が要るため自動修正しない |
+| [x] | RC-70 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | イベントページの watch が event オブジェクト参照で発火し Callable を再呼び出しする<br>ID の組を監視し stale 応答を捨てるようにした |
+
+---
+
+**識別子**: RC-60（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/forms/CartFormAnswer.vue:159`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
++import { getAuth } from 'firebase/auth'
+…
++  try {
++    const auth = getAuth()
++    const user = auth.currentUser
++    const token = user == null ? undefined : await user.getIdTokenResult()
++    const eventStore = useEventStore(
++      item.event.event_id,
++      buildEventStoreOptions(token?.claims.enterprise_id as string | undefined),
++    )
++    await eventStore.confirmOrder({
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `base` の新規コンポーネントが `getAuth()` の ID トークン claim を `as string | undefined` でキャストして `useEventStore` を直接呼んでいます。チェックリストの「base は `useAppEventStore` / `useCreateAppEventStore` 経由で inject スコープを通す（`cart.vue` の既存パターンは例外、新規は setup のクロージャ）」と `as` 禁止の両方に反します → setup で `const createAppEventStore = useCreateAppEventStore()` を取り、`startOrder` 内では `createAppEventStore(item.event.event_id)` を使ってください。`getAuth` / `buildEventStoreOptions` の import も不要になります。
+
+**コメント要約**: CartFormAnswer が getAuth + `as` で useEventStore を直接呼ぶ
+setup の useCreateAppEventStore クロージャに置き換えた
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-39〜41 と同じ base の規約違反（app 依存の直接解決）。手順 3a で自動修正し、`useCreateAppEventStore()` のクロージャに置き換えた。
+---
+
+**識別子**: RC-61（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/forms/FormAnswerFields.vue:74`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++      <v-text-field
++        v-if="field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'date'"
++        :model-value="answerFor(field.field_id).text_value ?? ''"
++        :type="field.type === 'text' ? 'text' : field.type"
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `:type="field.type === 'text' ? 'text' : field.type"` は `phone` 設問で `type="phone"` を出力します。`phone` は HTML の input type に無いためブラウザは `text` にフォールバックし、スマホで数字キーボードが出ません → `phone` のときだけ `tel` に変換するヘルパー（`textInputType`）を通してください。
+
+**コメント要約**: 電話番号設問の input type が `phone` になる
+`tel` に変換するヘルパーを通した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 方針が一意な微修正。手順 3b で自動修正。
+---
+
+**識別子**: RC-62（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormEditor.vue:106`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const save = async () => {
++  if (communityId.value === '' || name.value.trim() === '') {
++    return
++  }
++  saving.value = true
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: フォーム名が空のまま「保存」を押すと `save` が無言で return し、画面には何も起きません。設問側は Callable の `invalid-argument` が `save_failed` 通知で出るのに、フォーム名だけ無反応になります → 保存ボタンを `name.trim() === ''` で `disabled` にするか、`v-text-field` に必須 rule を付けて理由を見せてください。
+
+**コメント要約**: フォーム名が空のとき保存が無言で何もしない
+UX ラベルのため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: disabled か rule 表示かの見せ方は UX 判断。auto-fix-policy の 👤 UX 除外に該当するため未着手。
+---
+
+**識別子**: RC-63（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/manage/event/EventFormSettingsPanel.vue:147`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++        <v-btn color="primary" :loading="saving" :disabled="selectedFormId === ''" @click="applyCommunityForm">
++          {{ config == null ? $t('manage.forms.set_to_event') : $t('manage.forms.replace_event') }}
++        </v-btn>
++        <v-btn v-if="config != null" variant="outlined" :loading="saving" @click="requestClear">
++          {{ $t('manage.forms.clear_event') }}
++        </v-btn>
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: 「イベントから外す」は `ConfirmDialog` を挟んでいますが、「別のフォームに差し替える」は確認なしで `setEventFormFromCommunity` を呼びます。差し替えはイベント側で編集した設問を捨てて `definition_version` を進めるため、外す操作と同程度に破壊的です → `clear` と同じく確認ダイアログを挟んでください（文言は「イベントの設問を上書きします。確定済みの回答は残ります」程度）。
+
+**コメント要約**: 「別のフォームに差し替える」に確認ダイアログが無い
+UX ラベルのため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 確認文言と出し分けは UX 判断。👤 UX 除外のため未着手。
+---
+
+**識別子**: RC-64（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/manage/event/EventFormSettingsPanel.vue:156`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++        <v-textarea v-model="purpose" :label="$t('manage.forms.purpose')" rows="2" class="mb-4" />
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `CommunityFormEditor` の利用目的には `:maxlength="FORM_FIELD_LIMITS.maxPurpose"` がありますが、イベント設問側の `v-textarea` にはありません。500 文字を超えると `UpdateEventFormConfigRequestSchema` の `max(maxPurpose)` で `parseOrThrow` が「必須パラメータが不足しています」を返し、原因が伝わりません → 同じ `:maxlength` を付けてください。
+
+**コメント要約**: イベント設問の利用目的に maxlength が無く上限超過が invalid-argument になる
+`FORM_FIELD_LIMITS.maxPurpose` を付けた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 既存画面と同じ属性を足すだけで方針が一意。手順 3b で自動修正。
+---
+
+**識別子**: RC-65（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/locales/messages/ja.ts:182`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    form_page_title: '事前アンケート',
++    form_submit_and_continue: '回答して次へ',
++    back_to_cart: 'カートに戻る',
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `cart.form_submit_and_continue` は `user` / `base` のどこからも参照されていません（回答画面の末尾ボタンは `proceed_to_payment` / `order_and_attend_event` を使う仕様）→ 未参照キーなので削除してください。
+
+**コメント要約**: 未参照の i18n キー `cart.form_submit_and_continue` が残る
+削除した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: チェックリスト「未参照になった ja.ts の i18n キーを削除」。手順 3b で自動修正。
+---
+
+**識別子**: RC-66（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:73`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
++  try {
++    return schema.parse(data)
++  } catch {
++    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
++  }
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: 同じ `parseOrThrow` が `formAdmin.ts:73` と `formOrder.ts:27` に丸ごと重複しています → フォーム系の共通ヘルパーを置いている `utils/formAccess.ts` へ 1 本化して両方から import してください。
+
+**コメント要約**: `parseOrThrow` が formAdmin / formOrder に重複
+`utils/formAccess.ts` へ集約した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 移動先が一意な重複排除。手順 3b で自動修正。
+---
+
+**識別子**: RC-67（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:345`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++export const getEventFormResponse = onCall(async (request): Promise<GetEventFormResponseResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, event_id, user_id } = parseOrThrow(GetEventFormResponseRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  await requirePfEventForForm(community_id, event_id)
++  const items = await buildResponseItems(community_id, event_id)
++  const response = items.find((item) => item.user_id === user_id)
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [📐リファクタ/M]: 単一ユーザーの回答詳細を返す `getEventFormResponse` が `buildResponseItems` で全回答・`ordered` / `canceled` 全注文・全ユーザーを読み、その中から 1 件を `find` しています。現状 UI は一覧データから詳細を出すため呼ばれていませんが、参加者が多いイベントで呼ぶと 1 件のために一覧と同じ read が走ります → `getFormResponse(user_id)` + 当該ユーザーの注文だけで participation を判定する専用パスに分けるか、未使用なら Callable 自体を落としてください。
+
+**コメント要約**: getEventFormResponse が 1 件のために全回答・全注文・全ユーザーを読む
+リファクタ / M のため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: participation 判定の切り出しが要り、残す / 削るの判断も含むため自動修正対象外。
+---
+
+**識別子**: RC-68（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:129`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++  const now = Date.now()
++  const nextRevision = (existing?.revision ?? 0) + 1
++  const config = await getEventFormConfig(params.event.community_id, params.event.id, params.transaction)
++  const confirmed = new FormResponse(params.userId, {
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [📐リファクタ/S]: `confirmOrderHandler` 経路では `planFormConfirmation` が同一 Transaction で `form_configs/current` を読んだ直後に、`applyAttemptToConfirmedResponse` がもう一度 `getEventFormConfig` を読みます。Webhook 経路では plan を通らないので読む必要がありますが、plan 経路では二重 read です → `FormConfirmPlan` の `apply` に `config` を載せ、`applyAttemptToConfirmedResponse` は `params.config ?? await getEventFormConfig(...)` で受け取るようにしてください。
+
+**コメント要約**: applyAttemptToConfirmedResponse が plan 済みの form_configs を再読込する
+リファクタ種別のため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: S
+
+**判断理由**: Transaction の read 順序には影響しない最適化。📐 リファクタのため手順 3b 対象外。
+---
+
+**識別子**: RC-69（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `user/src/components/manage/event/member.vue:260`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++        <EventFormResponsesPanel v-if="eventStore.event != null" :event="eventStore.event" />
+```
+
+（`user/src/pages/manage/event/[eventId]/[tab].vue:233` にも同じパネルを配置）
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [📐リファクタ/S]: `EventFormResponsesPanel` が参加者タブ（`member.vue`）と新設の「事前アンケート」タブ（`[tab].vue` の `form`）の両方に置かれています。同じ一覧・CSV が 2 箇所に出て、どちらが正か分かりにくいうえ、タブごとに `listEventFormResponses` が走ります → 仕様（§4「イベント管理 → 回答一覧」）に沿ってどちらか 1 箇所に寄せてください。設定と回答を同じタブで見せるなら `form` タブ側に残し、参加者 CSV と並べたいなら `member.vue` 側に残す判断です。
+
+**コメント要約**: 回答一覧パネルが参加者タブと事前アンケートタブの両方に出る
+配置の判断が要るため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: S
+
+**判断理由**: どちらのタブに残すかは UX 判断。👤 UX + 📐 リファクタのため自動修正対象外。
+---
+
+**識別子**: RC-70（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `user/src/pages/c/[communityAccount]/e/[eventId]/index.vue:58`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++watch(
++  event,
++  async (current) => {
++    hasPreEventForm.value = false
++    if (current == null || (current.enterprise_id != null && current.enterprise_id !== '')) {
++      return
++    }
++    try {
++      const response = await getEventFormPresence({
++        community_id: current.community_id,
++        event_id: current.event_id,
++      })
++      hasPreEventForm.value = response.data.has_form
+```
+
+**レビュワーのコメント（原文）**:
+
+🟡 **修正提案** [🔧微修正/S]: `watch(event, ...)` は `eventStore.event` が Firestore 購読で新しいオブジェクトになるたびに発火し、そのたびに `getEventFormPresence` Callable を呼び直します（RC-56 でカート側に入れたのと同じ問題）。非同期なので古い応答が後から `hasPreEventForm` を上書きすることもあります → `community_id` と `event_id` の組を `computed` にして監視し、応答到着時にキーが変わっていなければ反映してください。
+
+**コメント要約**: イベントページの watch が event オブジェクト参照で発火し Callable を再呼び出しする
+ID の組を監視し stale 応答を捨てるようにした
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-56 と同型で方針が一意。手順 3b で自動修正。
