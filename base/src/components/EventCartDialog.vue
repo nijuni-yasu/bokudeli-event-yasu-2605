@@ -157,11 +157,17 @@ watch(countOptions, (options) => {
 
 const isAddingOrder = ref(false)
 
-const closeDialog = () => {
-  isAddingOrder.value = false
+const resetAndClose = () => {
   selectedCount.value = 1
   addErrorMessage.value = ''
   isOpen.value = false
+}
+
+const closeDialog = () => {
+  if (isAddingOrder.value) {
+    return
+  }
+  resetAndClose()
 }
 
 const getAddToCartErrorMessage = (error: unknown): string | null => {
@@ -178,6 +184,9 @@ const getAddToCartErrorMessage = (error: unknown): string | null => {
 }
 
 const addCart = async () => {
+  if (isAddingOrder.value) {
+    return
+  }
   if (eventStore.event == null) {
     console.warn('eventStore.event is null')
     return
@@ -207,7 +216,7 @@ const addCart = async () => {
       ],
     })
     emit('added')
-    closeDialog()
+    resetAndClose()
   } catch (e) {
     const message = getAddToCartErrorMessage(e)
     if (message != null) {
@@ -223,7 +232,7 @@ const addCart = async () => {
 </script>
 
 <template>
-  <v-dialog v-model="isOpen" max-width="500px" scrollable @click:outside="closeDialog()">
+  <v-dialog v-model="isOpen" max-width="500px" scrollable :persistent="isAddingOrder" @click:outside="closeDialog()">
     <v-card>
       <v-card-text class="pa-5 pa-sm-10">
         <EventMenuImage
@@ -334,7 +343,14 @@ const addCart = async () => {
           {{ addErrorMessage }}
         </v-alert>
         <div class="d-flex justify-end align-center flex-wrap ga-3">
-          <v-btn rounded="pill" size="small" variant="outlined" color="secondary" @click="closeDialog()">
+          <v-btn
+            rounded="pill"
+            size="small"
+            variant="outlined"
+            color="secondary"
+            :disabled="isAddingOrder"
+            @click="closeDialog()"
+          >
             {{ $t('cart_dialog.close') }}
           </v-btn>
           <v-btn
