@@ -700,8 +700,10 @@ const showDeleteConfirm = (event: BokudeliEvent, orderId: string) => {
   openDeleteConfirm.value = true
 }
 
+const incrementLockKey = (eventId: string, menuId: string) => `add_${eventId}_${menuId}`
+
 const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
-  const menuKey = `add_${menu.group_key}`
+  const menuKey = incrementLockKey(event.event_id, menu.menu_id)
   if (menuUpdatingStates.value[menuKey]) return
   menuUpdatingStates.value[menuKey] = true
   try {
@@ -749,9 +751,11 @@ const decrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
   }
 }
 
-const isMenuUpdating = (menu: GroupedMenu) => {
+const isMenuUpdating = (eventId: string, menu: GroupedMenu) => {
   return (
-    (menuUpdatingStates.value[`add_${menu.group_key}`] || menuUpdatingStates.value[`remove_${menu.group_key}`]) ?? false
+    (menuUpdatingStates.value[incrementLockKey(eventId, menu.menu_id)] ||
+      menuUpdatingStates.value[`remove_${menu.group_key}`]) ??
+    false
   )
 }
 
@@ -992,7 +996,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                           v-if="menu.count > 1"
                           :icon="mdiMinusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu)"
+                          :loading="isMenuUpdating(cartItem.event.event_id, menu)"
                           @click="decrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>
@@ -1008,7 +1012,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                         <v-btn
                           :icon="mdiPlusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu)"
+                          :loading="isMenuUpdating(cartItem.event.event_id, menu)"
                           :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu, cartItem.groupedMenus)"
                           @click="incrementMenuCount(cartItem.event, menu)"
                         >
