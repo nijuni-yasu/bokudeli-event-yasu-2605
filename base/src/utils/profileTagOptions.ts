@@ -19,6 +19,13 @@ const STARTER_TAGS: readonly MasterTag[] = [
 
 const ALL_TAGS = [...new Set<string>(TAG_GENRES.flatMap((genre) => [...genre.tags]))]
 
+/** 正規化と大文字小文字を無視したマスタの完全一致。返す表記はマスタのまま。 */
+export function findExactMasterTag(query: string): string | undefined {
+  const key = normalizeTag(query).toLowerCase()
+  if (key === '') return undefined
+  return ALL_TAGS.find((tag) => normalizeTag(tag).toLowerCase() === key)
+}
+
 /** 検索時はジャンルを横断し、完全一致を先頭にする。保存する表記はマスタを維持する。 */
 export function getProfileTagCandidates(query: string): readonly string[] {
   const normalizedQuery = normalizeTag(query).toLowerCase()

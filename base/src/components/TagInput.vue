@@ -4,10 +4,14 @@ import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { VTextField } from 'vuetify/components'
 import { mdiArrowLeft, mdiCheck, mdiClose, mdiMagnify, mdiPlus } from '@mdi/js'
-import { TAG_GENRES, isMasterTagLabel } from '@shokujii/common/constants/tags.js'
+import { TAG_GENRES } from '@shokujii/common/constants/tags.js'
 import { USER_TAG_MAX_COUNT, USER_TAG_MAX_LENGTH } from '@shokujii/common/constants/userTags.js'
 import { normalizeTag, tagCodePointLength } from '@shokujii/common/utils/normalizeTag.js'
-import { getProfileTagCandidates, PROFILE_TAG_PAGE_SIZE } from '@shokujii/base/utils/profileTagOptions.js'
+import {
+  findExactMasterTag,
+  getProfileTagCandidates,
+  PROFILE_TAG_PAGE_SIZE,
+} from '@shokujii/base/utils/profileTagOptions.js'
 
 const props = withDefaults(defineProps<{ loading?: boolean }>(), { loading: false })
 const tags = defineModel<string[]>({ required: true })
@@ -30,13 +34,45 @@ const candidates = computed(() => getProfileTagCandidates(query.value))
 const pageSize = computed(() => (xs.value ? PROFILE_TAG_PAGE_SIZE.mobile : PROFILE_TAG_PAGE_SIZE.desktop))
 const visibleTags = computed(() => candidates.value.slice(0, page.value * pageSize.value))
 const hasMore = computed(() => visibleTags.value.length < candidates.value.length)
-const canCreate = computed(
-  () => isSearching.value && !isMasterTagLabel(normalizedQuery.value) && !selectedTags.value.has(normalizedQuery.value),
-)
 const isBrowsingGenres = computed(() => showGenres.value)
+const exactMasterTag = computed(() => findExactMasterTag(normalizedQuery.value))
+const hasSelectedQuery = computed(() => {
+  const key = normalizedQuery.value.toLowerCase()
+  for (const stored of selectedTags.value.keys()) {
+    if (stored.toLowerCase() === key) return true
+  }
+  return false
+})
+const canCreate = computed(
+  () => isSearching.value && !isBrowsingGenres.value && exactMasterTag.value == null && !hasSelectedQuery.value,
+)
+/** 検索開始前の候補表示。検索解除で戻す */
+const viewBeforeSearch = ref<{ showGenres: boolean; expandedGenres: string[] } | null>(null)
 
 watch([normalizedQuery, pageSize], () => {
   page.value = 1
+})
+
+watch(normalizedQuery, (query, previous) => {
+  const wasSearching = previous != null && previous !== ''
+  const nowSearching = query !== ''
+  if (!wasSearching && nowSearching) {
+    viewBeforeSearch.value = {
+      showGenres: showGenres.value,
+      expandedGenres: [...expandedGenres.value],
+    }
+    showGenres.value = false
+    return
+  }
+  if (wasSearching && !nowSearching && viewBeforeSearch.value != null) {
+    showGenres.value = viewBeforeSearch.value.showGenres
+    expandedGenres.value = [...viewBeforeSearch.value.expandedGenres]
+    viewBeforeSearch.value = null
+    return
+  }
+  if (nowSearching && wasSearching && previous !== query && showGenres.value) {
+    showGenres.value = false
+  }
 })
 
 const setGenreView = async (show: boolean): Promise<void> => {
@@ -51,14 +87,16 @@ const setGenreView = async (show: boolean): Promise<void> => {
 const isSelected = (tag: string): boolean => selectedTags.value.has(normalizeTag(tag))
 
 const addTag = (raw: string, clearQuery: boolean): void => {
-  const tag = normalizeTag(raw)
+  const normalized = normalizeTag(raw)
+  const tag = findExactMasterTag(normalized) ?? normalized
+  const alreadySelected = tags.value.some((item) => normalizeTag(item).toLowerCase() === tag.toLowerCase())
   if (
     props.loading ||
     isComposing.value ||
     tag === '' ||
     tagCodePointLength(tag) > USER_TAG_MAX_LENGTH ||
     isAtLimit.value ||
-    isSelected(tag)
+    alreadySelected
   ) {
     return
   }

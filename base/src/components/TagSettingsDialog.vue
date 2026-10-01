@@ -32,11 +32,12 @@ const sameTagList = (left: readonly string[] | undefined, right: readonly string
 const hasTagChanges = computed(() => tagsReady.value && !sameTagList(baselineTags.value, tags.value))
 
 watch(
-  [model, () => currentUserStore.user],
-  ([isOpen], previous) => {
+  [model, () => currentUserStore.user, () => currentUserStore.firebaseUser?.uid ?? null],
+  ([isOpen, , uid], previous) => {
     const openedNow = isOpen && previous?.[0] !== true
+    const uidChanged = previous != null && previous[2] !== uid
     const user = currentUserStore.user
-    if (user == null) {
+    if (user == null || uidChanged) {
       savedTagsAwaitingSnapshot.value = null
       tagsObservedBeforeSave.value = null
     } else if (savedTagsAwaitingSnapshot.value != null) {
@@ -49,11 +50,11 @@ watch(
         tagsObservedBeforeSave.value = null
       }
     }
-    if (isOpen && (openedNow || user == null)) {
+    if (isOpen && (openedNow || user == null || uidChanged)) {
       tagsReady.value = false
       tags.value = []
       baselineTags.value = []
-      if (openedNow) {
+      if (openedNow || uidChanged) {
         errorMessage.value = ''
       }
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isMasterTagLabel } from '@shokujii/common/constants/tags.js'
-import { getProfileTagCandidates, PROFILE_TAG_PAGE_SIZE } from './profileTagOptions.js'
+import { findExactMasterTag, getProfileTagCandidates, PROFILE_TAG_PAGE_SIZE } from './profileTagOptions.js'
 
 describe('プロフィールタグの候補', () => {
   it('最初の候補は既存マスタから重複なく11個提示する', () => {
@@ -22,6 +22,8 @@ describe('プロフィールタグの候補', () => {
 
   it('全角・前後空白・英字の大小を吸収して全ジャンルを検索し、完全一致を先頭にする', () => {
     const candidates = getProfileTagCandidates('　ａｉ　')
+    expect(findExactMasterTag('　ａｉ　')).toBe('AI')
+    expect(findExactMasterTag('存在しないタグの検索語')).toBeUndefined()
     expect(candidates[0]).toBe('AI')
     expect(candidates).toEqual(expect.arrayContaining(['AI', '生成AI', 'AIエージェント']))
     expect(candidates.every(isMasterTagLabel)).toBe(true)
