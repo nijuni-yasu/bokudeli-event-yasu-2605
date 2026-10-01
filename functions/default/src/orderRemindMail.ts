@@ -13,6 +13,7 @@ import {
   convertToDuration,
 } from '@shokujii/common/utils/datetime.js'
 import { getShopReservationApprovalDeadlineMillis } from '@shokujii/common/constants/eventReservation.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 const logger = createModuleLogger('orderRemindMail')
 
@@ -171,7 +172,7 @@ async function createOrdersForOrganizerRemind(event: ShokujiiEvent): Promise<Ord
     }
     ordersByStatus[order.status].push({
       name: userName,
-      order: order.menu_name,
+      order: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
       price: `¥${order.menu_price}`,
     })
   })

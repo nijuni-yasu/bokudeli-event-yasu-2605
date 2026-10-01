@@ -31,7 +31,9 @@ import {
   writeEnterpriseSubsidyRecalculatedAudit,
 } from './utils/enterpriseSubsidyOrders.js'
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
+import { assertStripeCheckoutLineItemLimit, formatStripeProductName } from './utils/stripeCheckoutLineItems.js'
 
 const logger = createModuleLogger('stripe')
 const db = getFirestore()
@@ -238,7 +240,7 @@ export const createStripeCheckoutSession = onCall<
         existing.quantity++
       } else {
         grouped.set(groupKey, {
-          menuName: order.menu_name,
+          menuName: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
           unitAmount,
           quantity: 1,
           imageUrl: menuImageMap.get(order.menu_id) ?? '',
@@ -253,7 +255,7 @@ export const createStripeCheckoutSession = onCall<
           currency: 'jpy',
           tax_behavior: 'inclusive',
           product_data: {
-            name: item.menuName,
+            name: formatStripeProductName(item.menuName),
             ...(item.imageUrl ? { images: [item.imageUrl] } : {}),
             metadata: { partner_id: event.partner_id },
           },
@@ -277,19 +279,8 @@ export const createStripeCheckoutSession = onCall<
     if (feeLineItem != null) {
       lineItems.push(feeLineItem)
     }
-
-    if (lineItems.length > 100) {
-      logger.warn('Checkout line items exceed Stripe limit', {
-        eventId: event_id,
-        communityId: community_id,
-        userId: uid,
-        lineItemCount: lineItems.length,
-      })
-      throw new HttpsError(
-        'failed-precondition',
-        '注文数が多すぎるため決済を開始できません。注文を分けてお試しください',
-      )
-    }
+    // システム利用料行を含む最終件数で検査する（食事 100 + 利用料 1 は Stripe 上限超過）
+    assertStripeCheckoutLineItemLimit(lineItems.length)
 
     const stripe = new Stripe(STRIPE_API_KEY.value(), {
       apiVersion: '2026-02-25.clover',

@@ -127,6 +127,14 @@ describe('buildEventReceiptMergeData', () => {
 })
 
 describe('buildEventReceiptMenuLines', () => {
+  const largeOption = {
+    option_id: 'opt-size',
+    option_name: 'サイズ',
+    item_id: 'item-large',
+    item_name: '大盛',
+    price_delta: 100,
+  }
+
   it('同じ自己負担単価の行を集約し、自己負担0は出さない', () => {
     expect(
       buildEventReceiptMenuLines([
@@ -141,5 +149,28 @@ describe('buildEventReceiptMenuLines', () => {
         { menu_name: 'うどん', menu_price: 800, status: 'canceled' },
       ]),
     ).toEqual([{ menu_name: 'カレー', count: 2, price: convertNumberToYen(1000) }])
+  })
+
+  it('選択が違う注文は表示名で別行にし、同じ選択は集約する', () => {
+    expect(
+      buildEventReceiptMenuLines([
+        { menu_name: 'バーガー', menu_price: 1000, status: 'ordered' },
+        {
+          menu_name: 'バーガー',
+          menu_price: 1100,
+          status: 'ordered',
+          selected_options: [largeOption],
+        },
+        {
+          menu_name: 'バーガー',
+          menu_price: 1100,
+          status: 'ordered',
+          selected_options: [largeOption],
+        },
+      ]),
+    ).toEqual([
+      { menu_name: 'バーガー', count: 1, price: convertNumberToYen(1000) },
+      { menu_name: 'バーガー（大盛）', count: 2, price: convertNumberToYen(1100) },
+    ])
   })
 })

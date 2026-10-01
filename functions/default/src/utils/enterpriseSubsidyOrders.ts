@@ -25,6 +25,8 @@ import {
   getEnterpriseRef,
 } from '../stores/enterprise.js'
 import type { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
+import type { AddToCartMenuRequest } from '@shokujii/common/apis/order.js'
+import { getStripeLineItemGroupKey, resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import { clearOrderPayEnterpriseSubsidyAmount, createOrder, getOrdersInCart, saveOrder } from '../stores/memberOrder.js'
 import type { ShokujiiEvent } from '../stores/event.js'
 import { writeAuditLog } from './auditLog.js'
@@ -284,7 +286,7 @@ export function buildEnterpriseSubsidyUsageExceededDetails(params: {
   }
 }
 
-export type AddToCartMenuInput = { menu_id: string; count: number }
+export type AddToCartMenuInput = AddToCartMenuRequest
 
 /** addToCart: enterprise_subsidy のメニュー追加と usage exceeded 判定 */
 export async function addEnterpriseSubsidyMenusToCart(params: {
@@ -336,11 +338,20 @@ export async function addEnterpriseSubsidyMenusToCart(params: {
       throw new HttpsError('failed-precondition', `メニューが見つかりません: ${menu.menu_id}`)
     }
 
+    const resolved = resolveEventMenuCartOrder({
+      eventMenu: masterMenu,
+      selectedItems: menu.selected_items,
+      presentedMenuPrice: menu.presented_menu_price,
+    })
+    if (!resolved.ok) {
+      throw new HttpsError(resolved.httpsCode, resolved.reason)
+    }
+
     for (let i = 0; i < menu.count; i++) {
       const payField = applyEnterpriseSubsidyPayFieldToCartTracker({
         event,
         settings,
-        menuPrice: masterMenu.menu_price,
+        menuPrice: resolved.menu_price,
         tracker,
       })
       await createOrder(
@@ -354,8 +365,9 @@ export async function addEnterpriseSubsidyMenusToCart(params: {
           status: 'in_cart',
           menu_id: masterMenu.id,
           menu_name: masterMenu.menu_name,
-          menu_price: masterMenu.menu_price,
+          menu_price: resolved.menu_price,
           enterprise_id: enterpriseId,
+          ...(resolved.selected_options.length > 0 ? { selected_options: resolved.selected_options } : {}),
           ...(payField !== undefined ? { pay_enterprise_subsidy_amount: payField } : {}),
         },
         transaction,
@@ -438,11 +450,8 @@ export function computeOrderSelfPayUnitAmount(order: EventMemberOrder): number {
   return order.menu_price - (order.pay_enterprise_subsidy_amount ?? order.pay_community_bill_off_amount ?? 0)
 }
 
-export function getStripeCheckoutLineItemGroupKey(eventPayment: EventPaymentType, order: EventMemberOrder): string {
-  if (eventPayment === 'enterprise_subsidy') {
-    return `${order.menu_id}\u0000${computeOrderSelfPayUnitAmount(order)}`
-  }
-  return order.menu_id
+export function getStripeCheckoutLineItemGroupKey(_eventPayment: EventPaymentType, order: EventMemberOrder): string {
+  return getStripeLineItemGroupKey(order, computeOrderSelfPayUnitAmount(order))
 }
 
 export function sumEnterpriseSubsidyAmounts(orders: EventMemberOrder[]): number {

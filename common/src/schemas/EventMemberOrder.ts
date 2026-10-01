@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema, optionalDeleteField } from './firebase/index.js'
+import { SelectedOptionSchema } from './menuOption.js'
 
 const nowMillis = () => DateTime.now().toMillis()
 
@@ -79,7 +80,8 @@ const EventMemberOrderDbSchema = z.object({
   status: z.enum(EVENT_MEMBER_ORDER_STATUS_VALUES),
   menu_id: z.string().nonempty(),
   menu_name: z.string().nonempty(),
-  menu_price: z.number().int().positive(),
+  // 0 は「注文なしで参加」。負数は拒否する。
+  menu_price: z.number().int().nonnegative(),
   created_at: TimestampSchema,
   updated_at: TimestampSchema,
   carted_at: TimestampSchema,
@@ -98,6 +100,7 @@ const EventMemberOrderDbSchema = z.object({
   pay_community_bill_off_amount: z.number().int().nonnegative().optional(),
   enterprise_id: z.string().nonempty().nullable().optional(),
   pay_enterprise_subsidy_amount: z.number().int().nonnegative().optional(),
+  selected_options: z.array(SelectedOptionSchema).optional(),
 })
 
 const EventMemberOrderAppSchema = z.object({
@@ -108,7 +111,7 @@ const EventMemberOrderAppSchema = z.object({
   status: z.enum(EVENT_MEMBER_ORDER_STATUS_VALUES).default('in_cart'),
   menu_id: z.string().nonempty(),
   menu_name: z.string().nonempty(),
-  menu_price: z.number().int().positive(),
+  menu_price: z.number().int().nonnegative(),
   stripe_id: z.string().optional(),
   carted_at: EpochMillisSchema.optional(),
   ordered_at: EpochMillisSchema.optional(),
@@ -121,6 +124,7 @@ const EventMemberOrderAppSchema = z.object({
   pay_community_bill_off_amount: z.number().int().nonnegative().optional(),
   enterprise_id: z.string().nonempty().nullable().optional(),
   pay_enterprise_subsidy_amount: z.number().int().nonnegative().optional(),
+  selected_options: z.array(SelectedOptionSchema).optional(),
 })
 
 const convertOrderToDb = (order: EventMemberOrder) => {
@@ -156,6 +160,7 @@ export class EventMemberOrder {
   pay_community_bill_off_amount?: number
   enterprise_id?: string | null
   pay_enterprise_subsidy_amount?: number
+  selected_options?: z.infer<typeof SelectedOptionSchema>[]
 
   constructor(orderId: string, src: Partial<EventMemberOrder>) {
     Object.assign(this, EventMemberOrderAppSchema.parse(src))

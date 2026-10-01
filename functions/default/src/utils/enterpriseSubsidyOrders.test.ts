@@ -667,13 +667,16 @@ describe('stripe checkout helpers', () => {
     expect(computeOrderSelfPayUnitAmount(makeOrder('o1', 800, 500))).toBe(300)
   })
 
-  it('getStripeCheckoutLineItemGroupKey は enterprise_subsidy で unitAmount ごとに分割', () => {
+  it('getStripeCheckoutLineItemGroupKey は自己負担単価ごとに分割', () => {
     const orderA = makeOrder('o1', 800, 500)
     const orderB = makeOrder('o2', 800, 300)
+    const samePay = makeOrder('o3', 800, 500)
     expect(getStripeCheckoutLineItemGroupKey('enterprise_subsidy', orderA)).not.toBe(
       getStripeCheckoutLineItemGroupKey('enterprise_subsidy', orderB),
     )
-    expect(getStripeCheckoutLineItemGroupKey('user_advance', orderA)).toBe('m1')
+    expect(getStripeCheckoutLineItemGroupKey('user_advance', orderA)).toBe(
+      getStripeCheckoutLineItemGroupKey('user_advance', samePay),
+    )
   })
 
   it('sumEnterpriseSubsidyAmounts は合計補助額', () => {

@@ -131,12 +131,7 @@ export class ShokujiiEvent extends Event {
         return 'unchanged'
       }
       const updatedMenu = new EventMenu(this.id, menuId, {
-        menu_name: targetMenu.menu_name,
-        menu_price: targetMenu.menu_price,
-        menu_description: targetMenu.menu_description,
-        menu_sort_number: targetMenu.menu_sort_number,
-        is_selected: targetMenu.is_selected,
-        limit_per_event: targetMenu.limit_per_event,
+        ...targetMenu,
         is_sold_out: isSoldOut,
       })
       await this.saveMenu(updatedMenu, transaction)

@@ -1,6 +1,7 @@
 export const getHomePath = () => '/'
 export const getShopPath = () => '/shop'
 export const getMenuPath = () => '/menu'
+export const getOptionsPath = () => '/options'
 export const getOrderPath = () => '/order'
 export const getCommunityPath = () => '/community'
 export const getEventPath = () => '/events'

@@ -8,6 +8,12 @@ import { getCommunityPath, getEventPath, getProfile } from '@/router/utils'
 import { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
+import {
+  buildMenuPriceLines,
+  formatOrderMenuDisplayName,
+  getOrderMenuGroupKey,
+  type MenuPriceLine,
+} from '@shokujii/common/utils/menuOption.js'
 import { CartItem, useCurrentUserStore } from '@shokujii/base/stores/currentUser'
 import { useEventStore, buildEventStoreOptions, type EventStoreOptions } from '@shokujii/base/stores/event'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
@@ -28,6 +34,7 @@ import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import MinimumParticipantsDialog from '@shokujii/base/components/MinimumParticipantsDialog.vue'
+import MenuPriceBreakdown from '@shokujii/base/components/MenuPriceBreakdown.vue'
 import type { MinimumParticipantsType } from '@shokujii/common/schemas/Event.js'
 import { convertStoragePathToURL } from '@shokujii/base/utils/storage.js'
 import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl.js'
@@ -101,9 +108,11 @@ async function resolveEventStoreOptions(): Promise<EventStoreOptions> {
 }
 
 type GroupedMenu = {
+  group_key: string
   menu_id: string
   menu_name: string
   menu_price: number
+  price_lines: MenuPriceLine[]
   count: number
   order_ids: string[]
   totalPrice: number
@@ -111,13 +120,15 @@ type GroupedMenu = {
   totalPayment: number
   /** 1個分の割引。enterprise_subsidy では品目ごとに異なり得るため表示は totalDiscount/count を使用 */
   offAmountPerUnit: number
+  selected_items?: { option_id: string; item_id: string }[]
 }
 
 const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
   const map = new Map<string, GroupedMenu>()
   for (const order of orders) {
     const discount = getMemberOrderDiscountAmount(order)
-    const existing = map.get(order.menu_id)
+    const key = getOrderMenuGroupKey(order)
+    const existing = map.get(key)
     if (existing) {
       existing.count++
       existing.order_ids.push(order.order_id)
@@ -125,10 +136,16 @@ const groupOrdersByMenu = (orders: EventMemberOrder[]): GroupedMenu[] => {
       existing.totalDiscount += discount
       existing.totalPayment += order.menu_price - discount
     } else {
-      map.set(order.menu_id, {
+      map.set(key, {
+        group_key: key,
         menu_id: order.menu_id,
-        menu_name: order.menu_name,
+        menu_name: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
+        selected_items: order.selected_options?.map((item) => ({
+          option_id: item.option_id,
+          item_id: item.item_id,
+        })),
         menu_price: order.menu_price,
+        price_lines: buildMenuPriceLines(order.menu_name, order.menu_price, order.selected_options),
         count: 1,
         order_ids: [order.order_id],
         totalPrice: order.menu_price,
@@ -381,12 +398,15 @@ const isMenuSoldOutInCart = (eventId: string, menuId: string): boolean =>
 const getMenuLimitRemainingInCart = (eventId: string, menuId: string): MenuLimitRemainingInfo | undefined =>
   menuLimitRemainingByEvent.value[eventId]?.[menuId]
 
-const canIncrementMenuCount = (eventId: string, menu: GroupedMenu): boolean => {
+const countSameMenuInCart = (groups: readonly GroupedMenu[], menuId: string): number =>
+  groups.reduce((sum, group) => (group.menu_id === menuId ? sum + group.count : sum), 0)
+
+const canIncrementMenuCount = (eventId: string, menu: GroupedMenu, groups: readonly GroupedMenu[]): boolean => {
   const info = getMenuLimitRemainingInCart(eventId, menu.menu_id)
   if (info == null) {
     return true
   }
-  return info.ordered + menu.count < info.limit
+  return info.ordered + countSameMenuInCart(groups, menu.menu_id) < info.limit
 }
 
 const getOrderErrorMessage = (error: unknown): string | null => {
@@ -429,7 +449,7 @@ const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined 
 
 const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   const { event, orders } = item
-  if (event.event_payment === 'user_advance') return true
+  if (event.event_payment === 'user_advance') return item.totalPrice > 0
   if (needsCommunityBillStripe(event, orders)) return true
   if (event.event_payment === 'enterprise_subsidy') return item.totalPrice > 0
   return false
@@ -593,7 +613,9 @@ const startOrderProcess = async () => {
 
 const paymentMessageForItem = (item: EnrichedCartItem) => {
   const { event, orders, totalPrice } = item
-  if (event.event_payment === 'user_advance') return $t('cart.confirm_order_credit_card')
+  if (event.event_payment === 'user_advance') {
+    return totalPrice > 0 ? $t('cart.confirm_order_credit_card') : $t('cart.confirm_order_zero_payment')
+  }
   if (event.event_payment === 'user_on_day') return $t('cart.confirm_order_participant_on_day')
   if (event.event_payment === 'enterprise_subsidy') {
     if (totalPrice > 0) {
@@ -680,8 +702,10 @@ const showDeleteConfirm = (event: BokudeliEvent, orderId: string) => {
   openDeleteConfirm.value = true
 }
 
+const incrementLockKey = (eventId: string, menuId: string) => `add_${eventId}_${menuId}`
+
 const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
-  const menuKey = `add_${menu.menu_id}`
+  const menuKey = incrementLockKey(event.event_id, menu.menu_id)
   if (menuUpdatingStates.value[menuKey]) return
   menuUpdatingStates.value[menuKey] = true
   try {
@@ -694,6 +718,8 @@ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
         {
           menu_id: menu.menu_id,
           count: 1,
+          selected_items: menu.selected_items,
+          presented_menu_price: menu.menu_price,
         },
       ],
     })
@@ -707,7 +733,7 @@ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
 
 const decrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
   if (menu.count <= 1) return
-  const menuKey = `remove_${menu.menu_id}`
+  const menuKey = `remove_${menu.group_key}`
   if (menuUpdatingStates.value[menuKey]) return
   menuUpdatingStates.value[menuKey] = true
   try {
@@ -727,8 +753,12 @@ const decrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
   }
 }
 
-const isMenuUpdating = (menuId: string) => {
-  return (menuUpdatingStates.value[`add_${menuId}`] || menuUpdatingStates.value[`remove_${menuId}`]) ?? false
+const isMenuUpdating = (eventId: string, menu: GroupedMenu) => {
+  return (
+    (menuUpdatingStates.value[incrementLockKey(eventId, menu.menu_id)] ||
+      menuUpdatingStates.value[`remove_${menu.group_key}`]) ??
+    false
+  )
 }
 
 const isOpenCancelpolicyDialog = ref(false)
@@ -925,7 +955,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
               <v-table>
                 <thead>
                   <tr>
-                    <th class="text-center" style="padding: 2px">{{ $t('cart.menu') }}</th>
+                    <th class="text-start cart-order-menu">{{ $t('cart.menu') }}</th>
                     <th class="text-center" style="padding: 1px">{{ $t('cart.count') }}</th>
                     <th class="text-center" style="padding: 1px">{{ $t('cart.unit_price') }}</th>
                     <th v-if="hasCartCommunityBill(cartItem.event)" class="text-center" style="padding: 1px">
@@ -934,9 +964,15 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="menu in cartItem.groupedMenus" :key="menu.menu_id">
-                    <td style="padding: 1px">
-                      {{ menu.menu_name }}
+                  <tr v-for="menu in cartItem.groupedMenus" :key="menu.group_key">
+                    <td class="text-start cart-order-menu">
+                      <MenuPriceBreakdown
+                        v-if="menu.price_lines.length > 0"
+                        class="text-body-1"
+                        :lines="menu.price_lines"
+                        :per-meal="menu.count > 1"
+                      />
+                      <template v-else>{{ menu.menu_name }}</template>
                       <span
                         v-if="isMenuSoldOutInCart(cartItem.event.event_id, menu.menu_id)"
                         class="sold-out-label d-block text-caption"
@@ -962,7 +998,7 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                           v-if="menu.count > 1"
                           :icon="mdiMinusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu.menu_id)"
+                          :loading="isMenuUpdating(cartItem.event.event_id, menu)"
                           @click="decrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>
@@ -978,8 +1014,8 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                         <v-btn
                           :icon="mdiPlusCircleOutline"
                           variant="text"
-                          :loading="isMenuUpdating(menu.menu_id)"
-                          :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu)"
+                          :loading="isMenuUpdating(cartItem.event.event_id, menu)"
+                          :disabled="!canIncrementMenuCount(cartItem.event.event_id, menu, cartItem.groupedMenus)"
                           @click="incrementMenuCount(cartItem.event, menu)"
                         >
                         </v-btn>
@@ -1299,5 +1335,11 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
 
 .menu-limit-label {
   color: rgb(var(--v-theme-primary));
+}
+
+.cart-order-menu {
+  text-align: start !important;
+  padding: 10px 12px !important;
+  vertical-align: middle;
 }
 </style>

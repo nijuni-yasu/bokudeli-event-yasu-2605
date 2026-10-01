@@ -28,6 +28,7 @@ import { runUserProfileBackfill } from './utils/userProfileBackfill.js'
 import { resolveUserFriendsList } from './utils/userFriendsResolver.js'
 import { computeProfileItemLinkableToViewer } from './utils/profileItemVisibility.js'
 import { createModuleLogger } from './utils/logger.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { assertEnterpriseProfileAccess, isEnterpriseViewer } from './utils/enterpriseProfileAccess.js'
 import { computeUserProfileCounts } from './utils/recountUserProfileCounts.js'
 
@@ -269,7 +270,7 @@ const mapOrderToFoodPreview = (
     community_id: order.community_id,
     event_id: order.event_id,
     menu_id: order.menu_id,
-    menu_name: order.menu_name,
+    menu_name: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
     menu_price: order.menu_price,
     shop_name: event.shop_name ?? '',
     ordered_at: toMillis(order.ordered_at) || order.updated_at,

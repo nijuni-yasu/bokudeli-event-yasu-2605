@@ -1,6 +1,7 @@
 import { PartnerMenu } from '../schemas/PartnerMenu.js'
 import { EventMenu } from '../schemas/EventMenu.js'
 import { RawEventStatusType } from '../schemas/Event.js'
+import { isMenuMinTotalValid, snapshotPartnerOptionsForMenu, type MenuOptionDefinition } from './menuOption.js'
 
 /**
  * PartnerMenu（店舗メニューマスタ）からEventMenuを再生成すべきステータスか判定
@@ -51,6 +52,7 @@ export function convertFromPartnerMenuToEventMenu(
   eventId: string,
   eventStartDatetime: number | null,
   selectedMenuIds: string[],
+  partnerOptions: readonly MenuOptionDefinition[] = [],
 ): EventMenu | null {
   // 論理削除チェック：削除済みメニューはEventMenuに含めない
   if (partnerMenu.is_deleted) {
@@ -65,6 +67,14 @@ export function convertFromPartnerMenuToEventMenu(
     }
   }
 
+  const options = snapshotPartnerOptionsForMenu(partnerMenu.option_ids ?? [], partnerOptions)
+  if (options == null) {
+    return null
+  }
+  if (!isMenuMinTotalValid(partnerMenu.menu_price, options)) {
+    return null
+  }
+
   // EventMenuに変換（期間情報は含めない）
   return new EventMenu(eventId, partnerMenu.menu_id, {
     menu_name: partnerMenu.menu_name,
@@ -74,7 +84,22 @@ export function convertFromPartnerMenuToEventMenu(
     menu_sort_number: partnerMenu.menu_sort_number,
     limit_per_event: partnerMenu.limit_per_event,
     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
+    options,
   })
+}
+
+export function isPartnerMenuSkippedForMinTotal(
+  partnerMenu: PartnerMenu,
+  partnerOptions: readonly MenuOptionDefinition[] = [],
+): boolean {
+  if (partnerMenu.is_deleted) {
+    return false
+  }
+  const options = snapshotPartnerOptionsForMenu(partnerMenu.option_ids ?? [], partnerOptions)
+  if (options == null) {
+    return false
+  }
+  return !isMenuMinTotalValid(partnerMenu.menu_price, options)
 }
 
 /**
@@ -90,13 +115,16 @@ export function convertPartnerMenusToEventMenus(
   eventId: string,
   eventStartDatetime: number | null,
   selectedMenuIds: string[] = [],
+  partnerOptions: readonly MenuOptionDefinition[] = [],
 ): EventMenu[] {
   // 論理削除済みはデフォルト選択の判定・店舗変更時の共通 menu_id 判定から除外する
   const activePartnerMenus = partnerMenus.filter((pm) => !pm.is_deleted)
   const effectiveSelectedMenuIds = applyDefaultSelectedMenuIds(selectedMenuIds, activePartnerMenus)
 
   return activePartnerMenus
-    .map((menu) => convertFromPartnerMenuToEventMenu(menu, eventId, eventStartDatetime, effectiveSelectedMenuIds))
+    .map((menu) =>
+      convertFromPartnerMenuToEventMenu(menu, eventId, eventStartDatetime, effectiveSelectedMenuIds, partnerOptions),
+    )
     .filter((menu): menu is EventMenu => menu !== null)
 }
 

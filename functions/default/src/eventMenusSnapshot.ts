@@ -4,7 +4,11 @@ import { getStorage } from 'firebase-admin/storage'
 import { createModuleLogger } from './utils/logger.js'
 import { getPartner } from './stores/partner.js'
 import { getEventInCommunity } from './stores/event.js'
-import { convertPartnerMenusToEventMenus } from '@shokujii/common/utils/eventMenuConverter.js'
+import {
+  convertPartnerMenusToEventMenus,
+  isPartnerMenuSkippedForMinTotal,
+} from '@shokujii/common/utils/eventMenuConverter.js'
+import { findMissingOptionIds, MENU_MIN_TOTAL_INVALID_MESSAGE } from '@shokujii/common/utils/menuOption.js'
 import {
   getMenuImageStoragePath,
   getEventMenuImageStoragePath,
@@ -43,12 +47,33 @@ export const savePartnerMenusToEventMenus = async (
     selectedMenuIds ?? existingEventMenusForSelection.filter((m) => m.is_selected).map((m) => m.menu_id)
 
   const partnerMenus = await partner.getMenus()
+  const partnerOptions = await partner.getOptions()
   const eventMenusToSave = convertPartnerMenusToEventMenus(
     partnerMenus,
     eventId,
     startDatetime,
     effectiveSelectedMenuIds,
+    partnerOptions,
   )
+  for (const menu of partnerMenus) {
+    const missingOptionIds = findMissingOptionIds(menu.option_ids ?? [], partnerOptions)
+    if (missingOptionIds.length > 0) {
+      logger.error('PartnerMenu references missing options; skipping snapshot', {
+        partnerId,
+        eventId,
+        menuId: menu.menu_id,
+        missingOptionIds,
+      })
+    }
+    if (isPartnerMenuSkippedForMinTotal(menu, partnerOptions)) {
+      logger.error(MENU_MIN_TOTAL_INVALID_MESSAGE, {
+        partnerId,
+        eventId,
+        menuId: menu.menu_id,
+        menuPrice: menu.menu_price,
+      })
+    }
+  }
 
   const bucket = getStorage().bucket()
   await bucket.deleteFiles({ prefix: getEventMenuImagesPrefix(communityId, eventId) })
@@ -103,7 +128,10 @@ export const savePartnerMenusToEventMenus = async (
       throw new Error(`Event ${eventId} not found`)
     }
 
-    const freshPartnerMenus = await partner.getMenus(transaction)
+    const [freshPartnerMenus, freshPartnerOptions] = await Promise.all([
+      partner.getMenus(transaction),
+      partner.getOptions(transaction),
+    ])
     const existingEventMenus = await event.getMenus(transaction)
 
     await Promise.all(
@@ -117,6 +145,7 @@ export const savePartnerMenusToEventMenus = async (
       eventId,
       startDatetime,
       effectiveSelectedMenuIds,
+      freshPartnerOptions,
     )
 
     await Promise.all(eventMenusToSaveInTx.map((eventMenu) => event.saveMenu(eventMenu, transaction)))

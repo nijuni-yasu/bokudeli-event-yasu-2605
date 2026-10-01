@@ -5,6 +5,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 import { createModuleLogger } from './utils/logger.js'
 import Stripe from 'stripe'
 import { EventStripe, StripeMenuType } from '@shokujii/common/schemas/EventStripe.js'
+import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 import {
   getOrdersByIds,
   saveOrder,
@@ -429,14 +430,18 @@ async function handleOrderConfirmation(
 
     const menusMap = new Map<string, StripeMenuType>()
     for (const order of orders) {
-      const existing = menusMap.get(order.menu_id)
+      const key = getOrderMenuGroupKey(order)
+      const existing = menusMap.get(key)
       if (existing) {
         existing.count++
       } else {
-        menusMap.set(order.menu_id, {
-          menu_name: order.menu_name,
+        menusMap.set(key, {
+          menu_name: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
           menu_price: order.menu_price,
           count: 1,
+          ...(order.selected_options != null && order.selected_options.length > 0
+            ? { selected_item_names: order.selected_options.map((item) => item.item_name) }
+            : {}),
         })
       }
     }

@@ -1,3 +1,4 @@
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { ShokujiiEvent } from '../stores/event.js'
 import { getUser } from '../stores/user.js'
 
@@ -23,7 +24,7 @@ export async function createOrdersForOrderDeadline(event: ShokujiiEvent): Promis
 
     orderDataList.push({
       name: userName,
-      order: order.menu_name,
+      order: formatOrderMenuDisplayName(order.menu_name, order.selected_options),
       price: `¥${order.menu_price}`,
     })
     count++

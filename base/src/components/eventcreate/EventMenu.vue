@@ -8,6 +8,7 @@ import { mdiStorefrontOutline, mdiGestureTap } from '@mdi/js'
 import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import { sortMenusWithSoldOutLast } from '@shokujii/common/utils/menuSort.js'
 
 const { t } = useI18n()
 
@@ -62,6 +63,8 @@ const isLastSelected = (menuId: string): boolean => {
 const selectedCount = computed(() => {
   return props.menus.filter((menu) => menu.is_selected).length
 })
+
+const displayMenus = computed(() => sortMenusWithSoldOutLast(props.menus))
 </script>
 
 <template>
@@ -92,9 +95,10 @@ const selectedCount = computed(() => {
             </v-card-subtitle>
 
             <v-row>
-              <v-col v-for="(item, i) of props.menus" :key="`menu_${i}`" md="4" sm="4" cols="12">
+              <v-col v-for="item of displayMenus" :key="item.menu_id" md="4" sm="4" cols="12">
                 <v-card
-                  class="mb-3 mx-0 menu-card"
+                  height="100%"
+                  class="mb-3 mx-0 menu-card d-flex flex-column"
                   :class="{
                     'menu-selected': isMenuSelected(item.menu_id),
                     'menu-unselected': !isMenuSelected(item.menu_id),
@@ -121,10 +125,10 @@ const selectedCount = computed(() => {
                   <v-card-title class="justify-center pb-3 text-wrap">
                     {{ item.menu_name }}
                   </v-card-title>
-                  <v-card-text class="text-left text-subtitle-2 pb-2">
+                  <v-card-text class="text-left text-subtitle-2 pb-2 menu-description">
                     {{ item.menu_description }}
                   </v-card-text>
-                  <v-card-text class="d-flex align-center px-4 pb-5">
+                  <v-card-text class="d-flex align-center px-4 pb-5 mt-auto flex-grow-0">
                     <MenuStatusChips
                       v-if="item.is_sold_out || item.limit_per_event != null"
                       :is-sold-out="item.is_sold_out"
@@ -153,6 +157,17 @@ const selectedCount = computed(() => {
   position: relative;
   text-align: center;
   transition: all 0.3s ease;
+}
+
+.menu-description {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.4;
+  min-height: 4.2em;
+  max-height: 4.2em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .menu-clickable {

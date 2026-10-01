@@ -246,15 +246,15 @@ service cloud.firestore {
                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
                 allow create, update, delete: if isSupport()
             }
+            // オプションの参照整合性・項目検証・原子的な削除は Callable で保証する。
+            // 店舗本人も直書きでは保存・削除できない。
             match /menus/{menu} {
                 allow read: if true
-                // メニュー情報はログインした店舗アカウントでないと create/update/deleteできない
-                allow create, update, delete: if request.auth != null && request.auth.uid == partner_id
+                allow write: if false
             }
             match /options/{option} {
                 allow read: if true
-                // メニュー情報はログインした店舗アカウントでないと create/update/deleteできない
-                allow create, update, delete: if request.auth != null && request.auth.uid == partner_id
+                allow write: if false
             }
         }
         match /communities/{community} {

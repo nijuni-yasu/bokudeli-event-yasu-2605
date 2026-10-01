@@ -1,29 +1,34 @@
 import { z } from 'zod'
 import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
+import { EventMenuOptionSchema } from './menuOption.js'
 
 const EventMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
-  menu_description: z.string().nonempty(),
+  menu_description: MenuDescriptionDbFieldSchema,
   menu_name: z.string().nonempty(),
-  menu_price: z.number().int().positive(),
+  // 0 は「注文なしで参加」。負数は拒否する。
+  menu_price: z.number().int().nonnegative(),
   is_sold_out: z.boolean(),
   menu_sort_number: z.number().int().nonnegative(),
   is_selected: z.boolean(),
   limit_per_event: LimitPerEventDbFieldSchema,
+  options: z.array(EventMenuOptionSchema).optional(),
 })
 
 const EventMenuAppSchema = z.object({
   // Mandatory
   menu_name: z.string().nonempty(),
   // Default
-  menu_price: z.number().int().positive().default(100),
-  menu_description: z.string().default(''),
+  menu_price: z.number().int().nonnegative().default(100),
+  menu_description: MenuDescriptionAppFieldSchema,
   is_sold_out: z.boolean().default(false),
   is_selected: z.boolean().default(true),
   // Mandatory
   menu_sort_number: z.number().int().nonnegative(),
   limit_per_event: LimitPerEventAppFieldSchema,
+  options: z.array(EventMenuOptionSchema).default([]),
 })
 
 const convertToDb = (menu: EventMenu) => {
@@ -46,6 +51,7 @@ export class EventMenu {
   menu_sort_number!: number
   is_selected!: boolean
   limit_per_event!: number | null
+  options!: z.infer<typeof EventMenuOptionSchema>[]
 
   constructor(event_id: string, menu_id: string, src: Partial<EventMenu>) {
     Object.assign(this, EventMenuAppSchema.parse(src))

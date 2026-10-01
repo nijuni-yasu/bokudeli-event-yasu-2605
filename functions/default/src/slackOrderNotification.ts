@@ -7,6 +7,7 @@ import { getUser } from './stores/user.js'
 import { getEventUrlForEvent, getUserUrlForCommunity } from './utils/urls.js'
 import { sendCommunityBotsMessageOrThrow } from './utils/slackMessage.js'
 import { createModuleLogger } from './utils/logger.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 const logger = createModuleLogger('slackOrderNotification')
 
@@ -34,7 +35,7 @@ const sendOrderedMessage = async (params: {
   const menuCounts: Record<string, number> = {}
   const menuNameOrder: string[] = []
   for (const order of sorted) {
-    const name = order.menu_name
+    const name = formatOrderMenuDisplayName(order.menu_name, order.selected_options)
     if (name === '') continue
     if (menuCounts[name] === undefined) {
       menuCounts[name] = 0

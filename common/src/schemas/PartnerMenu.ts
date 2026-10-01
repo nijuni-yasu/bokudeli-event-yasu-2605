@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import { TimestampSchema, EpochMillisSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
+import { OptionIdListSchema } from './menuOption.js'
 
 const PartnerMenuDbSchema = z.object({
   updatedAt: TimestampSchema,
-  menu_description: z.string().nonempty(),
+  menu_description: MenuDescriptionDbFieldSchema,
   menu_name: z.string().nonempty(),
   menu_price: z.number().int().positive(),
   is_sold_out: z.boolean(),
@@ -15,11 +17,12 @@ const PartnerMenuDbSchema = z.object({
   menu_date_end: TimestampSchema.nullable(),
   is_deleted: z.boolean().optional(),
   deleted_at: TimestampSchema.optional(),
+  option_ids: OptionIdListSchema.optional(),
 })
 
 const PartnerMenuAppSchema = z.object({
   // Default
-  menu_description: z.string().default(''),
+  menu_description: MenuDescriptionAppFieldSchema,
   menu_name: z.string().default(''),
   menu_price: z.number().int().positive().default(1000),
   is_sold_out: z.boolean().default(false),
@@ -30,6 +33,7 @@ const PartnerMenuAppSchema = z.object({
   menu_date_end: EpochMillisSchema.nullable().default(null),
   is_deleted: z.boolean().default(false),
   deleted_at: EpochMillisSchema.optional(),
+  option_ids: OptionIdListSchema.default([]),
 })
 
 const convertToDb = (menu: PartnerMenu) => {
@@ -56,6 +60,7 @@ export class PartnerMenu {
   menu_date_end!: number | null
   is_deleted!: boolean
   deleted_at?: number
+  option_ids!: string[]
 
   constructor(partner_id: string, menu_id: string, src: Partial<PartnerMenu>) {
     Object.assign(this, PartnerMenuAppSchema.parse(src))

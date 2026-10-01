@@ -10,6 +10,8 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiCart } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import type { CartSelectedItemType } from '@shokujii/common/schemas/menuOption.js'
 
 const props = defineProps<{
   menu: BokudeliEventMenu
@@ -28,6 +30,7 @@ const emit = defineEmits<{
 
 const selectedCount = ref(1)
 const addErrorMessage = ref('')
+const selectedByOption = ref<Record<string, string[]>>({})
 
 const currentMenu = computed(() => {
   const menus = eventStore.menus
@@ -65,16 +68,83 @@ const countOptions = computed(() => {
   return Array.from({ length: max }, (_, i) => i + 1)
 })
 
-const isAddDisabled = computed(
-  () => currentMenu.value.is_sold_out || isMenuLimitSoldOut(currentMenu.value) || countOptions.value.length === 0,
+const menuOptions = computed(() => currentMenu.value.options ?? [])
+
+const resetOptionSelection = () => {
+  const initial: Record<string, string[]> = {}
+  for (const option of menuOptions.value) {
+    initial[option.option_id] =
+      option.required && option.selection === 'single' && option.option_items[0] != null
+        ? [option.option_items[0].item_id]
+        : []
+  }
+  selectedByOption.value = initial
+}
+
+const selectedItems = computed((): CartSelectedItemType[] =>
+  Object.entries(selectedByOption.value).flatMap(([option_id, itemIds]) =>
+    itemIds.map((item_id) => ({ option_id, item_id })),
+  ),
 )
 
-watch(isOpen, (open) => {
-  if (open) {
-    addErrorMessage.value = ''
-    selectedCount.value = countOptions.value[0] ?? 1
+const resolvedSelection = computed(() =>
+  resolveEventMenuCartOrder({
+    eventMenu: currentMenu.value,
+    selectedItems: selectedItems.value,
+  }),
+)
+
+const displayedPrice = computed(() =>
+  resolvedSelection.value.ok ? resolvedSelection.value.menu_price : currentMenu.value.menu_price,
+)
+
+const displayedSubtotal = computed(() =>
+  resolvedSelection.value.ok ? resolvedSelection.value.menu_price * selectedCount.value : null,
+)
+
+const isAddDisabled = computed(
+  () =>
+    currentMenu.value.is_sold_out ||
+    isMenuLimitSoldOut(currentMenu.value) ||
+    countOptions.value.length === 0 ||
+    !resolvedSelection.value.ok,
+)
+
+const getSingleValue = (optionId: string): string | null => selectedByOption.value[optionId]?.[0] ?? null
+
+const setSingleValue = (optionId: string, itemId: string | null) => {
+  selectedByOption.value = { ...selectedByOption.value, [optionId]: itemId == null || itemId === '' ? [] : [itemId] }
+}
+
+const isMultipleChecked = (optionId: string, itemId: string): boolean =>
+  selectedByOption.value[optionId]?.includes(itemId) === true
+
+const toggleMultiple = (optionId: string, itemId: string, checked: boolean) => {
+  const current = new Set(selectedByOption.value[optionId] ?? [])
+  if (checked) {
+    current.add(itemId)
+  } else {
+    current.delete(itemId)
   }
-})
+  selectedByOption.value = { ...selectedByOption.value, [optionId]: [...current] }
+}
+
+const formatDelta = (delta: number): string => {
+  const sign = delta > 0 ? '+' : delta < 0 ? '-' : ''
+  return `${sign}¥${priceString(Math.abs(delta))}`
+}
+
+watch(
+  isOpen,
+  (open) => {
+    if (open) {
+      addErrorMessage.value = ''
+      selectedCount.value = countOptions.value[0] ?? 1
+      resetOptionSelection()
+    }
+  },
+  { immediate: true },
+)
 
 watch(countOptions, (options) => {
   if (options.length === 0) {
@@ -87,15 +157,24 @@ watch(countOptions, (options) => {
 
 const isAddingOrder = ref(false)
 
-const closeDialog = () => {
-  isAddingOrder.value = false
+const resetAndClose = () => {
   selectedCount.value = 1
   addErrorMessage.value = ''
   isOpen.value = false
 }
 
+const closeDialog = () => {
+  if (isAddingOrder.value) {
+    return
+  }
+  resetAndClose()
+}
+
 const getAddToCartErrorMessage = (error: unknown): string | null => {
-  if (error instanceof FirebaseError && error.code === 'functions/failed-precondition') {
+  if (
+    error instanceof FirebaseError &&
+    (error.code === 'functions/failed-precondition' || error.code === 'functions/invalid-argument')
+  ) {
     return getUserFacingFailedPreconditionMessage(error.message)
   }
   if (error instanceof Error) {
@@ -105,6 +184,9 @@ const getAddToCartErrorMessage = (error: unknown): string | null => {
 }
 
 const addCart = async () => {
+  if (isAddingOrder.value) {
+    return
+  }
   if (eventStore.event == null) {
     console.warn('eventStore.event is null')
     return
@@ -128,11 +210,13 @@ const addCart = async () => {
         {
           menu_id,
           count: selectedCount.value,
+          selected_items: selectedItems.value,
+          presented_menu_price: displayedPrice.value,
         },
       ],
     })
     emit('added')
-    closeDialog()
+    resetAndClose()
   } catch (e) {
     const message = getAddToCartErrorMessage(e)
     if (message != null) {
@@ -148,56 +232,160 @@ const addCart = async () => {
 </script>
 
 <template>
-  <v-dialog v-model="isOpen" max-width="500px" @click:outside="closeDialog()">
-    <v-card class="pa-sm-10 pa-5">
-      <EventMenuImage v-if="eventStore.event != null" :event="eventStore.event" :menu="currentMenu" class="ma-3" />
-      <v-card-title class="text-left text-h4 py-1 text-wrap">
-        {{ currentMenu.menu_name }}
-      </v-card-title>
-      <v-card-text class="text-left py-2">
-        {{ currentMenu.menu_description }}
-      </v-card-text>
-      <v-card-text class="d-flex align-center pb-8">
-        <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
-        <MenuStatusChips
-          v-else-if="showSoldOutStatusChip"
-          :is-sold-out="currentMenu.is_sold_out"
-          :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
-          align="start"
+  <v-dialog v-model="isOpen" max-width="500px" scrollable :persistent="isAddingOrder" @click:outside="closeDialog()">
+    <v-card>
+      <v-card-text class="pa-5 pa-sm-10">
+        <EventMenuImage
+          v-if="eventStore.event != null"
+          :event="eventStore.event"
+          :menu="currentMenu"
+          :alt="currentMenu.menu_name"
+          class="my-3"
         />
-        <v-spacer />
-        <span class="text-h5">¥ </span>
-        <span class="text-h4">{{ priceString(currentMenu.menu_price) }}</span>
+        <v-card-title class="text-left text-h4 font-weight-bold px-0 py-1 text-wrap">
+          {{ currentMenu.menu_name }}
+        </v-card-title>
+        <div class="text-h5 py-1">¥{{ priceString(currentMenu.menu_price) }}</div>
+        <div v-if="showRemainingChip || showSoldOutStatusChip" class="mt-2">
+          <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
+          <MenuStatusChips
+            v-else-if="showSoldOutStatusChip"
+            :is-sold-out="currentMenu.is_sold_out"
+            :is-limit-sold-out="!currentMenu.is_sold_out && isMenuLimitSoldOut(currentMenu)"
+            align="start"
+          />
+        </div>
+        <p
+          v-if="currentMenu.menu_description != null && currentMenu.menu_description !== ''"
+          class="text-body-2 text-medium-emphasis mt-4 mb-0"
+        >
+          {{ currentMenu.menu_description }}
+        </p>
+        <div v-for="option in menuOptions" :key="option.option_id" class="mt-6">
+          <v-divider class="mb-5" />
+          <div class="d-flex align-center flex-wrap ga-2 mb-1">
+            <h3 class="text-subtitle-1 font-weight-bold">{{ option.option_name }}</h3>
+            <v-chip
+              :color="option.required ? 'error' : 'secondary'"
+              variant="outlined"
+              size="small"
+              class="flex-shrink-0"
+            >
+              {{ $t(option.required ? 'cart_dialog.required' : 'cart_dialog.optional') }}
+            </v-chip>
+            <v-btn
+              v-if="option.selection === 'single' && !option.required && getSingleValue(option.option_id) != null"
+              variant="text"
+              size="small"
+              class="ms-auto"
+              @click="setSingleValue(option.option_id, null)"
+            >
+              {{ $t('cart_dialog.clear_selection') }}
+            </v-btn>
+          </div>
+          <p
+            v-if="option.option_description != null && option.option_description !== ''"
+            class="text-body-2 text-medium-emphasis mb-2"
+          >
+            {{ option.option_description }}
+          </p>
+          <v-radio-group
+            v-if="option.selection === 'single'"
+            :model-value="getSingleValue(option.option_id)"
+            :mandatory="option.required"
+            class="cart-dialog-options"
+            hide-details
+            @update:model-value="(value) => setSingleValue(option.option_id, typeof value === 'string' ? value : null)"
+          >
+            <v-radio v-for="item in option.option_items" :key="item.item_id" :value="item.item_id">
+              <template #label>
+                <span class="cart-dialog-option-label">
+                  <span>{{ item.name }}</span>
+                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                </span>
+              </template>
+            </v-radio>
+          </v-radio-group>
+          <div v-else class="cart-dialog-options">
+            <v-checkbox
+              v-for="item in option.option_items"
+              :key="item.item_id"
+              :model-value="isMultipleChecked(option.option_id, item.item_id)"
+              hide-details
+              @update:model-value="(value) => toggleMultiple(option.option_id, item.item_id, value === true)"
+            >
+              <template #label>
+                <span class="cart-dialog-option-label">
+                  <span>{{ item.name }}</span>
+                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                </span>
+              </template>
+            </v-checkbox>
+          </div>
+        </div>
       </v-card-text>
-      <v-row v-if="countOptions.length > 0" class="mx-3 mb-2">
-        <v-select v-model="selectedCount" :items="countOptions" dense outlined filled label="個数"></v-select>
-      </v-row>
-      <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mx-3 mb-2">
-        {{ addErrorMessage }}
-      </v-alert>
-      <v-row class="justify-center mx-1 my-2">
-        <v-btn
-          class="justify-center mx-1 align-self-center"
-          rounded="pill"
-          color="primary"
-          :prepend-icon="mdiCart"
-          :loading="isAddingOrder"
-          :disabled="isAddDisabled"
-          @click="addCart()"
-        >
-          {{ $t('cart_dialog.add') }}
-        </v-btn>
-        <v-btn
-          class="justify-center mx-1 my-2 align-self-center"
-          rounded="pill"
-          size="small"
-          variant="outlined"
-          color="secondary"
-          @click="closeDialog()"
-        >
-          {{ $t('cart_dialog.close') }}
-        </v-btn>
-      </v-row>
+      <v-divider />
+      <div class="pa-5 px-sm-10 py-sm-6 flex-shrink-0">
+        <div class="d-flex align-center justify-space-between ga-4 mb-4">
+          <v-select
+            v-if="countOptions.length > 0"
+            v-model="selectedCount"
+            :items="countOptions"
+            :label="$t('cart_dialog.count')"
+            class="cart-dialog-count"
+            hide-details
+          />
+          <div class="text-h5 text-no-wrap text-right ms-auto">
+            {{ displayedSubtotal == null ? $t('cart_dialog.price_pending') : `¥${priceString(displayedSubtotal)}` }}
+          </div>
+        </div>
+        <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mb-4">
+          {{ addErrorMessage }}
+        </v-alert>
+        <div class="d-flex justify-end align-center flex-wrap ga-3">
+          <v-btn
+            rounded="pill"
+            size="small"
+            variant="outlined"
+            color="secondary"
+            :disabled="isAddingOrder"
+            @click="closeDialog()"
+          >
+            {{ $t('cart_dialog.close') }}
+          </v-btn>
+          <v-btn
+            rounded="pill"
+            color="primary"
+            :prepend-icon="mdiCart"
+            :loading="isAddingOrder"
+            :disabled="isAddDisabled"
+            @click="addCart()"
+          >
+            {{ $t('cart_dialog.add') }}
+          </v-btn>
+        </div>
+      </div>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.cart-dialog-options :deep(.v-label) {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-dialog-option-label {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cart-dialog-count {
+  flex: 0 0 120px;
+}
+</style>

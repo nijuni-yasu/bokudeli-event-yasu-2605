@@ -186,6 +186,7 @@ export default {
     community_name: 'コミュニティ名',
     shop_name: '店舗名',
     menu: 'メニュー',
+    option: 'オプション',
     price: '単価',
     user: 'ユーザー',
     carted_at: 'カート日時',

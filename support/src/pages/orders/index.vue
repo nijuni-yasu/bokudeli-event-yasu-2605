@@ -9,6 +9,7 @@ import { orderStatusTicketTone } from '@/utils/statusColors'
 import { matchesSearch } from '@/utils/search'
 import { formatRelativeJa } from '@/utils/format'
 import { isQueryFlagActive, withQueryFlag } from '@/utils/queryFlag'
+import { formatOrderMenuDisplayName, formatSelectedOptionItemNames } from '@shokujii/common/utils/menuOption.js'
 import SupportFilterChip from '@/components/SupportFilterChip.vue'
 import SupportPageHeader from '@/components/SupportPageHeader.vue'
 import SupportStatusTicket from '@/components/SupportStatusTicket.vue'
@@ -124,7 +125,13 @@ const filteredOrders = computed(() => {
   return orders.filter(({ order, eventId }) => {
     const summary = eventSummaries.value.get(eventId)
     return matchesSearch(
-      [order.menu_name, order.user_id, summary?.eventName, summary?.communityName, summary?.shopName],
+      [
+        formatOrderMenuDisplayName(order.menu_name, order.selected_options),
+        order.user_id,
+        summary?.eventName,
+        summary?.communityName,
+        summary?.shopName,
+      ],
       searchQuery.value,
     )
   })
@@ -205,7 +212,9 @@ const selectedSummary = computed(() => {
                 />
               </td>
               <td>
-                <span class="line-clamp-2">{{ row.order.menu_name }}</span>
+                <span class="line-clamp-2">{{
+                  formatOrderMenuDisplayName(row.order.menu_name, row.order.selected_options)
+                }}</span>
               </td>
               <td class="text-end support-table-col-nowrap">{{ $n(row.order.menu_price, 'currency') }}</td>
               <td>
@@ -238,7 +247,14 @@ const selectedSummary = computed(() => {
       </v-card-actions>
     </v-card>
 
-    <SupportDetailDrawer v-model="drawerOpen" :title="selected?.order.menu_name ?? $t('orders.title')">
+    <SupportDetailDrawer
+      v-model="drawerOpen"
+      :title="
+        selected == null
+          ? $t('orders.title')
+          : formatOrderMenuDisplayName(selected.order.menu_name, selected.order.selected_options)
+      "
+    >
       <dl v-if="selected != null" class="support-detail-list">
         <SupportDetailField :label="$t('orders.status')">
           <SupportStatusTicket
@@ -254,6 +270,13 @@ const selectedSummary = computed(() => {
         </SupportDetailField>
         <SupportDetailField :label="$t('orders.shop_name')">
           {{ selectedSummary?.shopName || '—' }}
+        </SupportDetailField>
+        <SupportDetailField :label="$t('orders.option')">
+          {{
+            selected.order.selected_options == null || selected.order.selected_options.length === 0
+              ? '—'
+              : formatSelectedOptionItemNames(selected.order.selected_options)
+          }}
         </SupportDetailField>
         <SupportDetailField :label="$t('orders.price')">
           {{ $n(selected.order.menu_price, 'currency') }}

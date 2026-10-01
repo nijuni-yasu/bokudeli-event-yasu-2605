@@ -82,7 +82,7 @@ const rootClass = computed(() => ({
     <v-chip v-if="showRemainingCountChip" color="primary" variant="tonal" size="small" label>
       {{ $t('event_menu.remaining_count', [remaining]) }}
     </v-chip>
-    <v-chip v-if="showLimitSettingChip" color="success" variant="tonal" size="small" label>
+    <v-chip v-if="showLimitSettingChip" color="secondary" variant="outlined" size="small" label>
       {{ $t('menu_status.limit_per_event', [limitPerEvent]) }}
     </v-chip>
   </div>

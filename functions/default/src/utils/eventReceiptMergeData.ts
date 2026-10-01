@@ -1,7 +1,9 @@
 import type { EventMemberOrderStatusType } from '@shokujii/common/schemas/EventMemberOrder.js'
+import type { SelectedOptionType } from '@shokujii/common/schemas/menuOption.js'
 import { convertNumberToYen } from '@shokujii/common/utils/converter.js'
 import { convertToDate, convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { computeInclusive8ExTaxAndTax, computeInclusive10ExTaxAndTax } from '@shokujii/common/utils/invoice.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { getMemberOrderDiscountAmount } from '@shokujii/common/utils/paymentEnterpriseSubsidyAmount.js'
 
 /** ニジュウニ株式会社の適格請求書発行事業者登録番号（店舗マスタに持たない） */
@@ -41,6 +43,7 @@ export type EventReceiptMenuSource = {
   status: EventMemberOrderStatusType
   pay_community_bill_off_amount?: number
   pay_enterprise_subsidy_amount?: number
+  selected_options?: SelectedOptionType[]
 }
 
 export type EventReceiptMergeData = {
@@ -101,7 +104,7 @@ function buildShopInvoiceLine(shopInvoiceNumber: string): string {
   return `${RECEIPT_SHOP_INVOICE_NUMBER_PREFIX}${RECEIPT_SHOP_INVOICE_NUMBER_NONE}<br>${RECEIPT_SHOP_NOT_QUALIFIED_INVOICE}`
 }
 
-/** `ordered` の自己負担単価を menu_name + 単価で集約する。キャンセル行は出さない */
+/** `ordered` の自己負担単価を表示名 + 単価で集約する。キャンセル行は出さない */
 export function buildEventReceiptMenuLines(
   orders: EventReceiptMenuSource[],
 ): { menu_name: string; count: number; price: string }[] {
@@ -110,12 +113,13 @@ export function buildEventReceiptMenuLines(
     if (order.status !== 'ordered') continue
     const unitAmount = computeReceiptMenuSelfPay(order)
     if (unitAmount <= 0) continue
-    const key = `${order.menu_name}\u0000${String(unitAmount)}`
+    const menuName = formatOrderMenuDisplayName(order.menu_name, order.selected_options)
+    const key = `${menuName}\u0000${String(unitAmount)}`
     const existing = groups.get(key)
     if (existing != null) {
       existing.count += 1
     } else {
-      groups.set(key, { menu_name: order.menu_name, unitAmount, count: 1 })
+      groups.set(key, { menu_name: menuName, unitAmount, count: 1 })
     }
   }
   return [...groups.values()].map((group) => ({
