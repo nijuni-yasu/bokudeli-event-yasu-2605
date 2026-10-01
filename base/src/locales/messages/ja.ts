@@ -179,7 +179,6 @@ export default {
     form_load_failed: '事前アンケートを読み込めませんでした。カートからやり直してください。',
     form_save_failed: '回答の保存に失敗しました。内容を確認して再度お試しください。',
     form_page_title: '事前アンケート',
-    form_submit_and_continue: '回答して次へ',
     back_to_cart: 'カートに戻る',
     no_items_in_cart: 'カートに商品はありません。',
     doesnt_exists_user_name: 'ユーザー名が登録されていません。登録完了後、注文を完了してください',

@@ -37,6 +37,7 @@ import { FORM_FIELD_LIMITS } from '@shokujii/common/schemas/formFields.js'
 import { createModuleLogger } from './utils/logger.js'
 import {
   assertEventFormEditable,
+  parseOrThrow,
   requireAuthUid,
   requireCommunityManager,
   requirePfEventForForm,
@@ -68,14 +69,6 @@ function duplicateFormName(name: string): string {
     return `${name}${DUPLICATE_FORM_NAME_SUFFIX}`
   }
   return `${name.slice(0, FORM_FIELD_LIMITS.maxName - DUPLICATE_FORM_NAME_SUFFIX.length)}${DUPLICATE_FORM_NAME_SUFFIX}`
-}
-
-function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
-  try {
-    return schema.parse(data)
-  } catch {
-    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
-  }
 }
 
 export const listCommunityFormsCallable = onCall(async (request): Promise<ListCommunityFormsResponse> => {

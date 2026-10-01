@@ -13,7 +13,12 @@ import {
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import { createModuleLogger } from './utils/logger.js'
-import { requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
+import {
+  parseOrThrow,
+  requireAuthUid,
+  requirePfEventForForm,
+  visibleFieldsForNewAnswers,
+} from './utils/formAccess.js'
 import { getOrdersInCart } from './stores/memberOrder.js'
 import {
   createFormCheckoutAttempt,
@@ -23,14 +28,6 @@ import {
 } from './stores/form.js'
 
 const logger = createModuleLogger('formOrder')
-
-function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
-  try {
-    return schema.parse(data)
-  } catch {
-    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
-  }
-}
 
 function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: FormField[]): FormAnswerInput[] {
   const fieldById = new Map(fields.map((field) => [field.field_id, field]))

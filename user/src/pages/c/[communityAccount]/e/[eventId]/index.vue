@@ -55,10 +55,16 @@ const { isManager } = useCommunityMemberFlags(communityAccount)
 const event = computed<BokudeliEvent | null>(() => eventStore.event)
 const hasPreEventForm = ref(false)
 
+// event オブジェクトは購読更新のたびに新参照になるため、ID の組だけを監視して Callable の再呼び出しを抑える
+const preEventFormKey = computed(() =>
+  event.value == null ? '' : `${event.value.community_id}\u0000${event.value.event_id}`,
+)
+
 watch(
-  event,
-  async (current) => {
+  preEventFormKey,
+  async (key) => {
     hasPreEventForm.value = false
+    const current = event.value
     if (current == null || (current.enterprise_id != null && current.enterprise_id !== '')) {
       return
     }
@@ -67,7 +73,9 @@ watch(
         community_id: current.community_id,
         event_id: current.event_id,
       })
-      hasPreEventForm.value = response.data.has_form
+      if (preEventFormKey.value === key) {
+        hasPreEventForm.value = response.data.has_form
+      }
     } catch {
       hasPreEventForm.value = false
     }

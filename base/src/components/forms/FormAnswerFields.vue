@@ -50,6 +50,8 @@ const setOptions = (fieldId: string, optionIds: string[]) => {
   upsert({ field_id: fieldId, option_ids: optionIds })
 }
 
+const textInputType = (type: FormField['type']): string => (type === 'phone' ? 'tel' : type)
+
 const visibleOptions = (field: FormField) => {
   if (field.type !== 'checkbox' && field.type !== 'radio' && field.type !== 'select') {
     return []
@@ -71,7 +73,7 @@ const visibleOptions = (field: FormField) => {
       <v-text-field
         v-if="field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'date'"
         :model-value="answerFor(field.field_id).text_value ?? ''"
-        :type="field.type === 'text' ? 'text' : field.type"
+        :type="textInputType(field.type)"
         :disabled="disabled"
         :error-messages="issueMessage(field.field_id)"
         hide-details="auto"

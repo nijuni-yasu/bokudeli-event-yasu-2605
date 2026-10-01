@@ -10,7 +10,7 @@ import {
   updateEventFormConfig,
 } from '@shokujii/base/apis/form.js'
 import type { CommunityFormSummary, EventFormConfigDto, FormFieldInput } from '@shokujii/common/apis/form.js'
-import { isEventFormEditableStatus } from '@shokujii/common/schemas/formFields.js'
+import { FORM_FIELD_LIMITS, isEventFormEditableStatus } from '@shokujii/common/schemas/formFields.js'
 import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
 
 const props = defineProps<{
@@ -153,7 +153,13 @@ const clear = async () => {
       </div>
       <v-alert v-if="config == null" type="info" variant="tonal">{{ $t('manage.forms.no_event_form') }}</v-alert>
       <template v-else>
-        <v-textarea v-model="purpose" :label="$t('manage.forms.purpose')" rows="2" class="mb-4" />
+        <v-textarea
+          v-model="purpose"
+          :label="$t('manage.forms.purpose')"
+          :maxlength="FORM_FIELD_LIMITS.maxPurpose"
+          rows="2"
+          class="mb-4"
+        />
         <div class="text-subtitle-1 mb-2">{{ $t('manage.forms.event_fields') }}</div>
         <FormFieldsEditor v-model="fields" />
         <v-btn class="mt-4" color="primary" :loading="saving" @click="saveFields">{{ $t('manage.forms.save') }}</v-btn>

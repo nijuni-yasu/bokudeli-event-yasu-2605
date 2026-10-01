@@ -6,8 +6,7 @@ import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
 import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
-import { useEventStore, buildEventStoreOptions } from '@shokujii/base/stores/event'
-import { getAuth } from 'firebase/auth'
+import { useCreateAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
@@ -28,6 +27,7 @@ const props = defineProps<{
 const { t: $t } = useI18n()
 const router = useRouter()
 const { cart } = storeToRefs(useCurrentUserStore())
+const createAppEventStore = useCreateAppEventStore()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -156,13 +156,7 @@ const startOrder = async (attemptId: string) => {
     return
   }
   try {
-    const auth = getAuth()
-    const user = auth.currentUser
-    const token = user == null ? undefined : await user.getIdTokenResult()
-    const eventStore = useEventStore(
-      item.event.event_id,
-      buildEventStoreOptions(token?.claims.enterprise_id as string | undefined),
-    )
+    const eventStore = createAppEventStore(item.event.event_id)
     await eventStore.confirmOrder({
       community_id: item.event.community_id,
       event_id: item.event.event_id,

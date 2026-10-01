@@ -11,6 +11,14 @@ import { getEventEnterpriseId } from './enterpriseSubsidyOrders.js'
 import type { ShokujiiEvent } from '../stores/event.js'
 import type { ShokujiiCommunity } from '../stores/community.js'
 
+export function parseOrThrow<T>(schema: { parse: (value: unknown) => T }, data: unknown): T {
+  try {
+    return schema.parse(data)
+  } catch {
+    throw new HttpsError('invalid-argument', '必須パラメータが不足しています')
+  }
+}
+
 export async function requireAuthUid(uid: string | undefined): Promise<string> {
   if (uid == null) {
     throw new HttpsError('unauthenticated', '認証が必要です')
