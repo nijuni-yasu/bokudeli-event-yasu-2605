@@ -12,7 +12,7 @@ import UserProfile from '@/components/UserProfile.vue'
 import Footer from '@/components/Footer.vue'
 import { useNavItems } from '@/navigation'
 import type { Notification } from '@shokujii/base/types/index.js'
-import { getManagePath, getManageNewCommunityPath, getUnauthenticatedEntry } from '@/router/utils'
+import { getLogin, getManagePath, getManageNewCommunityPath } from '@/router/utils'
 import { hasManagedCommunity } from '@shokujii/base/stores/community.js'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useChatStore } from '@shokujii/base/stores/chat.js'
@@ -166,7 +166,7 @@ const handleChatHeaderClick = (): void => {
       >
         {{ $t('navigation.new_event') }}
       </v-btn>
-      <v-btn v-else class="me-4" variant="outlined" :to="getUnauthenticatedEntry()">
+      <v-btn v-else class="me-4" variant="outlined" :to="getLogin()">
         {{ $t('navigation.login') }}
       </v-btn>
       <v-badge

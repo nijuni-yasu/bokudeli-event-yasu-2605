@@ -7,6 +7,7 @@ on:
       - development
     paths:
       - 'terms/**'
+      - 'common/src/utils/paymentUserFee.ts'
       - 'firebase.json'
   workflow_dispatch:
     inputs:

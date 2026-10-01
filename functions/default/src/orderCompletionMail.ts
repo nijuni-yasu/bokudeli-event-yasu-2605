@@ -1,5 +1,5 @@
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
-import { DEFAULT_FROM, getCommunityEmailsForEvent } from './utils/mail.js'
+import { DEFAULT_FROM, getCommunityEmailsForEvent, NEW_EVENT_NOTIFICATION_ASM_GROUP_ID } from './utils/mail.js'
 import * as sgMail from './utils/sendgrid.js'
 import { sendDynamicTemplateWithPersonalizations } from './utils/sendgridBulk.js'
 import { getEventUrlForEvent, getUserUrl, FIREBASE_STORAGE_BASE_URL, convertStoragePathToURL } from './utils/urls.js'
@@ -165,6 +165,15 @@ async function getCommunityMemberEmails(communityId: string): Promise<string[]> 
  * - メール送信失敗時の再送信防止（送信処理が失敗しても、フラグにより2度目の送信は行われない）
  */
 async function sendNewEventNotificationToMembers(eventId: string, userId: string, communityId: string): Promise<void> {
+  // 配信停止グループ未設定時は、送信先の取得・送信済みフラグの更新も行わない。
+  if (!Number.isSafeInteger(NEW_EVENT_NOTIFICATION_ASM_GROUP_ID) || NEW_EVENT_NOTIFICATION_ASM_GROUP_ID <= 0) {
+    logger.warn('Skipped new event notification because unsubscribe group is not configured', {
+      eventId,
+      communityId,
+    })
+    return
+  }
+
   // 送信先が 0 件のときはトランザクション（sent_new_event_mail_at 更新）も行わない
   const emails = await getCommunityMemberEmails(communityId)
   if (emails.length === 0) {
@@ -213,6 +222,10 @@ async function sendNewEventNotificationToMembers(eventId: string, userId: string
       {
         from: DEFAULT_FROM,
         templateId: NEW_EVENT_NOTIFICATION_TEMPLATE_ID,
+        asm: {
+          groupId: NEW_EVENT_NOTIFICATION_ASM_GROUP_ID,
+          groupsToDisplay: [NEW_EVENT_NOTIFICATION_ASM_GROUP_ID],
+        },
       },
       emails.map((to) => ({ to, dynamicTemplateData })),
       { feature: 'newEventNotification', eventId: event.id, communityId },

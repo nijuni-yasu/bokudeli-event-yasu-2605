@@ -10,6 +10,9 @@ export const DEFAULT_TO = 'support+to@nijuni.jp'
 export const SUPPORT_MAIL = 'shokujiiサポート<support+cc@nijuni.jp>'
 export const SUPPORT_MAIL_ADDRESS = 'support@nijuni.jp'
 
+// SendGrid の「shokujii コミュニティ新着イベント」専用グループ。
+export const NEW_EVENT_NOTIFICATION_ASM_GROUP_ID = 36042
+
 /**
  * Reply-To 用に trim 済みメールアドレスを返す。空なら undefined。
  */

@@ -1,22 +1,17 @@
 /**
  * Stripe 実課金の自己負担額に対するシステム利用料（画面上の名称）。
- * `MIN(220, MAX(110, FLOOR(自己負担 × 0.1, 100) × 1.1))` と同等。自己負担 0 以下は 0。
+ * 自己負担がある場合は定額。自己負担 0 以下は 0。
  *
  * @see documents/01_マネタイズと決済/02_ユーザー決済手数料.md
  */
 import type { CommunityBillSettingsType, EventPaymentType } from '../schemas/Event.js'
 
-/** 1,000 円刻みの税込手数料単位（最低額でもある） */
-export const USER_PAYMENT_FEE_UNIT = 110
-/** 1 セッションあたりの手数料上限 */
-export const USER_PAYMENT_FEE_MAX = 220
+/** 新規 Checkout 1 セッションあたりの税込手数料。料金改定はこの定数を変更する。 */
+export const USER_PAYMENT_FEE_AMOUNT = 110
 
 export function computeUserPaymentFeeFromSelfPay(selfPay: number): number {
   if (selfPay <= 0) return 0
-  return Math.min(
-    USER_PAYMENT_FEE_MAX,
-    Math.max(USER_PAYMENT_FEE_UNIT, Math.floor(selfPay / 1000) * USER_PAYMENT_FEE_UNIT),
-  )
+  return USER_PAYMENT_FEE_AMOUNT
 }
 
 export function computeCheckoutTotalFromSelfPay(selfPay: number): { selfPay: number; fee: number; total: number } {
@@ -24,29 +19,26 @@ export function computeCheckoutTotalFromSelfPay(selfPay: number): { selfPay: num
   return { selfPay, fee, total: selfPay + fee }
 }
 
-/** Webhook が EventStripe に書く pay_amount / pay_user_fee_amount。手数料 0 のレガシーは fee フィールドを省略。 */
-export function computeEventStripePayFields(selfPay: number): {
+/** EventStripe に書く金額。Webhook は Checkout の実際の手数料を必ず渡す。手数料 0 は fee を省略。 */
+export function computeEventStripePayFields(
+  selfPay: number,
+  chargedFee: number,
+): {
   pay_amount: number
   pay_user_fee_amount?: number
 } {
-  const fee = computeUserPaymentFeeFromSelfPay(selfPay)
   return {
-    pay_amount: selfPay + fee,
-    ...(fee > 0 ? { pay_user_fee_amount: fee } : {}),
+    pay_amount: selfPay + chargedFee,
+    ...(chargedFee > 0 ? { pay_user_fee_amount: chargedFee } : {}),
   }
 }
 
-/** amount_total が無いセッションは検証スキップ。あるときは pay_amount か legacy_self_pay と一致必須。 */
+/** Stripe の実課金額と保存予定額が一致することを確認する。金額欠落は確定不可。 */
 export function isCheckoutAmountTotalMatchingPayAmount(
   amountTotal: number | null | undefined,
   payAmount: number,
-  legacySelfPayAmount?: number,
 ): boolean {
-  return (
-    amountTotal == null ||
-    amountTotal === payAmount ||
-    (legacySelfPayAmount != null && amountTotal === legacySelfPayAmount)
-  )
+  return amountTotal != null && amountTotal === payAmount
 }
 
 /** Stripe Checkout に手数料を載せる支払い方式か（自己負担 0 は対象外） */

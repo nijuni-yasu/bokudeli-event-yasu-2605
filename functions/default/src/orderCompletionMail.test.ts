@@ -11,6 +11,7 @@ const makeIcsMock = vi.fn()
 const runTransactionMock = vi.fn()
 const getEventInCommunityMock = vi.fn()
 const saveEventMock = vi.fn()
+const mailConfig = vi.hoisted(() => ({ newEventNotificationAsmGroupId: 12345 }))
 
 vi.mock('./utils/sendgrid.js', () => ({
   send: (...args: unknown[]) => sgMailSendMock(...args),
@@ -27,6 +28,9 @@ vi.mock('./stores/user.js', () => ({
 
 vi.mock('./utils/mail.js', () => ({
   DEFAULT_FROM: 'test@example.com',
+  get NEW_EVENT_NOTIFICATION_ASM_GROUP_ID() {
+    return mailConfig.newEventNotificationAsmGroupId
+  },
   getCommunityEmailsForEvent: (...args: unknown[]) => getCommunityEmailsForEventMock(...args),
 }))
 
@@ -97,6 +101,7 @@ function createMockEvent(overrides: Partial<ShokujiiEvent> = {}): ShokujiiEvent 
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mailConfig.newEventNotificationAsmGroupId = 12345
   getUserPersonalInformationMock.mockResolvedValue({ user_email: 'member@example.com' })
   getUserMock.mockResolvedValue({
     user_id: 'user1',
@@ -147,12 +152,59 @@ describe('sendOrderCompletionMails', () => {
       expect.objectContaining({ feature: 'orderCompletionOrganizers' }),
     )
     expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledWith(
-      expect.anything(),
+      expect.objectContaining({
+        templateId: 'd-5ed49e5d3b5c43e1823a96bbf80af471',
+        asm: { groupId: 12345, groupsToDisplay: [12345] },
+      }),
       expect.anything(),
       expect.objectContaining({ feature: 'newEventNotification' }),
     )
     expect(saveEventMock).toHaveBeenCalled()
+    expect(sgMailSendMock.mock.calls[0]?.[0]).not.toHaveProperty('asm')
+    const organizerCall = sendDynamicTemplateWithPersonalizationsMock.mock.calls.find(
+      (call) => call[2]?.feature === 'orderCompletionOrganizers',
+    )
+    expect(organizerCall?.[0]).not.toHaveProperty('asm')
   })
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1])(
+    '配信停止グループIDが無効（%s）なら新着通知とフラグ更新だけをスキップする',
+    async (groupId) => {
+      mailConfig.newEventNotificationAsmGroupId = groupId
+
+      await sendOrderCompletionMails(createMockEvent(), 'user1')
+
+      expect(getCommunityMock).not.toHaveBeenCalled()
+      expect(runTransactionMock).not.toHaveBeenCalled()
+      expect(saveEventMock).not.toHaveBeenCalled()
+      expect(sgMailSendMock).toHaveBeenCalledTimes(1)
+      expect(sgMailSendMock.mock.calls[0]?.[0]).not.toHaveProperty('asm')
+      expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledTimes(1)
+      expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledWith(
+        expect.objectContaining({ templateId: 'd-6f18a5804cb9458fb1267924ff954a95' }),
+        expect.anything(),
+        expect.objectContaining({ feature: 'orderCompletionOrganizers' }),
+      )
+      expect(sendDynamicTemplateWithPersonalizationsMock.mock.calls[0]?.[0]).not.toHaveProperty('asm')
+    },
+  )
+
+  it.each([{ is_public: false }, { sent_new_event_mail_at: 1_700_000_000_000 }])(
+    '非公開・送信済みイベントでは新着通知を送信しない（%j）',
+    async (overrides) => {
+      getEventInCommunityMock.mockResolvedValue(createMockEvent(overrides))
+
+      await sendOrderCompletionMails(createMockEvent(), 'user1')
+
+      expect(saveEventMock).not.toHaveBeenCalled()
+      expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledTimes(1)
+      expect(sendDynamicTemplateWithPersonalizationsMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ feature: 'orderCompletionOrganizers' }),
+      )
+    },
+  )
 
   it('エンプライベント内の PF uid でも #6 はイベント単位でスキップする', async () => {
     const event = createMockEvent({ enterprise_id: 'ent-a' })

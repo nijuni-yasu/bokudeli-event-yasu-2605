@@ -52,7 +52,7 @@ export function parsePassCodeMode(raw: unknown): PassCodeMode {
 
 export const getLogin = () => '/login'
 export const getRegister = () => '/register'
-/** 未ログイン時のデフォルト着地。ナビ・要認証ガードを含む全導線で使う（#2350） */
+/** 未ログイン時のデフォルト着地。要認証ガードと強制認証ダイアログで使う。ヘッダーのログインは getLogin（#2350 #2373） */
 export const getUnauthenticatedEntry = () => getRegister()
 // ここでデフォルト設定はあまり使うべきではないが、互換性のために
 export const getProfile = (isNewUser: boolean = false) => ({ path: '/profile', state: { isNewUser } })
