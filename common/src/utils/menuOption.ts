@@ -126,18 +126,26 @@ export function buildSelectedOptionsInDefinitionOrder(
   optionDefs: readonly MenuOptionDefinition[],
   selectedItems: readonly CartSelectedItemType[],
 ): SelectedOptionType[] {
-  const selected = new Set(selectedItems.map((item) => `${item.option_id}\u0000${item.item_id}`))
+  const selectedItemIdsByOptionId = new Map<string, Set<string>>()
+  for (const selected of selectedItems) {
+    const itemIds = selectedItemIdsByOptionId.get(selected.option_id) ?? new Set<string>()
+    itemIds.add(selected.item_id)
+    selectedItemIdsByOptionId.set(selected.option_id, itemIds)
+  }
   const result: SelectedOptionType[] = []
   for (const option of optionDefs) {
-    for (const item of option.option_items) {
-      if (selected.has(`${option.option_id}\u0000${item.item_id}`)) {
-        result.push({
-          option_id: option.option_id,
-          option_name: option.option_name,
-          item_id: item.item_id,
-          item_name: item.name,
-          price_delta: item.price_delta,
-        })
+    const selectedItemIds = selectedItemIdsByOptionId.get(option.option_id)
+    if (selectedItemIds != null) {
+      for (const item of option.option_items) {
+        if (selectedItemIds.has(item.item_id)) {
+          result.push({
+            option_id: option.option_id,
+            option_name: option.option_name,
+            item_id: item.item_id,
+            item_name: item.name,
+            price_delta: item.price_delta,
+          })
+        }
       }
     }
   }

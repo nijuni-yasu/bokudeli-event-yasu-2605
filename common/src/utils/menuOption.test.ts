@@ -242,6 +242,31 @@ describe('validateCartOptionSelection / resolveEventMenuCartOrder', () => {
     }
   })
 
+  it('ID に NUL が含まれても別オプションの項目を加算しない', () => {
+    const colliding: MenuOptionDefinition[] = [
+      {
+        option_id: 'a',
+        option_name: 'A',
+        selection: 'single',
+        required: false,
+        option_items: [{ item_id: 'b\u0000c', name: 'BC', price_delta: 10 }],
+      },
+      {
+        option_id: 'a\u0000b',
+        option_name: 'AB',
+        selection: 'single',
+        required: false,
+        option_items: [{ item_id: 'c', name: 'C', price_delta: 999 }],
+      },
+    ]
+    const result = validateCartOptionSelection(colliding, [{ option_id: 'a', item_id: 'b\u0000c' }])
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.selected_options.map((item) => item.item_id)).toEqual(['b\u0000c'])
+      expect(result.price_delta).toBe(10)
+    }
+  })
+
   it('必須未選択と single の複数選択を拒否する', () => {
     expect(validateCartOptionSelection([sizeOption], []).ok).toBe(false)
     expect(
