@@ -21,6 +21,9 @@
 | [x] | RC-15 | 4153988206 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | カテゴリ閲覧中も「を追加」が残る<br>`canCreate` をカテゴリ表示中は出さない |
 | [x] | RC-16 | 4153988186 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🔒 セキュリティ | 🔧 微修正 | S | 別アカウントへ切り替えても旧タグの下書きが残る<br>`firebaseUser.uid` の変化で編集内容を初期化する |
 | [x] | RC-17 | 4153966298 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 初期候補が11件で Issue の12件と違う、という指摘<br>仕様書 4.2.1 は11件。Issue の12件は更新前の完了条件 |
+| [x] | RC-18 | 5377749532 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 未保存で閉じると破棄する案内をフッターに出せ、という overview<br>仕様 4.2.1 のフッターは件数と保存ボタン。他項目は既存指摘と重複 |
+| [x] | RC-19 | 4154128658 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 選択状態の Map が大文字小文字を区別し、候補が未選択のまま反応しない<br>選択キーを小文字化し、表示・追加・解除を同じ規則に揃えた |
+| [x] | RC-20 | 4154128581 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 保存応答時に認証 UID が変わっても旧アカウントの結果で状態を更新する<br>開始時の UID と違えば待機値・閉じる・エラー表示を破棄する |
 
 ## 評価セッション（2026-10-01 13:33・shokujii-code-review）
 
@@ -1092,3 +1095,256 @@ Useful? React with 👍 / 👎.
 
 **判断理由**: 実装と `documents/03_参加者獲得/04_プロフィールタグ機能.md` 4.2.1 は初期候補11件（コミュマネからスタートアップ）で一致する。Issue #2375 の「12個」は、その後の候補入替より前の完了条件なので、コードを12件に戻さない。
 
+
+
+---
+
+## 評価セッション（2026-10-01 19:03・review-comments-evaluate auto / PR #2383）
+
+- **評価日時**: 2026-10-01 19:03 JST
+- **ブランチ名**: ui/2375（PR head。作業ツリーは `tree/5`）
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2383
+- **since**: 2026-10-01T09:51:02Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（依頼コメント 5928984858、Copilot 処理エラー 5928986779、Codex review 本文 5377761710）
+- **同一指摘のため RC 採番しない**: 4154138927（RC-19 と同一）、4154138910（RC-12 と同一）
+- **手順 4a 自動修正**: RC-19・RC-20（🚨 2件 / 🟡 0件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [x] | RC-18 | 5377749532 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 未保存で閉じると破棄する案内をフッターに出せ、という overview<br>仕様 4.2.1 のフッターは件数と保存ボタン。他項目は既存指摘と重複 |
+| [x] | RC-19 | 4154128658 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 選択状態の Map が大文字小文字を区別し、候補が未選択のまま反応しない<br>選択キーを小文字化し、表示・追加・解除を同じ規則に揃えた |
+| [x] | RC-20 | 4154128581 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 保存応答時に認証 UID が変わっても旧アカウントの結果で状態を更新する<br>開始時の UID と違えば待機値・閉じる・エラー表示を破棄する |
+
+---
+
+**識別子**: RC-18（GitHub id: 5377749532）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR レビュー overview
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+```
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+購読競合とアカウント切替で古いタグが混入する問題、および一部仕様未達が残っています。
+
+**Review effort:** Balanced  
+**Findings:** 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (4)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [UID切替後も旧UIDの保存完了処理が状態を更新する](#discussion_r4154128581) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [購読遅延により別更新を保存後更新と誤判定する](#discussion_r4153966114)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [大文字小文字の正規化が選択状態と一致していない](#discussion_r4154128658) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [デスクトップ初期候補数がIssueの完了条件と不一致](#discussion_r4153966298)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (2)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [検索開始・解除時の表示モードと開閉状態を復元できない](#discussion_r4153966243)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [完全一致判定の正規化が候補検索と不一致](#discussion_r4153966193)
+</details>
+
+<details>
+<summary><strong>Previously missed (1)</strong></summary>
+
+In code that hasn't changed since last review
+
+<details>
+<summary><picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> 未保存変更が破棄される旨の案内がフッターにない</summary>
+
+`base/​src/​components/​TagSettingsDialog.vue:140`
+
+[must] Issue #2375 は「保存せず閉じると変更を破棄する旨をフッターに表示する」と定めていますが、フッターには件数・保存中表示・エラー・保存ボタンしかなく、破棄されることを利用者へ案内していません。×・Esc・背景クリックで編集内容が消える一括保存 UX なので、フッターへ案内文を追加してください。
+</details>
+</details>
+```
+
+**コメント要約**: 未保存で閉じると破棄する案内をフッターに出せ、という overview。
+仕様 4.2.1 のフッターは件数と保存ボタン。他項目は既存指摘と重複。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview の新規部分は、Issue #2375 の「保存せず閉じると変更を破棄する旨をフッターに表示する」です。更新済み仕様 `documents/03_参加者獲得/04_プロフィールタグ機能.md` 4.2.1 はフッターを件数と保存ボタンに限定し、破棄は ×・Esc・背景クリック時の挙動として書いています。Issue の文言より後の仕様に合わせ、フッターへ案内文は足しません。UID 切替・大小文字は RC-20・RC-19、購読遅延は RC-12、初期候補 11 件は RC-17 と同一です。
+
+---
+
+**識別子**: RC-19（GitHub id: 4154128658）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/TagInput.vue:32`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
+-)
+-
+-const emit = defineEmits<{
+-  add: [tag: string]
+-  remove: [tag: string]
+-}>()
++const props = withDefaults(defineProps<{ loading?: boolean }>(), { loading: false })
++const tags = defineModel<string[]>({ required: true })
+ 
+ const { t: $t } = useI18n()
+-
+-const freeInput = ref('')
+-const snackbar = ref(false)
+-const snackbarMessage = ref('')
+-
+-const isAtLimit = computed(() => props.tags.length >= USER_TAG_MAX_COUNT)
+-const tagProgress = computed(() => (props.tags.length / USER_TAG_MAX_COUNT) * 100)
+-
+-const showError = (msg: string) => {
+-  snackbarMessage.value = msg
+-  snackbar.value = true
+-}
+-
+-watch(freeInput, (v) => {
+-  const n = normalizeTag(v)
+-  if (n !== v) {
+-    freeInput.value = n
++const { xs } = useDisplay()
++const query = ref('')
++const queryField = ref<InstanceType<typeof VTextField> | null>(null)
++const candidateHeading = ref<HTMLElement | null>(null)
++const showGenres = ref(false)
++const expandedGenres = ref<string[]>([])
++const page = ref(1)
++const isComposing = ref(false)
++const normalizedQuery = computed(() => normalizeTag(query.value))
++const isSearching = computed(() => normalizedQuery.value !== '')
++const isAtLimit = computed(() => tags.value.length >= USER_TAG_MAX_COUNT)
++const isTooLong = computed(() => tagCodePointLength(normalizedQuery.value) > USER_TAG_MAX_LENGTH)
++const selectedTags = computed(() => new Map(tags.value.map((tag) => [normalizeTag(tag), tag])))
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+[must] 完全一致・重複判定は大文字小文字を無視していますが、選択状態の Map は `normalizeTag` のみなので基準が一致していません。既存データに `ai` がある状態で検索候補 `AI` を表示すると、未選択の「＋」に見える一方、クリックは `alreadySelected` で無視されて何も起きません。Map・`isSelected`・`toggleTag` で同じ小文字化済みキーを使い、候補から解除できる状態に揃えてください。
+```
+
+**コメント要約**: 選択状態の Map が大文字小文字を区別し、候補が未選択のまま反応しない。
+選択キーを小文字化し、表示・追加・解除を同じ規則に揃えた。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `normalizeTag` は大文字小文字を維持するため、保存済み `ai` とマスタ `AI` は Map キーが一致せず未選択に見えます。追加側は小文字化して重複とみなすので、クリックしても追加も解除もされません。`tagSelectionKey` で Map・選択表示・追加・解除を同じ小文字キーに揃えました。Codex 4154138927 は同一指摘のため別 RC にしません。
+
+---
+
+**識別子**: RC-20（GitHub id: 4154128581）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/TagSettingsDialog.vue:79`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・末尾抜粋）
++      const snapshot = user.user_tags ?? []
++      const matchedSave = sameTagList(snapshot, savedTagsAwaitingSnapshot.value)
++      const movedPastStart =
++        tagsObservedBeforeSave.value != null && !sameTagList(snapshot, tagsObservedBeforeSave.value)
++      if (matchedSave || movedPastStart) {
++        savedTagsAwaitingSnapshot.value = null
++        tagsObservedBeforeSave.value = null
++      }
++    }
++    if (isOpen && (openedNow || user == null || uidChanged)) {
++      tagsReady.value = false
++      tags.value = []
++      baselineTags.value = []
++      if (openedNow || uidChanged) {
++        errorMessage.value = ''
++      }
++    }
++    if (isOpen && !tagsReady.value && user != null) {
++      const source = [...(savedTagsAwaitingSnapshot.value ?? user.user_tags ?? [])]
++      tags.value = [...source]
++      baselineTags.value = source
++      tagsReady.value = true
++    }
++  },
++  { immediate: true },
++)
++
++const saveTags = async (): Promise<void> => {
++  if (isUpdating.value || !tagsReady.value || !hasTagChanges.value) return
+   isUpdating.value = true
++  errorMessage.value = ''
+   try {
+-    await removeTagFromMyProfile(tag)
+-  } catch (e: unknown) {
+-    const msg = e instanceof Error ? e.message : $t('user_tags.save_failed')
+-    notification.show(msg, 'error')
++    const savedTags = normalizeTagList([...tags.value])
++    const tagsBeforeSave = [...(currentUserStore.user?.user_tags ?? [])]
++    const response = await updateUserTags(savedTags)
++    if (!response.data.success) throw new Error(response.data.message)
+```
+
+**レビュワーのコメント（原文）**:
+
+```
+[must] 保存待機中に認証 UID が A から B へ直接切り替わると、watcher は下書きを B 用に初期化しますが、A で開始したこの Promise の完了処理はその後も続きます。その結果、A の `savedTags` を待機値へ戻してダイアログを閉じ、次回 B の初期値や保存内容へ混入させられます。保存開始時の UID を保持し、応答後に UID が変わっていたら状態更新を破棄してください。
+```
+
+**コメント要約**: 保存応答時に認証 UID が変わっても旧アカウントの結果で状態を更新する。
+開始時の UID と違えば待機値・閉じる・エラー表示を破棄する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 保存開始後に UID が変わると、watcher は新しいユーザーの下書きへ初期化しますが、完了処理が旧 UID の `savedTags` を待機値に書き、ダイアログを閉じます。開始時 UID を保持し、応答後に違っていれば待機値・閉じる・画面上のエラー表示を行いません。失敗時の `reportClientError` は残します。保存中の別更新スナップショット（RC-12、Codex 4154138910）は書き込み世代が無く、この対応では変えていません。
+
+---
