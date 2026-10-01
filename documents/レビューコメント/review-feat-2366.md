@@ -68,6 +68,9 @@
 | [x] | RC-60 | 4152199773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 保存中も送信でき、二重作成で誤エラーになる<br>保存完了まで loading で再送信できない |
 | [x] | RC-61 | 4152662508 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | NUL 連結の選択キーが別項目を加算する<br>option_id ごとの Set で照合する |
 | [ ] | RC-62 | 4152662502 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 名札のメニュー名を UTF-16 単位で切る<br>絵文字境界で孤立サロゲートになる |
+| [x] | RC-63 | 4152871098 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | __proto__ を選択キーにすると必須選択が消える<br>参照 ID は __ で囲む値を既に拒否する |
+| [x] | RC-64 | 5926768347 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | カート追加中に閉じると二重注文できる<br>追加中は閉じられず、開始時にも実行中を拒否する |
+| [ ] | RC-65 | 4152871178 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 📋 仕様追加 | L | legacy manager のメニュー直書きが Rules で失敗する<br>移行か配信停止かの判断が残る |
 
 ---
 
@@ -4234,5 +4237,181 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: formatNamesPrintMenuLabel は String.length と slice で切るため、絵文字が 32 文字境界に掛かると高位サロゲートだけが残る。formatNamesPrintUserName も同じ切り方である。名札の見た目の切り詰めは 👤 UX のため自動修正しない。直すならコードポイント配列で切る。
+
+---
+
+---
+
+## 評価セッション（2026-10-01 16:33・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 16:33 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **since**: 2026-10-01T07:21:45Z
+- **partial**: true（sentinel）。Codex は `Didn't find any major issues` の問題なしサマリ。limits 文言は無い
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 GitHub id 5926693376、Codex 問題なし GitHub id 5926757074）
+- **同一指摘のため RC 採番しない**: Copilot overview 5376201574。インライン 4152871227 とトップレベル 5926768347 の名札切りは RC-62。同コメントの画像先行は RC-57、項目名 trim は RC-58、削除と並び替えの 500 件上限は RC-59
+- **手順 4a 自動修正**: RC-64（🚨 1件）。RC-65 は legacy manager の扱いが仕様判断のため自動修正しない。RC-63 は 👌
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-63 | 4152871098 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | __proto__ を選択キーにすると必須選択が消える<br>参照 ID は __ で囲む値を既に拒否する |
+| [x] | RC-64 | 5926768347 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | カート追加中に閉じると二重注文できる<br>追加中は閉じられず、開始時にも実行中を拒否する |
+| [ ] | RC-65 | 4152871178 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 📋 仕様追加 | L | legacy manager のメニュー直書きが Rules で失敗する<br>移行か配信停止かの判断が残る |
+
+---
+
+**識別子**: RC-63（GitHub id: 4152871098）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:81`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -65,16 +68,83 @@ const countOptions = computed(() => {
+   return Array.from({ length: max }, (_, i) => i + 1)
+ })
+ 
++const menuOptions = computed(() => currentMenu.value.options ?? [])
++
++const resetOptionSelection = () => {
++  const initial: Record<string, string[]> = {}
++  for (const option of menuOptions.value) {
++    initial[option.option_id] =
++      option.required && option.selection === 'single' && option.option_items[0] != null
++        ? [option.option_items[0].item_id]
++        : []
++  }
++  selectedByOption.value = initial
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `option_id` は Callable の `PartnerDocumentIdSchema` で `__proto__` を拒否しておらず、Firestore から来る有効な ID がこの plain object の特殊キーに入る可能性があります。`initial['__proto__'] = ...` は通常の own property にならないため、必須選択が `Object.entries` から消えてカート追加が失敗します。選択状態を `Map` で管理するなど、プロトタイプを持たないキー管理にしてください。
+
+**コメント要約**: __proto__ を選択キーにすると必須選択が消える。
+参照 ID は __ で囲む値を既に拒否する
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: PartnerDocumentIdSchema は `__` で始まり `__` で終わる ID を拒否し、テストも `__reserved__` を拒否している。Firestore のドキュメント ID も同じ制約のため、option_id が `__proto__` になる経路はない。
+
+---
+
+**識別子**: RC-64（GitHub id: 5926768347）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:160`
+
+**該当コード（レビュー時点）**:
+
+```ts
+const closeDialog = () => {
+  isAddingOrder.value = false
+  selectedCount.value = 1
+  addErrorMessage.value = ''
+  isOpen.value = false
+}
+
+const addCart = async () => {
+  if (eventStore.event == null) {
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行 HEAD `17f521b5` の差分を確認しました。利用可能な GitHub 操作では Files changed へのインライン投稿ができないため、該当箇所ごとに指摘します。
+
+- 🚨 **必須修正** `base/src/components/EventCartDialog.vue:160-194` — `closeDialog()` が通信中に `isAddingOrder` を解除し、`addCart()` の開始時にも二重実行ガードがありません。追加中に閉じて再度開く、または連打すると同じ Callable が並行し、注文が二重登録され得ます。実行中は閉じる操作を止め、ハンドラ先頭でも実行中を拒否してください。
+- 🚨 **必須修正** `base/src/stores/partner.ts:251-254` — メニュー保存 Callable の前に既存と同じ Storage パスへ画像を上書きしています。Callable が検証・競合で失敗しても画像だけ変わり、既存メニュー／承認時スナップショットと不整合になります。成功後に参照を切り替える方式か、失敗時に旧画像を維持する補償が必要です。
+- 🟡 **修正提案** `functions/default/src/utils/partnerMenuOperations.ts:99-101` — 参照メニューを全件書き込んだ後にオプションも削除するため、参照が500件以上だと transaction の書込上限を超えて削除が失敗します。原子性を保つ方式を設計するか、上限超過を明示的に拒否してください。
+- 🟡 **修正提案** `common/src/apis/partnerMenu.ts:54-57` — 並び替え ID 数に上限がなく、501件以上で transaction の書込上限を超えます。入力 schema で許容件数を制限し、上限超過を利用者に分かるエラーにしてください。
+- 🟡 **修正提案** `common/src/schemas/menuOption.ts:20,61-64` — `name` は空白のみでも通り、重複判定も trim 前の完全一致です。例えば末尾空白だけ異なる項目を別項目として保存でき、選択肢が表示上同じに見える場合があります。trim 後に空文字・長さ・重複を検証してください。
+- 🟡 **修正提案** `common/src/utils/menuOption.ts:226-228,242-244` — `length` / `slice` は UTF-16 コード単位で切るため、絵文字の途中で切れて孤立サロゲートが生成されます。コードポイント単位で上限を適用してください。
+
+CI は確認時点で Test Firestore Rules #732 が成功、PR verify #666 は lint 成功後の残りの検証が実行中でした。
+
+**コメント要約**: カート追加中に閉じると二重注文できる。
+追加中は閉じられず、開始時にも実行中を拒否する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: closeDialog が通信中に isAddingOrder を下ろすと、同じ Callable が並行して注文が二重になる。追加中はダイアログを persistent にし、閉じる操作と addCart の先頭で実行中を拒否する。成功時だけ resetAndClose で閉じる。同じコメントの画像先行、項目名、500 件上限、名札の文字切りは RC-57、RC-58、RC-59、RC-62 の再掲である。
+
+---
+
+**識別子**: RC-65（GitHub id: 4152871178）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `firestore.rules:253`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -246,15 +246,15 @@ service cloud.firestore {
+                 // サポートアカウントであれば、運営マネージャーから店舗の開店設定と承認設定を変更できる
+                 allow create, update, delete: if isSupport()
+             }
++            // オプションの参照整合性・項目検証・原子的な削除は Callable で保証する。
++            // 店舗本人も直書きでは保存・削除できない。
+             match /menus/{menu} {
+                 allow read: if true
+-                // メニュー情報はログインした店舗アカウントでないと create/update/deleteできない
+-                allow create, update, delete: if request.auth != null && request.auth.uid == partner_id
++                allow write: if false
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `allow write: if false` にすると、まだ `firebase.json:37-38` で配信対象になっている legacy `manager` の `Menu.vue` / `ModalMenuForm.vue` が行っている menus への create/update/delete がすべて失敗します。manager を同時に Callable 経由へ移行するか、配信停止を同じ変更で完了するまで、この Rules 変更はマージできません。
+
+**コメント要約**: legacy manager のメニュー直書きが Rules で失敗する。
+移行か配信停止かの判断が残る
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🔒 セキュリティ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: L
+
+**判断理由**: firebase.json は manager を配信対象のままにしている。menus の直書き禁止は店舗画面を Callable に移すこの PR の意図だが、legacy manager の Menu.vue はまだ直書きする。Rules を戻すと直書き禁止が崩れ、manager の移行は本 PR の範囲を超える。配信停止か移行かの判断が必要なため自動修正しない。
 
 ---
