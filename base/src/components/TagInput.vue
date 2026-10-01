@@ -1,275 +1,365 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { mdiPencilOutline, mdiTagOutline } from '@mdi/js'
+import { useDisplay } from 'vuetify'
+import { VTextField } from 'vuetify/components'
+import { mdiArrowLeft, mdiCheck, mdiClose, mdiMagnify, mdiPlus } from '@mdi/js'
 import { TAG_GENRES } from '@shokujii/common/constants/tags.js'
 import { USER_TAG_MAX_COUNT, USER_TAG_MAX_LENGTH } from '@shokujii/common/constants/userTags.js'
 import { normalizeTag, tagCodePointLength } from '@shokujii/common/utils/normalizeTag.js'
-import TagBadge from '@shokujii/base/components/TagBadge.vue'
+import {
+  findExactMasterTag,
+  getProfileTagCandidates,
+  PROFILE_TAG_PAGE_SIZE,
+} from '@shokujii/base/utils/profileTagOptions.js'
 
-const props = withDefaults(
-  defineProps<{
-    tags: string[]
-    loading?: boolean
-  }>(),
-  { loading: false },
-)
-
-const emit = defineEmits<{
-  add: [tag: string]
-  remove: [tag: string]
-}>()
+const props = withDefaults(defineProps<{ loading?: boolean }>(), { loading: false })
+const tags = defineModel<string[]>({ required: true })
 
 const { t: $t } = useI18n()
+const { xs } = useDisplay()
+const query = ref('')
+const queryField = ref<InstanceType<typeof VTextField> | null>(null)
+const candidateHeading = ref<HTMLElement | null>(null)
+const showGenres = ref(false)
+const expandedGenres = ref<string[]>([])
+const page = ref(1)
+const isComposing = ref(false)
+const normalizedQuery = computed(() => normalizeTag(query.value))
+const isSearching = computed(() => normalizedQuery.value !== '')
+const isAtLimit = computed(() => tags.value.length >= USER_TAG_MAX_COUNT)
+const isTooLong = computed(() => tagCodePointLength(normalizedQuery.value) > USER_TAG_MAX_LENGTH)
+const selectedTags = computed(() => new Map(tags.value.map((tag) => [normalizeTag(tag), tag])))
+const candidates = computed(() => getProfileTagCandidates(query.value))
+const pageSize = computed(() => (xs.value ? PROFILE_TAG_PAGE_SIZE.mobile : PROFILE_TAG_PAGE_SIZE.desktop))
+const visibleTags = computed(() => candidates.value.slice(0, page.value * pageSize.value))
+const hasMore = computed(() => visibleTags.value.length < candidates.value.length)
+const isBrowsingGenres = computed(() => showGenres.value)
+const exactMasterTag = computed(() => findExactMasterTag(normalizedQuery.value))
+const hasSelectedQuery = computed(() => {
+  const key = normalizedQuery.value.toLowerCase()
+  for (const stored of selectedTags.value.keys()) {
+    if (stored.toLowerCase() === key) return true
+  }
+  return false
+})
+const canCreate = computed(
+  () => isSearching.value && !isBrowsingGenres.value && exactMasterTag.value == null && !hasSelectedQuery.value,
+)
+/** 検索開始前の候補表示。検索解除で戻す */
+const viewBeforeSearch = ref<{ showGenres: boolean; expandedGenres: string[] } | null>(null)
 
-const freeInput = ref('')
-const snackbar = ref(false)
-const snackbarMessage = ref('')
+watch([normalizedQuery, pageSize], () => {
+  page.value = 1
+})
 
-const isAtLimit = computed(() => props.tags.length >= USER_TAG_MAX_COUNT)
-const tagProgress = computed(() => (props.tags.length / USER_TAG_MAX_COUNT) * 100)
-
-const showError = (msg: string) => {
-  snackbarMessage.value = msg
-  snackbar.value = true
-}
-
-watch(freeInput, (v) => {
-  const n = normalizeTag(v)
-  if (n !== v) {
-    freeInput.value = n
+watch(normalizedQuery, (query, previous) => {
+  const wasSearching = previous != null && previous !== ''
+  const nowSearching = query !== ''
+  if (!wasSearching && nowSearching) {
+    viewBeforeSearch.value = {
+      showGenres: showGenres.value,
+      expandedGenres: [...expandedGenres.value],
+    }
+    showGenres.value = false
+    return
+  }
+  if (wasSearching && !nowSearching && viewBeforeSearch.value != null) {
+    showGenres.value = viewBeforeSearch.value.showGenres
+    expandedGenres.value = [...viewBeforeSearch.value.expandedGenres]
+    viewBeforeSearch.value = null
+    return
+  }
+  if (nowSearching && wasSearching && previous !== query && showGenres.value) {
+    showGenres.value = false
   }
 })
 
-const tryAddTag = (raw: string) => {
-  const t = normalizeTag(raw)
-  if (t.length === 0) return
-  if (tagCodePointLength(t) > USER_TAG_MAX_LENGTH) {
-    showError($t('user_tags.tag_max_length'))
-    return
-  }
-  if (props.tags.includes(t)) {
-    return
-  }
-  if (props.tags.length >= USER_TAG_MAX_COUNT) {
-    showError($t('user_tags.limit_reached'))
-    return
-  }
-  emit('add', t)
-  freeInput.value = ''
+const setGenreView = async (show: boolean): Promise<void> => {
+  if (show) expandedGenres.value = []
+  showGenres.value = show
+  await nextTick()
+  // 候補の件数が大きく変わっても、スクロール位置が一覧末尾に移らないようにする。
+  candidateHeading.value?.focus({ preventScroll: true })
+  candidateHeading.value?.scrollIntoView({ block: 'nearest' })
 }
 
-const onRemove = (t: string) => {
+const isSelected = (tag: string): boolean => selectedTags.value.has(normalizeTag(tag))
+
+const addTag = (raw: string, clearQuery: boolean): void => {
+  const normalized = normalizeTag(raw)
+  const tag = findExactMasterTag(normalized) ?? normalized
+  const alreadySelected = tags.value.some((item) => normalizeTag(item).toLowerCase() === tag.toLowerCase())
+  if (
+    props.loading ||
+    isComposing.value ||
+    tag === '' ||
+    tagCodePointLength(tag) > USER_TAG_MAX_LENGTH ||
+    isAtLimit.value ||
+    alreadySelected
+  ) {
+    return
+  }
+  tags.value = [...tags.value, tag]
+  if (clearQuery) {
+    query.value = ''
+    queryField.value?.focus()
+  }
+}
+
+const removeTag = (tag: string, restoreFocus: boolean): void => {
   if (props.loading) return
-  emit('remove', t)
+  tags.value = tags.value.filter((item) => item !== tag)
+  if (restoreFocus) queryField.value?.focus()
 }
 
-const findStoredTag = (tag: string) => {
-  const normalized = normalizeTag(tag)
-  return props.tags.find((t) => normalizeTag(t) === normalized)
-}
-
-const isTagSelected = (tag: string) => findStoredTag(tag) !== undefined
-
-const onMasterClick = (tag: string) => {
-  if (props.loading) return
-  const stored = findStoredTag(tag)
-  if (stored !== undefined) {
-    onRemove(stored)
-    return
+const toggleTag = (tag: string): void => {
+  const storedTag = selectedTags.value.get(normalizeTag(tag))
+  if (storedTag != null) {
+    removeTag(storedTag, false)
+  } else {
+    addTag(tag, false)
   }
-  if (isAtLimit.value) return
-  tryAddTag(tag)
 }
 
-const genreSelectedCount = (genreTags: readonly string[]) => genreTags.filter((t) => isTagSelected(t)).length
-
-const isMasterSelected = (tag: string) => isTagSelected(tag)
-
-const isMasterPickable = (tag: string) => !props.loading && !isTagSelected(tag) && !isAtLimit.value
-
-const isMasterDisabled = (tag: string) => props.loading || (!isMasterSelected(tag) && isAtLimit.value)
+const onEnter = (event: KeyboardEvent): void => {
+  // Safari では変換確定の Enter で isComposing が false になることがある。
+  if (event.isComposing || isComposing.value || event.keyCode === 229) return
+  event.preventDefault()
+  addTag(query.value, true)
+}
 </script>
 
 <template>
   <div class="tag-input">
-    <v-alert variant="tonal" color="primary" density="compact" class="text-body-2 mb-6">
-      {{ $t('user_tags.dialog_hint') }}
-    </v-alert>
+    <v-text-field
+      ref="queryField"
+      v-model="query"
+      :label="$t('user_tags.search_label')"
+      :placeholder="$t('user_tags.search_placeholder')"
+      :prepend-inner-icon="mdiMagnify"
+      :error-messages="isTooLong ? $t('user_tags.tag_max_length') : []"
+      variant="outlined"
+      rounded="lg"
+      density="comfortable"
+      hide-details="auto"
+      autocomplete="off"
+      :disabled="loading"
+      @keydown.enter="onEnter"
+      @compositionstart="isComposing = true"
+      @compositionend="isComposing = false"
+    />
 
-    <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-4" height="2" />
+    <p v-if="isAtLimit" class="text-caption text-medium-emphasis mt-3" role="status">
+      {{ $t('user_tags.limit_help') }}
+    </p>
 
-    <v-sheet class="tag-input__hero rounded-lg pa-4 mb-6">
-      <div class="d-flex align-center justify-space-between mb-2">
-        <div class="text-subtitle-2">{{ $t('user_tags.current_tags_heading') }}</div>
-        <div class="text-caption font-weight-medium">{{ $t('user_tags.section_count', { count: tags.length }) }}</div>
-      </div>
-      <v-progress-linear
-        :model-value="tagProgress"
+    <div class="tag-input__heading">
+      <h3 ref="candidateHeading" class="text-subtitle-2" tabindex="-1">
+        {{
+          $t(
+            isBrowsingGenres
+              ? 'user_tags.browse_genres'
+              : isSearching
+                ? 'user_tags.search_results'
+                : 'user_tags.choose_tags',
+          )
+        }}
+      </h3>
+      <v-btn
+        v-if="isBrowsingGenres"
+        class="tag-input__nav-link"
+        variant="text"
+        size="small"
         color="primary"
-        height="6"
-        rounded
-        class="mb-3"
-        :aria-label="$t('user_tags.section_count', { count: tags.length })"
-      />
-
-      <transition-group v-if="tags.length > 0" name="tag-chip" tag="div" class="d-flex flex-wrap">
-        <TagBadge
-          v-for="t in tags"
-          :key="t"
-          :tag="t"
-          emphasized
-          highlighted
-          removable
-          :disabled="loading"
-          @close="onRemove"
-        />
-      </transition-group>
-
-      <div v-else class="tag-input__empty text-center py-4">
-        <v-icon :icon="mdiTagOutline" color="primary" size="28" class="mb-2 opacity-80" />
-        <p class="text-body-2 text-medium-emphasis mb-0">{{ $t('user_tags.section_empty_prompt') }}</p>
-      </div>
-
-      <p v-if="isAtLimit" class="text-caption text-medium-emphasis mb-0 mt-3">{{ $t('user_tags.limit_reached') }}</p>
-    </v-sheet>
-
-    <v-sheet class="tag-input__free-input rounded-lg pa-4 mb-4">
-      <div class="text-subtitle-1 font-weight-bold text-primary mb-1">{{ $t('user_tags.free_input_heading') }}</div>
-      <p class="text-body-2 text-medium-emphasis mb-3">{{ $t('user_tags.free_input_subheading') }}</p>
-      <v-text-field
-        v-model="freeInput"
-        :placeholder="$t('user_tags.free_input_placeholder')"
-        :hint="isAtLimit ? $t('user_tags.limit_reached') : $t('user_tags.free_input_hint')"
-        persistent-hint
-        variant="outlined"
-        hide-details="auto"
-        :disabled="loading || isAtLimit"
-        :prepend-inner-icon="mdiPencilOutline"
-        @keyup.enter="tryAddTag(freeInput)"
-      />
-    </v-sheet>
-
-    <div class="tag-input__divider d-flex align-center mb-4">
-      <v-divider class="flex-grow-1" />
-      <span class="tag-input__divider-label text-caption text-medium-emphasis mx-3">{{
-        $t('user_tags.section_divider')
-      }}</span>
-      <v-divider class="flex-grow-1" />
+        :prepend-icon="mdiArrowLeft"
+        @click="setGenreView(false)"
+      >
+        {{ $t('user_tags.back_to_suggestions') }}
+      </v-btn>
     </div>
 
-    <div class="text-subtitle-1 font-weight-bold mb-1">{{ $t('user_tags.master_tags_heading') }}</div>
-    <p class="text-body-2 text-medium-emphasis mb-3">{{ $t('user_tags.master_tags_subheading') }}</p>
-    <v-expansion-panels variant="accordion" multiple class="tag-input__panels">
-      <v-expansion-panel v-for="g in TAG_GENRES" :key="g.genre">
-        <v-expansion-panel-title>
-          <span>{{ g.genre }}</span>
-          <v-chip v-if="genreSelectedCount(g.tags) > 0" size="x-small" color="primary" variant="tonal" class="ml-2">
-            {{ genreSelectedCount(g.tags) }}
-          </v-chip>
-        </v-expansion-panel-title>
+    <v-expansion-panels
+      v-if="isBrowsingGenres"
+      v-model="expandedGenres"
+      variant="accordion"
+      multiple
+      flat
+      class="tag-input__genres"
+    >
+      <v-expansion-panel v-for="group in TAG_GENRES" :key="group.genre" :value="group.genre">
+        <v-expansion-panel-title>{{ group.genre }}</v-expansion-panel-title>
         <v-expansion-panel-text>
-          <div class="d-flex flex-wrap pt-1">
-            <TagBadge
-              v-for="tag in g.tags"
+          <div class="tag-input__options">
+            <v-btn
+              v-for="tag in group.tags"
               :key="tag"
-              :tag="tag"
-              compact
-              :highlighted="isMasterSelected(tag)"
-              :pickable="!isMasterSelected(tag) && isMasterPickable(tag)"
-              :clickable="!loading && (isMasterSelected(tag) || isMasterPickable(tag))"
-              :disabled="isMasterDisabled(tag)"
-              @click="onMasterClick(tag)"
-            />
+              class="tag-input__option"
+              :color="isSelected(tag) ? 'primary' : ''"
+              :variant="isSelected(tag) ? 'flat' : 'tonal'"
+              rounded="pill"
+              :prepend-icon="isSelected(tag) ? mdiCheck : mdiPlus"
+              :aria-label="tag"
+              :aria-pressed="isSelected(tag)"
+              :aria-disabled="loading || (!isSelected(tag) && isAtLimit)"
+              :disabled="loading || (!isSelected(tag) && isAtLimit)"
+              @click="toggleTag(tag)"
+            >
+              {{ tag }}
+            </v-btn>
           </div>
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
 
-    <v-snackbar v-model="snackbar" color="error" location="top" timeout="4000">
-      {{ snackbarMessage }}
-    </v-snackbar>
+    <div v-else class="tag-input__options" :aria-label="$t('user_tags.choose_tags')">
+      <v-btn
+        v-for="tag in visibleTags"
+        :key="tag"
+        class="tag-input__option"
+        :color="isSelected(tag) ? 'primary' : ''"
+        :variant="isSelected(tag) ? 'flat' : 'tonal'"
+        rounded="pill"
+        :prepend-icon="isSelected(tag) ? mdiCheck : mdiPlus"
+        :aria-label="tag"
+        :aria-pressed="isSelected(tag)"
+        :aria-disabled="loading || (!isSelected(tag) && isAtLimit)"
+        :disabled="loading || (!isSelected(tag) && isAtLimit)"
+        @click="toggleTag(tag)"
+      >
+        {{ tag }}
+      </v-btn>
+    </div>
+
+    <p
+      v-if="isSearching && !isBrowsingGenres && visibleTags.length === 0"
+      class="text-body-2 text-medium-emphasis my-3"
+    >
+      {{ $t('user_tags.no_results') }}
+    </p>
+    <div v-if="isSearching && !isBrowsingGenres && hasMore" class="text-center mt-3">
+      <v-btn variant="text" size="small" color="secondary" @click="page += 1">
+        {{ $t('user_tags.more_results') }}
+      </v-btn>
+    </div>
+    <v-btn
+      v-if="canCreate"
+      class="tag-input__create mt-4"
+      block
+      variant="tonal"
+      color="primary"
+      :prepend-icon="mdiPlus"
+      :disabled="loading || isAtLimit || isTooLong || isComposing"
+      @click="addTag(query, true)"
+    >
+      {{ $t('user_tags.create_tag', { tag: normalizedQuery }) }}
+    </v-btn>
+    <v-btn
+      v-if="!showGenres"
+      class="tag-input__show-more mt-4"
+      block
+      variant="outlined"
+      size="large"
+      color="primary"
+      @click="setGenreView(true)"
+    >
+      {{ $t('user_tags.show_more') }}
+    </v-btn>
+
+    <section v-if="tags.length > 0" class="tag-input__selected" :aria-label="$t('user_tags.current_tags_heading')">
+      <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
+      <div class="tag-input__options">
+        <v-btn
+          v-for="tag in tags"
+          :key="tag"
+          class="tag-input__remove"
+          variant="flat"
+          color="primary"
+          rounded="pill"
+          :append-icon="mdiClose"
+          :aria-label="$t('user_tags.remove_tag', { tag })"
+          :aria-disabled="loading"
+          :disabled="loading"
+          @click="removeTag(tag, true)"
+        >
+          {{ tag }}
+        </v-btn>
+      </div>
+    </section>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.tag-input__hero {
-  background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+.tag-input__nav-link {
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
-.tag-input__hero :deep(.tag-badge--emphasized.v-chip) {
-  background-color: rgba(var(--v-theme-primary), 0.12);
-  color: rgb(var(--v-theme-primary));
+.tag-input__show-more {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
-.tag-input__empty {
-  border: 1px dashed rgba(var(--v-theme-primary), 0.35);
-  border-radius: 8px;
+.tag-input__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-block: 20px 12px;
 }
 
-.tag-input__free-input {
-  background-color: rgb(var(--v-theme-surface));
-  border: 1px solid rgba(var(--v-theme-primary), 0.2);
-}
-
-.tag-input__divider {
-  min-height: 24px;
-  width: 100%;
-}
-
-.tag-input__divider-label {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.tag-input__panels {
+.tag-input__genres {
   :deep(.v-expansion-panel) {
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-    border-radius: 8px !important;
-    margin-bottom: 8px;
-
-    &::before {
-      box-shadow: none;
-    }
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   }
 
   :deep(.v-expansion-panel-title) {
-    min-height: 48px;
+    min-height: 52px;
+    padding-inline: 0;
     font-size: 0.875rem;
+    font-weight: 600;
   }
 
-  :deep(.tag-badge--highlighted.tag-badge--compact.v-chip) {
-    background-color: rgba(var(--v-theme-primary), 0.12);
-    color: rgb(var(--v-theme-primary));
-    transition:
-      background-color 0.15s ease,
-      transform 0.1s ease;
-
-    &:not(.v-chip--disabled):hover {
-      background-color: rgba(var(--v-theme-primary), 0.2);
-    }
-
-    &:not(.v-chip--disabled):active {
-      transform: scale(0.97);
-    }
+  :deep(.v-expansion-panel-text__wrapper) {
+    padding: 4px 0 20px;
   }
 }
 
-.tag-chip-enter-active,
-.tag-chip-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+.tag-input__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.tag-chip-enter-from,
-.tag-chip-leave-to {
-  opacity: 0;
-  transform: scale(0.9);
+.tag-input__option,
+.tag-input__remove,
+.tag-input__create {
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding-block: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+
+  :deep(.v-btn__content) {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: start;
+  }
+
+  &[aria-disabled='true'] {
+    cursor: default;
+  }
 }
 
-.tag-chip-move {
-  transition: transform 0.2s ease;
+.tag-input__selected {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>
