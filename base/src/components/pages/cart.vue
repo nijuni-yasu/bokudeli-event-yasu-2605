@@ -449,7 +449,7 @@ const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined 
 
 const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   const { event, orders } = item
-  if (event.event_payment === 'user_advance') return true
+  if (event.event_payment === 'user_advance') return item.totalPrice > 0
   if (needsCommunityBillStripe(event, orders)) return true
   if (event.event_payment === 'enterprise_subsidy') return item.totalPrice > 0
   return false
@@ -613,7 +613,9 @@ const startOrderProcess = async () => {
 
 const paymentMessageForItem = (item: EnrichedCartItem) => {
   const { event, orders, totalPrice } = item
-  if (event.event_payment === 'user_advance') return $t('cart.confirm_order_credit_card')
+  if (event.event_payment === 'user_advance') {
+    return totalPrice > 0 ? $t('cart.confirm_order_credit_card') : $t('cart.confirm_order_zero_payment')
+  }
   if (event.event_payment === 'user_on_day') return $t('cart.confirm_order_participant_on_day')
   if (event.event_payment === 'enterprise_subsidy') {
     if (totalPrice > 0) {

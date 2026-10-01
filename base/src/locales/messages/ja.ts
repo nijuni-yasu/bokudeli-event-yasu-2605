@@ -162,6 +162,7 @@ export default {
     subsidy_recalculated: '割引金額が更新されました。内容をご確認のうえ、再度お試しください。',
     update_failed: '個数の更新に失敗しました。',
     delete_failed: '削除に失敗しました。',
+    confirm_order_zero_payment: '支払いなしで注文を確定します。',
     confirm_order_credit_card: 'お支払い画面に進みますか？',
     confirm_order_participant_on_day: '支払い方法は「参加者による当日払い」です。注文を確定しますか？',
     confirm_order_community_bill: '支払い方法は「主催者請求書払い」です。注文を確定しますか？',
