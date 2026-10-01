@@ -54,6 +54,9 @@
 | [x] | RC-48 | 5911293633 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 返信は既存の未解消指摘の再掲<br>個別 RC で扱う |
 | [x] | RC-49 | 5366192698 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存スレッドと新規インラインの再掲<br>新規は RC-50 で扱う |
 | [x] | RC-50 | 4144582288 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | Rules で option_ids の実在を見てほしい<br>仕様 5.3 は配列長まで。存在確認は承認時 |
+| [x] | RC-51 | 5374647587 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存の未解消指摘の再掲<br>新しい指摘はない |
+| [x] | RC-52 | 5374647675 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC-53 で扱う |
+| [x] | RC-53 | 4151569102 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 別オプションの同時追加で限定数を超える<br>増加ロックをイベントとメニューで共有する |
 
 ---
 
@@ -2577,5 +2580,191 @@ Unresolved critical and moderate findings remain in Rules, rollout compatibility
 **想定工数**: —
 
 **判断理由**: 仕様 5.3 はメニューの option_ids を現行の write 条件のままにし、Rules では配列長だけを見る。存在しない ID は承認スナップショットが null を返し、そのメニューはイベントにコピーされない。画面保存では欠落 ID を既に拒否している。
+
+---
+
+---
+
+## 評価セッション（2026-10-01 12:35・review-comments-evaluate）
+
+- **評価日時**: 2026-10-01 12:35 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `feat/2366`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2367
+- **since**: 2026-10-01T03:26:31Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼コメント 5924114207、Copilot 処理エラー 5924115896）
+- **新規 RC**: RC-51〜RC-53
+- **手順 4a 自動修正**: RC-53（🚨 0件 / 🟡 1件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+| :---: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| [x] | RC-51 | 5374647587 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot 概要は既存の未解消指摘の再掲<br>新しい指摘はない |
+| [x] | RC-52 | 5374647675 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Codex レビュー本体は案内のみ<br>具体指摘はインライン RC-53 で扱う |
+| [x] | RC-53 | 4151569102 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 別オプションの同時追加で限定数を超える<br>増加ロックをイベントとメニューで共有する |
+
+---
+
+**識別子**: RC-51（GitHub id: 5374647587）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🔵 Needs a closer look
+
+未解決の必須レビュー指摘があり、互換性・決済・検証・削除処理の修正が必要です。
+
+**Review effort:** Lite  
+**Findings:** 10 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (10)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_idsの存在とパートナー所属を検証していない](#discussion_r4144582288)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [0円事前決済注文が確定できない支払い方式の不整合](#discussion_r4144224625)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各要素をRulesで検証していない](#discussion_r4115300334)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [オプション削除と参照解除が原子的に実行されない](#discussion_r4114702139)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Stripe商品名が長さ制限を超えて決済に失敗する](#discussion_r4114702125)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [EventMenuとFunctionsの独立デプロイで互換性が崩れる](#discussion_r4114702108)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [新API拡張が旧Functionsと後方互換になっていない](#discussion_r4114702084)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [デプロイ順序の不整合でカート金額と注文可否が変わる](#discussion_r4114702066)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Callable入力の未検証でTypeErrorが500エラーになる](#discussion_r4110466923)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [option_itemsの各項目をRulesで厳格に検証する](#discussion_r4104985599)
+</details>
+
+**コメント要約**: Copilot 概要は既存の未解消指摘の再掲。
+新しい指摘はない。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 列挙された 10 件は既存スレッドの再掲。今回の差分に対する新しい指摘はない。
+
+---
+
+**識別子**: RC-52（GitHub id: 5374647675）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `da5f68e528`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+**コメント要約**: Codex レビュー本体は案内のみ。
+具体指摘はインライン RC-53 で扱う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: レビュー本文は自動レビューである旨と接続案内だけで、コード上の指摘はインライン RC-53 にある。
+
+---
+
+**識別子**: RC-53（GitHub id: 4151569102）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/pages/cart.vue:704`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -681,7 +701,7 @@ const showDeleteConfirm = (event: BokudeliEvent, orderId: string) => {
+ }
+ 
+ const incrementMenuCount = async (event: BokudeliEvent, menu: GroupedMenu) => {
+-  const menuKey = `add_${menu.menu_id}`
++  const menuKey = `add_${menu.group_key}`
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  同一メニューの増加操作を同じロックで直列化する**
+
+限定食数が残り1食で、同じ `menu_id` のオプション構成A/Bがカートにある場合、両方の「＋」を最初の通信完了前に押すと、ロックが `group_key` ごとなので2件の `addToCart` が並行実行されます。サーバー側の `assertMenuLimitsForCartAdd` は既存カート数を含めず各リクエストの1件だけを検査するため両方が成功し、注文確定時まで上限超過に気づけません。以前の限定食数指摘への修正後も、更新キーが `menu_id` から `group_key` に変更されたことがこの競合を残す新しい根拠です。同じイベント・メニューの増加中は全オプション構成を共通ロックして二重追加を防いでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 別オプションの同時追加で限定数を超える。
+増加ロックをイベントとメニューで共有する。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 増加ロックが group_key 単位だと、同じメニューの別オプションを通信完了前に両方押したとき、サーバーはカート内の数を見ないため両方成功しうる。増加中はイベントと menu_id で共通ロックする。手順 4a で修正済み。
 
 ---
