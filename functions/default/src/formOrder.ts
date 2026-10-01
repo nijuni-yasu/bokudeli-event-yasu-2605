@@ -13,12 +13,7 @@ import {
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import { createModuleLogger } from './utils/logger.js'
-import {
-  parseOrThrow,
-  requireAuthUid,
-  requirePfEventForForm,
-  visibleFieldsForNewAnswers,
-} from './utils/formAccess.js'
+import { parseOrThrow, requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
 import { getOrdersInCart } from './stores/memberOrder.js'
 import {
   createFormCheckoutAttempt,
