@@ -26,7 +26,12 @@ function hasUniqueItemIds(items: readonly { item_id: string }[]): boolean {
   return hasUniqueValues(items.map((item) => item.item_id))
 }
 
-export const OptionItemListSchema = z.array(OptionItemSchema).min(1).max(OPTION_ITEMS_MAX).refine(hasUniqueItemIds)
+export const OptionItemListSchema = z
+  .array(OptionItemSchema)
+  .min(1)
+  .max(OPTION_ITEMS_MAX)
+  .refine(hasUniqueItemIds)
+  .refine((items) => !hasDuplicateOptionItemNames(items))
 
 export const EventMenuOptionSchema = z.object({
   option_id: z.string().nonempty(),
