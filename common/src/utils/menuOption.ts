@@ -190,6 +190,18 @@ export function computeOrderMenuPrice(basePrice: number, selectedOptions: readon
 
 export const NAMES_PRINT_MAX_MENU_LABEL_LENGTH = 32
 
+/** 名札のユーザー名。2行に収まる文字数で、超えた分は末尾を … にする */
+export const NAMES_PRINT_MAX_USER_NAME_LENGTH = 13
+
+export function formatNamesPrintUserName(userName: string, maxLength = NAMES_PRINT_MAX_USER_NAME_LENGTH): string {
+  const normalized = userName.normalize('NFKC')
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+  const ellipsis = '…'
+  return `${normalized.slice(0, Math.max(0, maxLength - ellipsis.length))}${ellipsis}`
+}
+
 export function formatSelectedOptionItemNames(selectedOptions?: readonly SelectedOptionType[] | null): string {
   if (selectedOptions == null || selectedOptions.length === 0) {
     return ''

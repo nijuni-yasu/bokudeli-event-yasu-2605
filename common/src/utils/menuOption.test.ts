@@ -6,6 +6,7 @@ import {
   computeOptionMinDelta,
   findMissingOptionIds,
   formatNamesPrintMenuLabel,
+  formatNamesPrintUserName,
   formatOrderMenuDisplayName,
   getOrderMenuGroupKey,
   getStripeLineItemGroupKey,
@@ -329,6 +330,11 @@ describe('formatNamesPrintMenuLabel', () => {
   it('メニュー名が 32 文字以上ならメニュー名だけ切る', () => {
     const longName = 'あ'.repeat(34)
     expect(formatNamesPrintMenuLabel(longName, selectedLargeCheese)).toBe('あ'.repeat(32))
+  })
+
+  it('ユーザー名が 13 文字を超えると末尾を … にする', () => {
+    expect(formatNamesPrintUserName('あ'.repeat(13))).toBe('あ'.repeat(13))
+    expect(formatNamesPrintUserName('あ'.repeat(14))).toBe(`${'あ'.repeat(12)}…`)
   })
 
   it('未満なら項目名側だけ切って … を付ける', () => {

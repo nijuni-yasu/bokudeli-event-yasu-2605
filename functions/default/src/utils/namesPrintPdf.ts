@@ -4,14 +4,12 @@ import { getStorage } from 'firebase-admin/storage'
 import sharp from 'sharp'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { sortEventMemberOrdersForPartnerDetail } from '@shokujii/common/utils/eventMemberOrderSort.js'
-import { formatNamesPrintMenuLabel } from '@shokujii/common/utils/menuOption.js'
+import { formatNamesPrintMenuLabel, formatNamesPrintUserName } from '@shokujii/common/utils/menuOption.js'
 import { createModuleLogger } from './logger.js'
 import type { ShokujiiUser } from '../stores/user.js'
 
 /** PDF 用プロフィール画像の一辺（px） */
 const NAMES_PRINT_PHOTO_SIZE_PX = 300
-/** 名札に載せるユーザー名の最大文字数 */
-const NAMES_PRINT_MAX_USER_NAME_LENGTH = 14
 /** テンプレート 1 行あたりの列数 */
 const NAMES_PRINT_COLUMNS_PER_ROW = 4
 
@@ -159,9 +157,7 @@ export const buildValidNameRows = async (
   return Promise.all(
     rows.map(async (row) => {
       const user = userById.get(row.userId)
-      const rawName = user?.user_name ?? ''
-      const name =
-        rawName.length > NAMES_PRINT_MAX_USER_NAME_LENGTH ? rawName.slice(0, NAMES_PRINT_MAX_USER_NAME_LENGTH) : rawName
+      const name = formatNamesPrintUserName(user?.user_name ?? '')
       const menu = row.menuName
       const photoUrl = user?.user_image_url
       const photo = await resolvePhotoUrl(photoUrl !== '' ? photoUrl : undefined)
