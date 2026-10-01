@@ -1,8 +1,7 @@
 import type Stripe from 'stripe'
-import { computeUserPaymentFeeFromSelfPay, USER_PAYMENT_FEE_AMOUNT } from '@shokujii/common/utils/paymentUserFee.js'
+import { computeUserPaymentFeeFromSelfPay } from '@shokujii/common/utils/paymentUserFee.js'
 
 export const USER_PAYMENT_FEE_LINE_ITEM_NAME = 'システム利用料'
-export const USER_PAYMENT_FEE_LINE_ITEM_DESCRIPTION = `自己負担がある事前決済のときだけかかります。現在は1回の決済につき税込${USER_PAYMENT_FEE_AMOUNT}円です。キャンセルしても返金されません。`
 
 /** Checkout に載せるシステム利用料 line item。fee が 0 以下なら追加しない。 */
 export function buildUserPaymentFeeCheckoutLineItem(fee: number): Stripe.Checkout.SessionCreateParams.LineItem | null {
@@ -13,7 +12,6 @@ export function buildUserPaymentFeeCheckoutLineItem(fee: number): Stripe.Checkou
       tax_behavior: 'inclusive',
       product_data: {
         name: USER_PAYMENT_FEE_LINE_ITEM_NAME,
-        description: USER_PAYMENT_FEE_LINE_ITEM_DESCRIPTION,
         metadata: { fee_type: 'user_payment_fee' },
       },
       unit_amount: fee,

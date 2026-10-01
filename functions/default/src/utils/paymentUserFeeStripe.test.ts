@@ -3,7 +3,6 @@ import Stripe from 'stripe'
 import { computeEventStripePayFields } from '@shokujii/common/utils/paymentUserFee.js'
 import {
   retrieveCheckoutUserPaymentFeeAmount,
-  USER_PAYMENT_FEE_LINE_ITEM_DESCRIPTION,
   USER_PAYMENT_FEE_LINE_ITEM_NAME,
   buildUserPaymentFeeCheckoutLineItem,
   buildUserPaymentFeeCheckoutLineItemFromSelfPay,
@@ -34,7 +33,6 @@ describe('buildUserPaymentFeeCheckoutLineItem', () => {
         tax_behavior: 'inclusive',
         product_data: {
           name: USER_PAYMENT_FEE_LINE_ITEM_NAME,
-          description: USER_PAYMENT_FEE_LINE_ITEM_DESCRIPTION,
           metadata: { fee_type: 'user_payment_fee' },
         },
         unit_amount: 110,
