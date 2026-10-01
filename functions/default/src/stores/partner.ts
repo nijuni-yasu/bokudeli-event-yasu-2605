@@ -91,6 +91,46 @@ export class Partner {
     return snapshot.docs.map((doc) => doc.data())
   }
 
+  async getOption(optionId: string, transaction: Transaction): Promise<PartnerOption | undefined> {
+    const optionRef = getFirestore()
+      .collection('partners')
+      .doc(this.id)
+      .collection('options')
+      .doc(optionId)
+      .withConverter(new PartnerOptionConverter())
+    return (await transaction.get(optionRef)).data()
+  }
+
+  async getMenusUsingOption(optionId: string, transaction: Transaction): Promise<PartnerMenu[]> {
+    const menusQuery = getFirestore()
+      .collection('partners')
+      .doc(this.id)
+      .collection('menus')
+      .where('option_ids', 'array-contains', optionId)
+      .withConverter(new PartnerMenuConverter())
+    return (await transaction.get(menusQuery)).docs.map((snapshot) => snapshot.data())
+  }
+
+  saveOption(option: PartnerOption, transaction: Transaction): void {
+    const optionRef = getFirestore()
+      .collection('partners')
+      .doc(this.id)
+      .collection('options')
+      .doc(option.id)
+      .withConverter(new PartnerOptionConverter())
+    transaction.set(optionRef, option)
+  }
+
+  deleteOption(optionId: string, transaction: Transaction): void {
+    const optionRef = getFirestore()
+      .collection('partners')
+      .doc(this.id)
+      .collection('options')
+      .doc(optionId)
+      .withConverter(new PartnerOptionConverter())
+    transaction.delete(optionRef)
+  }
+
   async getShops(transaction?: Transaction): Promise<PartnerShop[]> {
     const db = getFirestore()
     const shopsRef = db
