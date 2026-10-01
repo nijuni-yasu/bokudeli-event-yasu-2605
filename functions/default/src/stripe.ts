@@ -33,7 +33,7 @@ import {
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 import { assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
-import { assertStripeCheckoutLineItemLimit } from './utils/stripeCheckoutLineItems.js'
+import { assertStripeCheckoutLineItemLimit, formatStripeProductName } from './utils/stripeCheckoutLineItems.js'
 
 const logger = createModuleLogger('stripe')
 const db = getFirestore()
@@ -255,7 +255,7 @@ export const createStripeCheckoutSession = onCall<
           currency: 'jpy',
           tax_behavior: 'inclusive',
           product_data: {
-            name: item.menuName,
+            name: formatStripeProductName(item.menuName),
             ...(item.imageUrl ? { images: [item.imageUrl] } : {}),
             metadata: { partner_id: event.partner_id },
           },

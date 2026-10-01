@@ -11,3 +11,13 @@ export function assertStripeCheckoutLineItemLimit(lineItemCount: number): void {
     )
   }
 }
+
+const STRIPE_PRODUCT_NAME_MAX_LENGTH = 250
+
+/** Stripe に渡す商品名だけを省略する。注文スナップショットと集約キーは変更しない。 */
+export function formatStripeProductName(displayName: string): string {
+  const characters = Array.from(displayName)
+  return characters.length <= STRIPE_PRODUCT_NAME_MAX_LENGTH
+    ? displayName
+    : `${characters.slice(0, STRIPE_PRODUCT_NAME_MAX_LENGTH - 1).join('')}…`
+}
