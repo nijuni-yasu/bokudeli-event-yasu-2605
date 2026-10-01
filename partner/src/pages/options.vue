@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { FirebaseError } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { useI18n } from 'vue-i18n'
 import { usePartnerStore, BokudeliPartnerMenu, BokudeliPartnerOption } from '@shokujii/base/stores/partner.js'
 import OptionEditCard from '@/components/OptionEditCard.vue'
-import { isMenuMinTotalValid } from '@shokujii/common/utils/menuOption.js'
+import { isMenuMinTotalValid, MENU_MIN_TOTAL_INVALID_MESSAGE } from '@shokujii/common/utils/menuOption.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import { mdiPlus, mdiDelete } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
@@ -60,7 +61,10 @@ const createBlankOption = () =>
     option_items: [{ item_id: crypto.randomUUID(), name: '', price_delta: 0 }],
   })
 
-const openOptionDialog = (option: BokudeliPartnerOption) => {
+let isCreatingOption = false
+
+const openOptionDialog = (option: BokudeliPartnerOption, create = false) => {
+  isCreatingOption = create
   targetOption.value = new BokudeliPartnerOption(partnerId, option.option_id, {
     ...option,
     option_items: option.option_items.map((item) => ({ ...item })),
@@ -92,7 +96,7 @@ const saveOption = async (option: BokudeliPartnerOption) => {
       notification.show($t('menu_edit_card.error_min_total'), 'error')
       return
     }
-    await partnerStore.updateOption(option)
+    await partnerStore.updateOption(option, isCreatingOption)
     notification.show($t('options.saved'), 'success')
     optionDialog.value = false
   } catch (e) {
@@ -111,21 +115,15 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
     return
   }
   try {
-    const attachedMenus = menus.value.filter((menu) => (menu.option_ids ?? []).includes(option.option_id))
-    await Promise.all(
-      attachedMenus.map((menu) => {
-        const next = new BokudeliPartnerMenu(partnerId, menu.menu_id, {
-          ...menu,
-          option_ids: (menu.option_ids ?? []).filter((id) => id !== option.option_id),
-        })
-        return partnerStore.updateMenu(next)
-      }),
-    )
     await partnerStore.deleteOption(option.option_id)
     notification.show($t('options.deleted'), 'success')
   } catch (e) {
     console.error(e)
-    notification.show($t('options.delete_error'), 'error')
+    const key =
+      e instanceof FirebaseError && e.message.includes(MENU_MIN_TOTAL_INVALID_MESSAGE)
+        ? 'options.delete_min_total_error'
+        : 'options.delete_error'
+    notification.show($t(key), 'error')
   }
 }
 </script>
@@ -134,7 +132,12 @@ const onDeleteOption = async (option: BokudeliPartnerOption) => {
   <v-row class="justify-center">
     <v-col cols="12" class="px-0">
       <div class="ma-4 d-flex justify-start align-center">
-        <v-btn color="primary" size="x-large" :prepend-icon="mdiPlus" @click="openOptionDialog(createBlankOption())">
+        <v-btn
+          color="primary"
+          size="x-large"
+          :prepend-icon="mdiPlus"
+          @click="openOptionDialog(createBlankOption(), true)"
+        >
           {{ $t('options.add') }}
         </v-btn>
       </div>

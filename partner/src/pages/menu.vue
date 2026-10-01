@@ -103,7 +103,7 @@ const saveMenu = async (menu: BokudeliPartnerMenu, file: File | null): Promise<b
     return false
   }
 }
-const onDelete = (menu: BokudeliPartnerMenu) => {
+const onDelete = async (menu: BokudeliPartnerMenu) => {
   if (menu.menu_id == null) {
     console.error('menu.menu_id is null')
     notification.show($t('menu.delete_error'), 'error')
@@ -112,7 +112,7 @@ const onDelete = (menu: BokudeliPartnerMenu) => {
   const result = window.confirm($t('menu.delete_confirm'))
   if (result) {
     try {
-      partnerStore.deleteMenu(menu.menu_id)
+      await partnerStore.deleteMenu(menu.menu_id)
       notification.show($t('menu.deleted'), 'success')
     } catch (e) {
       console.error(e)

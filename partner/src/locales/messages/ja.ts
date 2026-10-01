@@ -188,6 +188,8 @@ export default {
     save_error: 'オプションを保存できませんでした',
     deleted: 'オプションを削除しました',
     delete_error: 'オプションを削除できませんでした',
+    delete_min_total_error:
+      '削除すると1円未満になるメニューがあります。先にメニューの価格やオプションを変更してください。',
     delete_confirm: 'このオプションを削除しますか？メニューから外されます。',
     delete: '削除',
     unused: '未使用',

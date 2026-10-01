@@ -12,17 +12,13 @@ import { PartnerMenu } from '@shokujii/common/schemas/PartnerMenu.js'
 import { PartnerOption } from '@shokujii/common/schemas/PartnerOption.js'
 import { defineStore } from 'pinia'
 import {
-  collection,
-  doc,
-  getDoc,
-  getFirestore,
-  onSnapshot,
-  deleteDoc,
-  setDoc,
-  Timestamp,
-  updateDoc,
-  writeBatch,
-} from 'firebase/firestore'
+  savePartnerMenu,
+  savePartnerOption,
+  deletePartnerOption,
+  deletePartnerMenu,
+  sortPartnerMenus,
+} from '../apis/partnerMenu.js'
+import { collection, doc, getFirestore, onSnapshot, setDoc, Timestamp, updateDoc } from 'firebase/firestore'
 import { getMenuImageStoragePath, getShopCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import { uploadImage, convertStoragePathToURL } from '@shokujii/base/utils/storage.js'
 import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
@@ -70,10 +66,6 @@ const optionConverter: FirestoreDataConverter<BokudeliPartnerOption> = {
     const partner_id = snapshot.ref.parent.parent!.id
     return new BokudeliPartnerOption(partner_id, snapshot.id, data)
   },
-}
-
-export const getPartnerOptionRef = (partnerId: string, optionId: string): DocumentReference<BokudeliPartnerOption> => {
-  return doc(db, 'partners', partnerId, 'options', optionId).withConverter(optionConverter)
 }
 
 const menuConverter: FirestoreDataConverter<BokudeliPartnerMenu> = {
@@ -259,37 +251,37 @@ export const usePartnerStore = (partnerId: string) => {
         await uploadImage(image, getMenuImageStoragePath(partnerRef.id, data.menu_id))
         _menuImageCacheBusters.value = new Map(_menuImageCacheBusters.value).set(data.menu_id, Date.now())
       }
-      const menuRef = doc(partnerRef, 'menus', data.menu_id).withConverter(menuConverter)
-      return await setDoc(menuRef, data, { merge: true })
-    }
-
-    const deleteMenu = async (menuId: string) => {
-      const menuRef = doc(partnerRef, 'menus', menuId).withConverter(menuConverter)
-      const snap = await getDoc(menuRef)
-      if (!snap.exists()) {
-        return
-      }
-      await updateDoc(menuRef, { is_deleted: true, deleted_at: Timestamp.now() })
-    }
-
-    const updateOption = async (data: BokudeliPartnerOption) => {
-      const optionRef = getPartnerOptionRef(partnerId, data.option_id)
-      return await setDoc(optionRef, data)
-    }
-
-    const deleteOption = async (optionId: string) => {
-      const optionRef = getPartnerOptionRef(partnerId, optionId)
-      await deleteDoc(optionRef)
-    }
-
-    const updateMenuSortOrder = async (menuIds: string[]) => {
-      const batch = writeBatch(db)
-      menuIds.forEach((menuId, index) => {
-        const menuRef = doc(partnerRef, 'menus', menuId)
-        batch.update(menuRef, { menu_sort_number: index })
+      return await savePartnerMenu({
+        menu_id: data.menu_id,
+        menu_name: data.menu_name,
+        menu_description: data.menu_description,
+        menu_price: data.menu_price,
+        is_sold_out: data.is_sold_out,
+        menu_sort_number: data.menu_sort_number,
+        limit_per_event: data.limit_per_event,
+        menu_date_start: data.menu_date_start,
+        menu_date_end: data.menu_date_end,
+        option_ids: data.option_ids,
       })
-      await batch.commit()
     }
+
+    const deleteMenu = async (menuId: string) => await deletePartnerMenu({ menu_id: menuId })
+
+    const updateOption = async (data: BokudeliPartnerOption, create: boolean) => {
+      return await savePartnerOption({
+        option_id: data.option_id,
+        create,
+        option_name: data.option_name,
+        ...(data.option_description != null ? { option_description: data.option_description } : {}),
+        selection: data.selection,
+        required: data.required,
+        option_items: data.option_items.map((item) => ({ ...item })),
+      })
+    }
+
+    const deleteOption = async (optionId: string) => await deletePartnerOption({ option_id: optionId })
+
+    const updateMenuSortOrder = async (menuIds: string[]) => await sortPartnerMenus({ menu_ids: menuIds })
 
     return {
       shops,
