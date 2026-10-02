@@ -328,7 +328,7 @@ export default {
         slackSetting: 'Slack連携',
         album: 'アルバム',
         settings: 'コミュニティ設定',
-        forms: '事前アンケート',
+        forms: 'フォーム作成',
       },
       album: {
         page_title: 'アルバムを設定しよう🎨',
@@ -364,7 +364,7 @@ export default {
         letter: 'レター',
         settings: '設定',
         flyer: 'チラシ',
-        form: '事前アンケート',
+        form: 'フォーム回答',
       },
       edit: 'イベント設定',
       delete: 'イベント削除',
@@ -568,7 +568,7 @@ export default {
       download: '請求書',
       download_invoice: '請求書をダウンロード',
       error: '請求書の取得に失敗しました',
-      title: '主催者請求書払い📃',
+      title: '主催者請求書払い💰',
       description: `イベント設定画面で<b>「主催者請求書払い」</b>を設定した場合、参加者は事前のオンライン決済を行わずにご注文いただけます。<br />
       イベント終了後、主催者様宛に請求書を発行いたしますので、銀行振込にてお支払いください。<br />
       <b>【お支払い期限】翌月末日</b><br />

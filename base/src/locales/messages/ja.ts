@@ -97,7 +97,8 @@ export default {
     cancel_until_deadline: '注文期限までキャンセル可',
     sns_hash_tag: '#️⃣ ハッシュタグ',
     event_details: '開催内容',
-    pre_event_form: 'このイベントには事前アンケートとして使うフォームがあります。カートから注文するときにご回答ください。',
+    pre_event_form:
+      'このイベントには事前アンケートとして使うフォームがあります。カートから注文するときにご回答ください。',
     participants: '参加者',
     participants_profile: '参加者一覧',
     show_participant_tags: 'タグ表示',
@@ -919,7 +920,7 @@ export default {
         letter: 'レター',
         settings: '設定',
         flyer: 'チラシ',
-        form: 'フォーム',
+        form: 'フォーム回答',
       },
       edit: 'イベント設定',
       delete: 'イベント削除',
@@ -1106,7 +1107,7 @@ export default {
       download: '請求書',
       download_invoice: '請求書をダウンロード',
       error: '請求書の取得に失敗しました',
-      title: '主催者請求書払い📃',
+      title: '主催者請求書払い💰',
       description: `イベント設定画面で<b>「主催者請求書払い」</b>を設定した場合、参加者は事前のオンライン決済を行わずにご注文いただけます。<br />
       イベント終了後、主催者様宛に請求書を発行いたしますので、銀行振込にてお支払いください。<br />
       <b>【お支払い期限】翌月末日</b><br />
@@ -1146,7 +1147,7 @@ export default {
         slackSetting: 'Slack連携',
         album: 'アルバム',
         settings: 'コミュニティ設定',
-        forms: 'フォーム',
+        forms: 'フォーム作成',
       },
       public_page: 'コミュニティページ',
       album: {
@@ -1177,7 +1178,7 @@ export default {
       },
     },
     forms: {
-      title: 'フォーム',
+      title: 'フォーム📝',
       create: 'フォームを作成',
       edit: 'フォームを編集',
       preview: 'プレビュー',
@@ -1185,7 +1186,6 @@ export default {
       archive: 'アーカイブ',
       unarchive: 'アーカイブ解除',
       archived: 'アーカイブ済み',
-      empty: 'まだフォームがありません。コミュニティで再利用し、事前アンケートとして使えます。',
       description: '説明',
       purpose: '利用目的',
       purpose_hint: '回答者に表示する利用目的です。',
@@ -1212,7 +1212,6 @@ export default {
       filter_confirmed: '参加確定',
       filter_canceled: '全取消',
       display_name: '表示名',
-      user_id: 'ユーザーID',
       answered_at: '回答日時',
       updated_at: '更新日時',
       participation: '参加状態',
@@ -1223,7 +1222,12 @@ export default {
       preview_notice: '入力を試せます。ここで入力した回答は保存されません。',
       preview_empty: '設問文と選択肢を入力すると、ここで回答画面を確認できます。',
       editor_hint: '参加者に聞きたいことをまとめて、イベントの事前アンケートとして使うフォームを作成します。',
-      list_hint: 'コミュニティのイベントで事前アンケートとして使うフォームを管理できます。',
+      list_heading_what: '【フォームとは】',
+      list_what:
+        'コミュニティでフォームを作成し、イベントの事前アンケートとして使います。<br />氏名や参加目的など、参加者に聞きたいことを設問にまとめられます。',
+      list_heading_how: '【使い方】',
+      list_how:
+        'この画面でフォームを作成・編集できます。一覧のメニューから複製もできます。<br />イベント作成・編集の「イベント詳細」で、コミュニティのフォームを1つ設定できます。同じフォームを複数のイベントに設定することもできます。<br />1つのイベントだけ設問を変えたいときは、フォームを複製し、複製を編集してからそのイベントに設定してください。',
       basic_info: '基本情報',
       name_required: 'フォーム名（必須）',
       name_placeholder: '例：交流会の事前アンケート',
@@ -1235,6 +1239,9 @@ export default {
       field_placeholder: '例：今回のイベントで話してみたいことは？',
       option_number: '選択肢 {number}',
       remove_field: '設問 {number} を削除',
+      move_up: '設問 {number} を上へ',
+      move_down: '設問 {number} を下へ',
+      drag_field: '設問 {number} をドラッグして順番を変える',
       remove_option: '選択肢 {number} を削除',
       deleted_field_answers_hint: '設問を削除しても、過去の回答は回答一覧・CSVに残ります。',
       delete_field_title: '設問を削除しますか？',
@@ -1246,7 +1253,6 @@ export default {
       more_actions: '「{name}」の操作',
       field_total: '{count} 問',
       active: '利用可能',
-      empty_title: 'フォームを作成して、参加者のことを知りましょう',
       validation: {
         required: '入力してください',
         summary: '入力内容を確認してください。修正が必要な項目にエラーを表示しています。',

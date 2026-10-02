@@ -86,7 +86,15 @@ const download = () => {
         <p class="text-body-2 text-medium-emphasis mb-0">{{ $t('manage.forms.responses_hint') }}</p>
       </div>
       <div class="d-flex flex-wrap align-center ga-3">
-        <v-btn-toggle v-model="filter" mandatory density="comfortable" color="primary" variant="outlined" divided>
+        <v-btn-toggle
+          v-model="filter"
+          class="form-response-filter"
+          mandatory
+          density="comfortable"
+          color="primary"
+          variant="outlined"
+          divided
+        >
           <v-btn value="confirmed">{{ $t('manage.forms.filter_confirmed') }}</v-btn>
           <v-btn value="canceled">{{ $t('manage.forms.filter_canceled') }}</v-btn>
         </v-btn-toggle>
@@ -180,9 +188,6 @@ const download = () => {
                 >{{ participationLabel(selected.participation) }}</v-chip
               >
             </div>
-            <p class="text-caption text-medium-emphasis mb-4 form-response-copy">
-              {{ $t('manage.forms.user_id') }}: {{ selected.user_id }}
-            </p>
             <dl class="d-flex flex-wrap ga-4 mb-6">
               <div>
                 <dt class="text-caption text-medium-emphasis">{{ $t('manage.forms.answered_at') }}</dt>
@@ -225,5 +230,20 @@ const download = () => {
 }
 .form-response-person {
   min-width: 0;
+}
+/* Materio の .v-btn-toggle .v-btn が inline-size: 44px 固定のため、ラベルが重なる */
+.form-response-filter {
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+  height: auto;
+}
+.form-response-filter :deep(.v-btn) {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: max-content;
+  inline-size: auto !important;
+  padding-inline: 16px;
+  white-space: nowrap;
 }
 </style>
