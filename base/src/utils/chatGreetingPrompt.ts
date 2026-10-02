@@ -35,6 +35,45 @@ export const CHAT_GREETING_CLOSING_KEYS = [
   'chat.greeting.closing.joined',
 ] as const
 
+/** 従来の7文面。自己紹介と一言は同じ添字で対にし、絵文字だけ別抽選する */
+export const CHAT_GREETING_VARIANTS = [
+  {
+    namedIntroKey: 'chat.greeting.intro.named_hello',
+    unnamedIntroKey: 'chat.greeting.intro.unnamed_hello',
+    closingKey: 'chat.greeting.closing.hello',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_nice_to_meet',
+    unnamedIntroKey: 'chat.greeting.intro.unnamed_nice_to_meet',
+    closingKey: 'chat.greeting.closing.nice_to_meet',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_looking_forward',
+    unnamedIntroKey: 'chat.greeting.intro.unnamed_looking_forward',
+    closingKey: 'chat.greeting.closing.looking_forward',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_plain',
+    unnamedIntroKey: null,
+    closingKey: 'chat.greeting.closing.wave',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_plain',
+    unnamedIntroKey: null,
+    closingKey: 'chat.greeting.closing.conversation',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_plain',
+    unnamedIntroKey: null,
+    closingKey: 'chat.greeting.closing.friendly',
+  },
+  {
+    namedIntroKey: 'chat.greeting.intro.named_joined',
+    unnamedIntroKey: 'chat.greeting.intro.unnamed_joined',
+    closingKey: 'chat.greeting.closing.joined',
+  },
+] as const
+
 export const CHAT_GREETING_EMOJI_KEYS = [
   'chat.greeting_emoji.smile',
   'chat.greeting_emoji.grin',
@@ -83,9 +122,9 @@ const pickIndex = (length: number, random: () => number): number => {
 
 export const pickChatGreeting = (userName: string, random: () => number = Math.random): ChatGreetingChoice => {
   const name = userName.trim()
-  const introKeys = name === '' ? CHAT_GREETING_UNNAMED_INTRO_KEYS : CHAT_GREETING_NAMED_INTRO_KEYS
-  const introKey = introKeys[pickIndex(introKeys.length, random)] ?? null
-  const closingKey = CHAT_GREETING_CLOSING_KEYS[pickIndex(CHAT_GREETING_CLOSING_KEYS.length, random)]
+  const variant = CHAT_GREETING_VARIANTS[pickIndex(CHAT_GREETING_VARIANTS.length, random)] ?? CHAT_GREETING_VARIANTS[0]
+  const introKey = name === '' ? variant.unnamedIntroKey : variant.namedIntroKey
+  const closingKey = variant.closingKey
   const emojiKey = CHAT_GREETING_EMOJI_KEYS[pickIndex(CHAT_GREETING_EMOJI_KEYS.length, random)]
   return name === '' ? { introKey, closingKey, emojiKey } : { introKey, closingKey, emojiKey, name }
 }
@@ -136,7 +175,7 @@ export const buildChatGreetingText = (
   return composeChatGreetingBody(intro, orderSentence, closing, maxLength)
 }
 
-/** 自己紹介、注文文、一言を連結する。上限を超えるときは注文文を外す */
+/** 自己紹介、注文文、一言を連結する。注文文があるときは改行で区切る。上限を超えるときは注文文を外す */
 export const composeChatGreetingBody = (
   intro: string,
   orderSentence: string,
@@ -147,7 +186,7 @@ export const composeChatGreetingBody = (
   if (orderSentence === '') {
     return withoutOrder
   }
-  const withOrder = `${intro}${orderSentence}${closing}`
+  const withOrder = [intro, orderSentence, closing].filter((part) => part !== '').join('\n')
   if (withOrder.length > maxLength) {
     return withoutOrder
   }
