@@ -24,7 +24,7 @@ declare module 'vue-router/auto-routes' {
     '/c/[communityAccount]/e/[eventId]/': RouteRecordInfo<'/c/[communityAccount]/e/[eventId]/', '/c/:communityAccount/e/:eventId', { communityAccount: ParamValue<true>, eventId: ParamValue<true> }, { communityAccount: ParamValue<false>, eventId: ParamValue<false> }>,
     '/c/[communityAccount]/e/[eventId]/members': RouteRecordInfo<'/c/[communityAccount]/e/[eventId]/members', '/c/:communityAccount/e/:eventId/members', { communityAccount: ParamValue<true>, eventId: ParamValue<true> }, { communityAccount: ParamValue<false>, eventId: ParamValue<false> }>,
     '/c/[communityAccount]/invites': RouteRecordInfo<'/c/[communityAccount]/invites', '/c/:communityAccount/invites', { communityAccount: ParamValue<true> }, { communityAccount: ParamValue<false> }>,
-    '/cart': RouteRecordInfo<'/cart', '/cart', Record<never, never>, Record<never, never>>,
+    '/cart/': RouteRecordInfo<'/cart/', '/cart', Record<never, never>, Record<never, never>>,
     '/cart/form/[communityAccount]/[eventId]': RouteRecordInfo<'/cart/form/[communityAccount]/[eventId]', '/cart/form/:communityAccount/:eventId', { communityAccount: ParamValue<true>, eventId: ParamValue<true> }, { communityAccount: ParamValue<false>, eventId: ParamValue<false> }>,
     '/chat/': RouteRecordInfo<'/chat/', '/chat', Record<never, never>, Record<never, never>>,
     '/chat/[roomId]': RouteRecordInfo<'/chat/[roomId]', '/chat/:roomId', { roomId: ParamValue<true> }, { roomId: ParamValue<false> }>,
