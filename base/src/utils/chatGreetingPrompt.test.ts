@@ -1,57 +1,202 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { SelectedOptionType } from '@shokujii/common/schemas/menuOption.js'
 import {
   CHAT_GREETING_EMOJI_KEYS,
-  CHAT_GREETING_NAMED_KEYS,
   CHAT_GREETING_PROMPT_STATE_KEY,
-  CHAT_GREETING_UNNAMED_KEYS,
+  CHAT_GREETING_VARIANTS,
+  buildChatGreetingText,
   clearChatGreetingPromptState,
+  composeChatGreetingBody,
+  formatChatGreetingMenuPhrase,
   pickChatGreeting,
   readChatGreetingPromptRoomId,
   withChatGreetingPrompt,
 } from './chatGreetingPrompt.js'
 
+const selectedLargeCheese: SelectedOptionType[] = [
+  { option_id: 'opt-size', option_name: 'サイズ', item_id: 'large', item_name: '大盛', price_delta: 100 },
+  { option_id: 'opt-topping', option_name: 'トッピング', item_id: 'cheese', item_name: 'チーズ', price_delta: 50 },
+]
+
 describe('pickChatGreeting', () => {
-  it('名前があるときは名前入りの文面を選ぶ', () => {
+  it('名前があるときは名前入りの自己紹介を選ぶ', () => {
     expect(pickChatGreeting('山田', () => 0)).toEqual({
-      key: CHAT_GREETING_NAMED_KEYS[0],
+      introKey: CHAT_GREETING_VARIANTS[0].namedIntroKey,
+      closingKey: CHAT_GREETING_VARIANTS[0].closingKey,
       emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
       name: '山田',
     })
     expect(pickChatGreeting(' 山田 ', () => 0.99)).toEqual({
-      key: CHAT_GREETING_NAMED_KEYS[CHAT_GREETING_NAMED_KEYS.length - 1],
+      introKey: CHAT_GREETING_VARIANTS[CHAT_GREETING_VARIANTS.length - 1].namedIntroKey,
+      closingKey: CHAT_GREETING_VARIANTS[CHAT_GREETING_VARIANTS.length - 1].closingKey,
       emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
       name: '山田',
     })
   })
 
-  it('名前が空のときは名前なしの文面を選ぶ', () => {
+  it('名前が空のときは名前なしの自己紹介を選ぶ', () => {
     expect(pickChatGreeting('  ', () => 0)).toEqual({
-      key: CHAT_GREETING_UNNAMED_KEYS[0],
+      introKey: CHAT_GREETING_VARIANTS[0].unnamedIntroKey,
+      closingKey: CHAT_GREETING_VARIANTS[0].closingKey,
       emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
     })
     expect(pickChatGreeting('', () => 1)).toEqual({
-      key: CHAT_GREETING_UNNAMED_KEYS[CHAT_GREETING_UNNAMED_KEYS.length - 1],
+      introKey: CHAT_GREETING_VARIANTS[CHAT_GREETING_VARIANTS.length - 1].unnamedIntroKey,
+      closingKey: CHAT_GREETING_VARIANTS[CHAT_GREETING_VARIANTS.length - 1].closingKey,
       emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
     })
   })
 
-  it.each(['山田', ''])('名前「%s」で文面と絵文字を独立して選ぶ', (userName) => {
-    const keys = userName === '' ? CHAT_GREETING_UNNAMED_KEYS : CHAT_GREETING_NAMED_KEYS
-    const random = vi
-      .fn<() => number>()
-      .mockReturnValueOnce(0)
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0.99)
-      .mockReturnValueOnce(0)
+  it('名前が空のとき自己紹介なしを選べる', () => {
+    expect(pickChatGreeting('', () => 0.6)).toMatchObject({
+      introKey: null,
+    })
+  })
+
+  it.each(['山田', ''])('名前「%s」で自己紹介と一言は同じ文面の対で、絵文字だけ別抽選する', (userName) => {
+    const introKeyOf = (index: number) => {
+      const variant = CHAT_GREETING_VARIANTS[index]
+      return userName === '' ? variant?.unnamedIntroKey : variant?.namedIntroKey
+    }
+    const random = vi.fn<() => number>().mockReturnValueOnce(0).mockReturnValueOnce(0.99)
 
     expect(pickChatGreeting(userName, random)).toMatchObject({
-      key: keys[0],
+      introKey: introKeyOf(0),
+      closingKey: CHAT_GREETING_VARIANTS[0].closingKey,
       emojiKey: CHAT_GREETING_EMOJI_KEYS[CHAT_GREETING_EMOJI_KEYS.length - 1],
     })
-    expect(pickChatGreeting(userName, random)).toMatchObject({
-      key: keys[keys.length - 1],
-      emojiKey: CHAT_GREETING_EMOJI_KEYS[0],
-    })
+  })
+})
+
+describe('formatChatGreetingMenuPhrase', () => {
+  it('確定注文を表示名でまとめ、単品は件数を付けない', () => {
+    expect(
+      formatChatGreetingMenuPhrase([
+        { status: 'ordered', menu_name: '唐揚げ' },
+        { status: 'canceled', menu_name: 'サラダ' },
+        { status: 'in_cart', menu_name: '牛丼' },
+        { status: 'processing', menu_name: 'カレー' },
+      ]),
+    ).toBe('唐揚げ')
+  })
+
+  it('同じ表示名は ×N、複数種類は出現順に「 と 」でつなぐ', () => {
+    expect(
+      formatChatGreetingMenuPhrase([
+        { status: 'ordered', menu_name: '唐揚げ' },
+        { status: 'ordered', menu_name: '牛丼' },
+        { status: 'ordered', menu_name: '唐揚げ' },
+      ]),
+    ).toBe('唐揚げ×2 と 牛丼')
+  })
+
+  it('オプション付きはメニュー名と項目名でまとめる', () => {
+    expect(
+      formatChatGreetingMenuPhrase([
+        { status: 'ordered', menu_name: 'チーズバーガー', selected_options: selectedLargeCheese },
+      ]),
+    ).toBe('チーズバーガー（大盛、チーズ）')
+  })
+
+  it('注文なしで参加はメニュー文に含めない', () => {
+    expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '注文なしで参加' }])).toBe('')
+    expect(
+      formatChatGreetingMenuPhrase([
+        { status: 'ordered', menu_name: '注文なしで参加' },
+        { status: 'ordered', menu_name: '唐揚げ' },
+      ]),
+    ).toBe('唐揚げ')
+  })
+
+  it('表示名が空の行は含めない', () => {
+    expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '' }])).toBe('')
+  })
+})
+
+describe('composeChatGreetingBody', () => {
+  it('自己紹介、注文文、一言を改行で区切る', () => {
+    expect(
+      composeChatGreetingBody(
+        'こんにちは！山田です。',
+        '唐揚げを注文しました。',
+        'みなさん、よろしくお願いします😊',
+        2000,
+      ),
+    ).toBe('こんにちは！山田です。\n唐揚げを注文しました。\nみなさん、よろしくお願いします😊')
+  })
+
+  it('自己紹介が空のときは注文文から改行する', () => {
+    expect(composeChatGreetingBody('', '唐揚げを注文しました。', 'よろしくお願いします😊', 2000)).toBe(
+      '唐揚げを注文しました。\nよろしくお願いします😊',
+    )
+  })
+
+  it('注文文が空のときは自己紹介と一言だけ', () => {
+    expect(composeChatGreetingBody('こんにちは！', '', 'みなさん、よろしくお願いします😊', 2000)).toBe(
+      'こんにちは！みなさん、よろしくお願いします😊',
+    )
+  })
+
+  it('上限を超えるときは注文文を外す', () => {
+    const intro = 'こんにちは！山田です。'
+    const closing = 'みなさん、よろしくお願いします😊'
+    const orderSentence = '唐揚げを注文しました。'
+    const maxLength = intro.length + closing.length
+    expect(composeChatGreetingBody(intro, orderSentence, closing, maxLength)).toBe(`${intro}${closing}`)
+    const withOrder = `${intro}\n${orderSentence}\n${closing}`
+    expect(composeChatGreetingBody(intro, orderSentence, closing, withOrder.length)).toBe(withOrder)
+    expect(composeChatGreetingBody(intro, orderSentence, closing, withOrder.length - 1)).toBe(`${intro}${closing}`)
+  })
+})
+
+describe('buildChatGreetingText', () => {
+  const messages: Record<string, string> = {
+    'chat.greeting.intro.named_hello': 'こんにちは！{name}です。',
+    'chat.greeting.intro.unnamed_hello': 'こんにちは！',
+    'chat.greeting.closing.hello': 'みなさん、よろしくお願いします{emoji}',
+    'chat.greeting_emoji.smile': '😊',
+    'chat.greeting.order': '{menus}を注文しました。',
+  }
+  const translate = (key: string, values?: Record<string, string>): string => {
+    let text = messages[key] ?? key
+    if (values == null) {
+      return text
+    }
+    for (const [name, value] of Object.entries(values)) {
+      text = text.split(`{${name}}`).join(value)
+    }
+    return text
+  }
+
+  it('自己紹介、注文、一言を改行で区切る', () => {
+    expect(buildChatGreetingText('山田', [{ status: 'ordered', menu_name: '唐揚げ' }], translate, 2000, () => 0)).toBe(
+      'こんにちは！山田です。\n唐揚げを注文しました。\nみなさん、よろしくお願いします😊',
+    )
+  })
+
+  it('注文が無いときと取得できないときはメニュー文を付けない', () => {
+    const withoutOrder = 'こんにちは！山田です。みなさん、よろしくお願いします😊'
+    expect(buildChatGreetingText('山田', [], translate, 2000, () => 0)).toBe(withoutOrder)
+    expect(buildChatGreetingText('山田', null, translate, 2000, () => 0)).toBe(withoutOrder)
+  })
+
+  it('名前が空のときは名前なしの自己紹介から始める', () => {
+    expect(buildChatGreetingText('', [{ status: 'ordered', menu_name: '唐揚げ' }], translate, 2000, () => 0)).toBe(
+      'こんにちは！\n唐揚げを注文しました。\nみなさん、よろしくお願いします😊',
+    )
+  })
+
+  it('上限を超えるときは注文文を外す', () => {
+    const withoutOrder = 'こんにちは！山田です。みなさん、よろしくお願いします😊'
+    expect(
+      buildChatGreetingText(
+        '山田',
+        [{ status: 'ordered', menu_name: '唐揚げ' }],
+        translate,
+        withoutOrder.length,
+        () => 0,
+      ),
+    ).toBe(withoutOrder)
   })
 })
 

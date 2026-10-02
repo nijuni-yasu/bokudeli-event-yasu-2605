@@ -147,15 +147,11 @@ npm -w <pkg> run format:check
 
 ソースコードやビルド・lint 対象となる設定を変更したタスクでは、**完了報告の前に必ず** [`/shokujii-code-review`](.agents/skills/shokujii-code-review/SKILL.md) でセルフレビューを実行する（差分レビュー。RC がある場合のみ review doc 記録。lint / test は本段階では実行しない）。
 
-**Stop hook による機械的検証**（Cursor / Claude 共通）:
+**Stop hook**（Cursor / Claude 共通）:
 
-- 正本: [`.agents/hooks/stop-gate-check.sh`](.agents/hooks/stop-gate-check.sh)（**セルフレビューのみ**。lint は含まない）
-- **Cursor**: [`.cursor/hooks/stop-gate.sh`](.cursor/hooks/stop-gate.sh) が `followup_message` で最大 3 回まで自動 retry（[`loop_limit`](.cursor/hooks.json)）。**Ask モード**（`composer_mode=chat`）および Stop hook 自身が注入した `[self-review]` followup ターンでは gate をスキップ（`.agents/hooks/stop-gate-check.sh` の `self-review-gate-skip` 判定による）
-- **Claude Code**: [`.claude/hooks/stop-gate.sh`](.claude/hooks/stop-gate.sh) が `decision:block` でターン終了を阻止
-- review スコープの変更が無いターンでは検証をスキップ（[`.agents/hooks/source-change-detect.sh`](.agents/hooks/source-change-detect.sh)）。**未コミット差分（working tree / staged / untracked）のみ**を対象とするため、**コミット済みで作業ツリー clean** の場合も gate はスキップされる（RC-16 参照）
-- pending state: `.agents/state/self-review-pending.json`（[`self_review_wake.py`](.agents/scripts/self_review_wake.py)）
-- **fingerprint**: consume 時に review スコープ差分の `reviewed_scope_fingerprint` を記録。consumed 後も**同一未コミット差分**なら合格。差分が変わったら手順 0 から再レビュー
-- **記録対象外ブランチ**（`release/` `sync/` `hotfix/` `backup/` `tree/`）では review doc への追記はスキップ可。**consumed + fingerprint 一致**で合格（指摘 0 件で review doc 未作成の場合も同様。未消費時は ledger の `task_skill=shokujii-code-review` も可）。ledger 照合には Stop hook から **`conversation_id`（または `session_id`）** が渡る必要がある。旧 Cursor・CLI 等で ID が無い場合は gate がブロックされうる（[review-doc-path.md](.agents/skills/review-comments-evaluate/references/review-doc-path.md) 参照）
+- 使用量記録は [`.cursor/hooks/stop-gate.sh`](.cursor/hooks/stop-gate.sh) と [`.claude/hooks/stop-gate.sh`](.claude/hooks/stop-gate.sh) が行う
+- セルフレビューの自動 followup は無効。[`.agents/hooks/stop-gate-check.sh`](.agents/hooks/stop-gate-check.sh) は常に成功終了し、未完了のセルフレビューで次ターンを差し込まない
+- セルフレビューは完了報告前に [`/shokujii-code-review`](.agents/skills/shokujii-code-review/SKILL.md) を実行する（上記の必須手順）。wake と fingerprint の手順はスキル側に従う
 
 ### PR verify 相当チェック（push 前）
 

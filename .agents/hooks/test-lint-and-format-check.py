@@ -100,6 +100,15 @@ def test_stop_gate_check_aborted_status() -> None:
     assert result.stdout.strip() == ""
 
 
+def test_stop_gate_check_does_not_block_on_review_scope() -> None:
+    result = run(
+        ["bash", str(HOOKS / "stop-gate-check.sh"), "completed", "0", "conv-1"],
+        cwd=REPO_ROOT,
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == ""
+
+
 def test_stop_gate_check_self_review_only_scope() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -186,6 +195,7 @@ def main() -> int:
         test_source_change_detect_agents_hooks_review_scope,
         test_lint_and_format_check_skips_without_source_changes,
         test_stop_gate_check_aborted_status,
+        test_stop_gate_check_does_not_block_on_review_scope,
         test_stop_gate_check_self_review_only_scope,
         test_cursor_stop_gate_adapter_followup_on_block,
         test_review_doc_session_detection,

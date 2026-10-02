@@ -3,9 +3,10 @@ import { isMasterTagLabel } from '@shokujii/common/constants/tags.js'
 import { findExactMasterTag, getProfileTagCandidates, PROFILE_TAG_PAGE_SIZE } from './profileTagOptions.js'
 
 describe('プロフィールタグの候補', () => {
-  it('最初の候補は既存マスタから重複なく11個提示する', () => {
+  it('最初の候補は既存マスタから重複なく12個提示する', () => {
     const candidates = getProfileTagCandidates('')
     expect(candidates.slice(0, PROFILE_TAG_PAGE_SIZE.mobile)).toEqual([
+      '生成AI',
       'コミュマネ',
       '筋トレ',
       '食べ歩き',
@@ -13,10 +14,9 @@ describe('プロフィールタグの候補', () => {
       'サウナ',
       '地域創生',
       '二拠点生活',
-      '音楽フェス',
     ])
     expect(candidates.every(isMasterTagLabel)).toBe(true)
-    expect(candidates).toHaveLength(11)
+    expect(candidates).toHaveLength(12)
     expect(new Set(candidates).size).toBe(candidates.length)
   })
 

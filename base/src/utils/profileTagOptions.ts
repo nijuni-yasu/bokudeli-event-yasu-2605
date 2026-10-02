@@ -4,6 +4,7 @@ import { normalizeTag } from '@shokujii/common/utils/normalizeTag.js'
 export const PROFILE_TAG_PAGE_SIZE = { desktop: 12, mobile: 8 }
 
 const STARTER_TAGS: readonly MasterTag[] = [
+  '生成AI',
   'コミュマネ',
   '筋トレ',
   '食べ歩き',

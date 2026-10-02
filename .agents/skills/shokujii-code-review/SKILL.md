@@ -107,7 +107,7 @@ python3 .agents/scripts/self_review_wake.py consume \
   --branch "$branch"
 ```
 
-consume はその時点の **review スコープ差分の fingerprint**（`reviewed_scope_fingerprint`）を wake に記録する。同一の未コミット差分が残る場合、Stop gate は再レビューなしで合格する（指摘 0 件で review doc 未作成の場合も **consumed + fingerprint 一致**で合格）。**review スコープに新しい変更**が入ったら手順 0 から再実行する。
+consume はその時点の **review スコープ差分の fingerprint**（`reviewed_scope_fingerprint`）を wake に記録する。Stop hook はセルフレビュー未完了でもターンを差し込まない。**review スコープに新しい変更**が入ったままセルフレビューをやり直すときは、手順 0 から再実行する。
 
 ---
 

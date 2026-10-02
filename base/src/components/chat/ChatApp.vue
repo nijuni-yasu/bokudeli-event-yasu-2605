@@ -22,10 +22,11 @@ import {
   useChatComposeDraftStore,
 } from '@shokujii/base/stores/chatComposeDraft.js'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
+import { fetchMemberOrdersForUser } from '@shokujii/base/stores/userEventOrdersShared.js'
 import type { ResolveChatRoomPathFn, ResolveUserPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import {
+  buildChatGreetingText,
   clearChatGreetingPromptState,
-  pickChatGreeting,
   readChatGreetingPromptRoomId,
 } from '@shokujii/base/utils/chatGreetingPrompt.js'
 import ChatLeftSidebarContent from './ChatLeftSidebarContent.vue'
@@ -99,6 +100,7 @@ const selectedImages = ref<SelectedImage[]>([])
 const imageInputRef = ref<HTMLInputElement | null>(null)
 const composeInputRef = ref<{ focus: () => void } | null>(null)
 const isGreetingPromptVisible = ref(false)
+const isApplyingGreeting = ref(false)
 let greetingPromptRequestId = 0
 const greetingPromptStartedRoomIds = new Set<string>()
 const greetingPromptTargetRoomId = ref<string | null>(null)
@@ -465,20 +467,63 @@ const isLocalComposeEmpty = (): boolean => {
   return msg.value.trim() === '' && selectedImages.value.length === 0
 }
 
-const acceptGreetingPrompt = (): void => {
+const acceptGreetingPrompt = async (): Promise<void> => {
+  if (isApplyingGreeting.value) {
+    return
+  }
   const roomId = greetingPromptTargetRoomId.value ?? store.activeRoomId
   if (roomId == null || store.activeRoomId !== roomId || !isLocalComposeEmpty()) {
     dismissGreetingPrompt()
     return
   }
-  const choice = pickChatGreeting(currentUserStore.user?.user_name ?? '')
-  const body = t(choice.key, { name: choice.name ?? '', emoji: t(choice.emojiKey) })
-  msg.value = body
-  composeDraftStore.upsertDraft(roomId, { body, attachments: [] })
-  dismissGreetingPrompt()
-  nextTick(() => {
-    composeInputRef.value?.focus()
-  })
+  const room = store.activeRoom
+  const userId = currentUserId.value
+  const communityId = room?.roomId === roomId ? room.communityId : undefined
+  const eventId = room?.roomId === roomId ? room.eventId : undefined
+  isApplyingGreeting.value = true
+  try {
+    let orders: Awaited<ReturnType<typeof fetchMemberOrdersForUser>> | null = null
+    if (communityId != null && communityId !== '' && eventId != null && eventId !== '' && userId !== '') {
+      try {
+        orders = await fetchMemberOrdersForUser(communityId, eventId, userId)
+      } catch (error) {
+        reportClientError(error, {
+          componentInfo: 'ChatApp.acceptGreetingPrompt',
+          documentPath: `communities/${communityId}/events/${eventId}/members/${userId}/member_orders`,
+          severity: 'warn',
+        })
+      }
+    }
+    const draft = composeDraftStore.getDraft(roomId)
+    const composeBlocked = !isLocalComposeEmpty() || (draft != null && !isChatComposeDraftEmpty(draft))
+    // 取得中にキャンセルしたときは入力欄を上書きしない。ルーム移動や下書きが入ったときは案内を閉じる。
+    if (greetingPromptTargetRoomId.value !== roomId) {
+      return
+    }
+    if (store.activeRoomId !== roomId || composeBlocked) {
+      dismissGreetingPrompt()
+      return
+    }
+    const body = buildChatGreetingText(
+      currentUserStore.user?.user_name ?? '',
+      orders,
+      (key, values) => t(key, values ?? {}),
+      CHAT_MESSAGE_BODY_MAX_LENGTH,
+    )
+    msg.value = body
+    composeDraftStore.upsertDraft(roomId, { body, attachments: [] })
+    dismissGreetingPrompt()
+    nextTick(() => {
+      composeInputRef.value?.focus()
+    })
+  } catch (error) {
+    reportClientError(error, {
+      componentInfo: 'ChatApp.acceptGreetingPrompt',
+      severity: 'warn',
+    })
+  } finally {
+    isApplyingGreeting.value = false
+  }
 }
 
 const dismissGreetingPrompt = (): void => {
@@ -972,7 +1017,7 @@ onBeforeUnmount(() => {
       </div>
     </VMain>
 
-    <VDialog v-model="isGreetingPromptVisible" max-width="420">
+    <VDialog v-model="isGreetingPromptVisible" max-width="420" :persistent="isApplyingGreeting">
       <VCard class="pa-6" rounded="lg">
         <h2 class="text-h6 text-center mb-2">{{ t('chat.greeting_prompt.title') }}</h2>
         <p class="text-body-2 text-medium-emphasis text-center mb-6">
@@ -982,7 +1027,7 @@ onBeforeUnmount(() => {
           <VBtn variant="outlined" color="primary" rounded="pill" @click="dismissGreetingPrompt">
             {{ t('chat.greeting_prompt.cancel') }}
           </VBtn>
-          <VBtn color="primary" rounded="pill" @click="acceptGreetingPrompt">
+          <VBtn color="primary" rounded="pill" :loading="isApplyingGreeting" @click="acceptGreetingPrompt">
             {{ t('chat.greeting_prompt.ok') }}
           </VBtn>
         </div>

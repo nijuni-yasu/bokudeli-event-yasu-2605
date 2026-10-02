@@ -80,7 +80,7 @@ Loop の前提は **「検証可能なループ」** である。現状は以下
 | 検証手段 | ローカル | CI（PR） |
 |:---------|:---------|:---------|
 | lint / format:check / 型 / vitest | git-create-pull-request / git-reflect-after-commit 前の lint-and-format | PR トリガー CI（`pr-verify.yml`） |
-| セルフレビュー | Stop フック（`.agents/hooks/stop-gate-check.sh`） | shokujii-code-review 記録 |
+| セルフレビュー | 完了報告前の shokujii-code-review（Stop hook の自動 followup は無効） | shokujii-code-review 記録 |
 | common build | lint-and-format 内 | デプロイ時のみ |
 | vitest（common / functions / base） | 手動 | ❌ CI 未実行 |
 | vue-tsc 型チェック | 手動 | ❌ CI 未実行 |
@@ -375,10 +375,10 @@ suwash / classmethod が「L3 で必須」とする denylist ゲートを、本�
 |:--------------|:-------------------------|
 | 機密ファイルの編集ブロック | `.claude/hooks/protect-files.sh`（`.env` / `.secret` / `.firebaserc` / `.pem` / `.key`） |
 | 危険操作のブロック | `.claude/settings.json` の `deny`（`firebase deploy*` / `gh pr merge*` / `git push --force` / `rm -rf*` 等） |
-| 検証ハーネス | `.agents/hooks/stop-gate-check.sh`（Stop 時: セルフレビューのみ。lint は create-pr / reflect 前） |
+| 検証ハーネス | `.agents/hooks/stop-gate-check.sh` は使用量記録用 Stop hook から呼ばれる。セルフレビューの自動 followup は無効。lint は create-pr / reflect 前 |
 
 - **denylist は全ループで共有**する。`.claude/settings.json` と `protect-files.sh` を正本とし、ループごとに個別 denylist を持たない。
-- Stop フックは **セルフレビュー完了**まで検証する（正本 `.agents/hooks/stop-gate-check.sh`）。PR verify 相当は push 前の lint-and-format。
+- Stop フックは使用量を記録する。セルフレビューの自動 followup は無効（`.agents/hooks/stop-gate-check.sh` は常に成功終了）。セルフレビューは完了報告前の shokujii-code-review。PR verify 相当は push 前の lint-and-format。
 - denylist の正本は第 13 章にまとめる。
 
 ---
