@@ -227,6 +227,7 @@ export const TAG_GENRES = [
     genre: 'テクノロジー／サイエンス',
     tags: [
       'AI',
+      '生成AI',
       'AIエージェント',
       'AR',
       'IoT',
