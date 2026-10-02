@@ -88,6 +88,8 @@
 | [x] | RC-82 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 設定パネル削除後も未参照の ja.ts キーが残る<br>未使用キーを削除した |
 | [x] | RC-83 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventFormConfig テストが `as Partial` で旧ドキュメントを渡す<br>余分なプロパティ付きオブジェクトを変数経由で渡すよう変えた |
 | [x] | RC-84 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | formAdmin が formFields を二重 import している<br>1本にまとめた |
+| [ ] | RC-85 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する |
+| [ ] | RC-86 | 5948721464 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される |
 
 ---
 
@@ -6459,3 +6461,92 @@ Useful? React with 👍 / 👎.
 ---
 
 
+
+## 評価セッション（2026-10-02 20:36・shokujii-code-review）
+
+- **評価日時**: 2026-10-02 20:36 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **対象**: PR #2384 の Files changed（最新 head `734fbc92`）
+- **Outdated / レビュー非該当**: 該当なし
+- **手順 3a/3b 自動修正**: 外部コードレビュー依頼のため修正なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-85 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する |
+| [ ] | RC-86 | 5948721464 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される |
+
+---
+
+**識別子**: RC-85（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `common/src/utils/validateFormAnswers.ts:106`
+
+**該当コード（レビュー時点の diff）**:
+
+```ts
+for (const optionId of optionIds) {
+  const option = options.find((item) => item.option_id === optionId)
+  if (option == null) {
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: checkbox 回答で同じ `option_id` が複数回送信されても検証を通過し、重複した選択肢・ラベルが確定回答へ保存されます。選択肢IDの重複を検出して `type` として拒否してください。
+
+**コメント要約**: checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Callable に重複IDを含む回答を直接送信でき、現状はそのまま重複値のスナップショットを保存する。回答値の一意性検証は既存のフォーム回答バリデーションの責務であり、重複を拒否する方針は一意。
+
+---
+
+**識別子**: RC-86（GitHub id: 5948721464）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `user/src/pages/manage/community/[communityAccount]/form/[formId].vue:5`
+
+**該当コード（レビュー時点の diff）**:
+
+```vue
+const formId = useRoute().params.formId as string
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `formId` と `CommunityFormEditor.vue` の `communityAccount` を setup 時に文字列として取得しているため、同じ動的ルート内でパラメータだけが変わる遷移では Vue Router がページを再利用し、編集対象が旧フォーム・旧コミュニティのままになります。route param を `computed` で参照し、編集コンポーネントへリアクティブに渡してください。
+
+**コメント要約**: フォーム編集 route の formId / communityAccount が setup 時の値に固定される
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 動的ルートの同一コンポーネント再利用では setup が再実行されず、URLと編集対象が不一致になる。route param をリアクティブに渡す修正方針は一意で、別フォームの誤更新を防ぐ。
+
+---
