@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   assertFails,
+  assertSucceeds,
   initializeTestEnvironment,
   type RulesTestContext,
   type RulesTestEnvironment,
@@ -124,12 +125,19 @@ describe('form collections firestore rules', () => {
   it.each([
     ['未認証', () => unauthenticated()],
     ['一般ユーザー', () => auth(MEMBER)],
-    ['コミュマネ', () => auth(MANAGER)],
-    ['サポート', () => auth(SUPPORT_USER)],
-  ])('%sは forms / form_configs / form_responses / form_checkout_attempts を read/write できない', async (_label, ctx) => {
+  ])('%sは forms を read/write できない', async (_label, ctx) => {
     const context = ctx()
     await assertFails(formRef(context).get())
     await assertFails(formRef(context).set({ name: '更新' }))
+  })
+
+  it.each([
+    ['未認証', () => unauthenticated()],
+    ['一般ユーザー', () => auth(MEMBER)],
+    ['コミュマネ', () => auth(MANAGER)],
+    ['サポート', () => auth(SUPPORT_USER)],
+  ])('%sは form_configs / form_responses / form_checkout_attempts を read/write できない', async (_label, ctx) => {
+    const context = ctx()
     await assertFails(formConfigRef(context).get())
     await assertFails(formConfigRef(context).set({ definition_version: 2 }))
     await assertFails(formResponseRef(context).get())
@@ -138,8 +146,19 @@ describe('form collections firestore rules', () => {
     await assertFails(formAttemptRef(context).set({ status: 'frozen' }))
   })
 
-  it('collection group からも form_responses を読めない', async () => {
+  it.each([
+    ['コミュマネ', () => auth(MANAGER)],
+    ['サポート', () => auth(SUPPORT_USER)],
+  ])('%sは forms を読めるが書けない', async (_label, ctx) => {
+    const context = ctx()
+    await assertSucceeds(formRef(context).get())
+    await assertSucceeds(context.firestore().collection('communities').doc(COMMUNITY_ID).collection('forms').get())
+    await assertFails(formRef(context).set({ name: '更新' }))
+  })
+
+  it('collection group からも form_responses と forms を読めない', async () => {
     await assertFails(auth(MANAGER).firestore().collectionGroup('form_responses').get())
     await assertFails(auth(SUPPORT_USER).firestore().collectionGroup('forms').get())
+    await assertFails(auth(MANAGER).firestore().collectionGroup('forms').get())
   })
 })

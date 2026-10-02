@@ -351,7 +351,9 @@ service cloud.firestore {
                 }
             }
             match /forms/{formId} {
-                allow read, write: if false;
+                // 定義の閲覧はコミュマネまたはサポート。作成・更新・複製・アーカイブは Functions のみ
+                allow read: if isManager() || isSupport();
+                allow write: if false;
             }
             match /members/{memberId} {
                 allow read: if true
