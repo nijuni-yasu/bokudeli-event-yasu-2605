@@ -90,6 +90,10 @@
 | [x] | RC-84 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | formAdmin が formFields を二重 import している<br>1本にまとめた |
 | [ ] | RC-85 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する |
 | [ ] | RC-86 | 5948721464 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される |
+| [x] | RC-87 | 5391301449 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:36）は個別指摘の要約<br>新規は RC-88〜90。is_selected 再掲は RC-23 |
+| [x] | RC-88 | 4165330532 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答配列に maxFields 上限が無い<br>SaveOrderFormAttemptRequestSchema に上限を付けた |
+| [x] | RC-89 | 4165330567 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 利用目的を trim 後だけ比較している<br>保存値そのものを比較するよう変えた |
+| [x] | RC-90 | 4165330483 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未知の設問IDを再利用できる<br>既存定義にある ID だけ維持し、選択肢も同様にした |
 
 ---
 
@@ -6548,5 +6552,341 @@ const formId = useRoute().params.formId as string
 **想定工数**: S
 
 **判断理由**: 動的ルートの同一コンポーネント再利用では setup が再実行されず、URLと編集対象が不一致になる。route param をリアクティブに渡す修正方針は一意で、別フォームの誤更新を防ぐ。
+
+---
+
+---
+
+## 評価セッション（2026-10-02 20:43・review-comments-evaluate）
+
+- **評価日時**: 2026-10-02 20:43 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 4（依頼定型文 5951434231、Copilot 実行エラー 5951436562、Codex 接続案内 5391312721、RC-23 同一指摘 4165339600）
+- **手順 4a 自動修正**: RC-88〜90（🚨 1件 / 🟡 2件）
+- **partial**: false
+- **注記**: origin の RC-85 / RC-86 と番号が衝突したため、本セッションは RC-87 から採番した
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-87 | 5391301449 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:36）は個別指摘の要約<br>新規は RC-88〜90。is_selected 再掲は RC-23 |
+| [x] | RC-88 | 4165330532 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答配列に maxFields 上限が無い<br>SaveOrderFormAttemptRequestSchema に上限を付けた |
+| [x] | RC-89 | 4165330567 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 利用目的を trim 後だけ比較している<br>保存値そのものを比較するよう変えた |
+| [x] | RC-90 | 4165330483 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未知の設問IDを再利用できる<br>既存定義にある ID だけ維持し、選択肢も同様にした |
+
+---
+
+**識別子**: RC-87（GitHub id: 5391301449）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+同時編集時の定義版重複や削除済み設問IDの再利用など、回答整合性を損なう問題が残っています。
+
+**Review effort:** Balanced  
+**Findings:** 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 6 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (12)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [未知の設問IDを再利用せず新規採番する](#discussion_r4165330483) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [削除時の編集可否確認がTransaction外で競合する](#discussion_r4164317311)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [編集可否確認と設定保存が別Transactionで競合する](#discussion_r4164317194)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Transaction外の全体更新で同時変更を上書きする](#discussion_r4164317121)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [回答配列にmaxFields上限を適用する](#discussion_r4165330532) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [利用目的の保存値を比較して版を更新する](#discussion_r4165330567) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (1)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [イベント状態確認がTransaction外で設問更新と競合する](#discussion_r4164317252)
+</details>
+
+**コメント要約**: Copilot overview（20:36）は個別指摘の要約
+新規は RC-88〜90。is_selected 再掲は RC-23
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 個別指摘の目次。新規 substantive はインライン RC で扱い、is_selected は既存 RC-23 と同一。
+
+---
+
+**識別子**: RC-88（GitHub id: 4165330532）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/apis/form.ts:166`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略）
++
++export const ArchiveCommunityFormRequestSchema = z.object({
++  community_id: z.string().min(1),
++  form_id: z.string().min(1),
++  archived: z.boolean(),
++})
++export type ArchiveCommunityFormRequest = z.infer<typeof ArchiveCommunityFormRequestSchema>
++export type ArchiveCommunityFormResponse = {
++  form: CommunityFormDetail
++}
++
++export type EventFormConfigDto = {
++  source_form_id: string
++  updated_at: number
++}
++
++export const GetEventFormPresenceRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++})
++export type GetEventFormPresenceRequest = z.infer<typeof GetEventFormPresenceRequestSchema>
++export type GetEventFormPresenceResponse = {
++  has_form: boolean
++}
++
++export const GetEventFormConfigRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++})
++export type GetEventFormConfigRequest = z.infer<typeof GetEventFormConfigRequestSchema>
++export type GetEventFormConfigResponse = {
++  config: EventFormConfigDto | null
++}
++
++export const SetEventFormFromCommunityRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++  form_id: z.string().min(1),
++})
++export type SetEventFormFromCommunityRequest = z.infer<typeof SetEventFormFromCommunityRequestSchema>
++export type SetEventFormFromCommunityResponse = {
++  config: EventFormConfigDto
++}
++
++export const ClearEventFormConfigRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++})
++export type ClearEventFormConfigRequest = z.infer<typeof ClearEventFormConfigRequestSchema>
++export type ClearEventFormConfigResponse = {
++  cleared: boolean
++}
++
++export const FormAnswerInputSchema = z.object({
++  field_id: z.string().min(1),
++  text_value: z.string().optional(),
++  option_id: z.string().min(1).optional(),
++  option_ids: z.array(z.string().min(1)).optional(),
++})
++
++export const GetOrderFormForCartRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++})
++export type GetOrderFormForCartRequest = z.infer<typeof GetOrderFormForCartRequestSchema>
++export type GetOrderFormForCartResponse = {
++  has_form: boolean
++  community_name: string
++  purpose: string
++  definition_version?: number
++  fields?: FormFieldDto[]
++  initial_answers?: FormAnswerInput[]
++  source?: 'attempt' | 'confirmed' | 'empty'
++}
++
++export const SaveOrderFormAttemptRequestSchema = z.object({
++  community_id: z.string().min(1),
++  event_id: z.string().min(1),
++  definition_version: z.number().int().positive(),
++  answers: z.array(FormAnswerInputSchema),
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 回答配列に設問数の上限がなく、認証済み利用者が大量の未知回答を送ると、その件数分の検証とエラー配列生成が走ります。フォームの上限と同じ `maxFields` を API 境界で適用してください。
+
+**コメント要約**: 回答配列に maxFields 上限が無い
+SaveOrderFormAttemptRequestSchema に上限を付けた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 設問上限と同じ maxFields を API 境界に付ける方針が一意。条件付き 🟡 のため自動修正した。
+
+---
+
+**識別子**: RC-89（GitHub id: 4165330567）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/communityFormDefinition.ts:10`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,16 @@
++import type { FormField } from '../schemas/formFields.js'
++
++export function nextCommunityFormDefinitionVersion(params: {
++  currentVersion: number
++  existingFields: FormField[]
++  existingPurpose: string
++  nextFields: FormField[]
++  nextPurpose: string
++}): number {
++  const purposeChanged = params.existingPurpose.trim() !== params.nextPurpose.trim()
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `trim()` 後だけを比較すると、保存・表示される利用目的が空白の追加／削除で変わっても定義バージョンが上がりません。進行中の回答試行が変更後も同じ版として扱われるため、保存値そのものを比較してください。
+
+**コメント要約**: 利用目的を trim 後だけ比較している
+保存値そのものを比較するよう変えた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: purpose は trim せず保存されるため、空白差で版が上がらないと試行が古いまま残る。保存値比較に直した。
+
+---
+
+**識別子**: RC-90（GitHub id: 4165330483）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/normalizeFormFields.ts:51`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,127 @@
++import {
++  FORM_FIELD_LIMITS,
++  FormFieldSchema,
++  isChoiceFieldType,
++  type FormField,
++  type FormOption,
++} from '../schemas/formFields.js'
++import type { FormFieldInput } from '../apis/form.js'
++
++export type NormalizeFormFieldsResult = { ok: true; fields: FormField[] } | { ok: false; message: string }
++
++function createEntityId(prefix: string): string {
++  const bytes = new Uint8Array(8)
++  if (typeof globalThis.crypto?.getRandomValues === 'function') {
++    globalThis.crypto.getRandomValues(bytes)
++  } else {
++    for (let i = 0; i < bytes.length; i++) {
++      bytes[i] = Math.floor(Math.random() * 256)
++    }
++  }
++  return `${prefix}_${Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')}`
++}
++
++function existingTypeById(existing: FormField[] | undefined): Map<string, FormField['type']> {
++  const map = new Map<string, FormField['type']>()
++  for (const field of existing ?? []) {
++    map.set(field.field_id, field.type)
++  }
++  return map
++}
++
++export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormField[]): NormalizeFormFieldsResult {
++  if (inputs.length > FORM_FIELD_LIMITS.maxFields) {
++    return { ok: false, message: `設問は${FORM_FIELD_LIMITS.maxFields}件までです` }
++  }
++
++  const usedFieldIds = new Set<string>()
++  const typeById = existingTypeById(existing)
++  const fields: FormField[] = []
++
++  for (const input of inputs) {
++    if (input.hidden_for_new === true) {
++      continue
++    }
++    let fieldId = input.field_id
++    if (fieldId != null && typeById.has(fieldId) && typeById.get(fieldId) !== input.type) {
++      return { ok: false, message: '同じ設問IDの項目タイプは変更できません' }
++    }
++    if (fieldId == null || fieldId === '' || usedFieldIds.has(fieldId)) {
++      fieldId = createEntityId('fld')
++    }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 入力された未知の `field_id` をそのまま採用できるため、削除済み設問の ID を再送して新設問へ再利用できます。その ID の過去回答は次回確定時に新設問の回答として上書きされるので、更新時は既存定義に存在する ID だけを維持し、それ以外は新規採番してください。
+
+**コメント要約**: 未知の設問IDを再利用できる
+既存定義にある ID だけ維持し、選択肢も同様にした
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 削除済み ID の再利用は確定回答の上書きにつながる。既存定義の ID のみ維持し、選択肢 ID も同様に採番し直した。
 
 ---

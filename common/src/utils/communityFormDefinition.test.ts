@@ -24,6 +24,18 @@ describe('nextCommunityFormDefinitionVersion', () => {
     ).toBe(2)
   })
 
+  it('利用目的の前後空白だけが変わっても上げる', () => {
+    expect(
+      nextCommunityFormDefinitionVersion({
+        currentVersion: 2,
+        existingFields: [field],
+        existingPurpose: '交流のため',
+        nextFields: [field],
+        nextPurpose: ' 交流のため ',
+      }),
+    ).toBe(3)
+  })
+
   it('設問または目的文が変わると上げる', () => {
     expect(
       nextCommunityFormDefinitionVersion({

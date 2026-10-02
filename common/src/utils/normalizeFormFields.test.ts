@@ -58,6 +58,64 @@ describe('normalizeFormFields', () => {
     }
   })
 
+  it('既存定義に無い設問IDは再利用せず新規採番する', () => {
+    const result = normalizeFormFields(
+      [
+        {
+          field_id: 'fld_deleted',
+          type: 'text',
+          label: '新しい設問',
+          required: false,
+        },
+      ],
+      [
+        {
+          field_id: 'fld_keep',
+          type: 'text',
+          label: '残す設問',
+          description: '',
+          required: false,
+          hidden_for_new: false,
+        },
+      ],
+    )
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.fields[0]?.field_id).not.toBe('fld_deleted')
+      expect(result.fields[0]?.field_id).toMatch(/^fld_/)
+    }
+  })
+
+  it('既存定義に無い選択肢IDは再利用せず新規採番する', () => {
+    const result = normalizeFormFields(
+      [
+        {
+          field_id: 'fld_role',
+          type: 'radio',
+          label: '参加区分',
+          required: true,
+          options: [{ option_id: 'o_deleted', label: '新規' }],
+        },
+      ],
+      [
+        {
+          field_id: 'fld_role',
+          type: 'radio',
+          label: '参加区分',
+          description: '',
+          required: true,
+          hidden_for_new: false,
+          options: [{ option_id: 'o_host', label: '主催', hidden_for_new: false }],
+        },
+      ],
+    )
+    expect(result.ok).toBe(true)
+    if (result.ok && result.fields[0]?.type === 'radio') {
+      expect(result.fields[0].options[0]?.option_id).not.toBe('o_deleted')
+      expect(result.fields[0].options[0]?.option_id).toMatch(/^opt_/)
+    }
+  })
+
   it('必須の選択式設問で表示選択肢が無いと拒否する', () => {
     const result = normalizeFormFields([
       {

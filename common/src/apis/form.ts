@@ -163,7 +163,7 @@ export const SaveOrderFormAttemptRequestSchema = z.object({
   community_id: z.string().min(1),
   event_id: z.string().min(1),
   definition_version: z.number().int().positive(),
-  answers: z.array(FormAnswerInputSchema),
+  answers: z.array(FormAnswerInputSchema).max(FORM_FIELD_LIMITS.maxFields),
 })
 export type SaveOrderFormAttemptRequest = z.infer<typeof SaveOrderFormAttemptRequestSchema>
 export type SaveOrderFormAttemptResponse = {

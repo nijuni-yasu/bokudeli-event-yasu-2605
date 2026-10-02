@@ -7,7 +7,7 @@ export function nextCommunityFormDefinitionVersion(params: {
   nextFields: FormField[]
   nextPurpose: string
 }): number {
-  const purposeChanged = params.existingPurpose.trim() !== params.nextPurpose.trim()
+  const purposeChanged = params.existingPurpose !== params.nextPurpose
   const fieldsChanged = JSON.stringify(params.existingFields) !== JSON.stringify(params.nextFields)
   if (purposeChanged || fieldsChanged) {
     return params.currentVersion + 1

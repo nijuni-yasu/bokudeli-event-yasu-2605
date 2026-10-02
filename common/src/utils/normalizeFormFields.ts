@@ -46,7 +46,7 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
     if (fieldId != null && typeById.has(fieldId) && typeById.get(fieldId) !== input.type) {
       return { ok: false, message: '同じ設問IDの項目タイプは変更できません' }
     }
-    if (fieldId == null || fieldId === '' || usedFieldIds.has(fieldId)) {
+    if (fieldId == null || fieldId === '' || usedFieldIds.has(fieldId) || !typeById.has(fieldId)) {
       fieldId = createEntityId('fld')
     }
     usedFieldIds.add(fieldId)
@@ -65,6 +65,12 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
         return { ok: false, message: `選択肢は${FORM_FIELD_LIMITS.maxOptions}件までです` }
       }
       const usedOptionIds = new Set<string>()
+      const existingField = existing?.find((field) => field.field_id === fieldId)
+      const existingOptionIds = new Set(
+        existingField != null && 'options' in existingField
+          ? existingField.options.map((option) => option.option_id)
+          : [],
+      )
       const options: FormOption[] = []
       for (const option of optionInputs) {
         if (option.hidden_for_new === true) {
@@ -75,7 +81,7 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
           return { ok: false, message: '選択肢名を入力してください' }
         }
         let optionId = option.option_id
-        if (optionId == null || optionId === '' || usedOptionIds.has(optionId)) {
+        if (optionId == null || optionId === '' || usedOptionIds.has(optionId) || !existingOptionIds.has(optionId)) {
           optionId = createEntityId('opt')
         }
         usedOptionIds.add(optionId)
