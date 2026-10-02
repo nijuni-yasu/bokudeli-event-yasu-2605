@@ -39,6 +39,9 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
   const fields: FormField[] = []
 
   for (const input of inputs) {
+    if (input.hidden_for_new === true) {
+      continue
+    }
     let fieldId = input.field_id
     if (fieldId != null && typeById.has(fieldId) && typeById.get(fieldId) !== input.type) {
       return { ok: false, message: '同じ設問IDの項目タイプは変更できません' }
@@ -64,6 +67,9 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
       const usedOptionIds = new Set<string>()
       const options: FormOption[] = []
       for (const option of optionInputs) {
+        if (option.hidden_for_new === true) {
+          continue
+        }
         const optionLabel = option.label.trim()
         if (optionLabel === '') {
           return { ok: false, message: '選択肢名を入力してください' }
@@ -76,11 +82,16 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
         options.push({
           option_id: optionId,
           label: optionLabel,
-          hidden_for_new: option.hidden_for_new ?? false,
+          hidden_for_new: false,
         })
       }
-      if (input.required && options.every((option) => option.hidden_for_new)) {
-        return { ok: false, message: '必須の選択式設問には表示する選択肢を1件以上設定してください' }
+      if (options.length === 0) {
+        return {
+          ok: false,
+          message: input.required
+            ? '必須の選択式設問には表示する選択肢を1件以上設定してください'
+            : '選択肢を1件以上入力してください',
+        }
       }
       const parsed = FormFieldSchema.safeParse({
         field_id: fieldId,
@@ -88,7 +99,7 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
         label,
         description: input.description ?? '',
         required: input.required,
-        hidden_for_new: input.hidden_for_new ?? false,
+        hidden_for_new: false,
         options,
       })
       if (!parsed.success) {
@@ -104,7 +115,7 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
       label,
       description: input.description ?? '',
       required: input.required,
-      hidden_for_new: input.hidden_for_new ?? false,
+      hidden_for_new: false,
     })
     if (!parsed.success) {
       return { ok: false, message: '設問の内容が不正です' }

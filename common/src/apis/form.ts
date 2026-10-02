@@ -97,9 +97,6 @@ export type ArchiveCommunityFormResponse = {
 
 export type EventFormConfigDto = {
   source_form_id: string
-  definition_version: number
-  purpose: string
-  fields: FormFieldDto[]
   updated_at: number
 }
 
@@ -128,17 +125,6 @@ export const SetEventFormFromCommunityRequestSchema = z.object({
 })
 export type SetEventFormFromCommunityRequest = z.infer<typeof SetEventFormFromCommunityRequestSchema>
 export type SetEventFormFromCommunityResponse = {
-  config: EventFormConfigDto
-}
-
-export const UpdateEventFormConfigRequestSchema = z.object({
-  community_id: z.string().min(1),
-  event_id: z.string().min(1),
-  purpose: z.string().max(FORM_FIELD_LIMITS.maxPurpose).optional(),
-  fields: z.array(FormFieldInputSchema).max(FORM_FIELD_LIMITS.maxFields),
-})
-export type UpdateEventFormConfigRequest = z.infer<typeof UpdateEventFormConfigRequestSchema>
-export type UpdateEventFormConfigResponse = {
   config: EventFormConfigDto
 }
 

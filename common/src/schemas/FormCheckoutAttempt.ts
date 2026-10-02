@@ -8,6 +8,7 @@ export type FormCheckoutAttemptStatus = (typeof FORM_CHECKOUT_ATTEMPT_STATUS_VAL
 
 const FormCheckoutAttemptDbSchema = z.object({
   user_id: z.string().min(1),
+  source_form_id: NonEmptyStringSchema.optional(),
   definition_version: z.number().int().positive(),
   revision_basis: z.number().int().nonnegative(),
   answers: z.array(FormAnswerSnapshotSchema),
@@ -20,6 +21,7 @@ const FormCheckoutAttemptDbSchema = z.object({
 
 const FormCheckoutAttemptAppSchema = z.object({
   user_id: z.string().min(1),
+  source_form_id: z.string().default(''),
   definition_version: z.number().int().positive(),
   revision_basis: z.number().int().nonnegative(),
   answers: z.array(FormAnswerSnapshotSchema),
@@ -43,6 +45,7 @@ const convertToDb = (attempt: FormCheckoutAttempt) => {
   }
   return {
     ...base,
+    ...(attempt.source_form_id.trim() !== '' ? { source_form_id: attempt.source_form_id } : {}),
     ...(attempt.stripe_session_id.trim() !== '' ? { stripe_session_id: attempt.stripe_session_id } : {}),
   }
 }
@@ -50,6 +53,7 @@ const convertToDb = (attempt: FormCheckoutAttempt) => {
 export class FormCheckoutAttempt {
   readonly id: string
   user_id!: string
+  source_form_id!: string
   definition_version!: number
   revision_basis!: number
   answers!: FormAnswerSnapshot[]

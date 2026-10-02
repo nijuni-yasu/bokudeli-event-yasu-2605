@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { EpochMillisSchema, TimestampSchema } from './firebase/index.js'
+import { EpochMillisSchema, NonEmptyStringSchema, TimestampSchema } from './firebase/index.js'
 import { FORM_FIELD_TYPE_VALUES } from './formFields.js'
 
 export const FormAnswerSnapshotSchema = z.object({
@@ -23,6 +23,7 @@ export type FormAnswerSnapshot = z.infer<typeof FormAnswerSnapshotSchema>
 
 const FormResponseDbSchema = z.object({
   user_id: z.string().min(1),
+  source_form_id: NonEmptyStringSchema.optional(),
   definition_version: z.number().int().positive(),
   revision: z.number().int().nonnegative(),
   answers: z.array(FormAnswerSnapshotSchema),
@@ -32,6 +33,7 @@ const FormResponseDbSchema = z.object({
 
 const FormResponseAppSchema = z.object({
   user_id: z.string().min(1),
+  source_form_id: z.string().default(''),
   definition_version: z.number().int().positive(),
   revision: z.number().int().nonnegative(),
   answers: z.array(FormAnswerSnapshotSchema),
@@ -42,6 +44,7 @@ const FormResponseAppSchema = z.object({
 const convertToDb = (response: FormResponse) => {
   return {
     user_id: response.user_id,
+    ...(response.source_form_id.trim() !== '' ? { source_form_id: response.source_form_id } : {}),
     definition_version: response.definition_version,
     revision: response.revision,
     answers: response.answers,
@@ -53,6 +56,7 @@ const convertToDb = (response: FormResponse) => {
 export class FormResponse {
   readonly id: string
   user_id!: string
+  source_form_id!: string
   definition_version!: number
   revision!: number
   answers!: FormAnswerSnapshot[]

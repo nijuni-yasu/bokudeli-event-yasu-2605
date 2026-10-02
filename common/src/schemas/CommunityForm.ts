@@ -8,6 +8,7 @@ const CommunityFormDbSchema = z.object({
   description: NonEmptyStringSchema.optional(),
   purpose: NonEmptyStringSchema.optional(),
   fields: FormFieldsSchema,
+  definition_version: z.number().int().positive(),
   archived: z.boolean(),
   created_by: z.string().min(1),
   updated_by: z.string().min(1),
@@ -21,6 +22,7 @@ const CommunityFormAppSchema = z.object({
   description: z.string().default(''),
   purpose: z.string().default(''),
   fields: FormFieldsSchema,
+  definition_version: z.number().int().positive().default(1),
   archived: z.boolean().default(false),
   created_by: z.string().min(1),
   updated_by: z.string().min(1),
@@ -33,6 +35,7 @@ const convertToDb = (form: CommunityForm) => {
     community_id: form.community_id,
     name: form.name,
     fields: form.fields,
+    definition_version: form.definition_version,
     archived: form.archived,
     created_by: form.created_by,
     updated_by: form.updated_by,
@@ -53,6 +56,7 @@ export class CommunityForm {
   description!: string
   purpose!: string
   fields!: FormField[]
+  definition_version!: number
   archived!: boolean
   created_by!: string
   updated_by!: string

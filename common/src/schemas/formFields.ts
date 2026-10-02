@@ -74,6 +74,31 @@ export function parseFormFields(value: unknown): FormField[] {
   return FormFieldsSchema.parse(value)
 }
 
+export function cloneFormFields(fields: FormField[]): FormField[] {
+  return FormFieldsSchema.parse(JSON.parse(JSON.stringify(fields)))
+}
+
+export function omitHiddenFormFields(fields: FormField[]): FormField[] {
+  const visible: FormField[] = []
+  for (const field of fields) {
+    if (field.hidden_for_new) {
+      continue
+    }
+    if (field.type === 'checkbox' || field.type === 'radio' || field.type === 'select') {
+      const options = field.options
+        .filter((option) => !option.hidden_for_new)
+        .map((option) => ({ ...option, hidden_for_new: false }))
+      if (options.length === 0) {
+        continue
+      }
+      visible.push({ ...field, hidden_for_new: false, options })
+      continue
+    }
+    visible.push({ ...field, hidden_for_new: false })
+  }
+  return visible
+}
+
 export const EVENT_FORM_EDITABLE_STATUS_VALUES = [
   'in_draft',
   'applying_reservation',
