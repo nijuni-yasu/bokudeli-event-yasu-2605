@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const { t: $t } = useI18n()
 
+const isEnterprise = computed(() => props.event.enterprise_id != null && props.event.enterprise_id !== '')
 const filter = ref<EventFormResponseFilter>('confirmed')
 const responses = ref<EventFormResponseListItem[]>([])
 const loading = ref(false)
@@ -72,8 +73,9 @@ const download = () => {
 </script>
 
 <template>
-  <section class="mt-10">
-    <div class="d-flex flex-wrap align-center justify-space-between ga-4 mb-4">
+  <section>
+    <v-alert v-if="isEnterprise" type="info" variant="tonal">{{ $t('manage.forms.enterprise_unsupported') }}</v-alert>
+    <div v-else class="d-flex flex-wrap align-center justify-space-between ga-4 mb-4">
       <div>
         <div class="d-flex align-center ga-2 mb-1">
           <h2 class="text-h6">{{ $t('manage.forms.responses_title') }}</h2>
@@ -98,111 +100,113 @@ const download = () => {
         </v-btn>
       </div>
     </div>
-    <v-progress-linear v-if="loading" indeterminate color="primary" />
-    <v-alert v-else-if="loadFailed" type="error" variant="tonal">
-      {{ $t('manage.forms.load_failed') }}
-      <template #append
-        ><v-btn variant="text" @click="retryKey++">{{ $t('manage.forms.retry') }}</v-btn></template
-      >
-    </v-alert>
-    <v-sheet v-else-if="responses.length === 0" border rounded="lg" class="text-center pa-8">
-      <v-avatar color="primary" variant="tonal" size="56" class="mb-3"
-        ><v-icon :icon="mdiTextBoxCheckOutline" size="28"
-      /></v-avatar>
-      <p class="text-body-1 mb-0">{{ $t('manage.forms.responses_empty') }}</p>
-    </v-sheet>
-    <v-table v-else class="border rounded-lg form-responses-table d-none d-sm-block">
-      <thead>
-        <tr>
-          <th>{{ $t('manage.forms.display_name') }}</th>
-          <th>{{ $t('manage.forms.participation') }}</th>
-          <th>{{ $t('manage.forms.answered_at') }}</th>
-          <th>{{ $t('manage.forms.updated_at') }}</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="item in responses" :key="item.user_id">
-          <td class="form-response-name">{{ item.display_name }}</td>
-          <td>
-            <v-chip
-              :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
-              size="small"
-              variant="tonal"
-              >{{ participationLabel(item.participation) }}</v-chip
-            >
-          </td>
-          <td class="text-no-wrap">{{ convertToDatetime(item.answered_at) }}</td>
-          <td class="text-no-wrap">{{ convertToDatetime(item.updated_at) }}</td>
-          <td class="text-right">
-            <v-btn variant="text" size="small" @click="selected = item">{{ $t('manage.forms.detail') }}</v-btn>
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
-    <div v-if="!loading && !loadFailed && responses.length > 0" class="d-flex d-sm-none flex-column ga-3">
-      <v-sheet v-for="item in responses" :key="item.user_id" border rounded="lg" class="pa-4">
-        <div class="d-flex align-start ga-3 mb-3">
-          <div class="flex-grow-1 form-response-person">
-            <h3 class="text-subtitle-1 mb-2 form-response-copy">{{ item.display_name }}</h3>
-            <v-chip
-              :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
-              size="small"
-              variant="tonal"
-              >{{ participationLabel(item.participation) }}</v-chip
-            >
-          </div>
-          <v-btn variant="tonal" size="small" @click="selected = item">{{ $t('manage.forms.detail') }}</v-btn>
-        </div>
-        <p class="text-caption text-medium-emphasis mb-0">
-          {{ $t('manage.forms.updated_at') }} {{ convertToDatetime(item.updated_at) }}
-        </p>
+    <template v-if="!isEnterprise">
+      <v-progress-linear v-if="loading" indeterminate color="primary" />
+      <v-alert v-else-if="loadFailed" type="error" variant="tonal">
+        {{ $t('manage.forms.load_failed') }}
+        <template #append
+          ><v-btn variant="text" @click="retryKey++">{{ $t('manage.forms.retry') }}</v-btn></template
+        >
+      </v-alert>
+      <v-sheet v-else-if="responses.length === 0" border rounded="lg" class="text-center pa-8">
+        <v-avatar color="primary" variant="tonal" size="56" class="mb-3"
+          ><v-icon :icon="mdiTextBoxCheckOutline" size="28"
+        /></v-avatar>
+        <p class="text-body-1 mb-0">{{ $t('manage.forms.responses_empty') }}</p>
       </v-sheet>
-    </div>
-    <v-dialog
-      :model-value="selected != null"
-      max-width="720"
-      scrollable
-      @update:model-value="selected = $event ? selected : null"
-    >
-      <v-card v-if="selected != null">
-        <v-card-title class="px-5 pt-5">{{ $t('manage.forms.response_detail') }}</v-card-title>
-        <v-card-text class="pa-5">
-          <div class="d-flex flex-wrap align-center ga-2 mb-2">
-            <h3 class="text-h6 form-response-copy">{{ selected.display_name }}</h3>
-            <v-chip
-              :color="selected.participation === 'confirmed' ? 'primary' : 'secondary'"
-              size="small"
-              variant="tonal"
-              >{{ participationLabel(selected.participation) }}</v-chip
-            >
+      <v-table v-else class="border rounded-lg form-responses-table d-none d-sm-block">
+        <thead>
+          <tr>
+            <th>{{ $t('manage.forms.display_name') }}</th>
+            <th>{{ $t('manage.forms.participation') }}</th>
+            <th>{{ $t('manage.forms.answered_at') }}</th>
+            <th>{{ $t('manage.forms.updated_at') }}</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in responses" :key="item.user_id">
+            <td class="form-response-name">{{ item.display_name }}</td>
+            <td>
+              <v-chip
+                :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
+                size="small"
+                variant="tonal"
+                >{{ participationLabel(item.participation) }}</v-chip
+              >
+            </td>
+            <td class="text-no-wrap">{{ convertToDatetime(item.answered_at) }}</td>
+            <td class="text-no-wrap">{{ convertToDatetime(item.updated_at) }}</td>
+            <td class="text-right">
+              <v-btn variant="text" size="small" @click="selected = item">{{ $t('manage.forms.detail') }}</v-btn>
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+      <div v-if="!loading && !loadFailed && responses.length > 0" class="d-flex d-sm-none flex-column ga-3">
+        <v-sheet v-for="item in responses" :key="item.user_id" border rounded="lg" class="pa-4">
+          <div class="d-flex align-start ga-3 mb-3">
+            <div class="flex-grow-1 form-response-person">
+              <h3 class="text-subtitle-1 mb-2 form-response-copy">{{ item.display_name }}</h3>
+              <v-chip
+                :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
+                size="small"
+                variant="tonal"
+                >{{ participationLabel(item.participation) }}</v-chip
+              >
+            </div>
+            <v-btn variant="tonal" size="small" @click="selected = item">{{ $t('manage.forms.detail') }}</v-btn>
           </div>
-          <p class="text-caption text-medium-emphasis mb-4 form-response-copy">
-            {{ $t('manage.forms.user_id') }}: {{ selected.user_id }}
+          <p class="text-caption text-medium-emphasis mb-0">
+            {{ $t('manage.forms.updated_at') }} {{ convertToDatetime(item.updated_at) }}
           </p>
-          <dl class="d-flex flex-wrap ga-4 mb-6">
-            <div>
-              <dt class="text-caption text-medium-emphasis">{{ $t('manage.forms.answered_at') }}</dt>
-              <dd class="text-body-2">{{ convertToDatetime(selected.answered_at) }}</dd>
+        </v-sheet>
+      </div>
+      <v-dialog
+        :model-value="selected != null"
+        max-width="720"
+        scrollable
+        @update:model-value="selected = $event ? selected : null"
+      >
+        <v-card v-if="selected != null">
+          <v-card-title class="px-5 pt-5">{{ $t('manage.forms.response_detail') }}</v-card-title>
+          <v-card-text class="pa-5">
+            <div class="d-flex flex-wrap align-center ga-2 mb-2">
+              <h3 class="text-h6 form-response-copy">{{ selected.display_name }}</h3>
+              <v-chip
+                :color="selected.participation === 'confirmed' ? 'primary' : 'secondary'"
+                size="small"
+                variant="tonal"
+                >{{ participationLabel(selected.participation) }}</v-chip
+              >
             </div>
-            <div>
-              <dt class="text-caption text-medium-emphasis">{{ $t('manage.forms.updated_at') }}</dt>
-              <dd class="text-body-2">{{ convertToDatetime(selected.updated_at) }}</dd>
-            </div>
-          </dl>
-          <v-sheet v-for="answer in selected.answers" :key="answer.field_id" border rounded="lg" class="pa-4 mb-3">
-            <div class="text-subtitle-2 mb-2 form-response-copy">{{ answer.field_label }}</div>
-            <div class="text-body-1 form-response-copy">
-              {{ answer.display_value !== '' ? answer.display_value : $t('manage.forms.no_answer') }}
-            </div>
-          </v-sheet>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="selected = null">{{ $t('manage.forms.close') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+            <p class="text-caption text-medium-emphasis mb-4 form-response-copy">
+              {{ $t('manage.forms.user_id') }}: {{ selected.user_id }}
+            </p>
+            <dl class="d-flex flex-wrap ga-4 mb-6">
+              <div>
+                <dt class="text-caption text-medium-emphasis">{{ $t('manage.forms.answered_at') }}</dt>
+                <dd class="text-body-2">{{ convertToDatetime(selected.answered_at) }}</dd>
+              </div>
+              <div>
+                <dt class="text-caption text-medium-emphasis">{{ $t('manage.forms.updated_at') }}</dt>
+                <dd class="text-body-2">{{ convertToDatetime(selected.updated_at) }}</dd>
+              </div>
+            </dl>
+            <v-sheet v-for="answer in selected.answers" :key="answer.field_id" border rounded="lg" class="pa-4 mb-3">
+              <div class="text-subtitle-2 mb-2 form-response-copy">{{ answer.field_label }}</div>
+              <div class="text-body-1 form-response-copy">
+                {{ answer.display_value !== '' ? answer.display_value : $t('manage.forms.no_answer') }}
+              </div>
+            </v-sheet>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn @click="selected = null">{{ $t('manage.forms.close') }}</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </template>
   </section>
 </template>
 

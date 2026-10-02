@@ -10,17 +10,20 @@ import {
   validateFormAnswers,
   type FormAnswerInput,
 } from '@shokujii/common/utils/validateFormAnswers.js'
+import { omitHiddenFormFields } from '@shokujii/common/schemas/formFields.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import { createModuleLogger } from './utils/logger.js'
-import { parseOrThrow, requireAuthUid, requirePfEventForForm, visibleFieldsForNewAnswers } from './utils/formAccess.js'
-import { getOrdersInCart } from './stores/memberOrder.js'
 import {
-  createFormCheckoutAttempt,
-  getEventFormConfig,
-  getFormResponse,
-  listPendingFormCheckoutAttemptsForUser,
-} from './stores/form.js'
+  loadEventFormReferenceIfPf,
+  parseOrThrow,
+  requireAuthUid,
+  requirePfEventForForm,
+  visibleFieldsForNewAnswers,
+} from './utils/formAccess.js'
+import { getOrdersInCart } from './stores/memberOrder.js'
+import { createFormCheckoutAttempt, getFormResponse, listPendingFormCheckoutAttemptsForUser } from './stores/form.js'
+import { isAttemptForCurrentForm } from './utils/formConfirm.js'
 
 const logger = createModuleLogger('formOrder')
 
@@ -32,15 +35,11 @@ function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: F
       return []
     }
     if (field.type === 'checkbox') {
-      const allowed = new Set(
-        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
-      )
+      const allowed = new Set(field.options.map((option) => option.option_id))
       return [{ ...answer, option_ids: (answer.option_ids ?? []).filter((id) => allowed.has(id)) }]
     }
     if (field.type === 'radio' || field.type === 'select') {
-      const allowed = new Set(
-        field.options.filter((option) => !option.hidden_for_new).map((option) => option.option_id),
-      )
+      const allowed = new Set(field.options.map((option) => option.option_id))
       if (answer.option_id != null && !allowed.has(answer.option_id)) {
         return [{ field_id: answer.field_id }]
       }
@@ -62,8 +61,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
   const event = await requirePfEventForForm(community_id, event_id)
   await requireInCart(community_id, event_id, uid)
 
-  const config = await getEventFormConfig(community_id, event_id)
-  if (config == null) {
+  const reference = await loadEventFormReferenceIfPf(event)
+  if (reference == null) {
     return { has_form: false, community_name: event.community_name, purpose: '' }
   }
 
@@ -72,16 +71,16 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
     getFormResponse(community_id, event_id, uid),
   ])
   const latestPending = pendingAttempts
-    .filter((attempt) => attempt.definition_version === config.definition_version)
+    .filter((attempt) => isAttemptForCurrentForm(attempt, reference.form))
     .sort((a, b) => b.updated_at - a.updated_at)[0]
 
-  const fields = visibleFieldsForNewAnswers(config.fields)
+  const fields = visibleFieldsForNewAnswers(reference.form.fields)
   if (latestPending != null) {
     return {
       has_form: true,
       community_name: event.community_name,
-      purpose: config.purpose,
-      definition_version: config.definition_version,
+      purpose: reference.form.purpose,
+      definition_version: reference.form.definition_version,
       fields,
       initial_answers: initialAnswersForVisibleFields(latestPending.answers, fields),
       source: 'attempt',
@@ -91,8 +90,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
     return {
       has_form: true,
       community_name: event.community_name,
-      purpose: config.purpose,
-      definition_version: config.definition_version,
+      purpose: reference.form.purpose,
+      definition_version: reference.form.definition_version,
       fields,
       initial_answers: initialAnswersForVisibleFields(confirmed.answers, fields),
       source: 'confirmed',
@@ -101,8 +100,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
   return {
     has_form: true,
     community_name: event.community_name,
-    purpose: config.purpose,
-    definition_version: config.definition_version,
+    purpose: reference.form.purpose,
+    definition_version: reference.form.definition_version,
     fields,
     initial_answers: [],
     source: 'empty',
@@ -112,17 +111,18 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
 export const saveOrderFormAttempt = onCall(async (request): Promise<SaveOrderFormAttemptResponse> => {
   const uid = await requireAuthUid(request.auth?.uid)
   const data = parseOrThrow(SaveOrderFormAttemptRequestSchema, request.data)
-  await requirePfEventForForm(data.community_id, data.event_id)
+  const event = await requirePfEventForForm(data.community_id, data.event_id)
   await requireInCart(data.community_id, data.event_id, uid)
 
-  const config = await getEventFormConfig(data.community_id, data.event_id)
-  if (config == null) {
+  const reference = await loadEventFormReferenceIfPf(event)
+  if (reference == null) {
     throw new HttpsError('failed-precondition', 'このイベントにフォームはありません')
   }
+  const fields = omitHiddenFormFields(reference.form.fields)
   const validated = validateFormAnswers({
-    fields: config.fields,
+    fields,
     answers: data.answers,
-    definitionVersion: config.definition_version,
+    definitionVersion: reference.form.definition_version,
     expectedDefinitionVersion: data.definition_version,
   })
   if (!validated.ok) {
@@ -132,10 +132,11 @@ export const saveOrderFormAttempt = onCall(async (request): Promise<SaveOrderFor
   const confirmed = await getFormResponse(data.community_id, data.event_id, uid)
   const attempt = await createFormCheckoutAttempt(data.community_id, data.event_id, {
     user_id: uid,
-    definition_version: config.definition_version,
+    source_form_id: reference.form.id,
+    definition_version: reference.form.definition_version,
     revision_basis: confirmed?.revision ?? 0,
     answers: validated.answers,
-    fields_snapshot: config.fields,
+    fields_snapshot: fields,
     status: 'pending',
   })
   logger.info('注文フローの回答試行を保存した', {

@@ -29,8 +29,6 @@ import type {
   SetEventFormFromCommunityResponse,
   UpdateCommunityFormRequest,
   UpdateCommunityFormResponse,
-  UpdateEventFormConfigRequest,
-  UpdateEventFormConfigResponse,
 } from '@shokujii/common/apis/form.js'
 
 export const listCommunityForms = (input: ListCommunityFormsRequest) => {
@@ -88,14 +86,6 @@ export const setEventFormFromCommunity = (input: SetEventFormFromCommunityReques
   const f = httpsCallable<SetEventFormFromCommunityRequest, SetEventFormFromCommunityResponse>(
     functions,
     'setEventFormFromCommunity',
-  )
-  return f(input)
-}
-
-export const updateEventFormConfig = (input: UpdateEventFormConfigRequest) => {
-  const f = httpsCallable<UpdateEventFormConfigRequest, UpdateEventFormConfigResponse>(
-    functions,
-    'updateEventFormConfig',
   )
   return f(input)
 }

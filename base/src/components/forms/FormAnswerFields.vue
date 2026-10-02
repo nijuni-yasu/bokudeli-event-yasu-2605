@@ -50,6 +50,20 @@ const setOptions = (fieldId: string, optionIds: string[]) => {
   upsert({ field_id: fieldId, option_ids: optionIds })
 }
 
+const isOptionChecked = (fieldId: string, optionId: string): boolean => {
+  return (answerFor(fieldId).option_ids ?? []).includes(optionId)
+}
+
+const toggleOption = (fieldId: string, optionId: string, checked: boolean) => {
+  const current = answerFor(fieldId).option_ids ?? []
+  const next = checked
+    ? current.includes(optionId)
+      ? current
+      : [...current, optionId]
+    : current.filter((id) => id !== optionId)
+  setOptions(fieldId, next)
+}
+
 const textInputType = (type: FormField['type']): string => (type === 'phone' ? 'tel' : type)
 
 const visibleOptions = (field: FormField) => {
@@ -82,9 +96,6 @@ const visibleOptions = (field: FormField) => {
       <div v-if="field.description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-answer-copy">
         {{ field.description }}
       </div>
-      <p v-if="field.type === 'checkbox'" class="text-caption text-medium-emphasis mb-2">
-        {{ $t('manage.forms.multiple_choice_hint') }}
-      </p>
       <v-text-field
         v-if="field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'date'"
         :model-value="answerFor(field.field_id).text_value ?? ''"
@@ -134,22 +145,20 @@ const visibleOptions = (field: FormField) => {
         variant="outlined"
         @update:model-value="setOption(field.field_id, String($event ?? ''))"
       />
-      <v-select
-        v-else-if="field.type === 'checkbox'"
-        :model-value="answerFor(field.field_id).option_ids ?? []"
-        :items="visibleOptions(field)"
-        item-title="label"
-        item-value="option_id"
-        :menu-props="{ contentClass: 'form-answer-options' }"
-        multiple
-        chips
-        closable-chips
-        :disabled="disabled"
-        :error-messages="issueMessage(field.field_id)"
-        hide-details="auto"
-        variant="outlined"
-        @update:model-value="setOptions(field.field_id, Array.isArray($event) ? $event.map(String) : [])"
-      />
+      <div v-else-if="field.type === 'checkbox'">
+        <v-checkbox
+          v-for="option in visibleOptions(field)"
+          :key="option.option_id"
+          :model-value="isOptionChecked(field.field_id, option.option_id)"
+          :label="option.label"
+          :disabled="disabled"
+          hide-details
+          @update:model-value="toggleOption(field.field_id, option.option_id, $event === true)"
+        />
+        <div v-if="issueMessage(field.field_id) !== ''" class="text-error text-caption">
+          {{ issueMessage(field.field_id) }}
+        </div>
+      </div>
     </v-sheet>
   </div>
 </template>
@@ -166,14 +175,17 @@ const visibleOptions = (field: FormField) => {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.form-answer :deep(.v-select__selection),
-.form-answer :deep(.v-chip__content) {
+.form-answer :deep(.v-select__selection) {
   min-width: 0;
 }
-.form-answer :deep(.v-chip__content) {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.form-answer :deep(.v-checkbox) {
+  margin-inline: 0;
+}
+.form-answer :deep(.v-checkbox .v-selection-control) {
+  min-height: 40px;
+}
+.form-answer :deep(.v-checkbox .v-label) {
+  opacity: 1;
 }
 :global(.form-answer-options .v-list-item-title) {
   white-space: normal;

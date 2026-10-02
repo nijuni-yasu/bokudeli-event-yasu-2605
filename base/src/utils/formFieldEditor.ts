@@ -12,7 +12,7 @@ export function changeFormFieldType(field: FormFieldInput, type: FormFieldInput[
     label: field.label,
     description: field.description ?? '',
     required: field.required,
-    hidden_for_new: field.hidden_for_new ?? false,
+    hidden_for_new: false,
     ...(isChoiceFieldType(type) ? { options: [{ label: '', hidden_for_new: false }] } : {}),
   }
 }

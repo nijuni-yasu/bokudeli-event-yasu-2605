@@ -12,6 +12,7 @@ import {
   FORM_FIELD_LIMITS,
   FormFieldSchema,
   isChoiceFieldType,
+  omitHiddenFormFields,
   type FormField,
 } from '@shokujii/common/schemas/formFields.js'
 import type { ResolveManageCommunityFormsPathFn } from '@shokujii/base/types/profilePathResolvers.js'
@@ -96,7 +97,7 @@ const load = async () => {
     name.value = response.data.form.name
     description.value = response.data.form.description
     purpose.value = response.data.form.purpose
-    fields.value = response.data.form.fields
+    fields.value = omitHiddenFormFields(response.data.form.fields)
   } catch {
     loadFailed.value = true
   } finally {

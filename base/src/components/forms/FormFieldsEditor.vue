@@ -24,11 +24,6 @@ const deleteDialogOpen = ref(false)
 const pendingDeleteField = shallowRef<FormFieldInput | null>(null)
 const typeItems = FORM_FIELD_TYPE_VALUES.map((value) => ({ value, title: $t(`manage.forms.types.${value}`) }))
 const requiredRule = (value: string): boolean | string => value.trim() !== '' || $t('manage.forms.validation.required')
-const visibleOptionRule = (field: FormFieldInput): boolean | string =>
-  !field.required ||
-  (field.options ?? []).some((option) => !option.hidden_for_new) ||
-  $t('manage.forms.validation.visible_option')
-
 const updateField = (index: number, patch: Partial<FormFieldInput>): void => {
   emit(
     'update:modelValue',
@@ -73,11 +68,7 @@ const addOption = (index: number): void => {
   updateField(index, { options })
 }
 
-const updateOption = (
-  fieldIndex: number,
-  optionIndex: number,
-  patch: { label?: string; hidden_for_new?: boolean },
-): void => {
+const updateOption = (fieldIndex: number, optionIndex: number, patch: { label?: string }): void => {
   const field = editableFields.value[fieldIndex]
   updateField(fieldIndex, {
     options: (field.options ?? []).map((option, index) => (index === optionIndex ? { ...option, ...patch } : option)),
@@ -187,10 +178,7 @@ const onTypeChange = (index: number, type: FormFieldInput['type']): void => {
             <div class="text-subtitle-2 mb-3">{{ $t('manage.forms.options') }}</div>
             <v-input
               :model-value="field.options"
-              :rules="[
-                () => (field.options?.length ?? 0) > 0 || $t('manage.forms.validation.options_required'),
-                () => visibleOptionRule(field),
-              ]"
+              :rules="[() => (field.options?.length ?? 0) > 0 || $t('manage.forms.validation.options_required')]"
               :disabled="disabled"
               hide-details="auto"
             >
@@ -209,14 +197,6 @@ const onTypeChange = (index: number, type: FormFieldInput['type']): void => {
                     density="comfortable"
                     hide-details="auto"
                     @update:model-value="updateOption(index, optionIndex, { label: String($event ?? '') })"
-                  />
-                  <v-checkbox
-                    :model-value="option.hidden_for_new === true"
-                    :label="$t('manage.forms.option_hidden')"
-                    :disabled="disabled"
-                    density="compact"
-                    hide-details
-                    @update:model-value="updateOption(index, optionIndex, { hidden_for_new: $event === true })"
                   />
                   <v-btn
                     :icon="mdiDeleteOutline"
@@ -271,16 +251,13 @@ const onTypeChange = (index: number, type: FormFieldInput['type']): void => {
 <style scoped>
 .form-option-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 8px;
 }
 @media (max-width: 599px) {
   .form-option-row {
     grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .form-option-row > :first-child {
-    grid-column: 1 / -1;
   }
 }
 </style>

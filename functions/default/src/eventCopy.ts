@@ -13,7 +13,7 @@ import { savePartnerMenusToEventMenus } from './eventMenusSnapshot.js'
 import { createModuleLogger } from './utils/logger.js'
 import { isEnterpriseEvent } from './utils/enterpriseMail.js'
 import { assertEnterpriseEventPaymentAllowed } from './utils/enterpriseSubsidyOrders.js'
-import { EventFormConfig, cloneFormFields } from '@shokujii/common/schemas/EventFormConfig.js'
+import { EventFormConfig } from '@shokujii/common/schemas/EventFormConfig.js'
 import { getEventFormConfig, saveEventFormConfig } from './stores/form.js'
 
 const logger = createModuleLogger('eventCopy')
@@ -139,9 +139,6 @@ export const copyEventCore = async (
   if (srcFormConfig != null) {
     const copiedConfig = new EventFormConfig('current', {
       source_form_id: srcFormConfig.source_form_id,
-      definition_version: 1,
-      purpose: srcFormConfig.purpose,
-      fields: cloneFormFields(srcFormConfig.fields),
     })
     await saveEventFormConfig(srcEvent.community_id, newEvent.id, copiedConfig)
   }

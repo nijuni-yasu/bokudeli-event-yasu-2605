@@ -11,7 +11,6 @@ import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CopyEventDialog from '@shokujii/base/components/manage/community/CopyEventDialog.vue'
 import EventLetter from '@shokujii/base/components/manage/event/EventLetter.vue'
 import EventSettings from '@shokujii/base/components/manage/event/EventSettings.vue'
-import EventFormSettingsPanel from '@shokujii/base/components/manage/event/EventFormSettingsPanel.vue'
 import EventFormResponsesPanel from '@shokujii/base/components/manage/event/EventFormResponsesPanel.vue'
 import EventFlyer from '@shokujii/base/components/manage/event/EventFlyer.vue'
 import EventCommunityBillAlert from '@shokujii/base/components/manage/event/EventCommunityBillAlert.vue'
@@ -229,7 +228,6 @@ const openEventPublicPage = () => {
         </v-tabs-window-item>
         <v-tabs-window-item value="form">
           <v-container class="manage-container">
-            <EventFormSettingsPanel v-if="event != null" :event="event" />
             <EventFormResponsesPanel v-if="event != null" :event="event" />
           </v-container>
         </v-tabs-window-item>

@@ -1,7 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/https'
-import { getFirestore } from 'firebase-admin/firestore'
 import { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
-import { EventFormConfig, cloneFormFields } from '@shokujii/common/schemas/EventFormConfig.js'
+import { EventFormConfig } from '@shokujii/common/schemas/EventFormConfig.js'
+import { cloneFormFields, FORM_FIELD_LIMITS, omitHiddenFormFields } from '@shokujii/common/schemas/formFields.js'
 import {
   ArchiveCommunityFormRequestSchema,
   ClearEventFormConfigRequestSchema,
@@ -15,7 +15,6 @@ import {
   ListEventFormResponsesRequestSchema,
   SetEventFormFromCommunityRequestSchema,
   UpdateCommunityFormRequestSchema,
-  UpdateEventFormConfigRequestSchema,
   type ArchiveCommunityFormResponse,
   type ClearEventFormConfigResponse,
   type CreateCommunityFormResponse,
@@ -29,11 +28,10 @@ import {
   type ListEventFormResponsesResponse,
   type SetEventFormFromCommunityResponse,
   type UpdateCommunityFormResponse,
-  type UpdateEventFormConfigResponse,
 } from '@shokujii/common/apis/form.js'
 import { formatFormAnswerDisplay } from '@shokujii/common/utils/validateFormAnswers.js'
+import { nextCommunityFormDefinitionVersion } from '@shokujii/common/utils/communityFormDefinition.js'
 import { normalizeFormFields } from '@shokujii/common/utils/normalizeFormFields.js'
-import { FORM_FIELD_LIMITS } from '@shokujii/common/schemas/formFields.js'
 import { createModuleLogger } from './utils/logger.js'
 import {
   assertEventFormEditable,
@@ -61,7 +59,6 @@ import {
 } from './stores/form.js'
 
 const logger = createModuleLogger('formAdmin')
-const db = getFirestore()
 const DUPLICATE_FORM_NAME_SUFFIX = ' のコピー'
 
 function duplicateFormName(name: string): string {
@@ -85,7 +82,7 @@ export const listCommunityFormsCallable = onCall(async (request): Promise<ListCo
         description: form.description,
         purpose: form.purpose,
         archived: form.archived,
-        field_count: form.fields.length,
+        field_count: omitHiddenFormFields(form.fields).length,
         updated_at: form.updated_at,
       })),
   }
@@ -116,6 +113,7 @@ export const createCommunityForm = onCall(async (request): Promise<CreateCommuni
     description: data.description ?? '',
     purpose: data.purpose ?? '',
     fields: normalized.fields,
+    definition_version: 1,
     archived: false,
     created_by: uid,
     updated_by: uid,
@@ -137,12 +135,20 @@ export const updateCommunityForm = onCall(async (request): Promise<UpdateCommuni
   if (!normalized.ok) {
     throw new HttpsError('invalid-argument', normalized.message)
   }
+  const nextPurpose = data.purpose ?? ''
   const updated = new CommunityForm(existing.id, {
     ...existing,
     name: data.name,
     description: data.description ?? '',
-    purpose: data.purpose ?? '',
+    purpose: nextPurpose,
     fields: normalized.fields,
+    definition_version: nextCommunityFormDefinitionVersion({
+      currentVersion: existing.definition_version,
+      existingFields: existing.fields,
+      existingPurpose: existing.purpose,
+      nextFields: normalized.fields,
+      nextPurpose,
+    }),
     archived: data.archived ?? existing.archived,
     updated_by: uid,
   })
@@ -164,6 +170,7 @@ export const duplicateCommunityForm = onCall(async (request): Promise<DuplicateC
     description: existing.description,
     purpose: existing.purpose,
     fields: cloneFormFields(existing.fields),
+    definition_version: 1,
     archived: false,
     created_by: uid,
     updated_by: uid,
@@ -195,7 +202,11 @@ export const getEventFormPresence = onCall(async (request): Promise<GetEventForm
     return { has_form: false }
   }
   const config = await getEventFormConfig(community_id, event_id)
-  return { has_form: config != null }
+  if (config == null) {
+    return { has_form: false }
+  }
+  const form = await getCommunityForm(community_id, config.source_form_id)
+  return { has_form: form != null }
 })
 
 export const getEventFormConfigCallable = onCall(async (request): Promise<GetEventFormConfigResponse> => {
@@ -217,51 +228,19 @@ export const setEventFormFromCommunity = onCall(async (request): Promise<SetEven
   if (form == null || form.archived) {
     throw new HttpsError('not-found', 'フォームが見つかりません')
   }
-  const config = await db.runTransaction(async (transaction) => {
-    const existing = await getEventFormConfig(community_id, event_id, transaction)
-    const next = new EventFormConfig('current', {
-      source_form_id: form.id,
-      definition_version: (existing?.definition_version ?? 0) + 1,
-      purpose: form.purpose,
-      fields: cloneFormFields(form.fields),
-    })
-    await saveEventFormConfig(community_id, event_id, next, transaction)
-    return next
+  const existing = await getEventFormConfig(community_id, event_id)
+  const next = new EventFormConfig('current', {
+    source_form_id: form.id,
+    created_at: existing?.created_at,
   })
+  await saveEventFormConfig(community_id, event_id, next)
   logger.info('イベントへフォームを設定した', {
     communityId: community_id,
     eventId: event_id,
     formId: form.id,
     userId: uid,
   })
-  return { config: toEventFormConfigDto(config) }
-})
-
-export const updateEventFormConfig = onCall(async (request): Promise<UpdateEventFormConfigResponse> => {
-  const uid = await requireAuthUid(request.auth?.uid)
-  const data = parseOrThrow(UpdateEventFormConfigRequestSchema, request.data)
-  await requireCommunityManager(data.community_id, uid)
-  const event = await requirePfEventForForm(data.community_id, data.event_id)
-  assertEventFormEditable(event)
-  const config = await db.runTransaction(async (transaction) => {
-    const existing = await getEventFormConfig(data.community_id, data.event_id, transaction)
-    if (existing == null) {
-      throw new HttpsError('not-found', 'イベントにフォームが設定されていません')
-    }
-    const normalized = normalizeFormFields(data.fields, existing.fields)
-    if (!normalized.ok) {
-      throw new HttpsError('invalid-argument', normalized.message)
-    }
-    const next = new EventFormConfig('current', {
-      ...existing,
-      purpose: data.purpose ?? existing.purpose,
-      fields: normalized.fields,
-      definition_version: existing.definition_version + 1,
-    })
-    await saveEventFormConfig(data.community_id, data.event_id, next, transaction)
-    return next
-  })
-  return { config: toEventFormConfigDto(config) }
+  return { config: toEventFormConfigDto(next) }
 })
 
 export const clearEventFormConfig = onCall(async (request): Promise<ClearEventFormConfigResponse> => {

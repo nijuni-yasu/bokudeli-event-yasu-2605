@@ -31,7 +31,7 @@ export const {
   addToCart, removeFromCart, confirmOrder,
   savePartnerMenu, savePartnerOption, deletePartnerOption, deletePartnerMenu, sortPartnerMenus,
   listCommunityFormsCallable, getCommunityFormCallable, createCommunityForm, updateCommunityForm, duplicateCommunityForm, archiveCommunityForm,
-  getEventFormPresence, getEventFormConfigCallable, setEventFormFromCommunity, updateEventFormConfig, clearEventFormConfig,
+  getEventFormPresence, getEventFormConfigCallable, setEventFormFromCommunity, clearEventFormConfig,
   listEventFormResponses, getEventFormResponse, getOrderFormForCart, saveOrderFormAttempt,
   getUserFriends, backfillUserFriends, getUserFriendMeetLog,
   updateUserTags,

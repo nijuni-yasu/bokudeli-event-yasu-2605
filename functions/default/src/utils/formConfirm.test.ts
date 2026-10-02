@@ -1,11 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
+import { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
 import { FormCheckoutAttempt } from '@shokujii/common/schemas/FormCheckoutAttempt.js'
+import { FormResponse } from '@shokujii/common/schemas/FormResponse.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
-import { mergeAttemptAnswersWithInactiveExisting } from './formConfirm.js'
+import {
+  isAttemptForCurrentForm,
+  isConfirmedResponseForCurrentForm,
+  mergeAttemptAnswersWithInactiveExisting,
+} from './formConfirm.js'
 
 vi.mock('../stores/form.js', () => ({}))
 vi.mock('./enterpriseSubsidyOrders.js', () => ({}))
+vi.mock('./formAccess.js', () => ({
+  loadEventFormReferenceIfPf: vi.fn(),
+}))
 
 const hiddenField: FormField = {
   field_id: 'hidden',
@@ -78,6 +87,52 @@ describe('Checkout 試行の定義スナップショット', () => {
     expect(
       mergeAttemptAnswersWithInactiveExisting([], [hiddenAnswer, oldVisibleAnswer], [hiddenField, visibleField]),
     ).toEqual([hiddenAnswer])
+  })
+
+  it('フォームIDが無い旧試行は現行フォームと一致しない', () => {
+    const form = new CommunityForm('form-1', {
+      community_id: 'c1',
+      name: '事前アンケート',
+      fields: [],
+      definition_version: 1,
+      created_by: 'u1',
+      updated_by: 'u1',
+    })
+    const attempt = new FormCheckoutAttempt('legacy', {
+      user_id: 'user',
+      definition_version: 1,
+      revision_basis: 1,
+      answers: [updatedAnswer],
+      status: 'frozen',
+    })
+    expect(isAttemptForCurrentForm(attempt, form)).toBe(false)
+  })
+
+  it('確定済み回答は同じフォームIDとバージョンのときだけ現行とみなす', () => {
+    const form = new CommunityForm('form-1', {
+      community_id: 'c1',
+      name: '事前アンケート',
+      fields: [],
+      definition_version: 2,
+      created_by: 'u1',
+      updated_by: 'u1',
+    })
+    const current = new FormResponse('user', {
+      user_id: 'user',
+      source_form_id: 'form-1',
+      definition_version: 2,
+      revision: 1,
+      answers: [updatedAnswer],
+    })
+    const otherForm = new FormResponse('user', {
+      user_id: 'user',
+      source_form_id: 'form-2',
+      definition_version: 2,
+      revision: 1,
+      answers: [updatedAnswer],
+    })
+    expect(isConfirmedResponseForCurrentForm(current, form)).toBe(true)
+    expect(isConfirmedResponseForCurrentForm(otherForm, form)).toBe(false)
   })
 
   it('定義を持たない旧試行は読み込み可能で、未編集の過去回答を消さない', () => {

@@ -2,34 +2,32 @@ import { HttpsError } from 'firebase-functions/https'
 import type { Transaction } from 'firebase-admin/firestore'
 import { FormResponse } from '@shokujii/common/schemas/FormResponse.js'
 import type { FormCheckoutAttempt } from '@shokujii/common/schemas/FormCheckoutAttempt.js'
-import type { EventFormConfig } from '@shokujii/common/schemas/EventFormConfig.js'
+import type { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
-import {
-  getEventFormConfig,
-  getFormCheckoutAttempt,
-  getFormResponse,
-  saveFormCheckoutAttempt,
-  saveFormResponse,
-} from '../stores/form.js'
-import { getEventEnterpriseId } from './enterpriseSubsidyOrders.js'
+import { getFormCheckoutAttempt, getFormResponse, saveFormCheckoutAttempt, saveFormResponse } from '../stores/form.js'
+import { loadEventFormReferenceIfPf } from './formAccess.js'
 import type { ShokujiiEvent } from '../stores/event.js'
 
-export async function loadEventFormConfigIfPf(
-  event: ShokujiiEvent,
-  transaction?: Transaction,
-): Promise<EventFormConfig | undefined> {
-  if (getEventEnterpriseId(event) != null) {
-    return undefined
+export function isAttemptForCurrentForm(attempt: FormCheckoutAttempt, form: CommunityForm): boolean {
+  if (attempt.source_form_id === '') {
+    return false
   }
-  return getEventFormConfig(event.community_id, event.id, transaction)
+  return attempt.source_form_id === form.id && attempt.definition_version === form.definition_version
+}
+
+export function isConfirmedResponseForCurrentForm(response: FormResponse, form: CommunityForm): boolean {
+  if (response.source_form_id !== '' && response.source_form_id !== form.id) {
+    return false
+  }
+  return response.definition_version === form.definition_version
 }
 
 export async function requireAttemptForLatestForm(params: {
   event: ShokujiiEvent
   userId: string
   attemptId: string | undefined
-  config: EventFormConfig
+  form: CommunityForm
   transaction: Transaction
 }): Promise<FormCheckoutAttempt> {
   if (params.attemptId == null || params.attemptId === '') {
@@ -47,7 +45,7 @@ export async function requireAttemptForLatestForm(params: {
   if (attempt.status === 'consumed') {
     throw new HttpsError('failed-precondition', 'この回答はすでに使用されています')
   }
-  if (attempt.definition_version !== params.config.definition_version) {
+  if (!isAttemptForCurrentForm(attempt, params.form)) {
     throw new HttpsError('failed-precondition', '設問が更新されています。回答画面でやり直してください')
   }
   return attempt
@@ -64,8 +62,8 @@ export async function planFormConfirmation(params: {
   attemptId: string | undefined
   transaction: Transaction
 }): Promise<FormConfirmPlan> {
-  const config = await loadEventFormConfigIfPf(params.event, params.transaction)
-  if (config == null) {
+  const reference = await loadEventFormReferenceIfPf(params.event, params.transaction)
+  if (reference == null) {
     return { kind: 'none' }
   }
   const existing = await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction)
@@ -74,12 +72,12 @@ export async function planFormConfirmation(params: {
       event: params.event,
       userId: params.userId,
       attemptId: params.attemptId,
-      config,
+      form: reference.form,
       transaction: params.transaction,
     })
     return { kind: 'apply', attempt, existing }
   }
-  if (existing != null && existing.definition_version === config.definition_version) {
+  if (existing != null && isConfirmedResponseForCurrentForm(existing, reference.form)) {
     return { kind: 'reuse', existing }
   }
   throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
@@ -90,8 +88,7 @@ export function mergeAttemptAnswersWithInactiveExisting(
   existingAnswers: FormAnswerSnapshot[] | undefined,
   fields: FormField[] | undefined,
 ): FormAnswerSnapshot[] {
-  // 削除済み・無効化済みの設問は編集対象外なので、回答時点の内容を維持する。
-  // 定義を復元できない旧試行も、今回の回答に含まれない確定済み回答を消さない。
+  // 今回の設問に無い確定済み回答は残す。削除した設問や種類変更前の旧IDも上書きしない。
   const editableIds = new Set((fields ?? []).filter((field) => !field.hidden_for_new).map((field) => field.field_id))
   const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
   const kept = (existingAnswers ?? []).filter(
@@ -130,6 +127,7 @@ export async function applyAttemptToConfirmedResponse(params: {
   const nextRevision = (existing?.revision ?? 0) + 1
   const confirmed = new FormResponse(params.userId, {
     user_id: params.userId,
+    source_form_id: params.attempt.source_form_id,
     definition_version: params.attempt.definition_version,
     revision: nextRevision,
     answers: mergeAttemptAnswersWithInactiveExisting(
