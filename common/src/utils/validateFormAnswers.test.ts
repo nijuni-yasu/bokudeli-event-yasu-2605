@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { FormField } from '../schemas/formFields.js'
 import { FormAnswerInputSchema } from '../apis/form.js'
-import { answersToInputs, compactFormAnswerInput, formatFormAnswerDisplay, validateFormAnswers } from './validateFormAnswers.js'
+import {
+  answersToInputs,
+  compactFormAnswerInput,
+  formatFormAnswerDisplay,
+  validateFormAnswers,
+} from './validateFormAnswers.js'
 
 const textField = (overrides?: Partial<FormField> & { type?: 'text' }): FormField => ({
   field_id: 'f_name',
