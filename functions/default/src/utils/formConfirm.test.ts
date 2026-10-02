@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { FormCheckoutAttempt } from '@shokujii/common/schemas/FormCheckoutAttempt.js'
 import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
-import { mergeAttemptAnswersWithHiddenExisting } from './formConfirm.js'
+import { mergeAttemptAnswersWithInactiveExisting } from './formConfirm.js'
 
 vi.mock('../stores/form.js', () => ({}))
 vi.mock('./enterpriseSubsidyOrders.js', () => ({}))
@@ -27,6 +27,28 @@ const oldVisibleAnswer: FormAnswerSnapshot = { ...hiddenAnswer, field_id: 'visib
 const updatedAnswer: FormAnswerSnapshot = { ...oldVisibleAnswer, text_value: '変更後' }
 
 describe('Checkout 試行の定義スナップショット', () => {
+  it('削除済み設問の回答は、残った設問への再回答を確定しても保持する', () => {
+    expect(
+      mergeAttemptAnswersWithInactiveExisting([updatedAnswer], [hiddenAnswer, oldVisibleAnswer], [visibleField]),
+    ).toEqual([hiddenAnswer, updatedAnswer])
+  })
+
+  it('すべての設問を削除しても過去回答を保持する', () => {
+    expect(mergeAttemptAnswersWithInactiveExisting([], [hiddenAnswer, oldVisibleAnswer], [])).toEqual([
+      hiddenAnswer,
+      oldVisibleAnswer,
+    ])
+  })
+
+  it('同じ設問文でも新しい ID で作り直した設問は、過去回答を上書きしない', () => {
+    const recreatedField = { ...visibleField, field_id: 'recreated' }
+    const recreatedAnswer = { ...oldVisibleAnswer, field_id: 'recreated', text_value: '新しい回答' }
+    expect(mergeAttemptAnswersWithInactiveExisting([recreatedAnswer], [oldVisibleAnswer], [recreatedField])).toEqual([
+      oldVisibleAnswer,
+      recreatedAnswer,
+    ])
+  })
+
   it('Checkout 中に設問が再表示・削除されても開始時に非表示だった回答を保持する', () => {
     const fields = [hiddenField, visibleField].map((field) => ({ ...field }))
     const attempt = new FormCheckoutAttempt('attempt', {
@@ -44,7 +66,7 @@ describe('Checkout 試行の定義スナップショット', () => {
       fields_snapshot: attempt.toFirestore().fields_snapshot,
     })
     expect(
-      mergeAttemptAnswersWithHiddenExisting(
+      mergeAttemptAnswersWithInactiveExisting(
         restored.answers,
         [hiddenAnswer, oldVisibleAnswer],
         restored.fields_snapshot,
@@ -54,7 +76,7 @@ describe('Checkout 試行の定義スナップショット', () => {
 
   it('今回表示した任意設問の未回答は、古い回答で埋め直さない', () => {
     expect(
-      mergeAttemptAnswersWithHiddenExisting([], [hiddenAnswer, oldVisibleAnswer], [hiddenField, visibleField]),
+      mergeAttemptAnswersWithInactiveExisting([], [hiddenAnswer, oldVisibleAnswer], [hiddenField, visibleField]),
     ).toEqual([hiddenAnswer])
   })
 
@@ -68,7 +90,11 @@ describe('Checkout 試行の定義スナップショット', () => {
     })
     expect(attempt.toFirestore()).not.toHaveProperty('fields_snapshot')
     expect(
-      mergeAttemptAnswersWithHiddenExisting(attempt.answers, [hiddenAnswer, oldVisibleAnswer], attempt.fields_snapshot),
+      mergeAttemptAnswersWithInactiveExisting(
+        attempt.answers,
+        [hiddenAnswer, oldVisibleAnswer],
+        attempt.fields_snapshot,
+      ),
     ).toEqual([hiddenAnswer, updatedAnswer])
   })
 })

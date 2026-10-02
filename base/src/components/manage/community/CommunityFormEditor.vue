@@ -7,6 +7,7 @@ import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityS
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { createCommunityForm, getCommunityForm, updateCommunityForm } from '@shokujii/base/apis/form.js'
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
+import type { FormAnswerInput } from '@shokujii/common/utils/validateFormAnswers.js'
 import {
   FORM_FIELD_LIMITS,
   FormFieldSchema,
@@ -34,6 +35,7 @@ const fields = ref<FormFieldInput[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const previewOpen = ref(false)
+const previewAnswers = ref<FormAnswerInput[]>([])
 const formRef = ref<InstanceType<typeof VForm> | null>(null)
 const loadFailed = ref(false)
 const validationFailed = ref(false)
@@ -151,6 +153,11 @@ const save = async () => {
 const back = () => {
   void router.push(props.resolveFormsPath(communityAccount))
 }
+
+const openPreview = (): void => {
+  previewAnswers.value = []
+  previewOpen.value = true
+}
 </script>
 
 <template>
@@ -215,7 +222,7 @@ const back = () => {
         class="form-editor-actions d-flex flex-wrap align-center ga-3 pa-4 mt-6"
         elevation="2"
       >
-        <v-btn :prepend-icon="mdiEyeOutline" variant="outlined" :disabled="saving" @click="previewOpen = true">{{
+        <v-btn :prepend-icon="mdiEyeOutline" variant="outlined" :disabled="saving" @click="openPreview">{{
           $t('manage.forms.preview')
         }}</v-btn>
         <v-spacer />
@@ -234,12 +241,13 @@ const back = () => {
         <v-card-title>{{ $t('manage.forms.preview') }}</v-card-title>
         <v-card-text>
           <v-alert type="info" variant="tonal" class="mb-6">{{ $t('manage.forms.preview_notice') }}</v-alert>
-          <h2 class="text-h6 mb-2">{{ name }}</h2>
+          <h2 class="text-h6 mb-2 form-editor-copy">{{ name }}</h2>
           <p v-if="description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-editor-copy">
             {{ description }}
           </p>
           <p v-if="purpose !== ''" class="mb-6 form-editor-copy">{{ purpose }}</p>
-          <FormAnswerFields :fields="previewFields" :model-value="[]" disabled />
+          <FormAnswerFields v-if="previewFields.length > 0" v-model="previewAnswers" :fields="previewFields" />
+          <v-alert v-else type="info" variant="tonal">{{ $t('manage.forms.preview_empty') }}</v-alert>
         </v-card-text>
         <v-card-actions
           ><v-spacer /><v-btn @click="previewOpen = false">{{ $t('manage.forms.close') }}</v-btn></v-card-actions

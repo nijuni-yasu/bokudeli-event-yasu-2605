@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { mdiClipboardTextOutline } from '@mdi/js'
 import { FirebaseError } from 'firebase/app'
 import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
@@ -234,18 +235,42 @@ const confirmOrderNow = async () => {
 </script>
 
 <template>
-  <v-container class="manage-container py-8" style="max-width: 720px">
-    <div class="text-h5 mb-2">{{ $t('cart.form_page_title') }}</div>
-    <div v-if="form?.purpose" class="text-body-1 mb-6">{{ form.purpose }}</div>
-    <v-progress-circular v-if="loading" indeterminate color="primary" />
+  <v-container class="manage-container py-8 cart-form">
+    <div class="d-flex align-center ga-3 mb-6">
+      <v-avatar color="primary" variant="tonal" rounded="lg" size="48"
+        ><v-icon :icon="mdiClipboardTextOutline"
+      /></v-avatar>
+      <h1 class="text-h5">{{ $t('cart.form_page_title') }}</h1>
+    </div>
+    <v-progress-linear v-if="loading" indeterminate color="primary" />
     <template v-else-if="form?.has_form">
-      <FormAnswerFields v-model="answers" :fields="fields" :issues="issues" />
-      <v-btn class="mt-8" color="grey-900" size="x-large" rounded="pill" block :loading="saving" @click="onPrimary">
+      <v-sheet v-if="form.purpose != null && form.purpose !== ''" color="surface" border rounded="lg" class="pa-4 mb-6">
+        <h2 class="text-subtitle-2 mb-2">{{ $t('manage.forms.purpose') }}</h2>
+        <p class="text-body-2 text-medium-emphasis mb-0 cart-form-copy">{{ form.purpose }}</p>
+      </v-sheet>
+      <FormAnswerFields v-model="answers" :fields="fields" :issues="issues" :disabled="saving || openConfirmOrder" />
+      <v-alert v-if="issues.length > 0" type="error" variant="tonal" class="mt-4">{{
+        $t('manage.forms.validation.summary')
+      }}</v-alert>
+      <v-btn
+        class="mt-8"
+        color="primary"
+        size="large"
+        block
+        :loading="saving"
+        :disabled="openConfirmOrder"
+        @click="onPrimary"
+      >
         {{ needsStripe ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event') }}
       </v-btn>
-      <v-btn class="mt-4" variant="text" block @click="router.push(resolveCartPath())">{{
-        $t('cart.back_to_cart')
-      }}</v-btn>
+      <v-btn
+        class="mt-3"
+        variant="text"
+        block
+        :disabled="saving || openConfirmOrder"
+        @click="router.push(resolveCartPath())"
+        >{{ $t('cart.back_to_cart') }}</v-btn
+      >
     </template>
     <ConfirmDialog v-model="openConfirmOrder" :is-confirm="true" :ok-click="confirmOrderNow" :ok-loading-state="saving">
       {{ confirmDialogMessage }}
@@ -253,3 +278,13 @@ const confirmOrderNow = async () => {
     <ConfirmDialog v-model="isOpenAlert" :is-confirm="false">{{ alertMessage }}</ConfirmDialog>
   </v-container>
 </template>
+
+<style scoped>
+.cart-form {
+  max-width: 720px;
+}
+.cart-form-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+</style>

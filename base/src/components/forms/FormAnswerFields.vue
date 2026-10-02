@@ -62,14 +62,29 @@ const visibleOptions = (field: FormField) => {
 
 <template>
   <div class="d-flex flex-column ga-4">
-    <div v-for="field in fields" :key="field.field_id">
-      <div class="text-subtitle-1 font-weight-medium mb-1">
-        {{ field.label }}
-        <span v-if="field.required" class="text-error">*</span>
+    <v-sheet
+      v-for="(field, index) in fields"
+      :key="field.field_id"
+      border
+      rounded="lg"
+      class="pa-4 pa-sm-5 form-answer"
+    >
+      <div class="d-flex align-center ga-2 mb-3">
+        <span class="text-caption text-medium-emphasis">{{
+          $t('manage.forms.question_number', { number: index + 1 })
+        }}</span>
+        <v-chip v-if="field.required" color="error" size="x-small" variant="tonal">{{
+          $t('manage.forms.field_required')
+        }}</v-chip>
+        <span v-else class="text-caption text-medium-emphasis">{{ $t('manage.forms.field_optional') }}</span>
       </div>
-      <div v-if="field.description !== ''" class="text-body-2 text-medium-emphasis mb-2">
+      <div class="text-subtitle-1 font-weight-medium mb-2 form-answer-copy">{{ field.label }}</div>
+      <div v-if="field.description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-answer-copy">
         {{ field.description }}
       </div>
+      <p v-if="field.type === 'checkbox'" class="text-caption text-medium-emphasis mb-2">
+        {{ $t('manage.forms.multiple_choice_hint') }}
+      </p>
       <v-text-field
         v-if="field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'date'"
         :model-value="answerFor(field.field_id).text_value ?? ''"
@@ -88,6 +103,7 @@ const visibleOptions = (field: FormField) => {
         hide-details="auto"
         variant="outlined"
         rows="4"
+        auto-grow
         @update:model-value="setText(field.field_id, String($event ?? ''))"
       />
       <v-radio-group
@@ -111,6 +127,7 @@ const visibleOptions = (field: FormField) => {
         :items="visibleOptions(field)"
         item-title="label"
         item-value="option_id"
+        :menu-props="{ contentClass: 'form-answer-options' }"
         :disabled="disabled"
         :error-messages="issueMessage(field.field_id)"
         hide-details="auto"
@@ -123,14 +140,43 @@ const visibleOptions = (field: FormField) => {
         :items="visibleOptions(field)"
         item-title="label"
         item-value="option_id"
+        :menu-props="{ contentClass: 'form-answer-options' }"
         multiple
         chips
+        closable-chips
         :disabled="disabled"
         :error-messages="issueMessage(field.field_id)"
         hide-details="auto"
         variant="outlined"
         @update:model-value="setOptions(field.field_id, Array.isArray($event) ? $event.map(String) : [])"
       />
-    </div>
+    </v-sheet>
   </div>
 </template>
+
+<style scoped>
+.form-answer {
+  min-width: 0;
+}
+.form-answer-copy {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.form-answer :deep(.v-label) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.form-answer :deep(.v-select__selection),
+.form-answer :deep(.v-chip__content) {
+  min-width: 0;
+}
+.form-answer :deep(.v-chip__content) {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:global(.form-answer-options .v-list-item-title) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+</style>
