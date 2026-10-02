@@ -1,26 +1,38 @@
 import type { HistoryState, RouteLocationRaw, Router } from 'vue-router'
+import type { SelectedOptionType } from '@shokujii/common/schemas/menuOption.js'
+import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 /** history.state に載せる、挨拶案内の対象ルーム ID */
 export const CHAT_GREETING_PROMPT_STATE_KEY = 'promptChatGreetingRoomId'
 
-export const CHAT_GREETING_NAMED_KEYS = [
-  'chat.greeting.named_hello',
-  'chat.greeting.named_nice_to_meet',
-  'chat.greeting.named_looking_forward',
-  'chat.greeting.named_wave',
-  'chat.greeting.named_conversation',
-  'chat.greeting.named_friendly',
-  'chat.greeting.named_joined',
+/** メニュー文に含めない参加専用メニュー名 */
+const PARTICIPATION_ONLY_MENU_NAME = '注文なしで参加'
+
+export const CHAT_GREETING_NAMED_INTRO_KEYS = [
+  'chat.greeting.intro.named_hello',
+  'chat.greeting.intro.named_nice_to_meet',
+  'chat.greeting.intro.named_looking_forward',
+  'chat.greeting.intro.named_plain',
+  'chat.greeting.intro.named_joined',
 ] as const
 
-export const CHAT_GREETING_UNNAMED_KEYS = [
-  'chat.greeting.unnamed_hello',
-  'chat.greeting.unnamed_nice_to_meet',
-  'chat.greeting.unnamed_looking_forward',
-  'chat.greeting.unnamed_wave',
-  'chat.greeting.unnamed_conversation',
-  'chat.greeting.unnamed_friendly',
-  'chat.greeting.unnamed_joined',
+/** null は自己紹介なし（一言、または注文文から始める） */
+export const CHAT_GREETING_UNNAMED_INTRO_KEYS = [
+  'chat.greeting.intro.unnamed_hello',
+  'chat.greeting.intro.unnamed_nice_to_meet',
+  'chat.greeting.intro.unnamed_looking_forward',
+  null,
+  'chat.greeting.intro.unnamed_joined',
+] as const
+
+export const CHAT_GREETING_CLOSING_KEYS = [
+  'chat.greeting.closing.hello',
+  'chat.greeting.closing.nice_to_meet',
+  'chat.greeting.closing.looking_forward',
+  'chat.greeting.closing.wave',
+  'chat.greeting.closing.conversation',
+  'chat.greeting.closing.friendly',
+  'chat.greeting.closing.joined',
 ] as const
 
 export const CHAT_GREETING_EMOJI_KEYS = [
@@ -41,10 +53,21 @@ export const CHAT_GREETING_EMOJI_KEYS = [
   'chat.greeting_emoji.folded_hands',
 ] as const
 
+export type ChatGreetingIntroKey =
+  | (typeof CHAT_GREETING_NAMED_INTRO_KEYS)[number]
+  | Exclude<(typeof CHAT_GREETING_UNNAMED_INTRO_KEYS)[number], null>
+
 export type ChatGreetingChoice = {
-  key: (typeof CHAT_GREETING_NAMED_KEYS)[number] | (typeof CHAT_GREETING_UNNAMED_KEYS)[number]
+  introKey: ChatGreetingIntroKey | null
+  closingKey: (typeof CHAT_GREETING_CLOSING_KEYS)[number]
   emojiKey: (typeof CHAT_GREETING_EMOJI_KEYS)[number]
   name?: string
+}
+
+export type ChatGreetingOrderLine = {
+  status: string
+  menu_name: string
+  selected_options?: readonly SelectedOptionType[] | null
 }
 
 const pickIndex = (length: number, random: () => number): number => {
@@ -60,10 +83,75 @@ const pickIndex = (length: number, random: () => number): number => {
 
 export const pickChatGreeting = (userName: string, random: () => number = Math.random): ChatGreetingChoice => {
   const name = userName.trim()
-  const keys = name === '' ? CHAT_GREETING_UNNAMED_KEYS : CHAT_GREETING_NAMED_KEYS
-  const key = keys[pickIndex(keys.length, random)]
+  const introKeys = name === '' ? CHAT_GREETING_UNNAMED_INTRO_KEYS : CHAT_GREETING_NAMED_INTRO_KEYS
+  const introKey = introKeys[pickIndex(introKeys.length, random)] ?? null
+  const closingKey = CHAT_GREETING_CLOSING_KEYS[pickIndex(CHAT_GREETING_CLOSING_KEYS.length, random)]
   const emojiKey = CHAT_GREETING_EMOJI_KEYS[pickIndex(CHAT_GREETING_EMOJI_KEYS.length, random)]
-  return name === '' ? { key, emojiKey } : { key, emojiKey, name }
+  return name === '' ? { introKey, closingKey, emojiKey } : { introKey, closingKey, emojiKey, name }
+}
+
+/** 確定注文の表示名を、同じ名前は件数、複数種類は「 と 」でまとめる。対象が無いときは空文字 */
+export const formatChatGreetingMenuPhrase = (orders: readonly ChatGreetingOrderLine[]): string => {
+  const menuCounts = new Map<string, number>()
+  const menuNameOrder: string[] = []
+  for (const order of orders) {
+    if (order.status !== 'ordered' || order.menu_name === PARTICIPATION_ONLY_MENU_NAME) {
+      continue
+    }
+    const name = formatOrderMenuDisplayName(order.menu_name, order.selected_options)
+    if (name === '') {
+      continue
+    }
+    const count = menuCounts.get(name)
+    if (count == null) {
+      menuCounts.set(name, 1)
+      menuNameOrder.push(name)
+      continue
+    }
+    menuCounts.set(name, count + 1)
+  }
+  return menuNameOrder
+    .map((name) => {
+      const count = menuCounts.get(name) ?? 0
+      return count <= 1 ? name : `${name}×${count}`
+    })
+    .join(' と ')
+}
+
+type ChatGreetingTranslate = (key: string, values?: Record<string, string>) => string
+
+/** 自己紹介・注文・一言を選んで連結する。orders が null のときは注文文を付けない */
+export const buildChatGreetingText = (
+  userName: string,
+  orders: readonly ChatGreetingOrderLine[] | null,
+  translate: ChatGreetingTranslate,
+  maxLength: number,
+  random: () => number = Math.random,
+): string => {
+  const choice = pickChatGreeting(userName, random)
+  const intro = choice.introKey == null ? '' : translate(choice.introKey, { name: choice.name ?? '' })
+  const closing = translate(choice.closingKey, { emoji: translate(choice.emojiKey) })
+  const menus = orders == null ? '' : formatChatGreetingMenuPhrase(orders)
+  const orderSentence = menus === '' ? '' : translate('chat.greeting.order', { menus })
+  return composeChatGreetingBody(intro, orderSentence, closing, maxLength)
+}
+
+/** 自己紹介、注文文、一言を連結する。上限を超えるときは注文文を外す */
+export const composeChatGreetingBody = (
+  intro: string,
+  orderSentence: string,
+  closing: string,
+  maxLength: number,
+): string => {
+  const withoutOrder = `${intro}${closing}`
+  if (orderSentence === '') {
+    return withoutOrder
+  }
+  const withOrder = `${intro}${orderSentence}${closing}`
+  if (withOrder.length > maxLength) {
+    return withoutOrder
+  }
+  return withOrder
 }
 
 export const withChatGreetingPrompt = (location: RouteLocationRaw, roomId: string): RouteLocationRaw => {
