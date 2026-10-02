@@ -83,6 +83,11 @@
 | [x] | RC-77 | 4154749076 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 💰 金銭 | 🔧 微修正 | M | 遅延 Webhook が最新定義で非表示の過去回答を消す |
 | [x] | RC-78 | 4154749163 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 旧リクエストの失敗が新イベントのフォーム案内を消す |
 | [x] | RC-79 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | 利用目的・回答値の空文字判定を明示する |
+| [x] | RC-80 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム選択の並列読み込みが古い結果で選択を上書きする<br>世代番号で古い応答を捨てるようにした |
+| [x] | RC-81 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 読み込み中の persist が未取得のまま成功扱いになる<br>読込完了を待ち、読込中は次へ・下書き保存を止めた |
+| [x] | RC-82 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 設定パネル削除後も未参照の ja.ts キーが残る<br>未使用キーを削除した |
+| [x] | RC-83 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventFormConfig テストが `as Partial` で旧ドキュメントを渡す<br>余分なプロパティ付きオブジェクトを変数経由で渡すよう変えた |
+| [x] | RC-84 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | formAdmin が formFields を二重 import している<br>1本にまとめた |
 
 ---
 
@@ -6168,3 +6173,289 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: 利用目的は `!= null && !== ''`、回答値は `!== ''` に変更。表示の意味は維持したまま判定条件を明確化した。
+
+## 評価セッション（2026-10-02 20:02・shokujii-code-review）
+
+- **評価日時**: 2026-10-02 20:02 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **対象**: フォーム参照モデル（イベントはフォームIDのみ、設問はコミュニティ側、ステップ4で選択）の未コミット差分
+- **Outdated / レビュー非該当**: 該当なし
+- **検証**: 参照モデルのスキーマ・正規化・定義バージョンの Vitest 7件成功。フォームタブが回答一覧のみであること、ステップ4に選択欄があること、設問編集に非表示チェックが無いことをローカル画面で確認。sandbox の Functions は旧コピーモデルのままのため、コミュニティ側の設問変更が未確定の回答画面に出るところまでは確認していない。
+- **再レビュー**: RC-80〜83 を自動修正。2周目で追加指摘なし。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-80 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム選択の並列読み込みが古い結果で選択を上書きする<br>世代番号で古い応答を捨てるようにした |
+| [x] | RC-81 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 読み込み中の persist が未取得のまま成功扱いになる<br>読込完了を待ち、読込中は次へ・下書き保存を止めた |
+| [x] | RC-82 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 設定パネル削除後も未参照の ja.ts キーが残る<br>未使用キーを削除した |
+| [x] | RC-83 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventFormConfig テストが `as Partial` で旧ドキュメントを渡す<br>余分なプロパティ付きオブジェクトを変数経由で渡すよう変えた |
+
+---
+
+**識別子**: RC-80（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/EventEdit.vue:577`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const loadEventFormSelection = async () => {
++  if (paymentUiStrategy.value.isEnterpriseMode) {
++    persistedCommunityFormId.value = ''
++    selectedCommunityFormId.value = ''
++    communityForms.value = []
++    eventFormLoadFailed.value = false
++    return
++  }
++  const communityId = communityStore.community?.community_id
++  if (communityId == null || communityId === '') {
++    return
++  }
++  eventFormLoading.value = true
++  eventFormLoadFailed.value = false
++  try {
++    const eventId = persistedEventIdForMenus.value
++    const [formsRes, configRes] = await Promise.all([
++      listCommunityForms({ community_id: communityId }),
++      eventId != null && eventId !== ''
++        ? getEventFormConfig({ community_id: communityId, event_id: eventId })
++        : Promise.resolve({ data: { config: null } }),
++    ])
++    const assigned = configRes.data.config?.source_form_id ?? ''
++    communityForms.value = formsRes.data.forms.filter((form) => !form.archived || form.form_id === assigned)
++    persistedCommunityFormId.value = assigned
++    selectedCommunityFormId.value = assigned
++  } catch {
++    eventFormLoadFailed.value = true
++  } finally {
++    eventFormLoading.value = false
++  }
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] コミュニティIDとイベントIDが順に揃うと `loadEventFormSelection` が並列で走り、先に始まった「イベントIDなし」の応答が後から選択値を空で上書きします。世代番号を付け、古い応答では `selectedCommunityFormId` / `persistedCommunityFormId` を書かないでください。
+
+**コメント要約**: フォーム選択の並列読み込みが古い結果で選択を上書きする
+世代番号で古い応答を捨てるようにした
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: watch が community_id の後に event_id を拾うと、イベントIDなしの読込が後着して設定済みフォームを消す。seq 不一致の応答は状態を更新しないようにした。
+
+---
+
+**識別子**: RC-81（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/components/EventEdit.vue:625`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const persistEventFormSelection = async (eventId: string): Promise<boolean> => {
++  if (paymentUiStrategy.value.isEnterpriseMode) {
++    return true
++  }
++  if (!canEditEventForm.value) {
++    return true
++  }
++  if (persistedCommunityFormId.value == null || eventFormLoadFailed.value) {
++    return true
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+[nit] `persistedCommunityFormId` が null の間（初回読込中）は persist が成功扱いで何も書きません。ステップ4の「次へ」や下書き保存が読込中に押されると、選んだフォームが保存されません。読込 Promise を待ってから比較し、読込中は次へ・下書き保存を無効にしてください。
+
+**コメント要約**: 読み込み中の persist が未取得のまま成功扱いになる
+読込完了を待ち、読込中は次へ・下書き保存を止めた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 読込完了前の保存は参照が付かない。最新の読込 Promise を待ち、ステップ4の次へと下書き保存を読込中は押せないようにした。
+
+---
+
+**識別子**: RC-82（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `base/src/locales/messages/ja.ts:1203`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+       load_failed: '読み込みに失敗しました',
+       set_to_event: 'このフォームをイベントに設定',
+       replace_event: '別のフォームに差し替える',
+       clear_event: 'イベントから外す',
+       clear_confirm: 'このイベントの事前アンケート設定を外しますか？確定済みの回答は残ります。',
+       no_event_form: 'このイベントに事前アンケートは設定されていません。',
+       select_form: 'コミュニティのフォームから設定',
+       event_fields: 'イベントの設問',
+       event_not_editable: 'この状態のイベントでは設問を変更できません。',
+       enterprise_unsupported: 'エンタープライズのイベントでは事前アンケートを利用できません。',
+```
+
+**レビュワーのコメント（原文）**:
+
+[nit] `EventFormSettingsPanel` 削除後も `manage.forms.set_to_event` など未参照の i18n キーが残っています。チェックリストどおり未使用キーを削除してください。`event_form_hint` / `event_edit_hint` / `validation.visible_option` も同様です。
+
+**コメント要約**: 設定パネル削除後も未参照の ja.ts キーが残る
+未使用キーを削除した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 未参照になった ja.ts キーは削除する規約。設定パネル専用の文言と、非表示チェック用の `visible_option` を削除した。
+
+---
+
+**識別子**: RC-83（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `common/src/schemas/EventFormConfig.test.ts:22`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    const config = new EventFormConfig('current', {
++      source_form_id: 'form-1',
++      definition_version: 3,
++      purpose: '旧目的',
++      fields: [
++        {
++          field_id: 'fld_1',
++          type: 'text',
++          label: '氏名',
++          description: '',
++          required: true,
++          hidden_for_new: false,
++        },
++      ],
++      created_at: 1_700_000_000_000,
++      updated_at: 1_700_000_000_000,
++    } as Partial<EventFormConfig>)
+```
+
+**レビュワーのコメント（原文）**:
+
+[nit] 旧ドキュメントを読むテストが `as Partial<EventFormConfig>` で型を消しています。余分なプロパティは変数に切り出してコンストラクタへ渡せば `as` は不要です。
+
+**コメント要約**: EventFormConfig テストが `as Partial` で旧ドキュメントを渡す
+余分なプロパティ付きオブジェクトを変数経由で渡すよう変えた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `as` 回避の規約。旧フィールドを含むオブジェクトを変数経由で渡せば excess property 検査を避けつつキャストなしで読める。
+
+---
+
+## 評価セッション（2026-10-02 20:11・shokujii-code-review）
+
+- **評価日時**: 2026-10-02 20:11 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **対象**: lint-and-format 後の review スコープ差分（Prettier 整形と formAdmin の import）
+- **Outdated / レビュー非該当**: 該当なし
+- **検証**: Prettier 整形は挙動変更なし。二重 import を1本にまとめた。2周目で追加指摘なし。
+- **再レビュー**: RC-84 自動修正後、追加指摘なし。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-84 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | formAdmin が formFields を二重 import している<br>1本にまとめた |
+
+---
+
+**識別子**: RC-84（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:4`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+ import { cloneFormFields, omitHiddenFormFields } from '@shokujii/common/schemas/formFields.js'
+ ...
+ import { normalizeFormFields } from '@shokujii/common/utils/normalizeFormFields.js'
+ import { FORM_FIELD_LIMITS } from '@shokujii/common/schemas/formFields.js'
+```
+
+**レビュワーのコメント（原文）**:
+
+[nit] `formAdmin.ts` が `@shokujii/common/schemas/formFields.js` を2回 import しており、`import/no-duplicates` で lint が落ちます。`cloneFormFields` / `omitHiddenFormFields` / `FORM_FIELD_LIMITS` を1本にまとめてください。
+
+**コメント要約**: formAdmin が formFields を二重 import している
+1本にまとめた
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同一モジュールの import 分割は規約違反で、PR verify の `--max-warnings=0` を落とす。方針は一意なので自動修正した。
+
+---
+
+
