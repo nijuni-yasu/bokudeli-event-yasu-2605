@@ -40,6 +40,7 @@ const communityId = computed(() => communityStore.value.community?.community_id 
 
 const name = ref('')
 const description = ref('')
+const purpose = ref('')
 const fields = ref<FormFieldInput[]>([])
 const saving = ref(false)
 const previewOpen = ref(false)
@@ -108,6 +109,7 @@ const applyForm = (formId: string) => {
   }
   name.value = form.name
   description.value = form.description
+  purpose.value = form.purpose
   fields.value = omitHiddenFormFields(form.fields).map((field) =>
     field.type === 'checkbox' || field.type === 'radio' || field.type === 'select'
       ? {
@@ -211,7 +213,7 @@ const save = async () => {
         community_id: communityId.value,
         name: name.value.trim(),
         description: description.value,
-        purpose: '',
+        purpose: purpose.value,
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
@@ -222,7 +224,7 @@ const save = async () => {
         form_id: props.formId,
         name: name.value.trim(),
         description: description.value,
-        purpose: '',
+        purpose: purpose.value,
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
@@ -289,6 +291,16 @@ const openPreview = (): void => {
                   hide-details="auto"
                   class="mt-4"
                 />
+                <v-textarea
+                  v-model="purpose"
+                  :label="$t('manage.forms.purpose')"
+                  :hint="$t('manage.forms.purpose_hint')"
+                  :maxlength="FORM_FIELD_LIMITS.maxPurpose"
+                  rows="2"
+                  auto-grow
+                  persistent-hint
+                  class="mt-4"
+                />
               </v-col>
             </v-row>
             <v-row>
@@ -296,11 +308,11 @@ const openPreview = (): void => {
                 <FormFieldsEditor v-model="fields" :disabled="saving" />
               </v-col>
             </v-row>
-            <v-alert v-if="validationFailed" type="error" variant="tonal">{{
+            <v-alert v-if="validationFailed" type="error" variant="tonal" class="my-6">{{
               $t('manage.forms.validation.summary')
             }}</v-alert>
             <v-row>
-              <v-col cols="12" class="d-flex flex-wrap ga-3">
+              <v-col cols="12" class="d-flex flex-wrap justify-end ga-3">
                 <v-btn :prepend-icon="mdiEyeOutline" variant="outlined" :disabled="saving" @click="openPreview">{{
                   $t('manage.forms.preview')
                 }}</v-btn>
@@ -322,6 +334,7 @@ const openPreview = (): void => {
           <p v-if="description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-editor-copy">
             {{ description }}
           </p>
+          <p v-if="purpose !== ''" class="mb-6 form-editor-copy">{{ purpose }}</p>
           <FormAnswerFields v-if="previewFields.length > 0" v-model="previewAnswers" :fields="previewFields" />
           <v-alert v-else type="info" variant="tonal">{{ $t('manage.forms.preview_empty') }}</v-alert>
         </v-card-text>

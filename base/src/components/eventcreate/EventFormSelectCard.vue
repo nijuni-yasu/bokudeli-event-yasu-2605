@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mdiTextBoxOutline } from '@mdi/js'
 import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
@@ -32,7 +32,39 @@ const selectedFormId = defineModel<string>({ required: true })
 
 const { t: $t } = useI18n()
 
-const selectItems = computed(() => [{ form_id: '', name: $t('event_edit.community_form_none') }, ...props.items])
+const attachForm = ref(selectedFormId.value !== '')
+
+watch(selectedFormId, (formId, previousFormId) => {
+  if (formId !== '') {
+    attachForm.value = true
+    return
+  }
+  if (previousFormId != null && previousFormId !== '') {
+    attachForm.value = false
+  }
+})
+
+const controlsDisabled = computed(() => props.disabled || props.canceled || props.notEditable)
+
+const formSelectionRule = (value: unknown): true | string => {
+  if (typeof value === 'string' && value !== '') {
+    return true
+  }
+  if (props.items.length === 0) {
+    return $t('event_edit.community_form_empty')
+  }
+  return $t('event_edit.community_form_select_required')
+}
+
+const onAttachFormChange = (value: unknown) => {
+  if (typeof value !== 'boolean') {
+    return
+  }
+  attachForm.value = value
+  if (!value) {
+    selectedFormId.value = ''
+  }
+}
 </script>
 
 <template>
@@ -58,16 +90,34 @@ const selectItems = computed(() => [{ form_id: '', name: $t('event_edit.communit
             <v-btn variant="text" @click="emit('retry')">{{ $t('manage.forms.retry') }}</v-btn>
           </template>
         </v-alert>
-        <v-select
-          v-else
-          v-model="selectedFormId"
-          :items="selectItems"
-          item-title="name"
-          item-value="form_id"
-          :label="$t('event_edit.community_form')"
-          :disabled="disabled || canceled || notEditable"
-          hide-details="auto"
-        />
+        <div v-else>
+          <v-radio-group
+            :model-value="attachForm"
+            hide-details
+            class="ma-1 ma-md-3"
+            :disabled="controlsDisabled"
+            @update:model-value="onAttachFormChange"
+          >
+            <v-radio :label="$t('event_edit.community_form_set')" :value="true" />
+            <v-radio :label="$t('event_edit.community_form_none')" :value="false" />
+          </v-radio-group>
+          <v-select
+            v-if="attachForm && items.length > 0"
+            v-model="selectedFormId"
+            :items="items"
+            item-title="name"
+            item-value="form_id"
+            :label="$t('event_edit.community_form_select_label')"
+            :disabled="controlsDisabled"
+            :rules="[formSelectionRule]"
+            hide-details="auto"
+            class="mt-2"
+          />
+          <template v-else-if="attachForm">
+            <v-alert type="info" variant="tonal" class="mt-2">{{ $t('event_edit.community_form_empty') }}</v-alert>
+            <v-input :model-value="selectedFormId" :rules="[formSelectionRule]" class="d-none" />
+          </template>
+        </div>
       </template>
     </v-card-text>
   </v-card>

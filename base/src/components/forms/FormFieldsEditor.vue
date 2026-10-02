@@ -331,14 +331,18 @@ const onTypeChange = (index: number, type: unknown): void => {
         </div>
       </v-card>
     </draggable>
-    <v-btn
-      :prepend-icon="mdiPlus"
-      :disabled="disabled || editableFields.length >= FORM_FIELD_LIMITS.maxFields"
-      variant="tonal"
-      @click="addField"
-    >
-      {{ $t('manage.forms.add_field') }}
-    </v-btn>
+    <div class="d-flex justify-center">
+      <v-btn
+        :prepend-icon="mdiPlus"
+        :disabled="disabled || editableFields.length >= FORM_FIELD_LIMITS.maxFields"
+        class="form-field-add"
+        size="large"
+        variant="outlined"
+        @click="addField"
+      >
+        {{ $t('manage.forms.add_field') }}
+      </v-btn>
+    </div>
     <v-dialog v-model="deleteDialogOpen" max-width="480">
       <v-card>
         <v-card-title>{{ $t('manage.forms.delete_field_title') }}</v-card-title>
@@ -380,6 +384,10 @@ const onTypeChange = (index: number, type: unknown): void => {
 
 .form-field-ghost {
   opacity: 0.5;
+}
+
+.form-field-add {
+  min-width: 16rem;
 }
 
 .form-option-row {

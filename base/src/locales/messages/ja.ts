@@ -403,7 +403,11 @@ export default {
     community_form: 'フォーム',
     community_form_hint:
       '事前アンケートとして使うコミュニティのフォームを1つ選べます。設問の編集はコミュニティのフォーム管理から行います。',
-    community_form_none: '設定しない',
+    community_form_set: 'フォームを設定する',
+    community_form_none: 'フォームを設定しない',
+    community_form_select_label: '設定するフォーム',
+    community_form_select_required: 'フォームを選んでください',
+    community_form_empty: '設定できるフォームがありません。コミュニティのフォーム管理で作成してください。',
     community_form_canceled: '中止したイベントのフォームは変更できません。',
     community_form_not_editable: 'この状態のイベントではフォームを変更できません。',
     form_save_failed: 'フォームの設定に失敗しました。',
