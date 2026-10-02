@@ -137,11 +137,30 @@ export type ClearEventFormConfigResponse = {
   cleared: boolean
 }
 
+const absentToUndefined = (value: unknown): unknown => (value == null ? undefined : value)
+
+const blankChoiceToUndefined = (value: unknown): unknown => {
+  if (value == null || value === '') {
+    return undefined
+  }
+  return value
+}
+
+const optionIdsOrUndefined = (value: unknown): unknown => {
+  if (value == null) {
+    return undefined
+  }
+  if (!Array.isArray(value)) {
+    return value
+  }
+  return value.filter((id) => typeof id === 'string' && id !== '')
+}
+
 export const FormAnswerInputSchema = z.object({
   field_id: z.string().min(1),
-  text_value: z.string().optional(),
-  option_id: z.string().min(1).optional(),
-  option_ids: z.array(z.string().min(1)).optional(),
+  text_value: z.preprocess(absentToUndefined, z.string().optional()),
+  option_id: z.preprocess(blankChoiceToUndefined, z.string().min(1).optional()),
+  option_ids: z.preprocess(optionIdsOrUndefined, z.array(z.string().min(1)).optional()),
 })
 
 export const GetOrderFormForCartRequestSchema = z.object({

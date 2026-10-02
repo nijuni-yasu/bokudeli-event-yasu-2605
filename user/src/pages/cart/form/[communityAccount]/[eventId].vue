@@ -3,8 +3,20 @@ import CartFormAnswer from '@shokujii/base/components/forms/CartFormAnswer.vue'
 import { getCartPath, getEventPath, getOrdersPathAfterOrder } from '@/router/utils'
 
 const route = useRoute()
-const eventId = route.params.eventId as string
-const communityAccount = route.params.communityAccount as string
+const eventId = computed(() => {
+  const value = route.params.eventId
+  if (typeof value === 'string') {
+    return value
+  }
+  return Array.isArray(value) ? (value[0] ?? '') : ''
+})
+const communityAccount = computed(() => {
+  const value = route.params.communityAccount
+  if (typeof value === 'string') {
+    return value
+  }
+  return Array.isArray(value) ? (value[0] ?? '') : ''
+})
 </script>
 
 <template>

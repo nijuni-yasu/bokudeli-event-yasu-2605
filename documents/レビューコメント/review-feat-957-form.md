@@ -96,6 +96,13 @@
 | [x] | RC-90 | 4165330483 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未知の設問IDを再利用できる<br>既存定義にある ID だけ維持し、選択肢も同様にした |
 | [x] | RC-91 | なし / 5951866495 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう<br>現行フォームと一致する確定回答だけを初期表示する |
 | [x] | RC-92 | 5391476254 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:59）は個別指摘の要約<br>RC-91 と RC-85/86 再掲は既存 RC で対応 |
+| [x] | RC-93 | 4165621701 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム切替中の遅い応答が画面を上書きする<br>watch の onCleanup で古い応答を捨てた |
+| [x] | RC-94 | 4165621774 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 空の source_form_id を現行フォームとして扱う<br>空文字も不一致にした |
+| [x] | RC-95 | 4165621825 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 初期回答に undefined プロパティが残り再送できない<br>値があるキーだけを含めるよう変えた |
+| [x] | RC-96 | 5391661144 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（21:22）は個別指摘の要約<br>実体は RC-93〜95 |
+| [x] | RC-97 | 4165662119 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム一覧が setup 時のコミュニティに固定される<br>route 追従と古い一覧応答の破棄を入れた |
+| [ ] | RC-98 | 4165662127 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💾 データ | 📋 仕様追加 | M | 任意設問の未回答が確定スナップショットから消える<br>空スナップショット保存は仕様判断が必要なため自動修正しない |
+| [x] | RC-99 | 4165662133 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | カート回答画面の route パラメータが setup 時に固定される<br>computed で子へ渡すよう変えた |
 
 ---
 
@@ -7038,5 +7045,615 @@ Checkbox回答の重複保存と動的ルート再利用による誤編集を修
 **想定工数**: —
 
 **判断理由**: overview は個別指摘の索引。新規実体は origin の RC-91。checkbox 重複と動的ルートは RC-85 / RC-86。
+
+---
+
+---
+
+## 評価セッション（2026-10-02 21:28・review-comments-evaluate）
+
+- **評価日時**: 2026-10-02 21:28 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（依頼定型文 5952078865、RC-93 同一指摘 4165662108、Codex 接続案内 5391717380）
+- **手順 4a 自動修正**: RC-93 / RC-94 / RC-95 / RC-97 / RC-99
+- **partial**: true
+- **注記**: Codex 未レビュー扱いで watcher は partial。境界時刻に届いた Codex インラインは評価対象に含めた。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-93 | 4165621701 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム切替中の遅い応答が画面を上書きする<br>watch の onCleanup で古い応答を捨てた |
+| [x] | RC-94 | 4165621774 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 空の source_form_id を現行フォームとして扱う<br>空文字も不一致にした |
+| [x] | RC-95 | 4165621825 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 初期回答に undefined プロパティが残り再送できない<br>値があるキーだけを含めるよう変えた |
+| [x] | RC-96 | 5391661144 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（21:22）は個別指摘の要約<br>実体は RC-93〜95 |
+| [x] | RC-97 | 4165662119 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム一覧が setup 時のコミュニティに固定される<br>route 追従と古い一覧応答の破棄を入れた |
+| [ ] | RC-98 | 4165662127 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💾 データ | 📋 仕様追加 | M | 任意設問の未回答が確定スナップショットから消える<br>空スナップショット保存は仕様判断が必要なため自動修正しない |
+| [x] | RC-99 | 4165662133 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | カート回答画面の route パラメータが setup 時に固定される<br>computed で子へ渡すよう変えた |
+
+
+---
+
+**識別子**: RC-93（GitHub id: 4165621701）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormEditor.vue:112`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・113 行）
++  }
++  return Array.isArray(value) ? (value[0] ?? '') : ''
++})
++const createCommunityStore = useCreateAppCommunityStore()
++const communityStore = computed(() => createCommunityStore(communityAccount.value))
++const communityId = computed(() => communityStore.value.community?.community_id ?? '')
++
++const name = ref('')
++const description = ref('')
++const purpose = ref('')
++const fields = ref<FormFieldInput[]>([])
++const loading = ref(false)
++const saving = ref(false)
++const previewOpen = ref(false)
++const previewAnswers = ref<FormAnswerInput[]>([])
++const formRef = ref<InstanceType<typeof VForm> | null>(null)
++const loadFailed = ref(false)
++const validationFailed = ref(false)
++const ready = computed(() => communityId.value !== '' && !loading.value && !loadFailed.value)
++const requiredRule = (value: string): boolean | string => value.trim() !== '' || $t('manage.forms.validation.required')
++
++const previewFields = computed<FormField[]>(() => {
++  const parsed: FormField[] = []
++  fields.value.forEach((field, index) => {
++    if (field.hidden_for_new || field.label.trim() === '') {
++      return
++    }
++    if (isChoiceFieldType(field.type)) {
++      const options = (field.options ?? [])
++        .filter((option) => option.label.trim() !== '')
++        .map((option, optionIndex) => ({
++          option_id: option.option_id ?? `preview_opt_${index}_${optionIndex}`,
++          label: option.label,
++          hidden_for_new: option.hidden_for_new ?? false,
++        }))
++      const result = FormFieldSchema.safeParse({
++        field_id: field.field_id ?? `preview_${index}`,
++        type: field.type,
++        label: field.label,
++        description: field.description ?? '',
++        required: field.required,
++        hidden_for_new: field.hidden_for_new ?? false,
++        options,
++      })
++      if (result.success) {
++        parsed.push(result.data)
++      }
++      return
++    }
++    const result = FormFieldSchema.safeParse({
++      field_id: field.field_id ?? `preview_${index}`,
++      type: field.type,
++      label: field.label,
++      description: field.description ?? '',
++      required: field.required,
++      hidden_for_new: field.hidden_for_new ?? false,
++    })
++    if (result.success) {
++      parsed.push(result.data)
++    }
++  })
++  return parsed
++})
++
++const load = async () => {
++  if (props.formId == null || communityId.value === '') {
++    return
++  }
++  loading.value = true
++  loadFailed.value = false
++  try {
++    const response = await getCommunityForm({ community_id: communityId.value, form_id: props.formId })
++    name.value = response.data.form.name
++    description.value = response.data.form.description
++    purpose.value = response.data.form.purpose
++    fields.value = omitHiddenFormFields(response.data.form.fields)
++  } catch {
++    loadFailed.value = true
++  } finally {
++    loading.value = false
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] ルート変更で `load()` が並行実行されますが、応答が現在の `community_id` / `formId` に対するものか確認していません。フォームAからBへ直接遷移した際にAの遅い応答が後着すると、画面へAの内容を入れたままBのIDで保存できます。監視の `onCleanup` または世代番号で古い応答を破棄してください。
+
+**コメント要約**: フォーム切替中の遅い応答が画面を上書きする
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同一ルート再利用で load が並行し、遅延応答が別フォームの内容を上書きして保存しうる。onCleanup で古い応答を捨てる方針は一意。
+
+---
+
+**識別子**: RC-94（GitHub id: 4165621774）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:23`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,144 @@
++import { HttpsError } from 'firebase-functions/https'
++import type { Transaction } from 'firebase-admin/firestore'
++import { FormResponse } from '@shokujii/common/schemas/FormResponse.js'
++import type { FormCheckoutAttempt } from '@shokujii/common/schemas/FormCheckoutAttempt.js'
++import type { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
++import type { FormField } from '@shokujii/common/schemas/formFields.js'
++import type { FormAnswerSnapshot } from '@shokujii/common/schemas/FormResponse.js'
++import { getFormCheckoutAttempt, getFormResponse, saveFormCheckoutAttempt, saveFormResponse } from '../stores/form.js'
++import { loadEventFormReferenceIfPf } from './formAccess.js'
++import type { ShokujiiEvent } from '../stores/event.js'
++
++export function isAttemptForCurrentForm(attempt: FormCheckoutAttempt, form: CommunityForm): boolean {
++  if (attempt.source_form_id === '') {
++    return false
++  }
++  return attempt.source_form_id === form.id && attempt.definition_version === form.definition_version
++}
++
++export function isConfirmedResponseForCurrentForm(response: FormResponse, form: CommunityForm): boolean {
++  if (response.source_form_id !== '' && response.source_form_id !== form.id) {
++    return false
++  }
++  return response.definition_version === form.definition_version
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] `source_form_id` が空の旧回答も、版だけ一致すれば現行フォームの回答として再利用されます。フォーム差し替え先が同じ版番号の場合に旧フォームの回答を初期表示したり、回答試行なしで注文確定できるため、「現行フォームID・版の両方が一致する」という要件どおり、空文字も不一致にしてください。
+
+**コメント要約**: 空の source_form_id を現行フォームとして扱う
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 試行は空IDを不一致にしている一方、確定回答だけ版一致で通していた。空文字も不一致にする方針は一意。
+
+---
+
+**識別子**: RC-95（GitHub id: 4165621825）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/utils/validateFormAnswers.ts:213`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・214 行）
++        continue
++      }
++      if (isBlank(optionId) || optionId == null) {
++        continue
++      }
++      const option = options.find((item) => item.option_id === optionId)
++      if (option == null) {
++        issues.push({ field_id: field.field_id, code: 'unknown_option' })
++        continue
++      }
++      snapshots.push({
++        field_id: field.field_id,
++        field_type: field.type,
++        field_label: field.label,
++        field_description: field.description,
++        option_id: option.option_id,
++        option_labels: [{ option_id: option.option_id, label: option.label }],
++      })
++      continue
++    }
++
++    const textValue = answer?.text_value
++    if (field.required && isBlank(textValue)) {
++      issues.push({ field_id: field.field_id, code: 'required' })
++      continue
++    }
++    if (isBlank(textValue) || textValue == null) {
++      continue
++    }
++    const trimmed = textValue.trim()
++    const maxLength = field.type === 'textarea' ? FORM_FIELD_LIMITS.maxLongText : FORM_FIELD_LIMITS.maxShortText
++    if (trimmed.length > maxLength) {
++      issues.push({ field_id: field.field_id, code: 'too_long' })
++      continue
++    }
++    if (field.type === 'email' && !isValidEmail(trimmed)) {
++      issues.push({ field_id: field.field_id, code: 'invalid_email' })
++      continue
++    }
++    if (field.type === 'phone' && !isValidPhone(trimmed)) {
++      issues.push({ field_id: field.field_id, code: 'invalid_phone' })
++      continue
++    }
++    if (field.type === 'date' && !isValidDateString(trimmed)) {
++      issues.push({ field_id: field.field_id, code: 'invalid_date' })
++      continue
++    }
++    snapshots.push({
++      field_id: field.field_id,
++      field_type: field.type,
++      field_label: field.label,
++      field_description: field.description,
++      text_value: trimmed,
++    })
++  }
++
++  if (issues.length > 0) {
++    return { ok: false, issues }
++  }
++  return { ok: true, answers: snapshots }
++}
++
++export function formatFormAnswerDisplay(answer: FormAnswerSnapshot): string {
++  if (answer.field_type === 'checkbox') {
++    return (answer.option_labels ?? []).map((option) => option.label).join('、')
++  }
++  if (answer.field_type === 'radio' || answer.field_type === 'select') {
++    return answer.option_labels?.[0]?.label ?? ''
++  }
++  return answer.text_value ?? ''
++}
++
++export function answersToInputs(answers: FormAnswerSnapshot[]): FormAnswerInput[] {
++  return answers.map((answer) => ({
++    field_id: answer.field_id,
++    text_value: answer.text_value,
++    option_id: answer.option_id,
++    option_ids: answer.option_ids,
++  }))
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 存在しない回答値まで `undefined` のプロパティとして生成しています。Callable のシリアライズではこれらが `null` になるため、初期回答を変更せず再送すると `FormAnswerInputSchema` の optional string/array 検証に失敗し、再注文できません（同PRの `formFieldEditor.ts` でもこの変換を避けています）。値があるキーだけを含めてください。
+
+**コメント要約**: 初期回答に undefined プロパティが残り再送できない
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Callable が undefined を null にし optional string 検証が落ちる。値があるキーだけ残す方針は formFieldEditor と同じで一意。
+
+---
+
+**識別子**: RC-96（GitHub id: 5391661144）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+旧フォーム回答の誤再利用、初期回答の再送失敗、フォーム切替時の非同期競合が残っています。
+
+**Review effort:** Balanced  
+**Findings:** 7 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (13)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [古いフォーム応答を破棄し、現在のフォーム内容を保持する](#discussion_r4165621701) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [現行フォームIDと版の両方が一致する回答のみ再利用する](#discussion_r4165621774) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [動的ルート変更時にフォームIDが更新されない](#discussion_r4165475388)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [削除時の編集可否確認がTransaction外で競合する](#discussion_r4164317311)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [編集可否確認と設定保存が別Transactionで競合する](#discussion_r4164317194)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Transaction外の全体更新で同時変更を上書きする](#discussion_r4164317121)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [undefined値を回答に含めず、存在するキーのみシリアライズする](#discussion_r4165621825) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (1)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [重複したoption_idsを拒否できていない](#discussion_r4165475423)
+</details>
+
+**コメント要約**: Copilot overview（21:22）は個別指摘の要約
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview は個別指摘の索引。新規実体は RC-93〜95。
+
+---
+
+**識別子**: RC-97（GitHub id: 4165662119）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormsPanel.vue:30`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,201 @@
++<script setup lang="ts">
++import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
++import { useNotification } from '@shokujii/base/composable/notification.js'
++import { archiveCommunityForm, duplicateCommunityForm, listCommunityForms } from '@shokujii/base/apis/form.js'
++import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import type {
++  ResolveManageCommunityFormEditPathFn,
++  ResolveManageCommunityFormNewPathFn,
++} from '@shokujii/base/types/profilePathResolvers.js'
++import {
++  mdiPlus,
++  mdiTextBoxOutline,
++  mdiDotsVertical,
++  mdiContentCopy,
++  mdiArchiveOutline,
++  mdiArchiveArrowUpOutline,
++  mdiPencilOutline,
++} from '@mdi/js'
++
++const props = defineProps<{
++  resolveFormNewPath: ResolveManageCommunityFormNewPathFn
++  resolveFormEditPath: ResolveManageCommunityFormEditPathFn
++}>()
++
++const { t: $t } = useI18n()
++const router = useRouter()
++const notification = useNotification()
++const communityAccount = useRoute().params.communityAccount as string
++const communityStore = useAppCommunityStore(communityAccount)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  フォーム一覧を変更後のコミュニティへ追従させる**
+
+`/manage/community/:communityAccount/forms` 間をクライアントサイド遷移すると同じルートコンポーネントが再利用されますが、ここで setup 時のパラメータを文字列として固定しているため、遷移後も旧コミュニティの store と一覧を使い続けます。URLとは異なるコミュニティのフォームを表示し、複製・アーカイブ・編集遷移まで旧コミュニティに対して実行し得るので、`communityAccount` を computed で参照して store と一覧読込を変更時に切り替えてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: フォーム一覧が setup 時のコミュニティに固定される
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-86 と同じ動的ルート再利用。route を computed にし一覧 load も古い応答を捨てる方針は一意。
+
+---
+
+**識別子**: RC-98（GitHub id: 4165662127）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `common/src/utils/validateFormAnswers.ts:161`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・162 行）
++    if (!knownIds.has(answer.field_id)) {
++      issues.push({ field_id: answer.field_id, code: 'unknown_field' })
++    }
++  }
++
++  const snapshots: FormAnswerSnapshot[] = []
++  for (const field of visibleFields(params.fields)) {
++    const answer = findAnswer(params.answers, field.field_id)
++    if (hasMismatchedAnswerShape(field, answer)) {
++      issues.push({ field_id: field.field_id, code: 'type' })
++      continue
++    }
++    if (field.type === 'checkbox' || field.type === 'radio' || field.type === 'select') {
++      const options = visibleOptions(field.options)
++      if (field.type === 'checkbox') {
++        const optionIds = answer?.option_ids ?? []
++        if (field.required && optionIds.length === 0) {
++          issues.push({ field_id: field.field_id, code: 'required' })
++          continue
++        }
++        if (optionIds.length === 0) {
++          continue
++        }
++        if (new Set(optionIds).size !== optionIds.length) {
++          issues.push({ field_id: field.field_id, code: 'type' })
++          continue
++        }
++        const selected: FormOption[] = []
++        for (const optionId of optionIds) {
++          const option = options.find((item) => item.option_id === optionId)
++          if (option == null) {
++            issues.push({ field_id: field.field_id, code: 'unknown_option' })
++          } else {
++            selected.push(option)
++          }
++        }
++        if (selected.length === optionIds.length) {
++          snapshots.push({
++            field_id: field.field_id,
++            field_type: field.type,
++            field_label: field.label,
++            field_description: field.description,
++            option_ids: selected.map((option) => option.option_id),
++            option_labels: selected.map((option) => ({ option_id: option.option_id, label: option.label })),
++          })
++        }
++        continue
++      }
++
++      const optionId = answer?.option_id
++      if (field.required && isBlank(optionId)) {
++        issues.push({ field_id: field.field_id, code: 'required' })
++        continue
++      }
++      if (isBlank(optionId) || optionId == null) {
++        continue
++      }
++      const option = options.find((item) => item.option_id === optionId)
++      if (option == null) {
++        issues.push({ field_id: field.field_id, code: 'unknown_option' })
++        continue
++      }
++      snapshots.push({
++        field_id: field.field_id,
++        field_type: field.type,
++        field_label: field.label,
++        field_description: field.description,
++        option_id: option.option_id,
++        option_labels: [{ option_id: option.option_id, label: option.label }],
++      })
++      continue
++    }
++
++    const textValue = answer?.text_value
++    if (field.required && isBlank(textValue)) {
++      issues.push({ field_id: field.field_id, code: 'required' })
++      continue
++    }
++    if (isBlank(textValue) || textValue == null) {
++      continue
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  未回答の任意設問も確定時のスナップショットへ残す**
+
+任意設問を空のまま確定すると、この分岐を含む各入力種別の空回答処理が設問自体を `answers` から除外します。回答一覧とCSVは保存済み `answers` だけから設問列を構築するため、全員が任意設問を未回答にした場合はその列が完全に消え、後から設問を削除すると回答時点にその設問が存在したことも復元できません。追加仕様の「確定時の設問ラベルを残す」挙動と詳細画面の「未回答」表示を成立させるため、表示対象だった任意設問についても値が空のスナップショット、または回答時点の設問スナップショットを保存してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 任意設問の未回答が確定スナップショットから消える
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💾 データ
+
+**変更種別**: 📋 仕様追加
+
+**想定工数**: M
+
+**判断理由**: 空スナップショットを残すかは仕様書の確定時ラベル・未回答表示の解釈が要る。保存形の判断が一意でないため自動修正しない。
+
+---
+
+**識別子**: RC-99（GitHub id: 4165662133）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `user/src/pages/cart/form/[communityAccount]/[eventId].vue:7`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,18 @@
++<script setup lang="ts">
++import CartFormAnswer from '@shokujii/base/components/forms/CartFormAnswer.vue'
++import { getCartPath, getEventPath, getOrdersPathAfterOrder } from '@/router/utils'
++
++const route = useRoute()
++const eventId = route.params.eventId as string
++const communityAccount = route.params.communityAccount as string
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  回答ルートのパラメータ変更を子コンポーネントへ反映する**
+
+`/cart/form/:communityAccount/:eventId` から同じルートの別イベントへクライアントサイド遷移した場合、Vue Router はページコンポーネントを再利用しますが、ここで setup 時の値を固定しているため `CartFormAnswer` は旧イベントの props のままです。その結果、URLとは異なるイベントの設問を表示し、旧イベントのカート注文へ回答保存・注文確定を実行し得ます。両パラメータを computed で参照してリアクティブに渡してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: カート回答画面の route パラメータが setup 時に固定される
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-86 と同じ。パラメータを computed で渡す方針は一意。
 
 ---

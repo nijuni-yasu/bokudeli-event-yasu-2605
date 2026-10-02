@@ -203,11 +203,30 @@ export function formatFormAnswerDisplay(answer: FormAnswerSnapshot): string {
   return answer.text_value ?? ''
 }
 
+export function compactFormAnswerInput(answer: FormAnswerInput): FormAnswerInput {
+  const input: FormAnswerInput = { field_id: answer.field_id }
+  if (typeof answer.text_value === 'string') {
+    input.text_value = answer.text_value
+  }
+  if (typeof answer.option_id === 'string' && answer.option_id !== '') {
+    input.option_id = answer.option_id
+  }
+  if (answer.option_ids != null) {
+    const optionIds = answer.option_ids.filter((id) => id !== '')
+    if (optionIds.length > 0) {
+      input.option_ids = optionIds
+    }
+  }
+  return input
+}
+
 export function answersToInputs(answers: FormAnswerSnapshot[]): FormAnswerInput[] {
-  return answers.map((answer) => ({
-    field_id: answer.field_id,
-    text_value: answer.text_value,
-    option_id: answer.option_id,
-    option_ids: answer.option_ids,
-  }))
+  return answers.map((answer) =>
+    compactFormAnswerInput({
+      field_id: answer.field_id,
+      text_value: answer.text_value,
+      option_id: answer.option_id,
+      option_ids: answer.option_ids,
+    }),
+  )
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FormField } from '../schemas/formFields.js'
-import { answersToInputs, formatFormAnswerDisplay, validateFormAnswers } from './validateFormAnswers.js'
+import { FormAnswerInputSchema } from '../apis/form.js'
+import { answersToInputs, compactFormAnswerInput, formatFormAnswerDisplay, validateFormAnswers } from './validateFormAnswers.js'
 
 const textField = (overrides?: Partial<FormField> & { type?: 'text' }): FormField => ({
   field_id: 'f_name',
@@ -171,7 +172,26 @@ describe('validateFormAnswers', () => {
       expect(result.answers[0]?.text_value).toBe('山田')
       expect(result.answers[1]?.option_labels?.[0]?.label).toBe('ゲスト')
       expect(formatFormAnswerDisplay(result.answers[1]!)).toBe('ゲスト')
-      expect(answersToInputs(result.answers)[0]?.text_value).toBe('山田')
+      const input = answersToInputs(result.answers)[0]
+      expect(input?.text_value).toBe('山田')
+      expect(input).not.toHaveProperty('option_id')
+      expect(input).not.toHaveProperty('option_ids')
+      expect(
+        compactFormAnswerInput({
+          field_id: 'f_name',
+          text_value: undefined,
+          option_id: '',
+          option_ids: [],
+        }),
+      ).toEqual({ field_id: 'f_name' })
+      expect(
+        FormAnswerInputSchema.parse({
+          field_id: 'f_name',
+          text_value: null,
+          option_id: null,
+          option_ids: null,
+        }),
+      ).toEqual({ field_id: 'f_name' })
     }
   })
 

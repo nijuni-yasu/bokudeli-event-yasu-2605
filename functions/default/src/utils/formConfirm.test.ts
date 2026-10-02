@@ -131,8 +131,15 @@ describe('Checkout 試行の定義スナップショット', () => {
       revision: 1,
       answers: [updatedAnswer],
     })
+    const legacy = new FormResponse('user', {
+      user_id: 'user',
+      definition_version: 2,
+      revision: 1,
+      answers: [updatedAnswer],
+    })
     expect(isConfirmedResponseForCurrentForm(current, form)).toBe(true)
     expect(isConfirmedResponseForCurrentForm(otherForm, form)).toBe(false)
+    expect(isConfirmedResponseForCurrentForm(legacy, form)).toBe(false)
   })
 
   it('定義を持たない旧試行は読み込み可能で、未編集の過去回答を消さない', () => {

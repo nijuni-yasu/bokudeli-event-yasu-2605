@@ -17,10 +17,10 @@ export function isAttemptForCurrentForm(attempt: FormCheckoutAttempt, form: Comm
 }
 
 export function isConfirmedResponseForCurrentForm(response: FormResponse, form: CommunityForm): boolean {
-  if (response.source_form_id !== '' && response.source_form_id !== form.id) {
+  if (response.source_form_id === '') {
     return false
   }
-  return response.definition_version === form.definition_version
+  return response.source_form_id === form.id && response.definition_version === form.definition_version
 }
 
 export async function requireAttemptForLatestForm(params: {
@@ -31,7 +31,7 @@ export async function requireAttemptForLatestForm(params: {
   transaction: Transaction
 }): Promise<FormCheckoutAttempt> {
   if (params.attemptId == null || params.attemptId === '') {
-    throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
+    throw new HttpsError('failed-precondition', 'フォームの回答が必要です')
   }
   const attempt = await getFormCheckoutAttempt(
     params.event.community_id,
@@ -40,7 +40,7 @@ export async function requireAttemptForLatestForm(params: {
     params.transaction,
   )
   if (attempt == null || attempt.user_id !== params.userId) {
-    throw new HttpsError('failed-precondition', '事前アンケートの回答が見つかりません')
+    throw new HttpsError('failed-precondition', 'フォームの回答が見つかりません')
   }
   if (attempt.status === 'consumed') {
     throw new HttpsError('failed-precondition', 'この回答はすでに使用されています')
@@ -80,7 +80,7 @@ export async function planFormConfirmation(params: {
   if (existing != null && isConfirmedResponseForCurrentForm(existing, reference.form)) {
     return { kind: 'reuse', existing }
   }
-  throw new HttpsError('failed-precondition', '事前アンケートの回答が必要です')
+  throw new HttpsError('failed-precondition', 'フォームの回答が必要です')
 }
 
 export function mergeAttemptAnswersWithInactiveExisting(

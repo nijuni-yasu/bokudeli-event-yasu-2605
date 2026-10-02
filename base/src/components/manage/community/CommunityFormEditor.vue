@@ -94,29 +94,43 @@ const previewFields = computed<FormField[]>(() => {
   return parsed
 })
 
-const load = async () => {
-  if (props.formId == null || communityId.value === '') {
+const load = async (isStale: () => boolean = () => false) => {
+  const formId = props.formId
+  const requestedCommunityId = communityId.value
+  if (formId == null || requestedCommunityId === '') {
     return
   }
   loading.value = true
   loadFailed.value = false
   try {
-    const response = await getCommunityForm({ community_id: communityId.value, form_id: props.formId })
+    const response = await getCommunityForm({ community_id: requestedCommunityId, form_id: formId })
+    if (isStale()) {
+      return
+    }
     name.value = response.data.form.name
     description.value = response.data.form.description
     purpose.value = response.data.form.purpose
     fields.value = omitHiddenFormFields(response.data.form.fields)
   } catch {
+    if (isStale()) {
+      return
+    }
     loadFailed.value = true
   } finally {
-    loading.value = false
+    if (!isStale()) {
+      loading.value = false
+    }
   }
 }
 
 watch(
   () => [communityId.value, props.formId],
-  () => {
-    void load()
+  (_current, _previous, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    void load(() => cancelled)
   },
   { immediate: true },
 )

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
+import { useCreateAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { archiveCommunityForm, duplicateCommunityForm, listCommunityForms } from '@shokujii/base/apis/form.js'
 import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
@@ -25,46 +25,67 @@ const props = defineProps<{
 
 const { t: $t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
-const communityAccount = useRoute().params.communityAccount as string
-const communityStore = useAppCommunityStore(communityAccount)
-const communityId = computed(() => communityStore.community?.community_id ?? '')
+const communityAccount = computed(() => {
+  const value = route.params.communityAccount
+  if (typeof value === 'string') {
+    return value
+  }
+  return Array.isArray(value) ? (value[0] ?? '') : ''
+})
+const createCommunityStore = useCreateAppCommunityStore()
+const communityStore = computed(() => createCommunityStore(communityAccount.value))
+const communityId = computed(() => communityStore.value.community?.community_id ?? '')
 
 const forms = ref<CommunityFormSummary[]>([])
 const loading = ref(false)
 const loadFailed = ref(false)
 const pendingFormId = ref('')
 
-const load = async () => {
-  if (communityId.value === '') {
+const load = async (isStale: () => boolean = () => false) => {
+  const requestedCommunityId = communityId.value
+  if (requestedCommunityId === '') {
     return
   }
   loading.value = true
   loadFailed.value = false
   try {
-    const response = await listCommunityForms({ community_id: communityId.value })
+    const response = await listCommunityForms({ community_id: requestedCommunityId })
+    if (isStale()) {
+      return
+    }
     forms.value = response.data.forms
   } catch {
+    if (isStale()) {
+      return
+    }
     loadFailed.value = true
   } finally {
-    loading.value = false
+    if (!isStale()) {
+      loading.value = false
+    }
   }
 }
 
 watch(
   communityId,
-  () => {
-    void load()
+  (_current, _previous, onCleanup) => {
+    let cancelled = false
+    onCleanup(() => {
+      cancelled = true
+    })
+    void load(() => cancelled)
   },
   { immediate: true },
 )
 
 const goNew = () => {
-  void router.push(props.resolveFormNewPath(communityAccount))
+  void router.push(props.resolveFormNewPath(communityAccount.value))
 }
 
 const goEdit = (formId: string) => {
-  void router.push(props.resolveFormEditPath(communityAccount, formId))
+  void router.push(props.resolveFormEditPath(communityAccount.value, formId))
 }
 
 const duplicate = async (formId: string) => {
@@ -73,7 +94,7 @@ const duplicate = async (formId: string) => {
   try {
     const response = await duplicateCommunityForm({ community_id: communityId.value, form_id: formId })
     notification.show($t('manage.forms.saved'), 'success')
-    void router.push(props.resolveFormEditPath(communityAccount, response.data.form.form_id))
+    void router.push(props.resolveFormEditPath(communityAccount.value, response.data.form.form_id))
   } catch {
     notification.show($t('manage.forms.save_failed'), 'error')
   } finally {

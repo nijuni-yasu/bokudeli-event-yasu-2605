@@ -7,6 +7,7 @@ import {
 } from '@shokujii/common/apis/form.js'
 import {
   answersToInputs,
+  compactFormAnswerInput,
   validateFormAnswers,
   type FormAnswerInput,
 } from '@shokujii/common/utils/validateFormAnswers.js'
@@ -36,7 +37,12 @@ function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: F
     }
     if (field.type === 'checkbox') {
       const allowed = new Set(field.options.map((option) => option.option_id))
-      return [{ ...answer, option_ids: (answer.option_ids ?? []).filter((id) => allowed.has(id)) }]
+      return [
+        compactFormAnswerInput({
+          ...answer,
+          option_ids: (answer.option_ids ?? []).filter((id) => allowed.has(id)),
+        }),
+      ]
     }
     if (field.type === 'radio' || field.type === 'select') {
       const allowed = new Set(field.options.map((option) => option.option_id))
@@ -44,7 +50,7 @@ function initialAnswersForVisibleFields(answers: FormAnswerSnapshot[], fields: F
         return [{ field_id: answer.field_id }]
       }
     }
-    return [answer]
+    return [compactFormAnswerInput(answer)]
   })
 }
 

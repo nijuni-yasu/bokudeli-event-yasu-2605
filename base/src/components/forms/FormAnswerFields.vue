@@ -43,6 +43,10 @@ const setText = (fieldId: string, textValue: string) => {
 }
 
 const setOption = (fieldId: string, optionId: string) => {
+  if (optionId === '') {
+    upsert({ field_id: fieldId })
+    return
+  }
   upsert({ field_id: fieldId, option_id: optionId })
 }
 

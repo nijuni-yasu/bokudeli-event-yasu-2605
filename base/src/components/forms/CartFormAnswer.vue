@@ -13,7 +13,11 @@ import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
 import type { ResolveEventHrefFn, ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
-import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
+import {
+  compactFormAnswerInput,
+  type FormAnswerInput,
+  type FormValidationIssue,
+} from '@shokujii/common/utils/validateFormAnswers.js'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { GetOrderFormForCartResponse } from '@shokujii/common/apis/form.js'
 
@@ -70,6 +74,40 @@ const needsStripe = computed(() => {
   return false
 })
 
+const loadOrderForm = async (isCancelled: () => boolean, preserveAlert = false) => {
+  form.value = null
+  answers.value = []
+  issues.value = []
+  openConfirmOrder.value = false
+  pendingAttemptId.value = ''
+  if (!preserveAlert) {
+    isOpenAlert.value = false
+  }
+  const item = cartItem.value
+  if (item == null) {
+    loading.value = false
+    showAlert($t('cart.form_load_failed'))
+    return
+  }
+  loading.value = true
+  try {
+    const response = await getOrderFormForCart({
+      community_id: item.event.community_id,
+      event_id: item.event.event_id,
+    })
+    if (isCancelled()) return
+    form.value = response.data
+    answers.value = (response.data.initial_answers ?? []).map((answer) => compactFormAnswerInput(answer))
+    if (!response.data.has_form) {
+      void router.replace(props.resolveCartPath())
+    }
+  } catch {
+    if (!isCancelled()) showAlert($t('cart.form_load_failed'))
+  } finally {
+    if (!isCancelled()) loading.value = false
+  }
+}
+
 watch(
   cartItemKey,
   async (_key, _previousKey, onCleanup) => {
@@ -77,35 +115,7 @@ watch(
     onCleanup(() => {
       cancelled = true
     })
-    form.value = null
-    answers.value = []
-    issues.value = []
-    openConfirmOrder.value = false
-    pendingAttemptId.value = ''
-    isOpenAlert.value = false
-    const item = cartItem.value
-    if (item == null) {
-      loading.value = false
-      showAlert($t('cart.form_load_failed'))
-      return
-    }
-    loading.value = true
-    try {
-      const response = await getOrderFormForCart({
-        community_id: item.event.community_id,
-        event_id: item.event.event_id,
-      })
-      if (cancelled) return
-      form.value = response.data
-      answers.value = response.data.initial_answers ?? []
-      if (!response.data.has_form) {
-        void router.replace(props.resolveCartPath())
-      }
-    } catch {
-      if (!cancelled) showAlert($t('cart.form_load_failed'))
-    } finally {
-      if (!cancelled) loading.value = false
-    }
+    await loadOrderForm(() => cancelled)
   },
   { immediate: true },
 )
@@ -131,10 +141,16 @@ const persistAttempt = async (): Promise<string | null> => {
     community_id: item.event.community_id,
     event_id: item.event.event_id,
     definition_version: current.definition_version,
-    answers: answers.value,
+    answers: answers.value.map((answer) => compactFormAnswerInput(answer)),
   })
   if (cartItemKey.value !== key) return null
   if (response.data.issues != null && response.data.issues.length > 0) {
+    const stale = response.data.issues.some((issue) => issue.code === 'version_mismatch')
+    if (stale) {
+      showAlert($t('cart.form_definition_changed'))
+      await loadOrderForm(() => cartItemKey.value !== key, true)
+      return null
+    }
     issues.value = response.data.issues
     return null
   }
@@ -198,7 +214,7 @@ const onPrimary = async () => {
     const attemptId = await persistAttempt()
     if (cartItemKey.value !== key) return
     if (attemptId == null) {
-      if (issues.value.length === 0) {
+      if (issues.value.length === 0 && !isOpenAlert.value) {
         showAlert($t('cart.form_save_failed'))
       }
       return
