@@ -121,6 +121,30 @@ describe('validateFormAnswers', () => {
     }
   })
 
+  it('checkbox の重複 option_id を拒否する', () => {
+    const checkbox: FormField = {
+      field_id: 'f_check',
+      type: 'checkbox',
+      label: '希望',
+      description: '',
+      required: false,
+      hidden_for_new: false,
+      options: [
+        { option_id: 'o1', label: '昼', hidden_for_new: false },
+        { option_id: 'o2', label: '夜', hidden_for_new: false },
+      ],
+    }
+    const result = validateFormAnswers({
+      fields: [checkbox],
+      answers: [{ field_id: 'f_check', option_ids: ['o1', 'o1'] }],
+      definitionVersion: 1,
+    })
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.issues[0]).toEqual({ field_id: 'f_check', code: 'type' })
+    }
+  })
+
   it('任意項目だけのフォームは空回答を許可する', () => {
     const result = validateFormAnswers({
       fields: [textField({ required: false })],

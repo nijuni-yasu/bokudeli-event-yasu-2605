@@ -102,6 +102,10 @@ export function validateFormAnswers(params: {
         if (optionIds.length === 0) {
           continue
         }
+        if (new Set(optionIds).size !== optionIds.length) {
+          issues.push({ field_id: field.field_id, code: 'type' })
+          continue
+        }
         const selected: FormOption[] = []
         for (const optionId of optionIds) {
           const option = options.find((item) => item.option_id === optionId)

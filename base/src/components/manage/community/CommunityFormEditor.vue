@@ -3,7 +3,7 @@ import type { VForm } from 'vuetify/components'
 import { mdiArrowLeft, mdiContentSaveOutline, mdiEyeOutline, mdiTextBoxOutline } from '@mdi/js'
 import FormFieldsEditor from '@shokujii/base/components/forms/FormFieldsEditor.vue'
 import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
-import { useAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
+import { useCreateAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { createCommunityForm, getCommunityForm, updateCommunityForm } from '@shokujii/base/apis/form.js'
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
@@ -24,10 +24,18 @@ const props = defineProps<{
 
 const { t: $t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
-const communityAccount = useRoute().params.communityAccount as string
-const communityStore = useAppCommunityStore(communityAccount)
-const communityId = computed(() => communityStore.community?.community_id ?? '')
+const communityAccount = computed(() => {
+  const value = route.params.communityAccount
+  if (typeof value === 'string') {
+    return value
+  }
+  return Array.isArray(value) ? (value[0] ?? '') : ''
+})
+const createCommunityStore = useCreateAppCommunityStore()
+const communityStore = computed(() => createCommunityStore(communityAccount.value))
+const communityId = computed(() => communityStore.value.community?.community_id ?? '')
 
 const name = ref('')
 const description = ref('')
@@ -131,7 +139,7 @@ const save = async () => {
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
-      void router.replace(props.resolveFormsPath(communityAccount))
+      void router.replace(props.resolveFormsPath(communityAccount.value))
     } else {
       await updateCommunityForm({
         community_id: communityId.value,
@@ -142,7 +150,7 @@ const save = async () => {
         fields: fields.value,
       })
       notification.show($t('manage.forms.saved'), 'success')
-      void router.push(props.resolveFormsPath(communityAccount))
+      void router.push(props.resolveFormsPath(communityAccount.value))
     }
   } catch {
     notification.show($t('manage.forms.save_failed'), 'error')
@@ -152,7 +160,7 @@ const save = async () => {
 }
 
 const back = () => {
-  void router.push(props.resolveFormsPath(communityAccount))
+  void router.push(props.resolveFormsPath(communityAccount.value))
 }
 
 const openPreview = (): void => {

@@ -88,13 +88,14 @@
 | [x] | RC-82 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 設定パネル削除後も未参照の ja.ts キーが残る<br>未使用キーを削除した |
 | [x] | RC-83 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventFormConfig テストが `as Partial` で旧ドキュメントを渡す<br>余分なプロパティ付きオブジェクトを変数経由で渡すよう変えた |
 | [x] | RC-84 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | formAdmin が formFields を二重 import している<br>1本にまとめた |
-| [ ] | RC-85 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する |
-| [ ] | RC-86 | 5948721464 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される |
+| [x] | RC-85 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する<br>重複 ID を type エラーとして拒否した |
+| [x] | RC-86 | 5948721464 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される<br>route param を computed にし store も追従させた |
 | [x] | RC-87 | 5391301449 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:36）は個別指摘の要約<br>新規は RC-88〜90。is_selected 再掲は RC-23 |
 | [x] | RC-88 | 4165330532 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答配列に maxFields 上限が無い<br>SaveOrderFormAttemptRequestSchema に上限を付けた |
 | [x] | RC-89 | 4165330567 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 利用目的を trim 後だけ比較している<br>保存値そのものを比較するよう変えた |
 | [x] | RC-90 | 4165330483 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未知の設問IDを再利用できる<br>既存定義にある ID だけ維持し、選択肢も同様にした |
-| [ ] | RC-91 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう |
+| [x] | RC-91 | なし / 5951866495 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう<br>現行フォームと一致する確定回答だけを初期表示する |
+| [x] | RC-92 | 5391476254 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:59）は個別指摘の要約<br>RC-91 と RC-85/86 再掲は既存 RC で対応 |
 
 ---
 
@@ -6481,8 +6482,8 @@ Useful? React with 👍 / 👎.
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-85 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する |
-| [ ] | RC-86 | 5948721464 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される |
+| [x] | RC-85 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | checkbox 回答の重複 option_id を検証せず回答スナップショットへ保存する<br>重複 ID を type エラーとして拒否した |
+| [x] | RC-86 | 5948721464 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | フォーム編集 route の formId / communityAccount が setup 時の値に固定される<br>route param を computed にし store も追従させた |
 
 ---
 
@@ -6508,7 +6509,7 @@ for (const optionId of optionIds) {
 
 **評価**: 🚨 必須修正
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -6518,7 +6519,7 @@ for (const optionId of optionIds) {
 
 **想定工数**: S
 
-**判断理由**: Callable に重複IDを含む回答を直接送信でき、現状はそのまま重複値のスナップショットを保存する。回答値の一意性検証は既存のフォーム回答バリデーションの責務であり、重複を拒否する方針は一意。
+**判断理由**: Callable に重複IDを含む回答を直接送信でき、現状はそのまま重複値のスナップショットを保存する。回答値の一意性検証は既存のフォーム回答バリデーションの責務であり、重複を拒否する方針は一意。`option_ids` の重複を `type` として拒否した。
 
 ---
 
@@ -6542,7 +6543,7 @@ const formId = useRoute().params.formId as string
 
 **評価**: 🚨 必須修正
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -6552,7 +6553,7 @@ const formId = useRoute().params.formId as string
 
 **想定工数**: S
 
-**判断理由**: 動的ルートの同一コンポーネント再利用では setup が再実行されず、URLと編集対象が不一致になる。route param をリアクティブに渡す修正方針は一意で、別フォームの誤更新を防ぐ。
+**判断理由**: 動的ルートの同一コンポーネント再利用では setup が再実行されず、URLと編集対象が不一致になる。route param をリアクティブに渡す修正方針は一意で、別フォームの誤更新を防ぐ。`formId` / `communityAccount` を route 由来の computed にし、コミュニティ store も account 変更へ追従させた。
 
 ---
 
@@ -6906,7 +6907,7 @@ SaveOrderFormAttemptRequestSchema に上限を付けた
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-91 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう |
+| [x] | RC-91 | なし / 5951866495 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう<br>現行フォームと一致する確定回答だけを初期表示する |
 
 ---
 
@@ -6937,7 +6938,7 @@ if (confirmed != null) {
 
 **評価**: 🚨 必須修正
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -6948,5 +6949,94 @@ if (confirmed != null) {
 **想定工数**: S
 
 **判断理由**: 複製関数は既存の設問ID・選択肢IDをそのままコピーし、注文フォーム取得は回答の `source_form_id` を確認せずID一致のみで初期回答へ採用する。フォーム切替時の旧回答混入を避ける必要があり、フォームID照合または複製時の再採番で解決できる。
+
+---
+
+**対応メモ**: `getOrderFormForCart` は確定回答を `isConfirmedResponseForCurrentForm` で現行フォームに揃えるようにした。
+
+---
+
+## 評価セッション（2026-10-02 21:00・review-comments-evaluate）
+
+- **評価日時**: 2026-10-02 21:00 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate`）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 3（依頼定型文 5951810615、RC-86 同一指摘 4165475388、RC-85 同一指摘 4165475423）
+- **手順 4a 自動修正**: RC-85 / RC-86（前セッション未着手の 🚨）および RC-91（origin 採番の 🚨。同一指摘 5951866495）
+- **partial**: true
+- **注記**: Codex は未レビュー。origin の RC-91 と番号が衝突したため、本セッションの新規は RC-92（overview）のみ。issue コメント 5951866495 の新規指摘は RC-91 と同一。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-92 | 5391476254 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（20:59）は個別指摘の要約<br>RC-91 と RC-85/86 再掲は既存 RC で対応 |
+
+---
+
+**識別子**: RC-92（GitHub id: 5391476254）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+Checkbox回答の重複保存と動的ルート再利用による誤編集を修正する必要があります。
+
+**Review effort:** Balanced  
+**Findings:** 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (11)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [動的ルート変更時にフォームIDが更新されない](#discussion_r4165475388) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [削除時の編集可否確認がTransaction外で競合する](#discussion_r4164317311)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [編集可否確認と設定保存が別Transactionで競合する](#discussion_r4164317194)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Transaction外の全体更新で同時変更を上書きする](#discussion_r4164317121)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [重複したoption_idsを拒否できていない](#discussion_r4165475423) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (3)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [未知の設問IDを再利用せず新規採番する](#discussion_r4165330483)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [利用目的の保存値を比較して版を更新する](#discussion_r4165330567)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [回答配列にmaxFields上限を適用する](#discussion_r4165330532)
+</details>
+
+**コメント要約**: Copilot overview（20:59）は個別指摘の要約
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: overview は個別指摘の索引。新規実体は origin の RC-91。checkbox 重複と動的ルートは RC-85 / RC-86。
 
 ---
