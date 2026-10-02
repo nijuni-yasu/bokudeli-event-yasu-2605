@@ -81,6 +81,20 @@ describe('validateFormAnswers', () => {
     }
   })
 
+  it('同じ field_id の回答が複数あると type で拒否する', () => {
+    const result = validateFormAnswers({
+      fields: [textField()],
+      answers: [
+        { field_id: 'f_name', text_value: '山田' },
+        { field_id: 'f_name', text_value: '佐藤' },
+      ],
+      definitionVersion: 1,
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.issues).toEqual([{ field_id: 'f_name', code: 'type' }])
+  })
+
   it('短文の上限を超える回答を拒否する', () => {
     const result = validateFormAnswers({
       fields: [textField()],

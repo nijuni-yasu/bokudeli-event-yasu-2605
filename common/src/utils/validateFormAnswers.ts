@@ -78,7 +78,13 @@ export function validateFormAnswers(params: {
   }
 
   const knownIds = new Set(params.fields.map((field) => field.field_id))
+  const seenAnswerIds = new Set<string>()
   for (const answer of params.answers) {
+    if (seenAnswerIds.has(answer.field_id)) {
+      issues.push({ field_id: answer.field_id, code: 'type' })
+    } else {
+      seenAnswerIds.add(answer.field_id)
+    }
     if (!knownIds.has(answer.field_id)) {
       issues.push({ field_id: answer.field_id, code: 'unknown_field' })
     }
