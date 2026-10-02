@@ -94,6 +94,7 @@
 | [x] | RC-88 | 4165330532 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答配列に maxFields 上限が無い<br>SaveOrderFormAttemptRequestSchema に上限を付けた |
 | [x] | RC-89 | 4165330567 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 利用目的を trim 後だけ比較している<br>保存値そのものを比較するよう変えた |
 | [x] | RC-90 | 4165330483 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 未知の設問IDを再利用できる<br>既存定義にある ID だけ維持し、選択肢も同様にした |
+| [ ] | RC-91 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう |
 
 ---
 
@@ -6888,5 +6889,64 @@ SaveOrderFormAttemptRequestSchema に上限を付けた
 **想定工数**: S
 
 **判断理由**: 削除済み ID の再利用は確定回答の上書きにつながる。既存定義の ID のみ維持し、選択肢 ID も同様に採番し直した。
+
+---
+
+## 評価セッション（2026-10-02 20:55・shokujii-code-review）
+
+- **評価日時**: 2026-10-02 20:55 JST
+- **評価者**: Cursor Agent（shokujii-code-review）
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **対象**: PR #2384 の最新 Files changed（head `a709682c`）
+- **Outdated / レビュー非該当**: 該当なし
+- **既存指摘の再確認**: RC-85 / RC-86 は最新コードでも未解消。既存記録を維持。
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-91 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう |
+
+---
+
+**識別子**: RC-91（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `functions/default/src/formOrder.ts:89-97`
+
+**該当コード（レビュー時点の diff）**:
+
+```ts
+if (confirmed != null) {
+  return {
+    has_form: true,
+    community_name: event.community_name,
+    purpose: reference.form.purpose,
+    definition_version: reference.form.definition_version,
+    fields,
+    initial_answers: initialAnswersForVisibleFields(confirmed.answers, fields),
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: フォーム複製時に `cloneFormFields` が `field_id` / `option_id` を維持します。イベントで元フォームから複製フォームへ差し替えた場合も、この回答取得処理は確定回答の `source_form_id` を現行フォームIDと照合せず、同じ設問IDを使って旧回答を新フォームの初期値として表示します。フォーム切替時の誤回答引き継ぎを防ぐため、初期値取得でも `source_form_id` を検証するか、複製時に設問・選択肢IDを再採番してください。
+
+**コメント要約**: フォーム複製で維持された設問IDにより旧フォームの回答を新フォームへ引き継いでしまう
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 複製関数は既存の設問ID・選択肢IDをそのままコピーし、注文フォーム取得は回答の `source_form_id` を確認せずID一致のみで初期回答へ採用する。フォーム切替時の旧回答混入を避ける必要があり、フォームID照合または複製時の再採番で解決できる。
 
 ---
