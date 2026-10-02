@@ -15,7 +15,7 @@ description: PR verify（pr-verify.yml）と同じ verify:functions-deploy / ver
 | **チェック内容** | verify:functions-deploy / test:verify-functions-deploy / verify:vue-tsc-gate / build / lint / format:check / build:types / vitest の項目・順序・対象パッケージは PR verify と一致 |
 | **format ローカル自動修正** | `format:check` 失敗時のみ `format` を実行し再チェック。PR verify は check のみ（リモートは修正不可） |
 | **合格状態** | スキル成功時 = PR verify が通る状態（format は自動修正後に check が緑） |
-| **含まないもの** | `npm ci`、Ubuntu 実行環境、実装ターン完了時のセルフレビュー（Stop 検証は [`.agents/hooks/stop-gate-check.sh`](../../hooks/stop-gate-check.sh) が担当） |
+| **含まないもの** | `npm ci`、Ubuntu 実行環境、実装ターン完了時のセルフレビュー（[`/shokujii-code-review`](../shokujii-code-review/SKILL.md)。Stop hook は自動 followup しない） |
 | **ローカル拡張** | CI は paths-filter で変更パッケージのみ実行。本スキルは push 前の full verify として全パッケージを常時実行する（vue-tsc gate も常時実行） |
 
 ## いつ実行するか
