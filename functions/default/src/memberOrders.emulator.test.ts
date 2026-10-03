@@ -49,12 +49,14 @@ describe.skipIf(process.env.FIRESTORE_EMULATOR_HOST == null)('0円事前決済�
       menu_price: 0,
       menu_sort_number: 0,
       menu_description: '参加のみ',
+      item_type: 'organizer_menu',
     })
     await db.doc(`${orderPath}/order-zero`).set({
       order_id: 'order-zero',
       menu_id: 'menu-zero',
       menu_name: '注文なしで参加',
       menu_price: 0,
+      item_type: 'organizer_menu',
       community_id: 'community-1',
       event_id: 'event-1',
       user_id: 'user-1',

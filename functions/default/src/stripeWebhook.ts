@@ -27,6 +27,10 @@ import {
   getEventEnterpriseId,
   processEnterpriseSubsidyOrdersForWebhook,
 } from './utils/enterpriseSubsidyOrders.js'
+import {
+  deleteOrderedNoOrderParticipation,
+  findOrderedNoOrderParticipationIdsToDelete,
+} from './utils/deleteOrderedNoOrderParticipation.js'
 
 const logger = createModuleLogger('stripeWebhook')
 const STRIPE_API_KEY = defineSecret('STRIPE_API_KEY')
@@ -382,6 +386,14 @@ async function handleOrderConfirmation(
       }
     }
 
+    const noOrderIdsToDelete = await findOrderedNoOrderParticipationIdsToDelete(
+      communityId,
+      eventId,
+      userId,
+      orders,
+      transaction,
+    )
+
     const selfPayAmount = orders.reduce((sum, o) => sum + computeOrderSelfPayUnitAmount(o), 0)
     const { pay_amount: payAmount, pay_user_fee_amount: userFeeAmount } = computeEventStripePayFields(
       selfPayAmount,
@@ -457,6 +469,7 @@ async function handleOrderConfirmation(
       order.failed_async_payment_intent = undefined
       saveOrder(communityId, eventId, userId, order, transaction)
     }
+    await deleteOrderedNoOrderParticipation(communityId, eventId, userId, noOrderIdsToDelete, transaction)
 
     const stripeDoc = new EventStripe(stripeDocId, {
       stripe_id: stripeDocId,

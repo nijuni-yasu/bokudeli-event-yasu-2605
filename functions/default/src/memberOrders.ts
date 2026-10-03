@@ -35,6 +35,10 @@ import { getEventInCommunity } from './stores/event.js'
 import { createModuleLogger } from './utils/logger.js'
 import { applyOrderConfirmedSideEffects } from './orderConfirmedSideEffects.js'
 import {
+  deleteOrderedNoOrderParticipation,
+  findOrderedNoOrderParticipationIdsToDelete,
+} from './utils/deleteOrderedNoOrderParticipation.js'
+import {
   addEnterpriseSubsidyMenusToCart,
   assertActiveEnterpriseMember,
   assertEnterpriseEventPaymentAllowed,
@@ -361,6 +365,14 @@ export async function confirmOrderHandler(
       transaction,
     })
 
+    const noOrderIdsToDelete = await findOrderedNoOrderParticipationIdsToDelete(
+      community_id,
+      event_id,
+      uid,
+      orders,
+      transaction,
+    )
+
     if (eventData.event_payment === 'enterprise_subsidy') {
       const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))
       if (!allOrganizerOnly) {
@@ -372,7 +384,7 @@ export async function confirmOrderHandler(
           throw new HttpsError('failed-precondition', '企業メンバー情報が見つかりません')
         }
         const orderedAt = Timestamp.now().toMillis()
-        return finalizeEnterpriseSubsidyZeroPaymentOrder({
+        const finalized = await finalizeEnterpriseSubsidyZeroPaymentOrder({
           enterpriseId,
           userId: uid,
           communityId: community_id,
@@ -384,6 +396,10 @@ export async function confirmOrderHandler(
           transaction,
           orderedAt,
         })
+        if (!finalized.recalculated) {
+          await deleteOrderedNoOrderParticipation(community_id, event_id, uid, noOrderIdsToDelete, transaction)
+        }
+        return finalized
       }
     }
 
@@ -413,6 +429,7 @@ export async function confirmOrderHandler(
       order.ordered_at = orderedAt
       saveOrder(community_id, event_id, uid, order, transaction)
     }
+    await deleteOrderedNoOrderParticipation(community_id, event_id, uid, noOrderIdsToDelete, transaction)
     return null
   })
 
