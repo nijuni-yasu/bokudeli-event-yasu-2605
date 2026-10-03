@@ -122,6 +122,10 @@
 | [x] | RC-116 | 4173162331 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | アーカイブの read→全体 set が同時編集を巻き戻す<br>取得・アーカイブ・保存を同一 Transaction にした |
 | [ ] | RC-117 | 4173181555 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | ユーザー名欠落時に UID を表示する<br>UX ラベルのため自動修正せず未着手 |
 | [x] | RC-118 | 4173162402 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 回答画面が未確定試行を全件取得する<br>現行フォームの最新1件だけ取得し複合インデックスを付けた |
+| [x] | RC-119 | 5401026390 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（22:31）は個別指摘の要約<br>新規は RC-120〜122。表示名の UID は RC-117 |
+| [ ] | RC-120 | 4173367912 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 回答一覧が確定とキャンセルを別 Callable で二重取得する<br>API を1回にするか読み取りを絞るかが併記のため自動修正しない |
+| [x] | RC-121 | 4173367897 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 🔧 微修正 | S | 空の利用目的で既存値を消す<br>空白のみの更新は既存の利用目的を維持する |
+| [x] | RC-122 | 4173367882 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームでも版番号の大小で試行を捨てる<br>同じ source_form_id のときだけ版の競合にする |
 
 ---
 
@@ -9431,5 +9435,439 @@ UX ラベルのため自動修正せず未着手
 **想定工数**: S
 
 **判断理由**: 試行は期限削除しない方針のまま、取得だけ現行フォームの source_form_id と definition_version に絞り updated_at 降順の1件にした。複合インデックスも差し替えた。インデックスの反映は次回の Firestore デプロイが必要。
+
+---
+
+---
+
+## 評価セッション（2026-10-03 22:36 JST・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 22:36 JST
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **since**: 2026-10-03T13:25:06Z
+- **partial**: true（Codex は問題なしサマリを返した。監視の partial は Codex 未レビューまたは limits 扱い）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 5969599167、Codex 問題なし 5969642129）
+- **重複除外**: 1（4173367858 は RC-117 と同じ表示名の UID フォールバック。新規採番しない）
+- **手順 4a 自動修正**: RC-121、RC-122（🚨 2件）
+- **自動修正しなかった未着手**: RC-120。RC-117 は未着手のまま
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-119 | 5401026390 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（22:31）は個別指摘の要約<br>新規は RC-120〜122。表示名の UID は RC-117 |
+| [ ] | RC-120 | 4173367912 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 回答一覧が確定とキャンセルを別 Callable で二重取得する<br>API を1回にするか読み取りを絞るかが併記のため自動修正しない |
+| [x] | RC-121 | 4173367897 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 🔧 微修正 | S | 空の利用目的で既存値を消す<br>空白のみの更新は既存の利用目的を維持する |
+| [x] | RC-122 | 4173367882 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームでも版番号の大小で試行を捨てる<br>同じ source_form_id のときだけ版の競合にする |
+
+**識別子**: RC-119（GitHub id: 5401026390）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+フォーム差し替え時の版比較と、利用目的・ユーザーIDに関する要件違反を修正する必要があります。
+
+**Review effort:** Balanced  
+**Findings:** 3 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (10)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [ユーザー取得失敗時にUIDが表示される](#discussion_r4173367858) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [異なるフォーム間でバージョン競合を判定する](#discussion_r4173367882) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [イベント更新とフォーム参照更新を原子的に処理する](#discussion_r4166687820)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空の利用目的で既存値が削除される](#discussion_r4173367897) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [最新の試行1件に絞り、複合インデックスを追加する](#discussion_r4173162402)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [参加者タブ表示で同一データを二重取得する](#discussion_r4173367912) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (4)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [取得・生成・保存を同一トランザクション内で実行する](#discussion_r4173162331)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [ルーター依存を除き、パス解決関数をprops注入にする](#discussion_r4173162375)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+</details>
+
+**コメント要約**: Copilot overview（22:31）は個別指摘の要約
+新規は RC-120〜122。表示名の UID は RC-117
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 変更サマリ。実体は RC-120、RC-121、RC-122。表示名の UID は RC-117 と同一指摘のため再採番しない。
+
+---
+**識別子**: RC-120（GitHub id: 4173367912）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/manage/event/EventFormResponsesPanel.vue:80`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・1 行）
++<script setup lang="ts">
++import { getCommunityForm, getEventFormConfig, listEventFormResponses } from '@shokujii/base/apis/form.js'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import UserAvatar from '@shokujii/base/components/UserAvatar.vue'
++import { buildEventFormResponseCsv, downloadMemberCsv } from '@shokujii/base/composable/memberCsvExport.js'
++import type { EventFormResponseFilter, EventFormResponseListItem } from '@shokujii/common/apis/form.js'
++import { omitHiddenFormFields, type FormField } from '@shokujii/common/schemas/formFields.js'
++import type { FormAnswerInput } from '@shokujii/common/utils/validateFormAnswers.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
++import { useUserStore } from '@shokujii/base/stores/user.js'
++import { getUserPath } from '@/router/utils'
++import { mdiDownload, mdiEyeOutline } from '@mdi/js'
++
++type AssignedForm = {
++  name: string
++  description: string
++  purpose: string
++  fields: FormField[]
++}
++
++const props = defineProps<{
++  event: BokudeliEvent
++}>()
++
++const { t: $t } = useI18n()
++
++const isEnterprise = computed(() => props.event.enterprise_id != null && props.event.enterprise_id !== '')
++const responses = ref<EventFormResponseListItem[]>([])
++const assignedForm = ref<AssignedForm | null>(null)
++const loading = ref(false)
++const loadFailed = ref(false)
++const retryKey = ref(0)
++const selected = ref<EventFormResponseListItem | null>(null)
++const previewOpen = ref(false)
++const previewAnswers = ref<FormAnswerInput[]>([])
++
++const loadAssignedForm = async (communityId: string, eventId: string): Promise<AssignedForm | null> => {
++  const configResponse = await getEventFormConfig({ community_id: communityId, event_id: eventId })
++  const formId = configResponse.data.config?.source_form_id ?? ''
++  if (formId === '') {
++    return null
++  }
++  const formResponse = await getCommunityForm({ community_id: communityId, form_id: formId })
++  const form = formResponse.data.form
++  return {
++    name: form.name,
++    description: form.description,
++    purpose: form.purpose,
++    fields: omitHiddenFormFields(form.fields),
++  }
++}
++
++watch(
++  () => [props.event.community_id, props.event.event_id, props.event.enterprise_id, retryKey.value],
++  async (_key, _previousKey, onCleanup) => {
++    let cancelled = false
++    onCleanup(() => {
++      cancelled = true
++    })
++    responses.value = []
++    assignedForm.value = null
++    selected.value = null
++    previewOpen.value = false
++    loadFailed.value = false
++    loading.value = false
++    if (props.event.enterprise_id != null && props.event.enterprise_id !== '') return
++    loading.value = true
++    try {
++      const [ordered, canceled, form] = await Promise.all([
++        listEventFormResponses({
++          community_id: props.event.community_id,
++          event_id: props.event.event_id,
++          filter: 'confirmed',
++        }),
++        listEventFormResponses({
++          community_id: props.event.community_id,
++          event_id: props.event.event_id,
++          filter: 'canceled',
++        }),
+```
+
+**レビュワーのコメント（原文）**:
+
+[imo] `confirmed` と `canceled` を別々に取得していますが、各 Callable はフィルター適用前に全回答・注文済・取消注文・ユーザーをすべて読み直すため、参加者タブを1回開くたび同じデータ取得が二重に走ります。1回の Callable で両状態を返してクライアント側でまとめるか、サーバー側で必要な読み取りだけに絞ってください。
+
+**コメント要約**: 回答一覧が確定とキャンセルを別 Callable で二重取得する
+API を1回にするか読み取りを絞るかが併記のため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 📐 リファクタ
+
+**想定工数**: M
+
+**判断理由**: imo。確定とキャンセルで listEventFormResponses が全回答と注文を読み直す指摘は妥当だが、1 Callable にまとめる案とサーバー側の読み取り削減が併記されている。リファクタかつ工数 M のため自動修正しない。
+
+---
+**識別子**: RC-121（GitHub id: 4173367897）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:150`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・71 行）
++}
++
++export const listCommunityFormsCallable = onCall(async (request): Promise<ListCommunityFormsResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id } = parseOrThrow(ListCommunityFormsRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const forms = await listCommunityForms(community_id)
++  return {
++    forms: forms
++      .sort((a, b) => b.updated_at - a.updated_at)
++      .map((form) => ({
++        form_id: form.id,
++        name: form.name,
++        description: form.description,
++        purpose: form.purpose,
++        archived: form.archived,
++        field_count: omitHiddenFormFields(form.fields).length,
++        updated_at: form.updated_at,
++      })),
++  }
++})
++
++export const getCommunityFormCallable = onCall(async (request): Promise<GetCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, form_id } = parseOrThrow(GetCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const form = await getCommunityForm(community_id, form_id)
++  if (form == null) {
++    throw new HttpsError('not-found', 'フォームが見つかりません')
++  }
++  return { form: toCommunityFormDetail(form) }
++})
++
++export const createCommunityForm = onCall(async (request): Promise<CreateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const data = parseOrThrow(CreateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(data.community_id, uid)
++  const normalized = normalizeFormFields(data.fields)
++  if (!normalized.ok) {
++    throw new HttpsError('invalid-argument', normalized.message)
++  }
++  const form = new CommunityForm('', {
++    community_id: data.community_id,
++    name: data.name,
++    description: data.description ?? '',
++    purpose: data.purpose ?? '',
++    fields: normalized.fields,
++    definition_version: 1,
++    archived: false,
++    created_by: uid,
++    updated_by: uid,
++  })
++  const created = await createCommunityFormDoc(data.community_id, form)
++  logger.info('コミュニティフォームを作成した', { communityId: data.community_id, formId: created.id, userId: uid })
++  return { form: toCommunityFormDetail(created) }
++})
++
++async function requireEditablePfEvent(communityId: string, eventId: string, transaction: Transaction): Promise<void> {
++  const event = await getEventInCommunity(communityId, eventId, transaction)
++  if (event == null) {
++    throw new HttpsError('not-found', 'イベントが見つかりません')
++  }
++  assertPfEvent(event)
++  assertEventFormEditable(event)
++}
++
++export const updateCommunityForm = onCall(async (request): Promise<UpdateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const data = parseOrThrow(UpdateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(data.community_id, uid)
++  const updated = await getFirestore().runTransaction(async (transaction) => {
++    const existing = await getCommunityForm(data.community_id, data.form_id, transaction)
++    if (existing == null) {
++      throw new HttpsError('not-found', 'フォームが見つかりません')
++    }
++    const normalized = normalizeFormFields(data.fields, existing.fields)
++    if (!normalized.ok) {
++      throw new HttpsError('invalid-argument', normalized.message)
++    }
++    const nextPurpose = data.purpose ?? ''
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] PR の確認観点では「利用目的を空のまま保存しても既存値を消さない」ことが要件ですが、空文字は nullish ではないため `nextPurpose` が `''` になり、更新時に既存の利用目的を削除します。空白だけの場合も含めて既存値を維持するか、API で空値を拒否してください。
+
+**コメント要約**: 空の利用目的で既存値を消す
+空白のみの更新は既存の利用目的を維持する
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 空文字は null ではないため既存の利用目的を消していた。空白だけの更新は既存値を維持し、入力があるときだけ新しい利用目的にする。
+
+---
+**識別子**: RC-122（GitHub id: 4173367882）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:133`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・54 行）
++    throw new HttpsError('failed-precondition', 'この回答はすでに使用されています')
++  }
++  if (!isAttemptForCurrentForm(attempt, params.form)) {
++    throw new HttpsError('failed-precondition', '設問が更新されています。回答画面でやり直してください')
++  }
++  return attempt
++}
++
++export type FormConfirmPlan =
++  | { kind: 'none' }
++  | { kind: 'reuse'; existing: FormResponse }
++  | { kind: 'apply'; attempt: FormCheckoutAttempt; existing?: FormResponse }
++
++export async function planFormConfirmation(params: {
++  event: ShokujiiEvent
++  userId: string
++  attemptId: string | undefined
++  transaction: Transaction
++}): Promise<FormConfirmPlan> {
++  const reference = await loadEventFormReferenceIfPf(params.event, params.transaction)
++  if (reference == null) {
++    return { kind: 'none' }
++  }
++  const existing = await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction)
++  if (params.attemptId != null && params.attemptId !== '') {
++    const attempt = await requireAttemptForLatestForm({
++      event: params.event,
++      userId: params.userId,
++      attemptId: params.attemptId,
++      form: reference.form,
++      transaction: params.transaction,
++    })
++    return { kind: 'apply', attempt, existing }
++  }
++  if (existing != null && isConfirmedResponseForCurrentForm(existing, reference.form)) {
++    return { kind: 'reuse', existing }
++  }
++  throw new HttpsError('failed-precondition', 'フォームの回答が必要です')
++}
++
++export function mergeAttemptAnswersWithInactiveExisting(
++  attemptAnswers: FormAnswerSnapshot[],
++  existingAnswers: FormAnswerSnapshot[] | undefined,
++  fields: FormField[] | undefined,
++  sourceFormIds?: { existing?: string; attempt?: string },
++): FormAnswerSnapshot[] {
++  // 別フォームへ差し替えた再注文では、旧フォームだけの回答を新フォームへ混ぜない。
++  if (sourceFormIds != null && (sourceFormIds.existing ?? '') !== (sourceFormIds.attempt ?? '')) {
++    return [...attemptAnswers]
++  }
++  // 今回の設問に無い確定済み回答は残す。削除した設問や種類変更前の旧IDも上書きしない。
++  const editableIds = new Set((fields ?? []).filter((field) => !field.hidden_for_new).map((field) => field.field_id))
++  const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
++  const kept = (existingAnswers ?? []).filter(
++    (answer) => !editableIds.has(answer.field_id) && !attemptIds.has(answer.field_id),
++  )
++  return [...kept, ...attemptAnswers]
++}
++
++export async function applyAttemptToConfirmedResponse(params: {
++  event: ShokujiiEvent
++  userId: string
++  attempt: FormCheckoutAttempt
++  transaction: Transaction
++  existing?: FormResponse
++  ignoreDefinitionMismatch?: boolean
++}): Promise<void> {
++  const existing =
++    params.existing ??
++    (await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction))
++  if (existing != null && existing.revision > params.attempt.revision_basis) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
++  }
++  if (
++    params.ignoreDefinitionMismatch !== true &&
++    existing != null &&
++    existing.definition_version > params.attempt.definition_version
++  ) {
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 定義バージョンはフォームごとの番号ですが、ここではフォームIDを確認せず大小比較しています。旧フォームが version 5、新フォームが version 1 のような差し替え後に非Stripe注文を確定すると、新フォームの試行を consumed にするだけで旧フォームの確定回答が残ります。バージョン競合の判定は同じ `source_form_id` の回答に限定してください。
+
+**コメント要約**: 別フォームでも版番号の大小で試行を捨てる
+同じ source_form_id のときだけ版の競合にする
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: definition_version はフォームごとの番号なので、別フォームの大きい版で新しい試行を consumed にしていた。版の競合判定を同じ source_form_id の回答に限定した。
 
 ---
