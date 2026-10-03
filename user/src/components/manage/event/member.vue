@@ -221,7 +221,12 @@ const downloadCsvFile = () => {
             </tbody>
           </v-table>
         </v-card>
-        <EventFormResponsesPanel v-if="eventStore.event != null" class="mt-8" :event="eventStore.event" />
+        <EventFormResponsesPanel
+          v-if="eventStore.event != null"
+          class="mt-8"
+          :event="eventStore.event"
+          :resolve-user-path="getUserPath"
+        />
       </v-col>
     </v-row>
   </v-container>

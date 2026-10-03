@@ -9,7 +9,7 @@ import type { FormAnswerInput } from '@shokujii/common/utils/validateFormAnswers
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { useUserStore } from '@shokujii/base/stores/user.js'
-import { getUserPath } from '@/router/utils'
+import type { ResolveUserPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import { mdiDownload, mdiEyeOutline } from '@mdi/js'
 
 type AssignedForm = {
@@ -20,6 +20,7 @@ type AssignedForm = {
 
 const props = defineProps<{
   event: BokudeliEvent
+  resolveUserPath: ResolveUserPathFn
 }>()
 
 const { t: $t } = useI18n()
@@ -183,12 +184,12 @@ const download = () => {
             <tr v-for="(item, index) in responses" :key="item.user_id">
               <td class="number-cell text-body-2">{{ index + 1 }}</td>
               <td class="minimum-cell">
-                <router-link :to="getUserPath(item.user_id)">
+                <router-link :to="props.resolveUserPath(item.user_id)">
                   <UserAvatar :user="userOf(item.user_id)" />
                 </router-link>
               </td>
               <td class="name-cell">
-                <router-link :to="getUserPath(item.user_id)" class="form-response-name">
+                <router-link :to="props.resolveUserPath(item.user_id)" class="form-response-name">
                   {{ item.display_name }}
                 </router-link>
               </td>
