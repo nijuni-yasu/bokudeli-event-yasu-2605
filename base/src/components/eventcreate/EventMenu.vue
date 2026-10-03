@@ -179,9 +179,7 @@ const displayMenus = computed(() => sortMenusWithSoldOutLast(props.menus))
                   <v-card-text class="text-left text-subtitle-2 pb-8">
                     {{ t('event_menu.no_order_participation_description') }}
                   </v-card-text>
-                  <v-card-text class="text-right text-h5 pb-5">
-                    {{ t('event_menu.no_order_participation_price_label') }}
-                  </v-card-text>
+                  <v-card-text class="text-right text-h5 pb-5">¥ {{ priceString(0) }}</v-card-text>
                 </v-card>
               </v-col>
             </v-row>

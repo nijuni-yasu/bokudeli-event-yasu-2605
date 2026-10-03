@@ -119,13 +119,8 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     align="start"
                   />
                   <v-spacer />
-                  <span v-if="isNoOrderParticipationMenu(menu.menu_id)" class="price-text">
-                    {{ $t('event_details.no_order_participation_price_label') }}
-                  </span>
-                  <template v-else>
-                    <span class="yen-text">¥ </span>
-                    <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                  </template>
+                  <span class="yen-text">¥ </span>
+                  <span class="price-text">{{ priceString(menu.menu_price) }}</span>
                 </div>
                 <div class="d-flex align-center justify-end flex-shrink-0">
                   <v-btn
@@ -197,13 +192,8 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                       align="start"
                     />
                     <v-spacer />
-                    <span v-if="isNoOrderParticipationMenu(menu.menu_id)" class="price-text">
-                      {{ $t('event_details.no_order_participation_price_label') }}
-                    </span>
-                    <template v-else>
-                      <span class="yen-text">¥ </span>
-                      <span class="price-text">{{ priceString(menu.menu_price) }}</span>
-                    </template>
+                    <span class="yen-text">¥ </span>
+                    <span class="price-text">{{ priceString(menu.menu_price) }}</span>
                   </div>
                   <v-row class="pb-1 px-2">
                     <v-col cols="12">

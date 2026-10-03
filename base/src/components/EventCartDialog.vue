@@ -254,10 +254,7 @@ const addCart = async () => {
         <v-card-title class="text-left text-h4 font-weight-bold px-0 py-1 text-wrap">
           {{ currentMenu.menu_name }}
         </v-card-title>
-        <div v-if="isNoOrderParticipation" class="text-h5 py-1">
-          {{ $t('cart_dialog.no_order_participation_price_label') }}
-        </div>
-        <div v-else class="text-h5 py-1">¥{{ priceString(currentMenu.menu_price) }}</div>
+        <div class="text-h5 py-1">¥{{ priceString(currentMenu.menu_price) }}</div>
         <div v-if="showRemainingChip || showSoldOutStatusChip" class="mt-2">
           <MenuStatusChips v-if="showRemainingChip" :remaining="remainingInfo!.remaining" align="start" />
           <MenuStatusChips
@@ -377,7 +374,7 @@ const addCart = async () => {
             :disabled="isAddDisabled"
             @click="addCart()"
           >
-            {{ isNoOrderParticipation ? $t('cart_dialog.add_no_order_participation') : $t('cart_dialog.add') }}
+            {{ $t('cart_dialog.add') }}
           </v-btn>
         </div>
       </div>
@@ -406,8 +403,8 @@ const addCart = async () => {
 }
 
 .no-order-icon-area {
-  aspect-ratio: 1;
-  max-height: 200px;
+  width: 100%;
+  height: 200px;
   background-color: rgb(var(--v-theme-grey-100));
   border-radius: 4px;
 }
