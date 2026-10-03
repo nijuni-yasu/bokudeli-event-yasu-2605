@@ -115,6 +115,13 @@
 | [x] | RC-109 | 5400239921 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（19:17）は個別指摘の要約<br>新規は RC-111。複製失敗は RC-110 |
 | [ ] | RC-110 | 4172746574 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | フォーム設定の複製失敗で孤立イベントが残る<br>原子作成・補償削除・ID返却が併記のため自動修正しない |
 | [x] | RC-111 | 4172732374 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームの確定回答を再注文時に混ぜる<br>同じ source_form_id のときだけ非表示回答と回答日時を引き継ぐ |
+| [x] | RC-112 | 5969159842 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | ステップ4の次へでフォーム参照だけ先に保存される<br>保存・申請のときだけ反映するよう次への即時保存を外した |
+| [x] | RC-113 | 5400763246 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（21:29）は個別指摘の要約<br>新規は RC-114〜118 |
+| [x] | RC-114 | 4173162375 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventEdit がアプリのルーター関数を直接 import している<br>resolveFormsPath を props 注入した |
+| [x] | RC-115 | 4173181554 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | アーカイブ更新が Transaction 外の全体保存<br>RC-116 と同じ修正で取得から保存まで Transaction に閉じた |
+| [x] | RC-116 | 4173162331 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | アーカイブの read→全体 set が同時編集を巻き戻す<br>取得・アーカイブ・保存を同一 Transaction にした |
+| [ ] | RC-117 | 4173181555 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | ユーザー名欠落時に UID を表示する<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-118 | 4173162402 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 回答画面が未確定試行を全件取得する<br>現行フォームの最新1件だけ取得し複合インデックスを付けた |
 
 ---
 
@@ -8782,5 +8789,647 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: 初期表示は source_form_id 不一致を除外しているのに、確定時のマージは既存回答を無条件に残していた。同じフォームのときだけ非表示回答と answered_at を引き継ぐよう変えた。
+
+---
+
+---
+
+## 評価セッション（2026-10-03 21:43 JST・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 21:43 JST
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **since**: 2026-10-03T12:21:35Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 5969108158、Codex 接続案内 5400786551）
+- **手順 4a 自動修正**: RC-112（🟡）、RC-114、RC-115、RC-116、RC-118（🚨 4件）
+- **自動修正しなかった未着手**: RC-117
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-112 | 5969159842 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | ステップ4の次へでフォーム参照だけ先に保存される<br>保存・申請のときだけ反映するよう次への即時保存を外した |
+| [x] | RC-113 | 5400763246 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（21:29）は個別指摘の要約<br>新規は RC-114〜118 |
+| [x] | RC-114 | 4173162375 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | EventEdit がアプリのルーター関数を直接 import している<br>resolveFormsPath を props 注入した |
+| [x] | RC-115 | 4173181554 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | アーカイブ更新が Transaction 外の全体保存<br>RC-116 と同じ修正で取得から保存まで Transaction に閉じた |
+| [x] | RC-116 | 4173162331 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | アーカイブの read→全体 set が同時編集を巻き戻す<br>取得・アーカイブ・保存を同一 Transaction にした |
+| [ ] | RC-117 | 4173181555 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | ユーザー名欠落時に UID を表示する<br>UX ラベルのため自動修正せず未着手 |
+| [x] | RC-118 | 4173162402 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 回答画面が未確定試行を全件取得する<br>現行フォームの最新1件だけ取得し複合インデックスを付けた |
+
+**識別子**: RC-112（GitHub id: 5969159842）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル（`base/src/components/EventEdit.vue:1083`、`functions/default/src/formAdmin.ts:200-205`）
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行 HEAD の Files changed をレビューし、以下の2点を確認しました（この環境では Files changed へのインライン投稿ができないため、行を明記します）。
+
+- 🚨 `base/src/components/EventEdit.vue:1083` — ステップ4の「次へ」で `persistEventFormSelection()` がフォーム参照を即時保存します。後続のイベント保存・申請前に編集を中断すると、イベント本体は未保存なのにフォーム設定だけ変わります。明示的な保存・申請に合わせて反映してください。
+- 🚨 `functions/default/src/formAdmin.ts:200-205` — アーカイブ処理がフォーム全体をトランザクション外で読み込み、全フィールドを書き戻しています。同時に別管理者が編集すると、その変更を古い内容で上書きし得ます。取得からアーカイブ状態の保存までを同一 Transaction にしてください。
+
+**コメント要約**: ステップ4の次へでフォーム参照だけ先に保存される
+保存・申請のときだけ反映するよう次への即時保存を外した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 下書き保存・更新・予約申請では既に persistEventFormSelection している。ステップ4の次へだけがイベント本体より先にフォーム参照を書くので、その呼び出しを外した。アーカイブの Transaction 化は RC-116 で対応した。
+
+---
+**識別子**: RC-113（GitHub id: 5400763246）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+アーカイブ更新の競合、回答試行の無制限取得、共有コンポーネントの依存反転を修正する必要があります。
+
+**Review effort:** Balanced  
+**Findings:** 3 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 6 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (10)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [取得・生成・保存を同一トランザクション内で実行する](#discussion_r4173162331) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [イベント更新とフォーム参照更新を原子的に処理する](#discussion_r4166687820)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [ルーター依存を除き、パス解決関数をprops注入にする](#discussion_r4173162375) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [最新の試行1件に絞り、複合インデックスを追加する](#discussion_r4173162402) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (5)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [再注文時に異なるフォームの既存回答を無条件マージしている](#discussion_r4172732374)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [削除時の編集可否確認がTransaction外で競合する](#discussion_r4164317311)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [編集可否確認と設定保存が別Transactionで競合する](#discussion_r4164317194)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Transaction外の全体更新で同時変更を上書きする](#discussion_r4164317121)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問変更後も同じfield_idの過去回答を初期値に再利用する](#discussion_r4166688017)
+</details>
+
+**コメント要約**: Copilot overview（21:29）は個別指摘の要約
+新規は RC-114〜118
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 変更サマリであり、新規の実体はインライン RC-114、RC-116、RC-118。再掲分は既存 RC で扱う。
+
+---
+**識別子**: RC-114（GitHub id: 4173162375）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/components/EventEdit.vue:47`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -35,7 +44,7 @@ import {
+   shouldUpdateExistingMenusOnly,
+ } from '@shokujii/common/utils/eventMenuConverter.js'
+ import { useRouter } from 'vue-router'
+-import { getCommunityPath, getManageCommunityAlbumPath } from '@/router/utils'
++import { getCommunityPath, getManageCommunityAlbumPath, getManageCommunityFormsPath } from '@/router/utils'
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 共有 `base` コンポーネントに app 固有の `@/router/utils` 依存を追加すると、各 app と型ビルド用 stub の全てに同名関数を要求する依存反転になります。本PRで追加した `ResolveManageCommunityFormsPathFn` を `EventEdit` の prop として受け取り、user / enterprise の shell から注入してください（同じ方式は `CommunityFormEditor.vue:19-23` にあります）。
+
+**コメント要約**: EventEdit がアプリのルーター関数を直接 import している
+resolveFormsPath を props 注入した
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: CommunityFormEditor と同じく、共有コンポーネントはアプリの `@/router/utils` を直接 import しない。resolveFormsPath を EventEdit と EventSettings の props にし、user / enterprise の画面から渡した。
+
+---
+**識別子**: RC-115（GitHub id: 4173181554）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:205`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・126 行）
++})
++
++async function requireEditablePfEvent(communityId: string, eventId: string, transaction: Transaction): Promise<void> {
++  const event = await getEventInCommunity(communityId, eventId, transaction)
++  if (event == null) {
++    throw new HttpsError('not-found', 'イベントが見つかりません')
++  }
++  assertPfEvent(event)
++  assertEventFormEditable(event)
++}
++
++export const updateCommunityForm = onCall(async (request): Promise<UpdateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const data = parseOrThrow(UpdateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(data.community_id, uid)
++  const updated = await getFirestore().runTransaction(async (transaction) => {
++    const existing = await getCommunityForm(data.community_id, data.form_id, transaction)
++    if (existing == null) {
++      throw new HttpsError('not-found', 'フォームが見つかりません')
++    }
++    const normalized = normalizeFormFields(data.fields, existing.fields)
++    if (!normalized.ok) {
++      throw new HttpsError('invalid-argument', normalized.message)
++    }
++    const nextPurpose = data.purpose ?? ''
++    const next = new CommunityForm(existing.id, {
++      ...existing,
++      name: data.name,
++      description: data.description ?? '',
++      purpose: nextPurpose,
++      fields: normalized.fields,
++      definition_version: nextCommunityFormDefinitionVersion({
++        currentVersion: existing.definition_version,
++        existingFields: existing.fields,
++        existingPurpose: existing.purpose,
++        nextFields: normalized.fields,
++        nextPurpose,
++      }),
++      archived: data.archived ?? existing.archived,
++      updated_by: uid,
++    })
++    await saveCommunityForm(data.community_id, next, transaction)
++    return next
++  })
++  return { form: toCommunityFormDetail(updated) }
++})
++
++export const duplicateCommunityForm = onCall(async (request): Promise<DuplicateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, form_id } = parseOrThrow(DuplicateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const existing = await getCommunityForm(community_id, form_id)
++  if (existing == null) {
++    throw new HttpsError('not-found', 'フォームが見つかりません')
++  }
++  const duplicated = new CommunityForm('', {
++    community_id,
++    name: duplicateFormName(existing.name),
++    description: existing.description,
++    purpose: existing.purpose,
++    fields: cloneFormFields(existing.fields),
++    definition_version: 1,
++    archived: false,
++    created_by: uid,
++    updated_by: uid,
++  })
++  const created = await createCommunityFormDoc(community_id, duplicated)
++  return { form: toCommunityFormDetail(created) }
++})
++
++export const archiveCommunityForm = onCall(async (request): Promise<ArchiveCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, form_id, archived } = parseOrThrow(ArchiveCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const existing = await getCommunityForm(community_id, form_id)
++  if (existing == null) {
++    throw new HttpsError('not-found', 'フォームが見つかりません')
++  }
++  const updated = new CommunityForm(existing.id, { ...existing, archived, updated_by: uid })
++  await saveCommunityForm(community_id, updated)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  アーカイブ更新をトランザクション内で直列化する**
+
+複数の管理者が同じフォームを操作し、一方の編集がコミットされた後に、もう一方が200行目で取得済みの古い `existing` を使ってアーカイブすると、この全フィールド保存が新しい設問・名前・`definition_version` まで巻き戻します。`updateCommunityForm` と同様、最新ドキュメントの取得、`archived` の変更、保存を同じ Firestore Transaction 内で行ってください。プロジェクト指定のレビュー・チェックリストでも競合箇所の Transaction 利用が求められています。
+
+AGENTS.md reference: [AGENTS.md:L281-L284](https://github.com/nijuniinc/bokudeli-event-new/blob/a15a683479f9fca4ebb5820997d441b622c4ed99/AGENTS.md#L281-L284)
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: アーカイブ更新が Transaction 外の全体保存
+RC-116 と同じ修正で取得から保存まで Transaction に閉じた
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: P1。指摘は RC-116 と同じ。archiveCommunityForm の取得と全体保存を同一 Transaction に閉じた。
+
+---
+**識別子**: RC-116（GitHub id: 4173162331）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:206`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・127 行）
++
++async function requireEditablePfEvent(communityId: string, eventId: string, transaction: Transaction): Promise<void> {
++  const event = await getEventInCommunity(communityId, eventId, transaction)
++  if (event == null) {
++    throw new HttpsError('not-found', 'イベントが見つかりません')
++  }
++  assertPfEvent(event)
++  assertEventFormEditable(event)
++}
++
++export const updateCommunityForm = onCall(async (request): Promise<UpdateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const data = parseOrThrow(UpdateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(data.community_id, uid)
++  const updated = await getFirestore().runTransaction(async (transaction) => {
++    const existing = await getCommunityForm(data.community_id, data.form_id, transaction)
++    if (existing == null) {
++      throw new HttpsError('not-found', 'フォームが見つかりません')
++    }
++    const normalized = normalizeFormFields(data.fields, existing.fields)
++    if (!normalized.ok) {
++      throw new HttpsError('invalid-argument', normalized.message)
++    }
++    const nextPurpose = data.purpose ?? ''
++    const next = new CommunityForm(existing.id, {
++      ...existing,
++      name: data.name,
++      description: data.description ?? '',
++      purpose: nextPurpose,
++      fields: normalized.fields,
++      definition_version: nextCommunityFormDefinitionVersion({
++        currentVersion: existing.definition_version,
++        existingFields: existing.fields,
++        existingPurpose: existing.purpose,
++        nextFields: normalized.fields,
++        nextPurpose,
++      }),
++      archived: data.archived ?? existing.archived,
++      updated_by: uid,
++    })
++    await saveCommunityForm(data.community_id, next, transaction)
++    return next
++  })
++  return { form: toCommunityFormDetail(updated) }
++})
++
++export const duplicateCommunityForm = onCall(async (request): Promise<DuplicateCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, form_id } = parseOrThrow(DuplicateCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const existing = await getCommunityForm(community_id, form_id)
++  if (existing == null) {
++    throw new HttpsError('not-found', 'フォームが見つかりません')
++  }
++  const duplicated = new CommunityForm('', {
++    community_id,
++    name: duplicateFormName(existing.name),
++    description: existing.description,
++    purpose: existing.purpose,
++    fields: cloneFormFields(existing.fields),
++    definition_version: 1,
++    archived: false,
++    created_by: uid,
++    updated_by: uid,
++  })
++  const created = await createCommunityFormDoc(community_id, duplicated)
++  return { form: toCommunityFormDetail(created) }
++})
++
++export const archiveCommunityForm = onCall(async (request): Promise<ArchiveCommunityFormResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, form_id, archived } = parseOrThrow(ArchiveCommunityFormRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const existing = await getCommunityForm(community_id, form_id)
++  if (existing == null) {
++    throw new HttpsError('not-found', 'フォームが見つかりません')
++  }
++  const updated = new CommunityForm(existing.id, { ...existing, archived, updated_by: uid })
++  await saveCommunityForm(community_id, updated)
++  return { form: toCommunityFormDetail(updated) }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この read→全体 `set` だけ Transaction 外なので、同時にフォーム編集が完了すると、後勝ちになったアーカイブ操作が編集内容を旧状態へ戻す（または編集側がアーカイブ状態を戻す）競合が発生します。`updateCommunityForm` と同様、取得・生成・保存を同一 Transaction に閉じてください。
+
+**コメント要約**: アーカイブの read→全体 set が同時編集を巻き戻す
+取得・アーカイブ・保存を同一 Transaction にした
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: updateCommunityForm と同様、getCommunityForm と saveCommunityForm を runTransaction 内で行うようにした。
+
+---
+**識別子**: RC-117（GitHub id: 4173181555）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/formAdmin.ts:306`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・227 行）
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, event_id } = parseOrThrow(GetEventFormConfigRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  await requirePfEventForForm(community_id, event_id)
++  const config = await getEventFormConfig(community_id, event_id)
++  return { config: config == null ? null : toEventFormConfigDto(config) }
++})
++
++export const setEventFormFromCommunity = onCall(async (request): Promise<SetEventFormFromCommunityResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, event_id, form_id } = parseOrThrow(SetEventFormFromCommunityRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  const next = await getFirestore().runTransaction(async (transaction) => {
++    await requireEditablePfEvent(community_id, event_id, transaction)
++    const form = await getCommunityForm(community_id, form_id, transaction)
++    if (form == null || form.archived) {
++      throw new HttpsError('not-found', 'フォームが見つかりません')
++    }
++    const existing = await getEventFormConfig(community_id, event_id, transaction)
++    const config = new EventFormConfig('current', {
++      source_form_id: form.id,
++      created_at: existing?.created_at,
++    })
++    await saveEventFormConfig(community_id, event_id, config, transaction)
++    return config
++  })
++  logger.info('イベントへフォームを設定した', {
++    communityId: community_id,
++    eventId: event_id,
++    formId: form_id,
++    userId: uid,
++  })
++  return { config: toEventFormConfigDto(next) }
++})
++
++export const clearEventFormConfig = onCall(async (request): Promise<ClearEventFormConfigResponse> => {
++  const uid = await requireAuthUid(request.auth?.uid)
++  const { community_id, event_id } = parseOrThrow(ClearEventFormConfigRequestSchema, request.data)
++  await requireCommunityManager(community_id, uid)
++  await getFirestore().runTransaction(async (transaction) => {
++    await requireEditablePfEvent(community_id, event_id, transaction)
++    await deleteEventFormConfig(community_id, event_id, transaction)
++  })
++  return { cleared: true }
++})
++
++function toResponseItem(
++  userId: string,
++  displayName: string,
++  participation: 'confirmed' | 'canceled',
++  answeredAt: number,
++  updatedAt: number,
++  answers: EventFormResponseListItem['answers'],
++): EventFormResponseListItem {
++  return {
++    user_id: userId,
++    display_name: displayName,
++    participation,
++    answered_at: answeredAt,
++    updated_at: updatedAt,
++    answers,
++  }
++}
++
++async function buildResponseItems(communityId: string, eventId: string): Promise<EventFormResponseListItem[]> {
++  const [responses, ordered, canceled] = await Promise.all([
++    listFormResponses(communityId, eventId),
++    getOrders(communityId, eventId, 'ordered'),
++    getOrders(communityId, eventId, 'canceled'),
++  ])
++  const orderedUsers = new Set(ordered.map((order) => order.user_id))
++  const canceledUsers = new Set(canceled.map((order) => order.user_id))
++  const usersById = await getUsersByUserIds(responses.map((response) => response.user_id))
++  return responses
++    .map((response) => {
++      const participation = orderedUsers.has(response.user_id) ? 'confirmed' : 'canceled'
++      const user = usersById.get(response.user_id)
++      return toResponseItem(
++        response.user_id,
++        user?.user_name ?? response.user_id,
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  ユーザー名欠落時も UID を表示しない**
+
+履歴データなどで回答者の `users` ドキュメントが存在しない場合、このフォールバックは Firebase UID を `display_name` として返します。その値は回答一覧だけでなく CSV の「ユーザー名」列にもそのまま出力されるため、「ユーザーIDは出さない」という本変更の仕様に反します。取得不能時は「退会済みユーザー」などの匿名表示名を返し、UID を表示用データへ流用しないでください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: ユーザー名欠落時に UID を表示する
+UX ラベルのため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: P2。users が無いとき display_name に UID を入れるため、一覧と CSV にユーザーIDが出る。表示文言の選択は UX ラベルに当たるため自動修正しない。
+
+---
+**識別子**: RC-118（GitHub id: 4173162402）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/stores/form.ts:240`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・161 行）
++  communityId: string,
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormResponse | undefined> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(userId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const listFormResponses = async (communityId: string, eventId: string): Promise<FormResponse[]> => {
++  const snapshot = await formResponsesCollection(communityId, eventId).get()
++  return snapshot.docs.map((doc) => doc.data())
++}
++
++export const saveFormResponse = async (
++  communityId: string,
++  eventId: string,
++  response: FormResponse,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formResponsesCollection(communityId, eventId).doc(response.id)
++  if (transaction === undefined) {
++    await ref.set(response)
++  } else {
++    transaction.set(ref, response)
++  }
++}
++
++export const createFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  src: Partial<FormCheckoutAttempt>,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc()
++  const attempt = new FormCheckoutAttempt(ref.id, src)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++  return attempt
++}
++
++export const getFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attemptId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt | undefined> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attemptId)
++  const snapshot = await (transaction === undefined ? ref.get() : transaction.get(ref))
++  return snapshot.exists ? snapshot.data() : undefined
++}
++
++export const saveFormCheckoutAttempt = async (
++  communityId: string,
++  eventId: string,
++  attempt: FormCheckoutAttempt,
++  transaction?: Transaction,
++): Promise<void> => {
++  const ref = formAttemptsCollection(communityId, eventId).doc(attempt.id)
++  if (transaction === undefined) {
++    await ref.set(attempt)
++  } else {
++    transaction.set(ref, attempt)
++  }
++}
++
++export const listPendingFormCheckoutAttemptsForUser = async (
++  communityId: string,
++  eventId: string,
++  userId: string,
++  transaction?: Transaction,
++): Promise<FormCheckoutAttempt[]> => {
++  const query = formAttemptsCollection(communityId, eventId)
++    .where('user_id', '==', userId)
++    .where('status', 'in', ['pending', 'frozen'])
++  const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 試行は期限削除せず、回答ボタンを押すたび新しい `pending` が作られるため、status で絞ってもこのクエリ結果は永続的に増え続けます。回答画面を開くたび全件取得・メモリ上ソートするので、`source_form_id`・`definition_version` も条件に含め、`updated_at desc` + `limit(1)` で必要な最新試行だけ取得してください（対応する複合インデックスも必要です）。
+
+**コメント要約**: 回答画面が未確定試行を全件取得する
+現行フォームの最新1件だけ取得し複合インデックスを付けた
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 試行は期限削除しない方針のまま、取得だけ現行フォームの source_form_id と definition_version に絞り updated_at 降順の1件にした。複合インデックスも差し替えた。インデックスの反映は次回の Firestore デプロイが必要。
 
 ---
