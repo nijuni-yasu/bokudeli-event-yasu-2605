@@ -19,9 +19,9 @@ describe('orderedNoOrderIdsToDelete', () => {
   })
 
   it('注文なし参加だけの確定では削除しない', () => {
-    expect(
-      orderedNoOrderIdsToDelete([noOrder('ordered')], [{ id: 'no-order', item_type: 'organizer_menu' }]),
-    ).toEqual([])
+    expect(orderedNoOrderIdsToDelete([noOrder('ordered')], [{ id: 'no-order', item_type: 'organizer_menu' }])).toEqual(
+      [],
+    )
   })
 
   it('item_type 未設定の店舗注文でも ordered の注文なし参加を返す', () => {
