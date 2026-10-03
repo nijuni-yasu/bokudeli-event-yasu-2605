@@ -113,7 +113,6 @@ export default {
     order_count: '（{0}個）',
     menu_join_button: '注文して参加する',
     menu_empty: 'メニューがありません',
-    no_order_participation_price_label: '食事は持参',
     no_order_participation_join_button: 'この方法で参加する',
     community_name: '【主催者】',
     contact_community: '主催者に連絡',
@@ -220,14 +219,12 @@ export default {
   },
   cart_dialog: {
     add: 'カートに追加',
-    add_no_order_participation: '参加を確定する',
     close: '閉じる',
     required: '必須',
     clear_selection: '選択を解除',
     optional: '任意',
     count: '個数',
     price_pending: '—',
-    no_order_participation_price_label: '食事は持参',
     login: 'ご注文にはログインが必要です。\nログイン完了後、再度この画面からメニューを選んでカートに追加してください。',
   },
   event_create_modal: {
@@ -471,7 +468,6 @@ export default {
     no_order_participation_title: '注文なしで参加（食事は持参）',
     no_order_participation_description:
       'メニューを注文できない方向けです。アレルギー、好みが合わない、お弁当持参など、どうしても注文できない場合のみこちらをお選びください。当日の食事はご自身でご用意いただきます。',
-    no_order_participation_price_label: '食事は持参',
   },
   event_detail: {
     event_detail: '開催内容',
