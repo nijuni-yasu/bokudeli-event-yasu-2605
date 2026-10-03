@@ -16,6 +16,8 @@
 | [x] | RC-10 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | `updateEventMenus` の accepting_order 経路で Transaction の read が write より後<br>選択変更のある保存が必ず失敗する。既読 menus を引数で渡す形に修正 |
 | [ ] | RC-11 | なし | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書 | 📐 リファクタ | M | 品目判定が `menu_id` 比較と `item_type` 判定の二重軸<br>`organizer_menu` が増えたとき排他・文言分岐が漏れる |
 | [x] | RC-12 | なし | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `memberOrders` の三項演算子の else 側が未使用<br>`addingNoOrder` の分岐内で読むよう整理 |
+| [x] | RC-13 | 4173589672 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 🔧 微修正 | S | `item_type` 未設定の 0 円メニューが `partner_menu` 既定のあと価格拒否で読めない<br>エミュレータの 0 円フィクスチャに `organizer_menu` を付けた |
+| [x] | RC-14 | 4173589682 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 🔧 微修正 | S | 確定済みの注文なし参加があっても店舗メニューを追加できる<br>店舗メニュー確定時に注文なし参加ドキュメントを削除する |
 
 ---
 
@@ -595,6 +597,148 @@ if (
 ### RC 一覧（サマリ）
 
 新規 RC なし。Codex インライン（`functions/default/src/eventMenusSelection.ts` の再生成経路で、店舗メニュー保存と注文なし参加 upsert が別 Transaction）は RC-3 として記録済み。
+
+---
+
+## 評価セッション（2026-10-03 23:48・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 23:48 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼定型文 GitHub id 5970180218、Codex 問題なしサマリ GitHub id 5970218727）
+- **partial**: true
+- **REVIEW_REQUEST_SINCE**: 2026-10-03T14:38:59Z
+- **手順 4a 自動修正**: 対象なし（RC-13 は仕様判断、RC-14 は修正方針が一意でない）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-13 | 4173589672 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 🔧 微修正 | S | `item_type` 未設定の 0 円メニューが `partner_menu` 既定のあと価格拒否で読めない<br>エミュレータの 0 円フィクスチャに `organizer_menu` を付けた |
+| [x] | RC-14 | 4173589682 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 🔧 微修正 | S | 確定済みの注文なし参加があっても店舗メニューを追加できる<br>店舗メニュー確定時に注文なし参加ドキュメントを削除する |
+
+**識別子**: RC-13（GitHub id: 4173589672）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `common/src/schemas/EventMenu.ts:15`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -3,33 +3,49 @@ import { TimestampSchema } from './firebase/index.js'
+ import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
+ import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
+ import { EventMenuOptionSchema } from './menuOption.js'
++import { EventItemTypeSchema, type EventItemTypeType } from './EventItemType.js'
+
+-const EventMenuDbSchema = z.object({
+-  updatedAt: TimestampSchema,
+-  menu_description: MenuDescriptionDbFieldSchema,
+-  menu_name: z.string().nonempty(),
+-  // 0 は「注文なしで参加」。負数は拒否する。
+-  menu_price: z.number().int().nonnegative(),
+-  is_sold_out: z.boolean(),
+-  menu_sort_number: z.number().int().nonnegative(),
+-  is_selected: z.boolean(),
+-  limit_per_event: LimitPerEventDbFieldSchema,
+-  options: z.array(EventMenuOptionSchema).optional(),
+-})
++const partnerMenuPriceRefine = (data: { item_type: EventItemTypeType; menu_price: number }, ctx: z.RefinementCtx) => {
++  if (data.item_type === 'partner_menu' && data.menu_price <= 0) {
++    ctx.addIssue({
++      code: z.ZodIssueCode.custom,
++      message: 'partner_menu requires menu_price > 0',
++      path: ['menu_price'],
++    })
++  }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この `superRefine` は読み取り時の `AppSchema.parse` にも適用されるため、`item_type` 未設定のドキュメントは既定値の `partner_menu` が入った直後に `menu_price: 0` として拒否されます。現在の `memberOrders.emulator.test.ts` は `item_type` なし・0 円のメニューを Firestore に作るため、`confirmOrder` のメニュー読み込みが失敗します。既存の 0 円データをどう扱うかを決め、該当データ／テストとスキーマの互換性を揃えてください。
+
+**コメント要約**: `item_type` 未設定の 0 円メニューが `partner_menu` 既定のあと価格拒否で読めない。<br>既存データとエミュレータテストの扱いが仕様判断。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 価格拒否は維持する。未設定は `partner_menu` のままで、本番の既存メニューは正の価格なので読み取れる。壊れていたのはエミュレータの 0 円フィクスチャなので、メニューと注文に `item_type: 'organizer_menu'` を付けた。
+
+---
+
+**識別子**: RC-14（GitHub id: 4173589682）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:137`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -109,10 +112,42 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
+
+     const existingMember = await getMember(community_id, event_id, uid, transaction)
+
+-    const existingCartOrders =
+-      eventData.event_payment === 'enterprise_subsidy'
+-        ? await getOrdersInCart(community_id, event_id, uid, transaction)
+-        : undefined
++    const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    const addingPartnerMenu = menus.some((m) => {
++      const eventMenu = eventMenus.find((em) => em.id === m.menu_id)
++      return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
++    })
++
++    const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
++
++    for (const menu of menus) {
++      if (menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && menu.count !== 1) {
++        throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
++      }
++    }
++
++    const hasExistingNoOrderInCart = existingCartOrders.some((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
++
++    if (addingNoOrder && (hasExistingPartnerInCart || addingPartnerMenu)) {
++      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
++    }
++    if (addingPartnerMenu && hasExistingNoOrderInCart) {
++      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
++    }
+```
+
+**レビュワーのコメント（原文）**:
+
+排他確認が `hasExistingNoOrderInCart` だけなので、すでに `ordered` の注文なし参加は検出されません。注文なし参加を確定した後に店舗メニューを追加でき、同一ユーザーに参加用の確定注文と店舗注文が併存します。仕様は「注文なし参加をキャンセルしてから注文」の2段階なので、店舗メニュー追加時もTransaction内で確定済みの予約注文を確認して拒否（または明示的な切替処理）してください。
+
+**コメント要約**: 確定済みの注文なし参加があっても店舗メニューを追加できる。<br>拒否するか切替を許すかは仕様の読み分けが必要。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: カート内の排他は維持する。確定済みの注文なし参加がある状態で店舗メニューを確定したら、同じ Transaction で注文なし参加ドキュメントを削除する。`canceled` には残さない。カート追加だけでは削除しない。`confirmOrder` と Stripe Webhook の確定成功時に行う。後から店舗注文をキャンセルしても注文なし参加は戻さない。
 
 ---
 
