@@ -30,9 +30,7 @@ export function orderedNoOrderIdsToDelete(
   return memberOrders
     .filter(
       (order) =>
-        order.menu_id === NO_ORDER_PARTICIPATION_MENU_ID &&
-        order.status === 'ordered' &&
-        !confirmingIds.has(order.id),
+        order.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && order.status === 'ordered' && !confirmingIds.has(order.id),
     )
     .map((order) => order.id)
 }
