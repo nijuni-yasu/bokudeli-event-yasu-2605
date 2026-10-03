@@ -126,6 +126,10 @@
 | [ ] | RC-120 | 4173367912 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 回答一覧が確定とキャンセルを別 Callable で二重取得する<br>API を1回にするか読み取りを絞るかが併記のため自動修正しない |
 | [x] | RC-121 | 4173367897 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 🔧 微修正 | S | 空の利用目的で既存値を消す<br>空白のみの更新は既存の利用目的を維持する |
 | [x] | RC-122 | 4173367882 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームでも版番号の大小で試行を捨てる<br>同じ source_form_id のときだけ版の競合にする |
+| [x] | RC-123 | 5970239886 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（23:46）は既存指摘の再掲<br>メニュー選択解除は RC-23。表示名の UID は RC-117 |
+| [x] | RC-124 | 4173595849 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答一覧がアプリのユーザーパスを直接 import している<br>resolveUserPath を props 注入した |
+| [ ] | RC-125 | 4173595845 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 🐛 実害 | 🔧 微修正 | S | processing 中でも別の in_cart があれば回答できる<br>仕様書ラベルのため自動修正せず未着手 |
+| [ ] | RC-126 | 4173595853 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 🔧 微修正 | S | 古い回答試行を消費したまま注文を成功させる<br>注文中断は金銭・仕様判断のため自動修正せず未着手 |
 
 ---
 
@@ -9869,5 +9873,212 @@ API を1回にするか読み取りを絞るかが併記のため自動修正し
 **想定工数**: S
 
 **判断理由**: definition_version はフォームごとの番号なので、別フォームの大きい版で新しい試行を consumed にしていた。版の競合判定を同じ source_form_id の回答に限定した。
+
+---
+
+## 評価セッション（2026-10-03 23:51 JST・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 23:51 JST
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **since**: 2026-10-03T14:40:45Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 1（依頼定型文 5970193619）
+- **重複除外**: Copilot overview 内のメニュー選択解除は RC-23、表示名の UID は RC-117。新規採番しない
+- **手順 4a 自動修正**: RC-124（🟡 1件）
+- **自動修正しなかった未着手**: RC-125、RC-126。RC-23 と RC-117 は未着手のまま
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-123 | 5970239886 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（23:46）は既存指摘の再掲<br>メニュー選択解除は RC-23。表示名の UID は RC-117 |
+| [x] | RC-124 | 4173595849 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 回答一覧がアプリのユーザーパスを直接 import している<br>resolveUserPath を props 注入した |
+| [ ] | RC-125 | 4173595845 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 🐛 実害 | 🔧 微修正 | S | processing 中でも別の in_cart があれば回答できる<br>仕様書ラベルのため自動修正せず未着手 |
+| [ ] | RC-126 | 4173595853 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 📑 仕様書, 💰 金銭 | 🔧 微修正 | S | 古い回答試行を消費したまま注文を成功させる<br>注文中断は金銭・仕様判断のため自動修正せず未着手 |
+
+**識別子**: RC-123（GitHub id: 5970239886）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+> 
+> @copilot この PR ��...
+
+現行 HEAD `574bd54` を確認し、以下の2点を見つけました。この環境では Files changed への新規インライン review comment を投稿できないため、依頼コメントへの返信で報告します。
+
+🚨 **必須修正** [🐛実害/M] `base/src/components/forms/CartFormAnswer.vue:194` — フォーム画面はクライアント側の `findCartOrderBlock()` で注文を確認しますが、サーバー側の `confirmOrderHandler` と Stripe Checkout の確定トランザクションは売り切れ・上限を確認する一方、対象メニューの `is_selected` を検証していません（`functions/default/src/memberOrders.ts:309-316`、`functions/default/src/stripe.ts:200-208`）。カート投入後に主催者がメニューを選択解除すると、その注文がフォーム回答後に確定・決済され得ます。両方のサーバー確定経路で、トランザクション内にメニューの存在と選択状態を検証してください。
+
+🚨 **必須修正** [👤UX/S] `functions/default/src/formAdmin.ts:307-311` — 回答者の `users` ドキュメントが存在しない場合、Firebase UID を `display_name` に使っています。退会後も回答を保持する仕様のため実際に起こり得て、回答一覧と CSV のユーザー名欄に UID が表示され、「ユーザーIDは出さない」という要件に反します。取得できない場合は UID を表示用データに使わず、匿名の固定表示名にしてください。
+
+前回報告したデプロイ順序の指摘は、レビュー記録上で移行策を採らない判断が示されているため、今回の再レビューでは繰り返していません。
+
+**コメント要約**: Copilot overview（23:46）は既存指摘の再掲
+メニュー選択解除は RC-23。表示名の UID は RC-117
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: メニューの選択解除は RC-23、ユーザー名欠落時の UID 表示は RC-117 と同じ指摘。新規採番せず、どちらも未着手のまま残す。
+
+---
+
+**識別子**: RC-124（GitHub id: 4173595849）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/manage/event/EventFormResponsesPanel.vue:12`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -0,0 +1,301 @@
++<script setup lang="ts">
++import { getCommunityForm, getEventFormConfig, listEventFormResponses } from '@shokujii/base/apis/form.js'
++import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
++import UserAvatar from '@shokujii/base/components/UserAvatar.vue'
++import { buildEventFormResponseCsv, downloadMemberCsv } from '@shokujii/base/composable/memberCsvExport.js'
++import type { EventFormResponseFilter, EventFormResponseListItem } from '@shokujii/common/apis/form.js'
++import { omitHiddenFormFields, type FormField } from '@shokujii/common/schemas/formFields.js'
++import type { FormAnswerInput } from '@shokujii/common/utils/validateFormAnswers.js'
++import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
++import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
++import { useUserStore } from '@shokujii/base/stores/user.js'
++import { getUserPath } from '@/router/utils'
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  ユーザーパスをアプリ側から注入する**
+
+新規の共有コンポーネントから `@/router/utils` を直接参照すると、`base` が利用側アプリのエイリアスとルート実装へ依存します。同じ変更内のほかの共有コンポーネントと同様に `ResolveUserPathFn` を props で受け取り、アプリ側 shell から注入してください。新規 `base` コードで `user` 等への依存反転を増やさないというプロジェクト方針にも反します。
+
+AGENTS.md reference: [AGENTS.md:L194-L196](https://github.com/nijuniinc/bokudeli-event-new/blob/574bd54bb6511be521d0bd3854462f264f0adff0/AGENTS.md#L194-L196)
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 回答一覧がアプリのユーザーパスを直接 import している
+resolveUserPath を props 注入した
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 回答一覧だけが base からアプリの getUserPath を直接呼んでいた。参加者画面から resolveUserPath を渡すようにした。
+
+---
+
+**識別子**: RC-125（GitHub id: 4173595845）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/formOrder.ts:60`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・61 行中の末尾）
++async function requireInCart(communityId: string, eventId: string, userId: string): Promise<void> {
++  const cartOrders = await getOrdersInCart(communityId, eventId, userId)
++  if (cartOrders.length === 0) {
++    throw new HttpsError('failed-precondition', 'カートに注文があるときだけ回答できます')
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  processing 中は回答 API を拒否する**
+
+同じイベントで PayPay 等の注文が `processing` のまま別メニューをカートへ追加した場合、この判定は `in_cart` が1件あれば通るため、`getOrderFormForCart` と `saveOrderFormAttempt` の両方で回答の取得・編集が可能です。`documents/02_主催者獲得と継続/01_フォーム機能_Issue957更新案.md:93` は `processing` 中の取得・編集を禁止しており、進行中の Webhook と新しい回答試行の確定順によって主催者向け回答が変わり得るため、`in_cart` の存在確認に加えて同一ユーザーの `processing` 注文がないことも検証してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: processing 中でも別の in_cart があれば回答できる
+仕様書ラベルのため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 仕様は processing 中の取得と編集を禁止している。現状は in_cart が1件あれば通る。仕様書ラベルのため自動修正しない。
+
+---
+
+**識別子**: RC-126（GitHub id: 4173595853）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:127`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・128 行中の末尾）
++  if (existing != null && existing.revision > params.attempt.revision_basis) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  古い回答試行では注文確定を中断する**
+
+同じ確定回答を基に複数タブで試行を保存し、一方を先に確定した後で別のカート注文にもう一方の試行を使うと、ここは競合した試行を `consumed` にするだけで正常終了します。呼び出し元はそのまま注文を `ordered` にするため、利用者には注文と回答更新が成功したように見える一方、入力した回答は黙って破棄されます。仕様の「別タブの古い回答では再読み込みを案内する」を満たすため、`existing.revision > revision_basis` の場合は試行を消費せず `failed-precondition` で注文確定を中断してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 古い回答試行を消費したまま注文を成功させる
+注文中断は金銭・仕様判断のため自動修正せず未着手
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📑 仕様書, 💰 金銭
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 競合した試行を consumed にして注文自体は成功させている。注文を失敗させるかは決済経路を含むため、金銭と仕様書のラベルで自動修正しない。試行の世代そのものは RC-28 のまま未着手。
 
 ---
