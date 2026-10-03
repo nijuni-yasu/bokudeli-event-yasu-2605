@@ -138,10 +138,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
 
     if (addingNoOrder) {
       const memberOrders = await getMemberOrders(community_id, event_id, uid, transaction)
-      const existingNoOrder = memberOrders.find(
+      const existingNoOrders = memberOrders.filter(
         (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),
       )
-      if (existingNoOrder != null) {
+      if (existingNoOrders.some((o) => o.status === 'in_cart')) {
+        return null
+      }
+      if (existingNoOrders.length > 0) {
         throw new HttpsError('failed-precondition', '注文なし参加は既に追加されています')
       }
     }
