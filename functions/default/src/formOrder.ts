@@ -73,7 +73,13 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
   }
 
   const [pendingAttempts, confirmed] = await Promise.all([
-    listPendingFormCheckoutAttemptsForUser(community_id, event_id, uid),
+    listPendingFormCheckoutAttemptsForUser(
+      community_id,
+      event_id,
+      uid,
+      reference.form.id,
+      reference.form.definition_version,
+    ),
     getFormResponse(community_id, event_id, uid),
   ])
   const latestPending = pendingAttempts

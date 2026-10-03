@@ -232,11 +232,17 @@ export const listPendingFormCheckoutAttemptsForUser = async (
   communityId: string,
   eventId: string,
   userId: string,
+  sourceFormId: string,
+  definitionVersion: number,
   transaction?: Transaction,
 ): Promise<FormCheckoutAttempt[]> => {
   const query = formAttemptsCollection(communityId, eventId)
     .where('user_id', '==', userId)
     .where('status', 'in', ['pending', 'frozen'])
+    .where('source_form_id', '==', sourceFormId)
+    .where('definition_version', '==', definitionVersion)
+    .orderBy('updated_at', 'desc')
+    .limit(1)
   const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
   return snapshot.docs.map((doc) => doc.data())
 }
