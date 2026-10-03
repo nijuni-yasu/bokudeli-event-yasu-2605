@@ -147,7 +147,8 @@ export const updateCommunityForm = onCall(async (request): Promise<UpdateCommuni
     if (!normalized.ok) {
       throw new HttpsError('invalid-argument', normalized.message)
     }
-    const nextPurpose = data.purpose ?? ''
+    const requestedPurpose = data.purpose ?? ''
+    const nextPurpose = requestedPurpose.trim() === '' ? existing.purpose : requestedPurpose
     const next = new CommunityForm(existing.id, {
       ...existing,
       name: data.name,
