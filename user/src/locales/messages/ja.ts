@@ -362,7 +362,7 @@ export default {
         overview: '概要',
         member: '参加者',
         letter: 'レター',
-        settings: '設定',
+        settings: 'イベント設定',
         flyer: 'チラシ',
         form: 'フォーム回答',
       },
