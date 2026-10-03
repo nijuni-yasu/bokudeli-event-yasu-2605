@@ -13,7 +13,6 @@ const props = defineProps<{
 const { t: $t } = useI18n()
 
 const isEnterprise = computed(() => props.event.enterprise_id != null && props.event.enterprise_id !== '')
-const filter = ref<EventFormResponseFilter>('confirmed')
 const responses = ref<EventFormResponseListItem[]>([])
 const loading = ref(false)
 const loadFailed = ref(false)
@@ -21,7 +20,7 @@ const retryKey = ref(0)
 const selected = ref<EventFormResponseListItem | null>(null)
 
 watch(
-  () => [props.event.community_id, props.event.event_id, props.event.enterprise_id, filter.value, retryKey.value],
+  () => [props.event.community_id, props.event.event_id, props.event.enterprise_id, retryKey.value],
   async (_key, _previousKey, onCleanup) => {
     let cancelled = false
     onCleanup(() => {
@@ -34,12 +33,19 @@ watch(
     if (props.event.enterprise_id != null && props.event.enterprise_id !== '') return
     loading.value = true
     try {
-      const response = await listEventFormResponses({
-        community_id: props.event.community_id,
-        event_id: props.event.event_id,
-        filter: filter.value,
-      })
-      if (!cancelled) responses.value = response.data.responses
+      const [ordered, canceled] = await Promise.all([
+        listEventFormResponses({
+          community_id: props.event.community_id,
+          event_id: props.event.event_id,
+          filter: 'confirmed',
+        }),
+        listEventFormResponses({
+          community_id: props.event.community_id,
+          event_id: props.event.event_id,
+          filter: 'canceled',
+        }),
+      ])
+      if (!cancelled) responses.value = [...ordered.data.responses, ...canceled.data.responses]
     } catch {
       if (!cancelled) loadFailed.value = true
     } finally {
@@ -49,16 +55,15 @@ watch(
   { immediate: true },
 )
 
-const participationLabel = (value: EventFormResponseFilter) =>
-  value === 'confirmed' ? $t('manage.forms.filter_confirmed') : $t('manage.forms.filter_canceled')
+const statusLabel = (value: EventFormResponseFilter) =>
+  value === 'confirmed' ? $t('manage.forms.status_ordered') : $t('manage.forms.status_canceled')
 
 const download = () => {
   if (loading.value || loadFailed.value || responses.value.length === 0) return
   const csv = buildEventFormResponseCsv(
     responses.value.map((item) => ({
-      user_id: item.user_id,
       display_name: item.display_name,
-      participation_label: participationLabel(item.participation),
+      participation_label: statusLabel(item.participation),
       answered_at: convertToDatetime(item.answered_at),
       updated_at: convertToDatetime(item.updated_at),
       answers: item.answers.map((answer) => ({
@@ -86,18 +91,6 @@ const download = () => {
         <p class="text-body-2 text-medium-emphasis mb-0">{{ $t('manage.forms.responses_hint') }}</p>
       </div>
       <div class="d-flex flex-wrap align-center ga-3">
-        <v-btn-toggle
-          v-model="filter"
-          class="form-response-filter"
-          mandatory
-          density="comfortable"
-          color="primary"
-          variant="outlined"
-          divided
-        >
-          <v-btn value="confirmed">{{ $t('manage.forms.filter_confirmed') }}</v-btn>
-          <v-btn value="canceled">{{ $t('manage.forms.filter_canceled') }}</v-btn>
-        </v-btn-toggle>
         <v-btn
           :prepend-icon="mdiDownload"
           variant="tonal"
@@ -126,7 +119,7 @@ const download = () => {
         <thead>
           <tr>
             <th>{{ $t('manage.forms.display_name') }}</th>
-            <th>{{ $t('manage.forms.participation') }}</th>
+            <th>{{ $t('manage.forms.status') }}</th>
             <th>{{ $t('manage.forms.answered_at') }}</th>
             <th>{{ $t('manage.forms.updated_at') }}</th>
             <th />
@@ -140,7 +133,7 @@ const download = () => {
                 :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
                 size="small"
                 variant="tonal"
-                >{{ participationLabel(item.participation) }}</v-chip
+                >{{ statusLabel(item.participation) }}</v-chip
               >
             </td>
             <td class="text-no-wrap">{{ convertToDatetime(item.answered_at) }}</td>
@@ -160,7 +153,7 @@ const download = () => {
                 :color="item.participation === 'confirmed' ? 'primary' : 'secondary'"
                 size="small"
                 variant="tonal"
-                >{{ participationLabel(item.participation) }}</v-chip
+                >{{ statusLabel(item.participation) }}</v-chip
               >
             </div>
             <v-btn variant="tonal" size="small" @click="selected = item">{{ $t('manage.forms.detail') }}</v-btn>
@@ -185,7 +178,7 @@ const download = () => {
                 :color="selected.participation === 'confirmed' ? 'primary' : 'secondary'"
                 size="small"
                 variant="tonal"
-                >{{ participationLabel(selected.participation) }}</v-chip
+                >{{ statusLabel(selected.participation) }}</v-chip
               >
             </div>
             <dl class="d-flex flex-wrap ga-4 mb-6">
@@ -230,20 +223,5 @@ const download = () => {
 }
 .form-response-person {
   min-width: 0;
-}
-/* Materio の .v-btn-toggle .v-btn が inline-size: 44px 固定のため、ラベルが重なる */
-.form-response-filter {
-  flex: 0 0 auto;
-  width: max-content;
-  max-width: 100%;
-  height: auto;
-}
-.form-response-filter :deep(.v-btn) {
-  flex: 0 0 auto;
-  width: auto !important;
-  min-width: max-content;
-  inline-size: auto !important;
-  padding-inline: 16px;
-  white-space: nowrap;
 }
 </style>

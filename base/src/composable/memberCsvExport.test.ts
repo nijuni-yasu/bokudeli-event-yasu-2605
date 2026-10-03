@@ -194,9 +194,8 @@ describe('buildEventFormResponseCsv', () => {
   it('確定時ラベルを設問列にして複数選択を1セルに入れる', () => {
     const csv = buildEventFormResponseCsv([
       {
-        user_id: 'u1',
         display_name: '太郎',
-        participation_label: '参加確定',
+        participation_label: '注文済',
         answered_at: '2026/01/01 12:00',
         updated_at: '2026/01/02 12:00',
         answers: [
@@ -206,15 +205,17 @@ describe('buildEventFormResponseCsv', () => {
       },
     ])
     expect(csv).toContain('"設問:氏名","設問:希望"')
-    expect(csv).toContain('"u1","太郎","参加確定","2026/01/01 12:00","2026/01/02 12:00","山田","昼、夜"')
+    expect(csv).toContain('"ステータス"')
+    expect(csv).toContain('"ユーザー名"')
+    expect(csv).not.toContain('ユーザーID')
+    expect(csv).toContain('"太郎","注文済","2026/01/01 12:00","2026/01/02 12:00","山田","昼、夜"')
   })
 
   it('同じラベルの別設問は field_id で列を分ける', () => {
     const csv = buildEventFormResponseCsv([
       {
-        user_id: 'u1',
         display_name: '太郎',
-        participation_label: '参加確定',
+        participation_label: '注文済',
         answered_at: '2026/01/01 12:00',
         updated_at: '2026/01/02 12:00',
         answers: [
@@ -230,17 +231,15 @@ describe('buildEventFormResponseCsv', () => {
   it('同じ field_id でもラベルが違う列は分ける', () => {
     const csv = buildEventFormResponseCsv([
       {
-        user_id: 'u1',
         display_name: '太郎',
-        participation_label: '参加確定',
+        participation_label: '注文済',
         answered_at: '2026/01/01 12:00',
         updated_at: '2026/01/02 12:00',
         answers: [{ field_id: 'f1', field_label: '旧氏名', display_value: '山田' }],
       },
       {
-        user_id: 'u2',
         display_name: '花子',
-        participation_label: '参加確定',
+        participation_label: '注文済',
         answered_at: '2026/01/01 13:00',
         updated_at: '2026/01/02 13:00',
         answers: [{ field_id: 'f1', field_label: '氏名', display_value: '佐藤' }],

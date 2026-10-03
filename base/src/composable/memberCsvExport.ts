@@ -127,7 +127,6 @@ export const downloadMemberCsv = (filename: string, content: string): void => {
 }
 
 export type EventFormResponseCsvRow = {
-  user_id: string
   display_name: string
   participation_label: string
   answered_at: string
@@ -158,9 +157,8 @@ export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): stri
     labelCounts.set(column.field_label, (labelCounts.get(column.field_label) ?? 0) + 1)
   }
   const headers = [
-    'ユーザーID',
-    '表示名',
-    '参加状態',
+    'ユーザー名',
+    'ステータス',
     '回答日時',
     '更新日時',
     ...columns.map((column) =>
@@ -174,7 +172,6 @@ export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): stri
       row.answers.map((answer) => [formResponseColumnKey(answer.field_id, answer.field_label), answer.display_value]),
     )
     return [
-      row.user_id,
       row.display_name,
       row.participation_label,
       row.answered_at,
