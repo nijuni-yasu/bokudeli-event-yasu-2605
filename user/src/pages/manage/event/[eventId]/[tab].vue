@@ -22,6 +22,7 @@ import { injectionKeyEventEditHostActive } from '@shokujii/base/components/event
 import {
   getEventEditPathByRawStatus,
   getEventPath,
+  getManageCommunityFormsPath,
   getManageCommunityInvoicePath,
   getManageCommunityPath,
   getManageEventPath,
@@ -40,7 +41,10 @@ const tabName = useRoute().params.tab as string
 const eventStore = useEventStore(eventId) as EventStore
 const event = computed(() => eventStore.event)
 
-const tab = ref<Tabs>(tabs.find((t) => t === tabName) ?? tabs[0])
+const tab = ref<Tabs>(tabName === 'form' ? 'member' : (tabs.find((t) => t === tabName) ?? tabs[0]))
+if (tabName === 'form') {
+  void router.replace(`/manage/event/${eventId}/member`)
+}
 
 const isSettingsTabActive = computed(() => tab.value === 'settings')
 provide(injectionKeyEventEditHostActive, isSettingsTabActive)
@@ -226,7 +230,7 @@ const openEventPublicPage = () => {
           <EventFlyer :flyer-logo-url="flyerLogo" />
         </v-tabs-window-item>
         <v-tabs-window-item value="settings">
-          <EventSettings />
+          <EventSettings :resolve-forms-path="getManageCommunityFormsPath" />
         </v-tabs-window-item>
       </v-tabs-window>
     </v-col>

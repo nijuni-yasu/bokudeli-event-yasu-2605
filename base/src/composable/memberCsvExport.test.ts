@@ -3,6 +3,7 @@ import {
   buildCommunityMemberCsv,
   buildCommunityMemberCsvRows,
   buildCsvContent,
+  buildEventFormResponseCsv,
   buildEventMemberCsv,
   buildEventMemberCsvHeaders,
   buildEventMemberCsvRows,
@@ -186,6 +187,67 @@ describe('buildEventMemberCsv', () => {
     })
     const csv = buildEventMemberCsv([{ order: sampleOrder(), member, statusLabel: '注文済' }], eventHeaders)
     expect(csv).toContain('"こんにちは, ""Alice""です\nよろしく","食事,交流 / ""和食"""\n')
+  })
+})
+
+describe('buildEventFormResponseCsv', () => {
+  it('確定時ラベルを設問列にして複数選択を1セルに入れる', () => {
+    const csv = buildEventFormResponseCsv([
+      {
+        display_name: '太郎',
+        participation_label: '注文済',
+        answered_at: '2026/01/01 12:00',
+        updated_at: '2026/01/02 12:00',
+        answers: [
+          { field_id: 'f1', field_label: '氏名', display_value: '山田' },
+          { field_id: 'f2', field_label: '希望', display_value: '昼、夜' },
+        ],
+      },
+    ])
+    expect(csv).toContain('"設問:氏名","設問:希望"')
+    expect(csv).toContain('"ステータス"')
+    expect(csv).toContain('"ユーザー名"')
+    expect(csv).not.toContain('ユーザーID')
+    expect(csv).toContain('"太郎","注文済","2026/01/01 12:00","2026/01/02 12:00","山田","昼、夜"')
+  })
+
+  it('同じラベルの別設問は field_id で列を分ける', () => {
+    const csv = buildEventFormResponseCsv([
+      {
+        display_name: '太郎',
+        participation_label: '注文済',
+        answered_at: '2026/01/01 12:00',
+        updated_at: '2026/01/02 12:00',
+        answers: [
+          { field_id: 'f1', field_label: '備考', display_value: 'A' },
+          { field_id: 'f2', field_label: '備考', display_value: 'B' },
+        ],
+      },
+    ])
+    expect(csv).toContain('"設問:備考 (f1)","設問:備考 (f2)"')
+    expect(csv).toContain('"A","B"')
+  })
+
+  it('同じ field_id でもラベルが違う列は分ける', () => {
+    const csv = buildEventFormResponseCsv([
+      {
+        display_name: '太郎',
+        participation_label: '注文済',
+        answered_at: '2026/01/01 12:00',
+        updated_at: '2026/01/02 12:00',
+        answers: [{ field_id: 'f1', field_label: '旧氏名', display_value: '山田' }],
+      },
+      {
+        display_name: '花子',
+        participation_label: '注文済',
+        answered_at: '2026/01/01 13:00',
+        updated_at: '2026/01/02 13:00',
+        answers: [{ field_id: 'f1', field_label: '氏名', display_value: '佐藤' }],
+      },
+    ])
+    expect(csv).toContain('"設問:旧氏名","設問:氏名"')
+    expect(csv).toContain('"山田",""')
+    expect(csv).toContain('"","佐藤"')
   })
 })
 

@@ -125,3 +125,59 @@ export const buildEventMemberCsv = (
 export const downloadMemberCsv = (filename: string, content: string): void => {
   downloadCsv(filename, content)
 }
+
+export type EventFormResponseCsvRow = {
+  display_name: string
+  participation_label: string
+  answered_at: string
+  updated_at: string
+  answers: Array<{
+    field_id: string
+    field_label: string
+    display_value: string
+  }>
+}
+
+const formResponseColumnKey = (fieldId: string, fieldLabel: string): string => `${fieldId}\0${fieldLabel}`
+
+export const buildEventFormResponseCsv = (rows: EventFormResponseCsvRow[]): string => {
+  const columns: Array<{ field_id: string; field_label: string }> = []
+  const seen = new Set<string>()
+  for (const row of rows) {
+    for (const answer of row.answers) {
+      const key = formResponseColumnKey(answer.field_id, answer.field_label)
+      if (!seen.has(key)) {
+        seen.add(key)
+        columns.push({ field_id: answer.field_id, field_label: answer.field_label })
+      }
+    }
+  }
+  const labelCounts = new Map<string, number>()
+  for (const column of columns) {
+    labelCounts.set(column.field_label, (labelCounts.get(column.field_label) ?? 0) + 1)
+  }
+  const headers = [
+    'ユーザー名',
+    'ステータス',
+    '回答日時',
+    '更新日時',
+    ...columns.map((column) =>
+      (labelCounts.get(column.field_label) ?? 0) > 1
+        ? `設問:${column.field_label} (${column.field_id})`
+        : `設問:${column.field_label}`,
+    ),
+  ]
+  const csvRows = rows.map((row) => {
+    const byColumn = new Map(
+      row.answers.map((answer) => [formResponseColumnKey(answer.field_id, answer.field_label), answer.display_value]),
+    )
+    return [
+      row.display_name,
+      row.participation_label,
+      row.answered_at,
+      row.updated_at,
+      ...columns.map((column) => byColumn.get(formResponseColumnKey(column.field_id, column.field_label)) ?? ''),
+    ]
+  })
+  return buildCsvContent(headers, csvRows)
+}

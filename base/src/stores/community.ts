@@ -33,6 +33,7 @@ import {
   getCommunityIconStoragePath,
 } from '@shokujii/common/utils/storagePaths.js'
 import { AlbumItem } from '@shokujii/common/schemas/AlbumItem.js'
+import { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
 import { BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { getUserRef, useUserStore } from '@shokujii/base/stores/user.js'
 import { useEventStore, type EventStore } from '@shokujii/base/stores/event.js'
@@ -94,6 +95,15 @@ export class BokudeliAlbumItem extends AlbumItem {
     super(id, src)
     this.community_id = communityId
   }
+}
+
+const communityFormConverter: FirestoreDataConverter<CommunityForm> = {
+  toFirestore(form: CommunityForm): DocumentData {
+    return form.toFirestore()
+  },
+  fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): CommunityForm {
+    return new CommunityForm(snapshot.id, snapshot.data(options))
+  },
 }
 
 const albumItemConverter: FirestoreDataConverter<BokudeliAlbumItem> = {
@@ -375,6 +385,63 @@ export const useCommunityStore = (target: string | BokudeliCommunity, scope?: Co
         .flatMap((store) => (store.event == null ? [] : (store.event as BokudeliEvent)))
         .sort((a, b) => (b.event_start_datetime ?? 0) - (a.event_start_datetime ?? 0))
     })
+
+    const _communityForms = ref<CommunityForm[] | null>(null)
+    const communityFormsLoadFailed = ref(false)
+    let unsubscribeCommunityForms: Unsubscribe | null = null
+
+    const subscribeCommunityForms = (communityRef: DocumentReference<BokudeliCommunity>) => {
+      if (unsubscribeCommunityForms != null) {
+        return
+      }
+      const formsRef = collection(communityRef, 'forms').withConverter(communityFormConverter)
+      unsubscribeCommunityForms = onSnapshot(
+        formsRef,
+        (snapshot) => {
+          communityFormsLoadFailed.value = false
+          _communityForms.value = snapshot.docs.flatMap((d) => {
+            try {
+              return [d.data()]
+            } catch (err) {
+              console.error(err)
+              reportClientError(err, { documentPath: d.ref.path, severity: 'warn' })
+              return []
+            }
+          })
+        },
+        (err) => {
+          console.error('subscribeCommunityForms snapshot error', err)
+          reportClientError(err, { documentPath: `${communityRef.path}/forms`, severity: 'warn' })
+          _communityForms.value = []
+          communityFormsLoadFailed.value = true
+        },
+      )
+    }
+
+    const communityForms = computed(() => {
+      if (community.value == null) {
+        return null
+      }
+      const refRaw = _communityRef.value
+      if (refRaw != null) {
+        subscribeCommunityForms(toRaw(refRaw))
+      }
+      if (_communityForms.value == null) {
+        return null
+      }
+      return [..._communityForms.value].sort((a, b) => b.updated_at - a.updated_at)
+    })
+
+    const retryCommunityForms = () => {
+      unsubscribeCommunityForms?.()
+      unsubscribeCommunityForms = null
+      communityFormsLoadFailed.value = false
+      _communityForms.value = null
+      const refRaw = _communityRef.value
+      if (refRaw != null) {
+        subscribeCommunityForms(toRaw(refRaw))
+      }
+    }
 
     const _albumItems = ref<BokudeliAlbumItem[] | null>(null)
     let unsubscribeAlbumItems: Unsubscribe | null = null
@@ -675,6 +742,10 @@ export const useCommunityStore = (target: string | BokudeliCommunity, scope?: Co
 
     const unsubscribe = () => {
       retry = 0
+      unsubscribeCommunityForms?.()
+      unsubscribeCommunityForms = null
+      _communityForms.value = null
+      communityFormsLoadFailed.value = false
       unsubscribeAlbumItems?.()
       unsubscribeAlbumItems = null
       _albumItems.value = null
@@ -757,6 +828,9 @@ export const useCommunityStore = (target: string | BokudeliCommunity, scope?: Co
       iconImageUrl,
       members,
       events,
+      communityForms,
+      communityFormsLoadFailed,
+      retryCommunityForms,
       albumItems,
       getLoadedCommunity,
       updateCommunity,

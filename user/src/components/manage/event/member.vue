@@ -7,22 +7,19 @@ import { useCommunityStore } from '@shokujii/base/stores/community.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { useRouter } from 'vue-router'
-import { mdiEmailOutline } from '@mdi/js'
+import { mdiEmailOutline, mdiDownload } from '@mdi/js'
 import { getUserPath, getManageCommunitySettingsPath } from '@/router/utils'
-import { mdiFacebook, mdiDownload } from '@mdi/js'
-import XIcon from '@shokujii/base/icons/x.js'
-import instagramIcon from '@/assets/images/sns/sns_instagram.png'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import {
   buildEventMemberCsv,
   downloadMemberCsv,
   type EventMemberCsvRowInput,
 } from '@shokujii/base/composable/memberCsvExport.js'
-import { buildFacebookUrl, buildTwitterUrl, buildInstagramUrl } from '@shokujii/base/utils/buildSnsLinks.js'
 import { priceString } from '@shokujii/base/schemes/converter'
 import type { User } from '@shokujii/common/schemas/User'
 import { convertToDatetime } from '@shokujii/common/utils/datetime.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
+import EventFormResponsesPanel from '@shokujii/base/components/manage/event/EventFormResponsesPanel.vue'
 
 const { t: $t } = useI18n()
 const route = useRoute()
@@ -66,7 +63,22 @@ const canceledMenus = computed(() =>
     .filter(([order]) => order.status === 'canceled')
     .sort(([a], [b]) => (a.canceled_at ?? 0) - (b.canceled_at ?? 0)),
 )
-const tables = computed(() => [orderedMenus.value, processingMenus.value, cartMenus.value, canceledMenus.value])
+const orderRows = computed(() => [
+  ...orderedMenus.value,
+  ...processingMenus.value,
+  ...cartMenus.value,
+  ...canceledMenus.value,
+])
+const orderStatusCounts = computed(() =>
+  (
+    [
+      { status: 'ordered', count: orderedMenus.value.length },
+      { status: 'processing', count: processingMenus.value.length },
+      { status: 'in_cart', count: cartMenus.value.length },
+      { status: 'canceled', count: canceledMenus.value.length },
+    ] satisfies Array<{ status: EventMemberOrder['status']; count: number }>
+  ).filter((item) => item.count > 0),
+)
 
 const isCommunityBill = computed(() => eventStore.event?.event_payment === 'community_bill')
 
@@ -98,29 +110,13 @@ const onEmailSent = () => {
 const onEmailFailed = () => {
   // エラー通知は EmailDialog 内で表示
 }
-const openNewLink = (url: string) => {
-  window.open(url, '_blank')
-}
-const getDateString = (order: EventMemberOrder) => {
-  switch (order.status) {
-    case 'ordered':
-      return convertToDatetime(order.updated_at)
-    case 'processing':
-      return convertToDatetime(order.processing_at ?? order.updated_at)
-    case 'in_cart':
-      return convertToDatetime(order.carted_at)
-    case 'canceled':
-      return order.canceled_at == null ? '' : convertToDatetime(order.canceled_at)
-  }
-}
+const orderStatusColor = (status: EventMemberOrder['status']) => (status === 'ordered' ? 'primary' : 'secondary')
 const allOrderRows = computed((): EventMemberCsvRowInput[] =>
-  [...orderedMenus.value, ...processingMenus.value, ...cartMenus.value, ...canceledMenus.value].map(
-    ([order, member]) => ({
-      order,
-      member,
-      statusLabel: $t(`manage.member.${order.status}`),
-    }),
-  ),
+  orderRows.value.map(([order, member]) => ({
+    order,
+    member,
+    statusLabel: $t(`manage.member.${order.status}`),
+  })),
 )
 
 const downloadCsvFile = () => {
@@ -144,7 +140,20 @@ const downloadCsvFile = () => {
 <template>
   <v-container class="manage-container">
     <v-row class="justify-center">
-      <v-col md="12" sm="12" cols="12" class="d-flex justify-end">
+      <v-col md="12" sm="12" cols="12" class="d-flex flex-wrap align-center justify-space-between ga-4">
+        <div class="d-flex flex-wrap align-center ga-2">
+          <h2 class="text-h5 font-weight-bold">{{ $t('manage.member.orders_title') }}</h2>
+          <v-chip
+            v-for="item in orderStatusCounts"
+            :key="item.status"
+            :color="orderStatusColor(item.status)"
+            size="small"
+            variant="tonal"
+          >
+            {{ $t(`manage.member.${item.status}`) }}
+            {{ $t('manage.member.orders_count', { count: item.count }) }}
+          </v-chip>
+        </div>
         <v-btn variant="outlined" :prepend-icon="mdiDownload" @click="downloadCsvFile">{{
           $t('manage.member.csv_download')
         }}</v-btn>
@@ -152,110 +161,72 @@ const downloadCsvFile = () => {
     </v-row>
     <v-row class="justify-center">
       <v-col md="12" sm="12" cols="12">
-        <v-card
-          v-if="orderedMenus.length + processingMenus.length + cartMenus.length + canceledMenus.length === 0"
-          class="pa-10"
-        >
-          {{ $t('manage.member.no_member') }}
+        <v-card v-if="orderRows.length === 0">
+          <p class="text-body-1 ma-0 px-4 py-4">{{ $t('manage.member.no_member') }}</p>
         </v-card>
-        <v-card v-else class="pa-10">
-          <template v-for="menus in tables">
-            <v-row v-if="menus.length !== 0" :key="menus[0][0].event_id" class="justify-center">
-              <v-col md="12" sm="12" cols="12">
-                <v-col cols="12" class="text-h5 font-weight-bold mt-4 mb-1">
-                  <v-row> {{ $t(`manage.member.${menus[0][0].status}`) }} </v-row>
-                </v-col>
-                <v-table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th colspan="2">{{ $t('manage.member.name') }}</th>
-                      <th colspan="3"></th>
-                      <th>
-                        <v-spacer />
-                      </th>
-                      <th>{{ $t('manage.member.order') }}</th>
-                      <th class="text-right amount-cell">{{ $t('manage.member.menu_price') }}</th>
-                      <th v-if="isCommunityBill" class="text-right amount-cell">
-                        {{ $t('manage.member.community_bill_off_amount') }}
-                      </th>
-                      <th>{{ $t(`manage.member.date.${menus[0][0].status}`) }}</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="([order, member], i) of menus" :key="order.order_id">
-                      <td class="number-cell text-body-2">{{ i + 1 }}</td>
-                      <td class="minimum-cell">
-                        <router-link :to="getUserPath(member.user_id)">
-                          <UserAvatar :user="member"></UserAvatar>
-                        </router-link>
-                      </td>
-                      <td class="name-cell">
-                        <router-link :to="getUserPath(member.user_id)" style="color: rgba(var(--v-theme-on-surface))">
-                          {{ member.user_name }}
-                        </router-link>
-                      </td>
-                      <td class="minimum-cell">
-                        <v-btn
-                          v-if="member.user_sns_facebook !== ''"
-                          :icon="mdiFacebook"
-                          color="#1877F2"
-                          density="compact"
-                          variant="text"
-                          @click="openNewLink(buildFacebookUrl(member.user_sns_facebook!))"
-                        />
-                      </td>
-                      <td class="minimum-cell">
-                        <v-btn
-                          v-if="member.user_sns_twitter !== ''"
-                          :icon="XIcon"
-                          color="grey-900"
-                          density="compact"
-                          variant="text"
-                          @click="openNewLink(buildTwitterUrl(member.user_sns_twitter!))"
-                        />
-                      </td>
-                      <td class="minimum-cell">
-                        <v-btn
-                          v-if="member.user_sns_instagram !== ''"
-                          density="compact"
-                          variant="text"
-                          icon=""
-                          @click="openNewLink(buildInstagramUrl(member.user_sns_instagram!))"
-                        >
-                          <img :src="instagramIcon" alt="Instagram" style="height: 24px; border-radius: 20%" />
-                        </v-btn>
-                      </td>
-                      <td>
-                        <v-spacer />
-                      </td>
-                      <td class="menu-cell text-body-2">
-                        {{ formatOrderMenuDisplayName(order.menu_name, order.selected_options) }}
-                      </td>
-                      <td class="text-right text-body-2 amount-cell">¥{{ priceString(order.menu_price) }}</td>
-                      <td v-if="isCommunityBill" class="text-right text-body-2 amount-cell">
-                        ¥{{ priceString(order.pay_community_bill_off_amount ?? 0) }}
-                      </td>
-                      <td class="date-cell text-body-2">
-                        {{ getDateString(order) }}
-                      </td>
-                      <td class="text-center number-cell">
-                        <v-btn
-                          :icon="mdiEmailOutline"
-                          variant="text"
-                          size="small"
-                          :color="canSendEmail ? undefined : 'grey-400'"
-                          @click="clickEmailButton(member)"
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </v-col>
-            </v-row>
-          </template>
+        <v-card v-else class="overflow-hidden">
+          <v-table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th colspan="2">{{ $t('manage.member.name') }}</th>
+                <th>{{ $t('manage.member.order') }}</th>
+                <th class="text-right amount-cell">{{ $t('manage.member.menu_price') }}</th>
+                <th v-if="isCommunityBill" class="text-right amount-cell">
+                  {{ $t('manage.member.community_bill_off_amount') }}
+                </th>
+                <th>{{ $t('manage.member.status') }}</th>
+                <th>{{ $t('manage.member.updated_at') }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="([order, member], i) of orderRows" :key="order.order_id">
+                <td class="number-cell text-body-2">{{ i + 1 }}</td>
+                <td class="minimum-cell">
+                  <router-link :to="getUserPath(member.user_id)">
+                    <UserAvatar :user="member"></UserAvatar>
+                  </router-link>
+                </td>
+                <td class="name-cell">
+                  <router-link :to="getUserPath(member.user_id)" style="color: rgba(var(--v-theme-on-surface))">
+                    {{ member.user_name }}
+                  </router-link>
+                </td>
+                <td class="menu-cell text-body-2">
+                  {{ formatOrderMenuDisplayName(order.menu_name, order.selected_options) }}
+                </td>
+                <td class="text-right text-body-2 amount-cell">¥{{ priceString(order.menu_price) }}</td>
+                <td v-if="isCommunityBill" class="text-right text-body-2 amount-cell">
+                  ¥{{ priceString(order.pay_community_bill_off_amount ?? 0) }}
+                </td>
+                <td>
+                  <v-chip :color="orderStatusColor(order.status)" size="small" variant="tonal">{{
+                    $t(`manage.member.${order.status}`)
+                  }}</v-chip>
+                </td>
+                <td class="date-cell text-body-2">
+                  {{ convertToDatetime(order.updated_at) }}
+                </td>
+                <td class="text-center number-cell">
+                  <v-btn
+                    :icon="mdiEmailOutline"
+                    variant="text"
+                    size="small"
+                    :color="canSendEmail ? undefined : 'grey-400'"
+                    @click="clickEmailButton(member)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
         </v-card>
+        <EventFormResponsesPanel
+          v-if="eventStore.event != null"
+          class="mt-8"
+          :event="eventStore.event"
+          :resolve-user-path="getUserPath"
+        />
       </v-col>
     </v-row>
   </v-container>

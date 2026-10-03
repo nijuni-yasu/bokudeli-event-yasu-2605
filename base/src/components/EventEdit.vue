@@ -16,6 +16,15 @@ import EventBasicInfoCard from '@shokujii/base/components/eventcreate/EventBasic
 import EventShop from '@shokujii/base/components/eventcreate/EventShop.vue'
 import EventMenu from '@shokujii/base/components/eventcreate/EventMenu.vue'
 import EventDetailCard from '@shokujii/base/components/eventcreate/EventDetailCard.vue'
+import EventFormSelectCard from '@shokujii/base/components/eventcreate/EventFormSelectCard.vue'
+import {
+  clearEventFormConfig,
+  getEventFormConfig,
+  listCommunityForms,
+  setEventFormFromCommunity,
+} from '@shokujii/base/apis/form.js'
+import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
+import { isEventFormEditableStatus } from '@shokujii/common/schemas/formFields.js'
 import EventShopNotice from '@shokujii/base/components/eventcreate/EventShopNotice.vue'
 import EventEditStepNav from '@shokujii/base/components/eventcreate/EventEditStepNav.vue'
 import { eventPaymentUiStrategyFromEnterpriseId } from '@shokujii/base/composable/eventPaymentUiStrategy.js'
@@ -36,6 +45,7 @@ import {
 } from '@shokujii/common/utils/eventMenuConverter.js'
 import { useRouter } from 'vue-router'
 import { getCommunityPath, getManageCommunityAlbumPath } from '@/router/utils'
+import type { ResolveManageCommunityFormsPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import { fetchLocationByPostalcode, LatLogLocation } from '@shokujii/base/utils/fetchLocation'
 import { updateEventDeadlineFromShop } from '@shokujii/common/utils/eventShopDeadline.js'
 import {
@@ -62,6 +72,7 @@ const props = defineProps<{
   communityAccount: string
   eventId?: string
   step?: string
+  resolveFormsPath: ResolveManageCommunityFormsPathFn
 }>()
 
 const emits = defineEmits<{
@@ -554,6 +565,122 @@ const canUseSecondarySave = computed(() => {
   return hasFirestoreDraft.value
 })
 
+const selectedCommunityFormId = ref('')
+const persistedCommunityFormId = ref<string | null>(null)
+const communityForms = ref<CommunityFormSummary[]>([])
+const eventFormLoading = ref(false)
+const eventFormLoadFailed = ref(false)
+
+const canEditEventForm = computed(() => {
+  const status = event.value?.event_status.value
+  return status != null && isEventFormEditableStatus(status)
+})
+
+let eventFormLoadSeq = 0
+let eventFormLoadPromise: Promise<void> | null = null
+
+const loadEventFormSelection = async () => {
+  const seq = ++eventFormLoadSeq
+  const run = async () => {
+    if (paymentUiStrategy.value.isEnterpriseMode) {
+      if (seq !== eventFormLoadSeq) {
+        return
+      }
+      persistedCommunityFormId.value = ''
+      selectedCommunityFormId.value = ''
+      communityForms.value = []
+      eventFormLoadFailed.value = false
+      return
+    }
+    const communityId = communityStore.community?.community_id
+    if (communityId == null || communityId === '') {
+      return
+    }
+    eventFormLoading.value = true
+    eventFormLoadFailed.value = false
+    try {
+      const eventId = persistedEventIdForMenus.value
+      const [formsRes, configRes] = await Promise.all([
+        listCommunityForms({ community_id: communityId }),
+        eventId != null && eventId !== ''
+          ? getEventFormConfig({ community_id: communityId, event_id: eventId })
+          : Promise.resolve({ data: { config: null } }),
+      ])
+      if (seq !== eventFormLoadSeq) {
+        return
+      }
+      const assigned = configRes.data.config?.source_form_id ?? ''
+      communityForms.value = formsRes.data.forms.filter((form) => !form.archived || form.form_id === assigned)
+      persistedCommunityFormId.value = assigned
+      selectedCommunityFormId.value = assigned
+    } catch {
+      if (seq !== eventFormLoadSeq) {
+        return
+      }
+      eventFormLoadFailed.value = true
+    } finally {
+      if (seq === eventFormLoadSeq) {
+        eventFormLoading.value = false
+      }
+    }
+  }
+  const pending = run()
+  eventFormLoadPromise = pending
+  await pending
+}
+
+watch(
+  () => [
+    communityStore.community?.community_id,
+    persistedEventIdForMenus.value,
+    paymentUiStrategy.value.isEnterpriseMode,
+  ],
+  () => {
+    void loadEventFormSelection()
+  },
+  { immediate: true },
+)
+
+const persistEventFormSelection = async (eventId: string): Promise<boolean> => {
+  if (paymentUiStrategy.value.isEnterpriseMode) {
+    return true
+  }
+  if (!canEditEventForm.value) {
+    return true
+  }
+  let pending = eventFormLoadPromise
+  while (pending != null) {
+    await pending
+    if (eventFormLoadPromise === pending) {
+      break
+    }
+    pending = eventFormLoadPromise
+  }
+  if (persistedCommunityFormId.value == null || eventFormLoadFailed.value) {
+    return true
+  }
+  const communityId = communityStore.community?.community_id
+  if (communityId == null || communityId === '') {
+    return false
+  }
+  const selected = selectedCommunityFormId.value
+  if (selected === persistedCommunityFormId.value) {
+    return true
+  }
+  try {
+    if (selected === '') {
+      await clearEventFormConfig({ community_id: communityId, event_id: eventId })
+    } else {
+      await setEventFormFromCommunity({ community_id: communityId, event_id: eventId, form_id: selected })
+    }
+    persistedCommunityFormId.value = selected
+    return true
+  } catch {
+    showNotification($t('event_edit.form_save_failed'), 'error')
+    return false
+  }
+}
+
 watch(
   () => communityStore.community?.is_approved,
   (is_approved) => {
@@ -747,6 +874,10 @@ const submitReservation = async () => {
       showReserveValidationFailure(result.reasonCodes)
       return
     }
+    // 申請メールはステータス更新で送る。フォーム選択の失敗で申請だけ先に確定しないよう、先に保存する。
+    if (!(await persistEventFormSelection(ev.event_id))) {
+      return
+    }
     ev.event_status = { value: 'applying_reservation', shop_comment: '' }
     const eventStore = createAppEventStore(ev.event_id)
     await eventStore.updateEvent(ev)
@@ -795,6 +926,9 @@ const handleSecondarySave = async () => {
       showNotification($t('event_edit.draft_save_failed'), 'error')
       return
     }
+    if (!(await persistEventFormSelection(ev.event_id))) {
+      return
+    }
     showNotification($t('event_edit.saved'), 'success')
   } catch (error) {
     console.error('Failed to save draft:', error)
@@ -809,6 +943,9 @@ const secondarySaveDisabledForStep = (step: number): boolean => {
     return true
   }
   if (isLoadingMenu.value) {
+    return true
+  }
+  if (eventFormLoading.value) {
     return true
   }
   const e = event.value
@@ -827,7 +964,7 @@ const secondarySaveDisabledForStep = (step: number): boolean => {
     case 3:
       return selectedMenuCount.value === 0
     case 4:
-      return !isValid4.value
+      return !isValid4.value || eventFormLoading.value
     default:
       return true
   }
@@ -839,6 +976,9 @@ const submit = async () => {
     const ev = props.eventId != null || hasFirestoreDraft.value ? await updateEventDraft() : await createEventDraft()
     if (ev == null) {
       showNotification($t('manage.event.save_failed'), 'error')
+      return
+    }
+    if (!(await persistEventFormSelection(ev.event_id))) {
       return
     }
     showNotification($t('manage.event.updated_success', { name: ev.event_name }), 'success')
@@ -910,7 +1050,7 @@ const handleStep1Next = async () => {
 }
 
 const handleStep4Next = async () => {
-  if (isProcessing.value) {
+  if (isProcessing.value || eventFormLoading.value) {
     return
   }
   const ev = event.value
@@ -1148,6 +1288,18 @@ const stepperItems = computed(() => [
                 :is-new="props.eventId == null && !hasFirestoreDraft"
                 :payment-ui-strategy="paymentUiStrategy"
               />
+              <event-form-select-card
+                v-model="selectedCommunityFormId"
+                :items="communityForms"
+                :loading="eventFormLoading"
+                :load-failed="eventFormLoadFailed"
+                :disabled="isProcessing"
+                :forms-path="props.resolveFormsPath(props.communityAccount)"
+                :is-enterprise="paymentUiStrategy.isEnterpriseMode"
+                :canceled="event?.event_status.value === 'event_canceled'"
+                :not-editable="event != null && !canEditEventForm && event.event_status.value !== 'event_canceled'"
+                @retry="loadEventFormSelection"
+              />
               <event-edit-step-nav :visible="stepper === 4">
                 <v-btn
                   color="primary"
@@ -1166,7 +1318,7 @@ const stepperItems = computed(() => [
                   rounded="xl"
                   min-width="168"
                   :append-icon="mdiChevronRight"
-                  :disabled="isProcessing"
+                  :disabled="isProcessing || eventFormLoading"
                   @click="handleStep4Next"
                 >
                   {{ $t('event_edit.next') }}

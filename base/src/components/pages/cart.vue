@@ -2,11 +2,9 @@
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { getAuth } from 'firebase/auth'
 import { FirebaseError } from 'firebase/app'
 import { getCommunityPath, getEventPath, getProfile } from '@/router/utils'
-import { BokudeliEvent } from '@shokujii/base/stores/event.js'
-import { priceString } from '@shokujii/base/schemes/converter'
+import { BokudeliEvent, useEventStore, type EventStoreOptions } from '@shokujii/base/stores/event'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import {
   buildMenuPriceLines,
@@ -15,7 +13,7 @@ import {
   type MenuPriceLine,
 } from '@shokujii/common/utils/menuOption.js'
 import { CartItem, useCurrentUserStore } from '@shokujii/base/stores/currentUser'
-import { useEventStore, buildEventStoreOptions, type EventStoreOptions } from '@shokujii/base/stores/event'
+import { priceString } from '@shokujii/base/schemes/converter'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { previewUserPaymentFee } from '@shokujii/common/utils/paymentUserFee.js'
 import {
@@ -30,7 +28,6 @@ import {
   sortEventMemberOrdersForEnterpriseSubsidyReplay,
   sortOrderIdsForEnterpriseSubsidyReplay,
 } from '@shokujii/common/utils/eventMemberOrderSort.js'
-import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import MinimumParticipantsDialog from '@shokujii/base/components/MinimumParticipantsDialog.vue'
@@ -53,19 +50,28 @@ import {
 } from '@mdi/js'
 import { useI18n } from 'vue-i18n'
 import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
+import { getEventFormPresence } from '@shokujii/base/apis/form'
 import {
   pfCartEnterpriseSubsidyBudgetLoader,
   fetchCartEnterpriseSubsidyBudget,
   type CartEnterpriseSubsidyBudget,
   type CartEnterpriseSubsidyBudgetLoader,
 } from '@shokujii/base/composable/cartMonthlyUsage.js'
-import type { ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import type { ResolveFormAnswerPathFn, ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import {
   loadMenuLimitRemainingMap,
   type MenuLimitRemainingInfo,
 } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
+import {
+  CART_BLOCK_MESSAGE_KEY,
+  findCartOrderBlock,
+  findProfileGap,
+  PROFILE_GAP_MESSAGE_KEY,
+  resolveCartEventStoreOptions,
+  type CartOrderBlockReason,
+} from '@shokujii/base/composable/cartOrderGate.js'
 
 const props = withDefaults(
   defineProps<{
@@ -73,12 +79,15 @@ const props = withDefaults(
     enterpriseSubsidyBudgetLoader?: CartEnterpriseSubsidyBudgetLoader
     /** 注文確定後の注文履歴 URL（各 app の cart shell から注入） */
     resolveOrdersPath: ResolveOrdersPathFn
+    /** PF の事前アンケート回答画面。未指定またはエンプラではフォーム導線を出さない */
+    resolveFormAnswerPath?: ResolveFormAnswerPathFn
     /** エンプラ等: SNS・ハッシュタグ行を非表示 */
     hideShareSns?: boolean
   }>(),
   {
     enterpriseSubsidyBudgetLoader: pfCartEnterpriseSubsidyBudgetLoader,
     hideShareSns: false,
+    resolveFormAnswerPath: undefined,
   },
 )
 
@@ -94,17 +103,7 @@ const {
 const userId = computed(() => currentUser.value?.id ?? '')
 
 async function resolveEventStoreOptions(): Promise<EventStoreOptions> {
-  const auth = getAuth()
-  const user = auth.currentUser
-  if (user == null) {
-    return {}
-  }
-  try {
-    const token = await user.getIdTokenResult()
-    return buildEventStoreOptions(token.claims.enterprise_id as string | undefined)
-  } catch {
-    return {}
-  }
+  return resolveCartEventStoreOptions()
 }
 
 type GroupedMenu = {
@@ -447,6 +446,96 @@ const enrichedCart = computed<EnrichedCartItem[] | null>(() => {
 const findEnrichedCartItem = (cartItem: CartItem): EnrichedCartItem | undefined =>
   enrichedCart.value?.find((item) => item.event.event_id === cartItem.event.event_id)
 
+type FormPresence = 'loading' | 'yes' | 'no' | 'error'
+const formPresenceByKey = ref<Record<string, FormPresence>>({})
+
+const formPresenceKey = (communityId: string, eventId: string): string => `${communityId}\u0000${eventId}`
+
+const isPfEvent = (event: BokudeliEvent): boolean => event.enterprise_id == null || event.enterprise_id === ''
+
+const loadFormPresence = async (event: BokudeliEvent, force = false) => {
+  const key = formPresenceKey(event.community_id, event.event_id)
+  if (!isPfEvent(event) || props.resolveFormAnswerPath == null) {
+    formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'no' }
+    return
+  }
+  if (!force && (formPresenceByKey.value[key] === 'yes' || formPresenceByKey.value[key] === 'no')) {
+    return
+  }
+  formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'loading' }
+  try {
+    const response = await getEventFormPresence({
+      community_id: event.community_id,
+      event_id: event.event_id,
+    })
+    formPresenceByKey.value = {
+      ...formPresenceByKey.value,
+      [key]: response.data.has_form ? 'yes' : 'no',
+    }
+  } catch {
+    formPresenceByKey.value = { ...formPresenceByKey.value, [key]: 'error' }
+  }
+}
+
+watch(
+  () =>
+    enrichedCart.value?.map((item) => formPresenceKey(item.event.community_id, item.event.event_id)).join(',') ?? '',
+  () => {
+    for (const item of enrichedCart.value ?? []) {
+      void loadFormPresence(item.event)
+    }
+  },
+  { immediate: true },
+)
+
+const formPresenceOf = (event: BokudeliEvent): FormPresence =>
+  formPresenceByKey.value[formPresenceKey(event.community_id, event.event_id)] ?? 'loading'
+
+const primaryCartButtonLabel = (item: EnrichedCartItem): string => {
+  if (formPresenceOf(item.event) === 'yes') {
+    return $t('cart.answer_pre_event_form')
+  }
+  return needsStripeCheckoutForItem(item) ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event')
+}
+
+const onPrimaryCartButton = async (item: EnrichedCartItem) => {
+  const presence = formPresenceOf(item.event)
+  if (presence === 'loading') {
+    return
+  }
+  // 一時的な取得失敗も、次の注文操作で1回だけ再取得する。
+  if (presence === 'no' || presence === 'error') {
+    await loadFormPresence(item.event, true)
+  }
+  const latestPresence = formPresenceOf(item.event)
+  if (latestPresence === 'loading') {
+    return
+  }
+  if (latestPresence === 'error') {
+    alertBody.value = $t('cart.form_presence_failed')
+    return
+  }
+  if (latestPresence === 'yes') {
+    const path = props.resolveFormAnswerPath
+    if (path == null) {
+      alertBody.value = $t('cart.form_presence_failed')
+      return
+    }
+    try {
+      if (!(await ensureCartOrderAllowed(item))) {
+        return
+      }
+    } catch (error) {
+      console.error('Failed to check cart before form:', error)
+      alertBody.value = $t('cart.order_failed')
+      return
+    }
+    await router.push(path({ communityAccount: item.event.community_account, eventId: item.event.event_id }))
+    return
+  }
+  await showConfirm(item)
+}
+
 const needsStripeCheckoutForItem = (item: EnrichedCartItem): boolean => {
   const { event, orders } = item
   if (event.event_payment === 'user_advance') return item.totalPrice > 0
@@ -460,54 +549,24 @@ const userPaymentFeeForItem = (item: EnrichedCartItem): number =>
 
 const checkoutTotalForItem = (item: EnrichedCartItem): number => item.totalPrice + userPaymentFeeForItem(item)
 
-const checkCart = async (
-  cartItem: CartItem,
-): Promise<true | 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu' | 'menuLimitMenu'> => {
-  const { event, orders } = cartItem
-
-  if (!isWithinOrderDeadline(event.event_deadline_datetime)) {
-    return 'deadline'
-  }
-
-  const eventStoreOptions = await resolveEventStoreOptions()
-  const eventStore = useEventStore(event.event_id, eventStoreOptions)
-  const members = await eventStore.getLoadedMembers()
-  if (members.length >= event.event_max_people) {
-    return 'limitPeople'
-  }
-
-  const eventMenus = await eventStore.getLoadedMenus()
-  const menuIds = new Set(orders.map((o) => o.menu_id))
-  for (const menuId of menuIds) {
-    const eventMenu = eventMenus.find((m) => m.id === menuId)
-    if (eventMenu == null || !eventMenu.is_selected) {
-      return 'unselectedMenu'
-    }
-    if (eventMenu.is_sold_out) {
-      return 'soldOutMenu'
-    }
-  }
-
-  const limitMap = await loadMenuLimitRemainingMap(event.event_id, eventStoreOptions)
-  if (limitMap != null && limitMap.size > 0) {
-    const menuCounts = new Map<string, number>()
-    for (const order of orders) {
-      menuCounts.set(order.menu_id, (menuCounts.get(order.menu_id) ?? 0) + 1)
-    }
-    for (const [menuId, cartCount] of menuCounts) {
-      const limitInfo = limitMap.get(menuId)
-      if (limitInfo == null) {
-        continue
-      }
-      if (cartCount > limitInfo.remaining) {
-        return 'menuLimitMenu'
-      }
-    }
-  }
-
-  return true
+const showDisableAlert = (reason: CartOrderBlockReason) => {
+  alertBody.value = $t(CART_BLOCK_MESSAGE_KEY[reason])
 }
 
+const ensureCartOrderAllowed = async (cartItem: CartItem): Promise<boolean> => {
+  const gap = findProfileGap(currentUser.value, currentUserPersonalInformation.value)
+  if (gap != null) {
+    targetUserParameter.value = $t(PROFILE_GAP_MESSAGE_KEY[gap])
+    openUserParameterConfirm.value = true
+    return false
+  }
+  const block = await findCartOrderBlock(cartItem)
+  if (block != null) {
+    showDisableAlert(block)
+    return false
+  }
+  return true
+}
 const isOpenAlert = ref(false)
 const alertMessage = ref('')
 
@@ -520,26 +579,6 @@ const alertBody = computed({
     isOpenAlert.value = true
   },
 })
-
-const showDisableAlert = (reason: 'deadline' | 'limitPeople' | 'unselectedMenu' | 'soldOutMenu' | 'menuLimitMenu') => {
-  switch (reason) {
-    case 'deadline':
-      alertBody.value = $t('cart.cannot_order_deadline')
-      break
-    case 'limitPeople':
-      alertBody.value = $t('cart.cannot_order_limit_people')
-      break
-    case 'unselectedMenu':
-      alertBody.value = $t('cart.cannot_order_unselected_menu')
-      break
-    case 'soldOutMenu':
-      alertBody.value = $t('cart.cannot_order_sold_out')
-      break
-    case 'menuLimitMenu':
-      alertBody.value = $t('cart.cannot_order_menu_limit')
-      break
-  }
-}
 
 const openConfirmOrder = ref(false)
 const confirmDialogMessage = ref('')
@@ -633,25 +672,13 @@ const paymentMessageForItem = (item: EnrichedCartItem) => {
 const openUserParameterConfirm = ref(false)
 const targetUserParameter = ref('')
 const showConfirm = async (cartItem: CartItem) => {
-  if (currentUser.value?.user_name == null || currentUser.value.user_name === '') {
-    targetUserParameter.value = $t('cart.doesnt_exists_user_name')
-    openUserParameterConfirm.value = true
-    return
-  }
-  if (!currentUser.value?.user_image_url) {
-    targetUserParameter.value = $t('cart.doesnt_exists_user_image')
-    openUserParameterConfirm.value = true
-    return
-  }
-  if (!currentUserPersonalInformation.value?.user_email) {
-    targetUserParameter.value = $t('cart.doesnt_exists_user_email')
-    openUserParameterConfirm.value = true
-    return
-  }
-
-  const checkResult = await checkCart(cartItem)
-  if (checkResult !== true) {
-    showDisableAlert(checkResult)
+  try {
+    if (!(await ensureCartOrderAllowed(cartItem))) {
+      return
+    }
+  } catch (error) {
+    console.error('Failed to check cart before order:', error)
+    alertBody.value = $t('cart.order_failed')
     return
   }
 
@@ -1155,15 +1182,13 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
               class="mt-8 text-md-h4 text-h5"
               color="grey-900"
               size="x-large"
-              :loading="isOrderProcessing"
+              :loading="isOrderProcessing || formPresenceOf(cartItem.event) === 'loading'"
               rounded="pill"
               elevation="5"
               width="85%"
-              @click="showConfirm(cartItem)"
+              @click="onPrimaryCartButton(cartItem)"
             >
-              {{
-                needsStripeCheckoutForItem(cartItem) ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event')
-              }}
+              {{ primaryCartButtonLabel(cartItem) }}
             </v-btn>
           </v-col>
         </v-row>

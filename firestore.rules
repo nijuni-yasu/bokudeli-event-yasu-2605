@@ -340,6 +340,20 @@ service cloud.firestore {
                 match /menus/{menuId} {
                     allow read: if true
                 }
+                match /form_configs/{docId} {
+                    allow read, write: if false;
+                }
+                match /form_responses/{userId} {
+                    allow read, write: if false;
+                }
+                match /form_checkout_attempts/{attemptId} {
+                    allow read, write: if false;
+                }
+            }
+            match /forms/{formId} {
+                // 定義の閲覧はコミュマネまたはサポート。作成・更新・複製・アーカイブは Functions のみ
+                allow read: if isManager() || isSupport();
+                allow write: if false;
             }
             match /members/{memberId} {
                 allow read: if true

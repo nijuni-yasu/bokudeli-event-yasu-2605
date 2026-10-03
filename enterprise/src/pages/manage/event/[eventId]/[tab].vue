@@ -22,6 +22,7 @@ import { injectionKeyEventEditHostActive } from '@shokujii/base/components/event
 import {
   getEventEditPathByRawStatus,
   getEventPath,
+  getManageCommunityFormsPath,
   getManageCommunityInvoicePath,
   getManageCommunityPath,
   getManageEventPath,
@@ -228,7 +229,7 @@ const openEventPublicPage = () => {
           <EventFlyer :flyer-logo-url="flyerLogo" />
         </v-tabs-window-item>
         <v-tabs-window-item value="settings">
-          <EventSettings />
+          <EventSettings :resolve-forms-path="getManageCommunityFormsPath" />
         </v-tabs-window-item>
       </v-tabs-window>
     </v-col>
