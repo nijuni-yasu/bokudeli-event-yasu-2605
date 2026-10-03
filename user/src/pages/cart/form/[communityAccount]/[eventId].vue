@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CartFormAnswer from '@shokujii/base/components/forms/CartFormAnswer.vue'
-import { getCartPath, getEventPath, getOrdersPathAfterOrder } from '@/router/utils'
+import { getCartPath, getEventPath, getOrdersPathAfterOrder, getProfile } from '@/router/utils'
 
 const route = useRoute()
 const eventId = computed(() => {
@@ -26,5 +26,6 @@ const communityAccount = computed(() => {
     :resolve-orders-path="getOrdersPathAfterOrder"
     :resolve-cart-path="getCartPath"
     :resolve-event-path="getEventPath"
+    :resolve-profile-path="() => getProfile(false)"
   />
 </template>

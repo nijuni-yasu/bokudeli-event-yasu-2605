@@ -8,6 +8,7 @@ export type ResolveCommunityPathFn = (communityAccount: string) => RouteLocation
 /** 注文確定後に注文履歴へ遷移する際の URL（成功ダイアログ用 query 付き） */
 export type ResolveOrdersPathFn = (params: { eventId: string; communityAccount: string }) => RouteLocationRaw
 export type ResolveFormAnswerPathFn = (params: { communityAccount: string; eventId: string }) => string
+export type ResolveProfilePathFn = () => RouteLocationRaw
 export type ResolveManageCommunityFormsPathFn = (communityAccount: string) => RouteLocationRaw
 export type ResolveManageCommunityFormNewPathFn = (communityAccount: string) => RouteLocationRaw
 export type ResolveManageCommunityFormEditPathFn = (communityAccount: string, formId: string) => RouteLocationRaw

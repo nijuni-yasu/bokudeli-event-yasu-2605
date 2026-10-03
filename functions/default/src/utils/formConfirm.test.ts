@@ -7,6 +7,7 @@ import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import {
   isAttemptForCurrentForm,
   isConfirmedResponseForCurrentForm,
+  isConfirmedResponseForSameForm,
   mergeAttemptAnswersWithInactiveExisting,
 } from './formConfirm.js'
 
@@ -140,6 +141,34 @@ describe('Checkout 試行の定義スナップショット', () => {
     expect(isConfirmedResponseForCurrentForm(current, form)).toBe(true)
     expect(isConfirmedResponseForCurrentForm(otherForm, form)).toBe(false)
     expect(isConfirmedResponseForCurrentForm(legacy, form)).toBe(false)
+  })
+
+  it('同じフォームIDなら版が違っても初期表示の対象にする', () => {
+    const form = new CommunityForm('form-1', {
+      community_id: 'c1',
+      name: '事前アンケート',
+      fields: [],
+      definition_version: 3,
+      created_by: 'u1',
+      updated_by: 'u1',
+    })
+    const older = new FormResponse('user', {
+      user_id: 'user',
+      source_form_id: 'form-1',
+      definition_version: 2,
+      revision: 1,
+      answers: [updatedAnswer],
+    })
+    const otherForm = new FormResponse('user', {
+      user_id: 'user',
+      source_form_id: 'form-2',
+      definition_version: 2,
+      revision: 1,
+      answers: [updatedAnswer],
+    })
+    expect(isConfirmedResponseForSameForm(older, form)).toBe(true)
+    expect(isConfirmedResponseForCurrentForm(older, form)).toBe(false)
+    expect(isConfirmedResponseForSameForm(otherForm, form)).toBe(false)
   })
 
   it('定義を持たない旧試行は読み込み可能で、未編集の過去回答を消さない', () => {

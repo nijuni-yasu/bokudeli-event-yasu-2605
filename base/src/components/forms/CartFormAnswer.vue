@@ -8,11 +8,20 @@ import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/f
 import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser'
 import { useCreateAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
+import {
+  CART_BLOCK_MESSAGE_KEY,
+  findCartOrderBlock,
+  findProfileGap,
+  PROFILE_GAP_MESSAGE_KEY,
+} from '@shokujii/base/composable/cartOrderGate.js'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
-import { isWithinOrderDeadline } from '@shokujii/common/utils/orderDeadline.js'
 import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
-import type { ResolveEventHrefFn, ResolveOrdersPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import type {
+  ResolveEventHrefFn,
+  ResolveOrdersPathFn,
+  ResolveProfilePathFn,
+} from '@shokujii/base/types/profilePathResolvers.js'
 import {
   compactFormAnswerInput,
   type FormAnswerInput,
@@ -27,11 +36,16 @@ const props = defineProps<{
   resolveOrdersPath: ResolveOrdersPathFn
   resolveCartPath: () => string
   resolveEventPath: ResolveEventHrefFn
+  resolveProfilePath: ResolveProfilePathFn
 }>()
 
 const { t: $t } = useI18n()
 const router = useRouter()
-const { cart } = storeToRefs(useCurrentUserStore())
+const {
+  cart,
+  user: currentUser,
+  personalInformation: currentUserPersonalInformation,
+} = storeToRefs(useCurrentUserStore())
 const createAppEventStore = useCreateAppEventStore()
 
 const loading = ref(true)
@@ -44,6 +58,8 @@ const isOpenAlert = ref(false)
 const openConfirmOrder = ref(false)
 const confirmDialogMessage = ref('')
 const pendingAttemptId = ref('')
+const openUserParameterConfirm = ref(false)
+const targetUserParameter = ref('')
 
 const showAlert = (message: string) => {
   alertMessage.value = message
@@ -158,13 +174,32 @@ const persistAttempt = async (): Promise<string | null> => {
   return response.data.attempt_id
 }
 
-const startOrder = async (attemptId: string) => {
+const ensureOrderAllowed = async (): Promise<boolean> => {
+  const gap = findProfileGap(currentUser.value, currentUserPersonalInformation.value)
+  if (gap != null) {
+    targetUserParameter.value = $t(PROFILE_GAP_MESSAGE_KEY[gap])
+    openUserParameterConfirm.value = true
+    return false
+  }
   const item = cartItem.value
   if (item == null) {
+    showAlert($t('cart.form_load_failed'))
+    return false
+  }
+  const block = await findCartOrderBlock(item)
+  if (block != null) {
+    showAlert($t(CART_BLOCK_MESSAGE_KEY[block]))
+    return false
+  }
+  return true
+}
+
+const startOrder = async (attemptId: string) => {
+  if (!(await ensureOrderAllowed())) {
     return
   }
-  if (!isWithinOrderDeadline(item.event.event_deadline_datetime)) {
-    showAlert($t('cart.cannot_order_deadline'))
+  const item = cartItem.value
+  if (item == null) {
     return
   }
   const orderIds = sortOrderIdsForEnterpriseSubsidyReplay(item.orders)
@@ -211,6 +246,10 @@ const onPrimary = async () => {
   const key = cartItemKey.value
   saving.value = true
   try {
+    if (!(await ensureOrderAllowed())) {
+      return
+    }
+    if (cartItemKey.value !== key) return
     const attemptId = await persistAttempt()
     if (cartItemKey.value !== key) return
     if (attemptId == null) {
@@ -243,6 +282,8 @@ const confirmOrderNow = async () => {
   saving.value = true
   try {
     await startOrder(pendingAttemptId.value)
+  } catch (error) {
+    showAlert(getOrderErrorMessage(error) ?? $t('cart.order_failed'))
   } finally {
     saving.value = false
     openConfirmOrder.value = false
@@ -292,6 +333,14 @@ const confirmOrderNow = async () => {
       {{ confirmDialogMessage }}
     </ConfirmDialog>
     <ConfirmDialog v-model="isOpenAlert" :is-confirm="false">{{ alertMessage }}</ConfirmDialog>
+    <ConfirmDialog
+      v-model="openUserParameterConfirm"
+      :is-confirm="true"
+      :ok-click="() => router.push(props.resolveProfilePath())"
+      :ok-text="$t('cart.go_to_setting')"
+    >
+      {{ targetUserParameter }}
+    </ConfirmDialog>
   </v-container>
 </template>
 

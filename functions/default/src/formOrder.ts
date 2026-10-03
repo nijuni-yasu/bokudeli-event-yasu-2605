@@ -24,7 +24,7 @@ import {
 } from './utils/formAccess.js'
 import { getOrdersInCart } from './stores/memberOrder.js'
 import { createFormCheckoutAttempt, getFormResponse, listPendingFormCheckoutAttemptsForUser } from './stores/form.js'
-import { isAttemptForCurrentForm, isConfirmedResponseForCurrentForm } from './utils/formConfirm.js'
+import { isAttemptForCurrentForm, isConfirmedResponseForSameForm } from './utils/formConfirm.js'
 
 const logger = createModuleLogger('formOrder')
 
@@ -92,7 +92,7 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
       source: 'attempt',
     }
   }
-  if (confirmed != null && isConfirmedResponseForCurrentForm(confirmed, reference.form)) {
+  if (confirmed != null && isConfirmedResponseForSameForm(confirmed, reference.form)) {
     return {
       has_form: true,
       community_name: event.community_name,

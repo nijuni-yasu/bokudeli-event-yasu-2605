@@ -1,3 +1,4 @@
+import { getFirestore, type Transaction } from 'firebase-admin/firestore'
 import { onCall, HttpsError } from 'firebase-functions/https'
 import { CommunityForm } from '@shokujii/common/schemas/CommunityForm.js'
 import { EventFormConfig } from '@shokujii/common/schemas/EventFormConfig.js'
@@ -35,6 +36,7 @@ import { normalizeFormFields } from '@shokujii/common/utils/normalizeFormFields.
 import { createModuleLogger } from './utils/logger.js'
 import {
   assertEventFormEditable,
+  assertPfEvent,
   parseOrThrow,
   requireAuthUid,
   requireCommunityManager,
@@ -123,36 +125,48 @@ export const createCommunityForm = onCall(async (request): Promise<CreateCommuni
   return { form: toCommunityFormDetail(created) }
 })
 
+async function requireEditablePfEvent(communityId: string, eventId: string, transaction: Transaction): Promise<void> {
+  const event = await getEventInCommunity(communityId, eventId, transaction)
+  if (event == null) {
+    throw new HttpsError('not-found', 'イベントが見つかりません')
+  }
+  assertPfEvent(event)
+  assertEventFormEditable(event)
+}
+
 export const updateCommunityForm = onCall(async (request): Promise<UpdateCommunityFormResponse> => {
   const uid = await requireAuthUid(request.auth?.uid)
   const data = parseOrThrow(UpdateCommunityFormRequestSchema, request.data)
   await requireCommunityManager(data.community_id, uid)
-  const existing = await getCommunityForm(data.community_id, data.form_id)
-  if (existing == null) {
-    throw new HttpsError('not-found', 'フォームが見つかりません')
-  }
-  const normalized = normalizeFormFields(data.fields, existing.fields)
-  if (!normalized.ok) {
-    throw new HttpsError('invalid-argument', normalized.message)
-  }
-  const nextPurpose = data.purpose ?? ''
-  const updated = new CommunityForm(existing.id, {
-    ...existing,
-    name: data.name,
-    description: data.description ?? '',
-    purpose: nextPurpose,
-    fields: normalized.fields,
-    definition_version: nextCommunityFormDefinitionVersion({
-      currentVersion: existing.definition_version,
-      existingFields: existing.fields,
-      existingPurpose: existing.purpose,
-      nextFields: normalized.fields,
-      nextPurpose,
-    }),
-    archived: data.archived ?? existing.archived,
-    updated_by: uid,
+  const updated = await getFirestore().runTransaction(async (transaction) => {
+    const existing = await getCommunityForm(data.community_id, data.form_id, transaction)
+    if (existing == null) {
+      throw new HttpsError('not-found', 'フォームが見つかりません')
+    }
+    const normalized = normalizeFormFields(data.fields, existing.fields)
+    if (!normalized.ok) {
+      throw new HttpsError('invalid-argument', normalized.message)
+    }
+    const nextPurpose = data.purpose ?? ''
+    const next = new CommunityForm(existing.id, {
+      ...existing,
+      name: data.name,
+      description: data.description ?? '',
+      purpose: nextPurpose,
+      fields: normalized.fields,
+      definition_version: nextCommunityFormDefinitionVersion({
+        currentVersion: existing.definition_version,
+        existingFields: existing.fields,
+        existingPurpose: existing.purpose,
+        nextFields: normalized.fields,
+        nextPurpose,
+      }),
+      archived: data.archived ?? existing.archived,
+      updated_by: uid,
+    })
+    await saveCommunityForm(data.community_id, next, transaction)
+    return next
   })
-  await saveCommunityForm(data.community_id, updated)
   return { form: toCommunityFormDetail(updated) }
 })
 
@@ -222,22 +236,24 @@ export const setEventFormFromCommunity = onCall(async (request): Promise<SetEven
   const uid = await requireAuthUid(request.auth?.uid)
   const { community_id, event_id, form_id } = parseOrThrow(SetEventFormFromCommunityRequestSchema, request.data)
   await requireCommunityManager(community_id, uid)
-  const event = await requirePfEventForForm(community_id, event_id)
-  assertEventFormEditable(event)
-  const form = await getCommunityForm(community_id, form_id)
-  if (form == null || form.archived) {
-    throw new HttpsError('not-found', 'フォームが見つかりません')
-  }
-  const existing = await getEventFormConfig(community_id, event_id)
-  const next = new EventFormConfig('current', {
-    source_form_id: form.id,
-    created_at: existing?.created_at,
+  const next = await getFirestore().runTransaction(async (transaction) => {
+    await requireEditablePfEvent(community_id, event_id, transaction)
+    const form = await getCommunityForm(community_id, form_id, transaction)
+    if (form == null || form.archived) {
+      throw new HttpsError('not-found', 'フォームが見つかりません')
+    }
+    const existing = await getEventFormConfig(community_id, event_id, transaction)
+    const config = new EventFormConfig('current', {
+      source_form_id: form.id,
+      created_at: existing?.created_at,
+    })
+    await saveEventFormConfig(community_id, event_id, config, transaction)
+    return config
   })
-  await saveEventFormConfig(community_id, event_id, next)
   logger.info('イベントへフォームを設定した', {
     communityId: community_id,
     eventId: event_id,
-    formId: form.id,
+    formId: form_id,
     userId: uid,
   })
   return { config: toEventFormConfigDto(next) }
@@ -247,9 +263,10 @@ export const clearEventFormConfig = onCall(async (request): Promise<ClearEventFo
   const uid = await requireAuthUid(request.auth?.uid)
   const { community_id, event_id } = parseOrThrow(ClearEventFormConfigRequestSchema, request.data)
   await requireCommunityManager(community_id, uid)
-  const event = await requirePfEventForForm(community_id, event_id)
-  assertEventFormEditable(event)
-  await deleteEventFormConfig(community_id, event_id)
+  await getFirestore().runTransaction(async (transaction) => {
+    await requireEditablePfEvent(community_id, event_id, transaction)
+    await deleteEventFormConfig(community_id, event_id, transaction)
+  })
   return { cleared: true }
 })
 

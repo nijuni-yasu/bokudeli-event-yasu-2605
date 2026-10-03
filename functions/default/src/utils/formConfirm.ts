@@ -23,6 +23,14 @@ export function isConfirmedResponseForCurrentForm(response: FormResponse, form: 
   return response.source_form_id === form.id && response.definition_version === form.definition_version
 }
 
+/** 初期表示用。版が上がっていても、同じフォームの過去回答を残っている設問へ載せる。 */
+export function isConfirmedResponseForSameForm(response: FormResponse, form: CommunityForm): boolean {
+  if (response.source_form_id === '') {
+    return false
+  }
+  return response.source_form_id === form.id
+}
+
 export async function requireAttemptForLatestForm(params: {
   event: ShokujiiEvent
   userId: string

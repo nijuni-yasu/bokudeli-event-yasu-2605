@@ -872,12 +872,13 @@ const submitReservation = async () => {
       showReserveValidationFailure(result.reasonCodes)
       return
     }
-    ev.event_status = { value: 'applying_reservation', shop_comment: '' }
-    const eventStore = createAppEventStore(ev.event_id)
-    await eventStore.updateEvent(ev)
+    // 申請メールはステータス更新で送る。フォーム選択の失敗で申請だけ先に確定しないよう、先に保存する。
     if (!(await persistEventFormSelection(ev.event_id))) {
       return
     }
+    ev.event_status = { value: 'applying_reservation', shop_comment: '' }
+    const eventStore = createAppEventStore(ev.event_id)
+    await eventStore.updateEvent(ev)
     showNotification($t('manage.event.reserve_success', { name: ev.shop_name }), 'success')
     emits('updated', ev.event_id)
   } catch (error) {
