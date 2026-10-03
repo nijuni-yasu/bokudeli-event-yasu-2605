@@ -55,6 +55,7 @@ describe('EventMenu limit_per_event 読み込み正規化', () => {
       menu_sort_number: 999999,
       is_selected: true,
       is_sold_out: false,
+      item_type: 'organizer_menu',
     })
     expect(menu.menu_price).toBe(0)
     expect(menu.isValidForDatabase()).toBe(true)
