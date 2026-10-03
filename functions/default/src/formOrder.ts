@@ -69,7 +69,7 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
 
   const reference = await loadEventFormReferenceIfPf(event)
   if (reference == null) {
-    return { has_form: false, community_name: event.community_name, purpose: '' }
+    return { has_form: false, community_name: event.community_name, name: '', description: '', purpose: '' }
   }
 
   const [pendingAttempts, confirmed] = await Promise.all([
@@ -91,6 +91,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
     return {
       has_form: true,
       community_name: event.community_name,
+      name: reference.form.name,
+      description: reference.form.description,
       purpose: reference.form.purpose,
       definition_version: reference.form.definition_version,
       fields,
@@ -102,6 +104,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
     return {
       has_form: true,
       community_name: event.community_name,
+      name: reference.form.name,
+      description: reference.form.description,
       purpose: reference.form.purpose,
       definition_version: reference.form.definition_version,
       fields,
@@ -112,6 +116,8 @@ export const getOrderFormForCart = onCall(async (request): Promise<GetOrderFormF
   return {
     has_form: true,
     community_name: event.community_name,
+    name: reference.form.name,
+    description: reference.form.description,
     purpose: reference.form.purpose,
     definition_version: reference.form.definition_version,
     fields,

@@ -15,7 +15,6 @@ import { mdiDownload, mdiEyeOutline } from '@mdi/js'
 type AssignedForm = {
   name: string
   description: string
-  purpose: string
   fields: FormField[]
 }
 
@@ -46,7 +45,6 @@ const loadAssignedForm = async (communityId: string, eventId: string): Promise<A
   return {
     name: form.name,
     description: form.description,
-    purpose: form.purpose,
     fields: omitHiddenFormFields(form.fields),
   }
 }
@@ -257,10 +255,9 @@ const download = () => {
           <v-card-text>
             <v-alert type="info" variant="tonal" class="mb-6">{{ $t('manage.forms.preview_notice') }}</v-alert>
             <h2 class="text-h6 mb-2 form-response-copy">{{ assignedForm.name }}</h2>
-            <p v-if="assignedForm.description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-response-copy">
+            <p v-if="assignedForm.description !== ''" class="text-body-2 text-medium-emphasis mb-6 form-response-copy">
               {{ assignedForm.description }}
             </p>
-            <p v-if="assignedForm.purpose !== ''" class="mb-6 form-response-copy">{{ assignedForm.purpose }}</p>
             <FormAnswerFields
               v-if="assignedForm.fields.length > 0"
               v-model="previewAnswers"

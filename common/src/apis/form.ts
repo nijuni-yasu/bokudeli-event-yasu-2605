@@ -171,6 +171,8 @@ export type GetOrderFormForCartRequest = z.infer<typeof GetOrderFormForCartReque
 export type GetOrderFormForCartResponse = {
   has_form: boolean
   community_name: string
+  name: string
+  description: string
   purpose: string
   definition_version?: number
   fields?: FormFieldDto[]

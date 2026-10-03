@@ -72,6 +72,11 @@ const cartItem = computed(() =>
   ),
 )
 const fields = computed<FormField[]>(() => form.value?.fields ?? [])
+const formName = computed(() => form.value?.name ?? '')
+const formDescription = computed(() => form.value?.description ?? '')
+const showFormIntro = computed(
+  () => form.value?.has_form === true && (formName.value !== '' || formDescription.value !== ''),
+)
 const cartItemKey = computed(() =>
   cartItem.value == null ? '' : `${cartItem.value.event.community_id}\0${cartItem.value.event.event_id}`,
 )
@@ -301,9 +306,17 @@ const confirmOrderNow = async () => {
     </div>
     <v-progress-linear v-if="loading" indeterminate color="primary" />
     <template v-else-if="form?.has_form">
-      <v-sheet v-if="form.purpose != null && form.purpose !== ''" color="surface" border rounded="lg" class="pa-4 mb-6">
-        <h2 class="text-subtitle-2 mb-2">{{ $t('manage.forms.purpose') }}</h2>
-        <p class="text-body-2 text-medium-emphasis mb-0 cart-form-copy">{{ form.purpose }}</p>
+      <v-sheet v-if="showFormIntro" color="surface" border rounded="lg" class="pa-4 mb-6">
+        <h2
+          v-if="formName !== ''"
+          class="text-h5 font-weight-regular cart-form-copy"
+          :class="formDescription !== '' ? 'mb-4' : 'mb-0'"
+        >
+          {{ formName }}
+        </h2>
+        <p v-if="formDescription !== ''" class="text-body-2 text-medium-emphasis mb-0 cart-form-copy">
+          {{ formDescription }}
+        </p>
       </v-sheet>
       <FormAnswerFields v-model="answers" :fields="fields" :issues="issues" :disabled="saving || openConfirmOrder" />
       <v-alert v-if="issues.length > 0" type="error" variant="tonal" class="mt-4">{{
