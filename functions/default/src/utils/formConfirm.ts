@@ -129,6 +129,8 @@ export async function applyAttemptToConfirmedResponse(params: {
   if (
     params.ignoreDefinitionMismatch !== true &&
     existing != null &&
+    existing.source_form_id !== '' &&
+    existing.source_form_id === params.attempt.source_form_id &&
     existing.definition_version > params.attempt.definition_version
   ) {
     params.attempt.status = 'consumed'
