@@ -578,3 +578,23 @@ if (
 
 ---
 
+## 評価セッション（2026-10-03 22:34・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 22:34 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼定型文 GitHub id 5969612686、Copilot 具体指摘なしの完了報告 GitHub id 5969639053）
+- **重複除外**: 1（GitHub id 4173367420 は RC-3 と同一指摘のため新規 RC なし）
+- **新規 RC なし**
+- **partial**: false
+- **REVIEW_REQUEST_SINCE**: 2026-10-03T13:26:52Z
+- **手順 4a 自動修正**: 対象なし
+
+### RC 一覧（サマリ）
+
+新規 RC なし。Codex インライン（`functions/default/src/eventMenusSelection.ts` の再生成経路で、店舗メニュー保存と注文なし参加 upsert が別 Transaction）は RC-3 として記録済み。
+
+---
+
