@@ -112,6 +112,9 @@
 | [ ] | RC-106 | 4166722175 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🔒 セキュリティ | 🔧 微修正 | S | エンタープライズでもフォーム管理 API を呼べる<br>セキュリティ影響の確認が必要なため自動修正しない |
 | [x] | RC-107 | 4166688017 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 📑 仕様書 | 📋 仕様追加 | M | 版が上がると同じ field_id の過去回答を初期表示しない<br>同じフォームIDなら残っている設問だけ初期表示する。無言再利用は版一致のときだけ |
 | [ ] | RC-108 | 4166722183 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | M | 注文期限後でも回答試行を保存できる<br>金銭・受付条件の確認が必要なため自動修正しない |
+| [x] | RC-109 | 5400239921 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（19:17）は個別指摘の要約<br>新規は RC-111。複製失敗は RC-110 |
+| [ ] | RC-110 | 4172746574 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | フォーム設定の複製失敗で孤立イベントが残る<br>原子作成・補償削除・ID返却が併記のため自動修正しない |
+| [x] | RC-111 | 4172732374 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームの確定回答を再注文時に混ぜる<br>同じ source_form_id のときだけ非表示回答と回答日時を引き継ぐ |
 
 ---
 
@@ -8529,3 +8532,255 @@ Useful? React with 👍 / 👎.
 
 ---
 
+---
+
+## 評価セッション（2026-10-03 19:28 JST・review-comments-evaluate）
+
+- **評価日時**: 2026-10-03 19:28 JST
+- **ブランチ名**: feat/957-form
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2384
+- **since**: 2026-10-03T10:10:19Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 6（依頼定型文 5968122913、Copilot 再掲 5968188650 は RC-31 / RC-100 / RC-102 / RC-107、Codex 接続案内 5400256049、退会時匿名化 4172746561 は RC-52、初期表示の版一致 4172746569 は RC-107、イベント更新とフォーム設定 4172746571 は RC-102）
+- **手順 4a 自動修正**: RC-111（🚨 1件）
+- **自動修正しなかった未着手**: RC-110
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-109 | 5400239921 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（19:17）は個別指摘の要約<br>新規は RC-111。複製失敗は RC-110 |
+| [ ] | RC-110 | 4172746574 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 🔧 微修正 | M | フォーム設定の複製失敗で孤立イベントが残る<br>原子作成・補償削除・ID返却が併記のため自動修正しない |
+| [x] | RC-111 | 4172732374 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ, 🐛 実害 | 🔧 微修正 | S | 別フォームの確定回答を再注文時に混ぜる<br>同じ source_form_id のときだけ非表示回答と回答日時を引き継ぐ |
+
+**識別子**: RC-109（GitHub id: 5400239921）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR トップレベル
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+（インライン指摘なし）
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+フォーム差し替え後の再注文で旧フォーム回答が新フォーム回答へ混在する問題が残っています。
+
+**Review effort:** Balanced  
+**Findings:** 6 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 5 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 1 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (12)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [再注文時に異なるフォームの既存回答を無条件マージしている](#discussion_r4172732374) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [イベント更新とフォーム参照更新を原子的に処理する](#discussion_r4166687820)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [削除時の編集可否確認がTransaction外で競合する](#discussion_r4164317311)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [編集可否確認と設定保存が別Transactionで競合する](#discussion_r4164317194)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Transaction外の全体更新で同時変更を上書きする](#discussion_r4164317121)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [フォーム回答後もshowConfirm相当の事前確認を適用する](#discussion_r4153960971)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [設問変更後も同じfield_idの過去回答を初期値に再利用する](#discussion_r4166688017)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [空白のみのnameをサーバー側で拒否できない](#discussion_r4164317371)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [決済失敗試行の個人情報が無期限に蓄積する](#discussion_r4154073753)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [pending/frozenのみをFirestoreで絞りupdated_at降順で1件取得する](#discussion_r4153961178)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Functions未デプロイ時に注文全体が停止するデプロイ順序問題](#discussion_r4153855345)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [注文確定の状態遷移と競合処理を検証するテスト不足](#discussion_r4153855528)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (2)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [重複する回答IDをエラーとして拒否する](#discussion_r4166687957)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [purposeを復元し入力欄と両APIのpayloadに反映する](#discussion_r4166687894)
+</details>
+
+**コメント要約**: Copilot overview（19:17）は個別指摘の要約
+新規は RC-111。複製失敗は RC-110
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: サマリは差し替え後の回答混線を見出しにしており、実体はインライン RC-111。未解決の旧指摘の再掲は既存 RC に残す。
+
+---
+
+**識別子**: RC-110（GitHub id: 4172746574）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `functions/default/src/eventCopy.ts:143`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -133,6 +135,14 @@ export const copyEventCore = async (
+     selectedMenuIds,
+   )
+ 
++  const srcFormConfig = await getEventFormConfig(srcEvent.community_id, srcEvent.id)
++  if (srcFormConfig != null) {
++    const copiedConfig = new EventFormConfig('current', {
++      source_form_id: srcFormConfig.source_form_id,
++    })
++    await saveEventFormConfig(srcEvent.community_id, newEvent.id, copiedConfig)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  フォーム設定の複製失敗時に作成済みイベントを残さない**
+
+フォーム付きイベントの複製でこの書き込みが一時的に失敗すると、イベント本体とメニューはすでに保存済みなのにCallable全体は失敗し、呼び出し元には `newEventId` が返りません。利用者がエラー表示から再試行するとフォームのない孤立イベントと再試行分のイベントが重複して作成されるため、イベントとフォーム設定を原子的に作成するか、失敗時の補償削除または作成済みIDを返せる処理境界にしてください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: フォーム設定の複製失敗で孤立イベントが残る
+原子作成・補償削除・ID返却が併記のため自動修正しない
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: フォーム設定の書き込みがイベント保存の後にあるため、失敗するとフォームのないイベントが残る。原文は Transaction、補償削除、作成済み ID の返却を併記しており方針が一意でない。工数 M のため自動修正しない。
+
+---
+
+**識別子**: RC-111（GitHub id: 4172732374）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/utils/formConfirm.ts:138`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+…（diff 先頭省略・139 行）
++export async function planFormConfirmation(params: {
++  event: ShokujiiEvent
++  userId: string
++  attemptId: string | undefined
++  transaction: Transaction
++}): Promise<FormConfirmPlan> {
++  const reference = await loadEventFormReferenceIfPf(params.event, params.transaction)
++  if (reference == null) {
++    return { kind: 'none' }
++  }
++  const existing = await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction)
++  if (params.attemptId != null && params.attemptId !== '') {
++    const attempt = await requireAttemptForLatestForm({
++      event: params.event,
++      userId: params.userId,
++      attemptId: params.attemptId,
++      form: reference.form,
++      transaction: params.transaction,
++    })
++    return { kind: 'apply', attempt, existing }
++  }
++  if (existing != null && isConfirmedResponseForCurrentForm(existing, reference.form)) {
++    return { kind: 'reuse', existing }
++  }
++  throw new HttpsError('failed-precondition', 'フォームの回答が必要です')
++}
++
++export function mergeAttemptAnswersWithInactiveExisting(
++  attemptAnswers: FormAnswerSnapshot[],
++  existingAnswers: FormAnswerSnapshot[] | undefined,
++  fields: FormField[] | undefined,
++): FormAnswerSnapshot[] {
++  // 今回の設問に無い確定済み回答は残す。削除した設問や種類変更前の旧IDも上書きしない。
++  const editableIds = new Set((fields ?? []).filter((field) => !field.hidden_for_new).map((field) => field.field_id))
++  const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
++  const kept = (existingAnswers ?? []).filter(
++    (answer) => !editableIds.has(answer.field_id) && !attemptIds.has(answer.field_id),
++  )
++  return [...kept, ...attemptAnswers]
++}
++
++export async function applyAttemptToConfirmedResponse(params: {
++  event: ShokujiiEvent
++  userId: string
++  attempt: FormCheckoutAttempt
++  transaction: Transaction
++  existing?: FormResponse
++  ignoreDefinitionMismatch?: boolean
++}): Promise<void> {
++  const existing =
++    params.existing ??
++    (await getFormResponse(params.event.community_id, params.event.id, params.userId, params.transaction))
++  if (existing != null && existing.revision > params.attempt.revision_basis) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
++  }
++  if (
++    params.ignoreDefinitionMismatch !== true &&
++    existing != null &&
++    existing.definition_version > params.attempt.definition_version
++  ) {
++    params.attempt.status = 'consumed'
++    await saveFormCheckoutAttempt(params.event.community_id, params.event.id, params.attempt, params.transaction)
++    return
++  }
++
++  const now = Date.now()
++  const nextRevision = (existing?.revision ?? 0) + 1
++  const confirmed = new FormResponse(params.userId, {
++    user_id: params.userId,
++    source_form_id: params.attempt.source_form_id,
++    definition_version: params.attempt.definition_version,
++    revision: nextRevision,
++    answers: mergeAttemptAnswersWithInactiveExisting(
++      params.attempt.answers,
++      existing?.answers,
++      params.attempt.fields_snapshot,
++    ),
++    answered_at: existing?.answered_at ?? now,
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 別フォームへ差し替えた後の再注文でも、既存回答を無条件にマージしているため、旧フォームにだけ存在する設問回答が新フォームの回答へ混在します。初期表示では `source_form_id` 不一致を除外しているのに、確定時に混線が再発し、CSVにも新フォーム由来として旧回答が出ます。同じ `source_form_id` の場合だけ非アクティブ回答と `answered_at` を引き継いでください。
+
+**コメント要約**: 別フォームの確定回答を再注文時に混ぜる
+同じ source_form_id のときだけ非表示回答と回答日時を引き継ぐ
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 💾 データ, 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 初期表示は source_form_id 不一致を除外しているのに、確定時のマージは既存回答を無条件に残していた。同じフォームのときだけ非表示回答と answered_at を引き継ぐよう変えた。
+
+---

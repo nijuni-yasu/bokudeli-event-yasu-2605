@@ -95,7 +95,12 @@ export function mergeAttemptAnswersWithInactiveExisting(
   attemptAnswers: FormAnswerSnapshot[],
   existingAnswers: FormAnswerSnapshot[] | undefined,
   fields: FormField[] | undefined,
+  sourceFormIds?: { existing?: string; attempt?: string },
 ): FormAnswerSnapshot[] {
+  // 別フォームへ差し替えた再注文では、旧フォームだけの回答を新フォームへ混ぜない。
+  if (sourceFormIds != null && (sourceFormIds.existing ?? '') !== (sourceFormIds.attempt ?? '')) {
+    return [...attemptAnswers]
+  }
   // 今回の設問に無い確定済み回答は残す。削除した設問や種類変更前の旧IDも上書きしない。
   const editableIds = new Set((fields ?? []).filter((field) => !field.hidden_for_new).map((field) => field.field_id))
   const attemptIds = new Set(attemptAnswers.map((answer) => answer.field_id))
@@ -133,6 +138,8 @@ export async function applyAttemptToConfirmedResponse(params: {
 
   const now = Date.now()
   const nextRevision = (existing?.revision ?? 0) + 1
+  const sameForm =
+    existing != null && existing.source_form_id !== '' && existing.source_form_id === params.attempt.source_form_id
   const confirmed = new FormResponse(params.userId, {
     user_id: params.userId,
     source_form_id: params.attempt.source_form_id,
@@ -140,10 +147,11 @@ export async function applyAttemptToConfirmedResponse(params: {
     revision: nextRevision,
     answers: mergeAttemptAnswersWithInactiveExisting(
       params.attempt.answers,
-      existing?.answers,
+      sameForm ? existing.answers : undefined,
       params.attempt.fields_snapshot,
+      { existing: existing?.source_form_id ?? '', attempt: params.attempt.source_form_id },
     ),
-    answered_at: existing?.answered_at ?? now,
+    answered_at: sameForm ? (existing.answered_at ?? now) : now,
     updated_at: now,
   })
   await saveFormResponse(params.event.community_id, params.event.id, confirmed, params.transaction)

@@ -143,6 +143,24 @@ describe('Checkout 試行の定義スナップショット', () => {
     expect(isConfirmedResponseForCurrentForm(legacy, form)).toBe(false)
   })
 
+  it('別フォームの確定回答は新しい回答に混ぜない', () => {
+    expect(
+      mergeAttemptAnswersWithInactiveExisting([updatedAnswer], [hiddenAnswer, oldVisibleAnswer], [visibleField], {
+        existing: 'form-old',
+        attempt: 'form-new',
+      }),
+    ).toEqual([updatedAnswer])
+  })
+
+  it('同じフォームの非表示回答は引き継ぐ', () => {
+    expect(
+      mergeAttemptAnswersWithInactiveExisting([updatedAnswer], [hiddenAnswer, oldVisibleAnswer], [visibleField], {
+        existing: 'form-1',
+        attempt: 'form-1',
+      }),
+    ).toEqual([hiddenAnswer, updatedAnswer])
+  })
+
   it('同じフォームIDなら版が違っても初期表示の対象にする', () => {
     const form = new CommunityForm('form-1', {
       community_id: 'c1',
