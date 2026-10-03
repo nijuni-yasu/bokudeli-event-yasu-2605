@@ -97,8 +97,6 @@ export default {
     cancel_until_deadline: '注文期限までキャンセル可',
     sns_hash_tag: '#️⃣ ハッシュタグ',
     event_details: '開催内容',
-    pre_event_form:
-      'このイベントには事前アンケートとして使うフォームがあります。カートから注文するときにご回答ください。',
     participants: '参加者',
     participants_profile: '参加者一覧',
     show_participant_tags: 'タグ表示',
@@ -1199,6 +1197,7 @@ export default {
       field_description: '補足',
       field_required: '必須',
       field_optional: '任意',
+      clear_selection: '選択を解除',
       field_type: '種類',
       options: '選択肢',
       add_option: '選択肢を追加',

@@ -76,6 +76,14 @@ const visibleOptions = (field: FormField) => {
   }
   return field.options.filter((option) => !option.hidden_for_new)
 }
+
+const canClearSelection = (field: FormField): boolean => {
+  if (field.required || (field.type !== 'radio' && field.type !== 'select')) {
+    return false
+  }
+  const optionId = answerFor(field.field_id).option_id
+  return optionId != null && optionId !== ''
+}
 </script>
 
 <template>
@@ -95,6 +103,16 @@ const visibleOptions = (field: FormField) => {
           $t('manage.forms.field_required')
         }}</v-chip>
         <span v-else class="text-caption text-medium-emphasis">{{ $t('manage.forms.field_optional') }}</span>
+        <v-btn
+          v-if="canClearSelection(field)"
+          variant="text"
+          size="small"
+          class="ms-auto"
+          :disabled="disabled"
+          @click="setOption(field.field_id, '')"
+        >
+          {{ $t('manage.forms.clear_selection') }}
+        </v-btn>
       </div>
       <div class="text-subtitle-1 font-weight-medium mb-2 form-answer-copy">{{ field.label }}</div>
       <div v-if="field.description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-answer-copy">
