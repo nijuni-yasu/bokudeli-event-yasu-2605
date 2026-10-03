@@ -1019,7 +1019,20 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                       </span>
                     </td>
                     <td style="padding: 1px">
-                      <div v-if="menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID" class="text-center">1</div>
+                      <div
+                        v-if="menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID"
+                        class="d-flex align-center justify-center"
+                      >
+                        <v-btn
+                          v-if="menu.order_ids[0] != null"
+                          :icon="mdiTrashCan"
+                          variant="text"
+                          :loading="isDeleteProcessing"
+                          @click="showDeleteConfirm(cartItem.event, menu.order_ids[0])"
+                        >
+                        </v-btn>
+                        <span class="mx-2">1</span>
+                      </div>
                       <div v-else class="d-flex align-center justify-center">
                         <v-btn
                           v-if="menu.count > 1"
