@@ -44,7 +44,7 @@ import {
   shouldUpdateExistingMenusOnly,
 } from '@shokujii/common/utils/eventMenuConverter.js'
 import { useRouter } from 'vue-router'
-import { getCommunityPath, getManageCommunityAlbumPath } from '@/router/utils'
+import { getCommunityPath, getManageCommunityAlbumPath, getManageCommunityFormsPath } from '@/router/utils'
 import { fetchLocationByPostalcode, LatLogLocation } from '@shokujii/base/utils/fetchLocation'
 import { updateEventDeadlineFromShop } from '@shokujii/common/utils/eventShopDeadline.js'
 import {
@@ -1296,6 +1296,7 @@ const stepperItems = computed(() => [
                 :loading="eventFormLoading"
                 :load-failed="eventFormLoadFailed"
                 :disabled="isProcessing"
+                :forms-path="getManageCommunityFormsPath(props.communityAccount)"
                 :is-enterprise="paymentUiStrategy.isEnterpriseMode"
                 :canceled="event?.event_status.value === 'event_canceled'"
                 :not-editable="event != null && !canEditEventForm && event.event_status.value !== 'event_canceled'"

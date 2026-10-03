@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { RouteLocationRaw } from 'vue-router'
 import { mdiTextBoxOutline } from '@mdi/js'
 import type { CommunityFormSummary } from '@shokujii/common/apis/form.js'
 
@@ -13,6 +14,7 @@ const props = withDefaults(
     isEnterprise?: boolean
     canceled?: boolean
     notEditable?: boolean
+    formsPath?: RouteLocationRaw
   }>(),
   {
     loading: false,
@@ -76,7 +78,14 @@ const onAttachFormChange = (value: unknown) => {
     <v-card-text class="pt-2 pt-md-5">
       <v-alert v-if="isEnterprise" type="info" variant="tonal">{{ $t('manage.forms.enterprise_unsupported') }}</v-alert>
       <template v-else>
-        <p class="text-body-2 text-medium-emphasis mb-4">{{ $t('event_edit.community_form_hint') }}</p>
+        <i18n-t keypath="event_edit.community_form_hint" tag="p" class="text-body-2 text-medium-emphasis mb-4">
+          <template #forms>
+            <router-link v-if="formsPath != null" :to="formsPath" class="text-primary">{{
+              $t('event_edit.community_forms_link')
+            }}</router-link>
+            <template v-else>{{ $t('event_edit.community_forms_link') }}</template>
+          </template>
+        </i18n-t>
         <v-alert v-if="canceled" type="info" variant="tonal" class="mb-4">{{
           $t('event_edit.community_form_canceled')
         }}</v-alert>
