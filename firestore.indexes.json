@@ -1817,6 +1817,18 @@
         {
           "fieldPath": "status",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source_form_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "definition_version",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updated_at",
+          "order": "DESCENDING"
         }
       ]
     }
