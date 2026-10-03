@@ -44,7 +44,8 @@ import {
   shouldUpdateExistingMenusOnly,
 } from '@shokujii/common/utils/eventMenuConverter.js'
 import { useRouter } from 'vue-router'
-import { getCommunityPath, getManageCommunityAlbumPath, getManageCommunityFormsPath } from '@/router/utils'
+import { getCommunityPath, getManageCommunityAlbumPath } from '@/router/utils'
+import type { ResolveManageCommunityFormsPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import { fetchLocationByPostalcode, LatLogLocation } from '@shokujii/base/utils/fetchLocation'
 import { updateEventDeadlineFromShop } from '@shokujii/common/utils/eventShopDeadline.js'
 import {
@@ -71,6 +72,7 @@ const props = defineProps<{
   communityAccount: string
   eventId?: string
   step?: string
+  resolveFormsPath: ResolveManageCommunityFormsPathFn
 }>()
 
 const emits = defineEmits<{
@@ -1079,10 +1081,6 @@ const handleStep4Next = async () => {
       step4ValidationDialog.visible = true
       return
     }
-    const eventId = persistedEventIdForMenus.value ?? ev.event_id
-    if (eventId != null && eventId !== '' && !(await persistEventFormSelection(eventId))) {
-      return
-    }
     stepper.value++
   } catch (error) {
     console.error('Failed to validate step 4:', error)
@@ -1296,7 +1294,7 @@ const stepperItems = computed(() => [
                 :loading="eventFormLoading"
                 :load-failed="eventFormLoadFailed"
                 :disabled="isProcessing"
-                :forms-path="getManageCommunityFormsPath(props.communityAccount)"
+                :forms-path="props.resolveFormsPath(props.communityAccount)"
                 :is-enterprise="paymentUiStrategy.isEnterpriseMode"
                 :canceled="event?.event_status.value === 'event_canceled'"
                 :not-editable="event != null && !canEditEventForm && event.event_status.value !== 'event_canceled'"

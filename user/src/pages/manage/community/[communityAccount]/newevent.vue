@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EventEdit from '@shokujii/base/components/EventEdit.vue'
-import { getEventPath } from '@/router/utils'
+import { getEventPath, getManageCommunityFormsPath } from '@/router/utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,7 +16,11 @@ const updated = (eventId: string) => {
   <v-container class="manage-container">
     <v-row class="justify-center">
       <v-col md="12" sm="12" cols="12">
-        <EventEdit :community-account="communityAccount" @updated="updated" />
+        <EventEdit
+          :community-account="communityAccount"
+          :resolve-forms-path="getManageCommunityFormsPath"
+          @updated="updated"
+        />
       </v-col>
     </v-row>
   </v-container>
