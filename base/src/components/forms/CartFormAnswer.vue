@@ -309,25 +309,39 @@ const confirmOrderNow = async () => {
       <v-alert v-if="issues.length > 0" type="error" variant="tonal" class="mt-4">{{
         $t('manage.forms.validation.summary')
       }}</v-alert>
-      <v-btn
-        class="mt-8"
-        color="primary"
-        size="large"
-        block
-        :loading="saving"
-        :disabled="openConfirmOrder"
-        @click="onPrimary"
-      >
-        {{ needsStripe ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event') }}
-      </v-btn>
-      <v-btn
-        class="mt-3"
-        variant="text"
-        block
-        :disabled="saving || openConfirmOrder"
-        @click="router.push(resolveCartPath())"
-        >{{ $t('cart.back_to_cart') }}</v-btn
-      >
+      <v-row class="justify-center">
+        <v-col class="text-center">
+          <v-btn
+            class="mt-8 text-md-h4 text-h5"
+            color="grey-900"
+            size="x-large"
+            rounded="pill"
+            elevation="5"
+            width="85%"
+            :loading="saving"
+            :disabled="openConfirmOrder"
+            @click="onPrimary"
+          >
+            {{ needsStripe ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event') }}
+          </v-btn>
+        </v-col>
+      </v-row>
+      <v-row class="justify-center">
+        <v-col class="text-center">
+          <v-btn
+            class="mb-8 text-md-h5 text-subtitle-1"
+            color="grey-600"
+            variant="text"
+            size="small"
+            rounded="pill"
+            elevation="0"
+            :disabled="saving || openConfirmOrder"
+            @click="router.push(resolveCartPath())"
+          >
+            {{ $t('cart.back_to_cart') }}
+          </v-btn>
+        </v-col>
+      </v-row>
     </template>
     <ConfirmDialog v-model="openConfirmOrder" :is-confirm="true" :ok-click="confirmOrderNow" :ok-loading-state="saving">
       {{ confirmDialogMessage }}
