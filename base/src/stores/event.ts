@@ -39,6 +39,7 @@ import {
 } from '@shokujii/base/apis/order.js'
 import { updateEventMenus as _updateEventMenus } from '@shokujii/base/apis/eventMenu.js'
 import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
+import { createFirestoreListenRetry, type FirestoreListenRetry } from '@shokujii/base/utils/firestoreListenRetry.js'
 import { ZodError } from 'zod'
 import { copyCommunityCoverToEvent as callCopyCommunityCoverToEvent } from '@shokujii/base/apis/copyCommunityCoverToEvent.js'
 import { preparePfEventDraft, type EventDraftPreparer } from '@shokujii/base/stores/eventDraft.js'
@@ -52,6 +53,9 @@ import { resizeImage } from '@shokujii/base/utils/image.js'
 import { uploadImage, convertStoragePathToURL } from '@shokujii/base/utils/storage.js'
 
 const TINYMCE_MAX_IMAGE_SIZE = 600
+
+/** イベント詳細で同時に users/{uid} を購読する人数。全員分張るとメニュー・バナー購読が失敗しやすい。 */
+export const EVENT_DETAIL_MEMBER_PREVIEW_LIMIT = 12
 
 class EventRefUpdatedEvent extends Event {
   constructor(
@@ -289,20 +293,10 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     })
 
     const menus = computed<EventMenu[] | null>(() => {
-      getEventRef()
-        .then((eventRef) => {
-          subscribeMenus(eventRef)
-        })
-        .catch((err) => {
-          console.error('getEventRef for menus failed', err)
-          reportClientError(err, { documentPath: `events/${eventId}`, severity: 'warn' })
-        })
-      const sortedMenus =
-        _menus.value?.sort((a, b) => {
-          // menu_sort_numberでソート（昇順）
-          return a.menu_sort_number - b.menu_sort_number
-        }) ?? null
-      return sortedMenus
+      if (_menus.value == null) {
+        return null
+      }
+      return [..._menus.value].sort((a, b) => a.menu_sort_number - b.menu_sort_number)
     })
 
     const confirmedOrders = computed<EventMemberOrder[] | null>(() => {
@@ -319,11 +313,8 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       return store
     }
 
-    const members = computed<BokudeliEventMember[] | null>(() => {
-      if (_memberIds.value == null) {
-        return null
-      }
-      return _memberIds.value.flatMap((memberId) => {
+    const buildMembers = (memberIds: string[]): BokudeliEventMember[] => {
+      return memberIds.flatMap((memberId) => {
         const memberStore = getMemberUserStore(memberId)
         const target = _orders.value?.filter((order) => order.user_id === memberId) ?? ([] as EventMemberOrder[])
         const orders = new Proxy(target, {
@@ -341,6 +332,21 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
         m.orders = orders
         return m
       })
+    }
+
+    const members = computed<BokudeliEventMember[] | null>(() => {
+      if (_memberIds.value == null) {
+        return null
+      }
+      return buildMembers(_memberIds.value)
+    })
+
+    /** イベント詳細の初期表示用。人数に比例して users 購読を張らない */
+    const previewMembers = computed<BokudeliEventMember[] | null>(() => {
+      if (_memberIds.value == null) {
+        return null
+      }
+      return buildMembers(_memberIds.value.slice(0, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT))
     })
 
     const coverImageUrl = computed<string | undefined>(() => {
@@ -443,65 +449,95 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       }
     }
 
-    let unsubscribeOrders: Unsubscribe | null = null
+    const ordersListenHolder: { current: FirestoreListenRetry | null } = { current: null }
+    let reportedOrdersError = false
     const subscribeOrders = () => {
-      if (unsubscribeOrders == null) {
-        const orderConstraints = [where('event_id', '==', eventId)]
-        if ('ordersEnterpriseId' in mergedOptions && mergedOptions.skipOrdersEnterpriseFilter !== true) {
-          // undefined を渡すと where() が実行時エラーになるため null に正規化する
-          orderConstraints.push(where('enterprise_id', '==', mergedOptions.ordersEnterpriseId ?? null))
-        }
-        const ordersQuery = query(collectionGroup(db, 'member_orders'), ...orderConstraints).withConverter(
-          memberOrderConverter,
-        )
-        unsubscribeOrders = onSnapshot(
-          ordersQuery,
-          (ordersSnapshot) => {
-            _orders.value = ordersSnapshot.docs.flatMap((orderDoc) => {
-              try {
-                return orderDoc.data()
-              } catch (err) {
-                console.error(err)
-                reportClientError(err, { documentPath: orderDoc.ref.path, severity: 'warn' })
-                return []
-              }
-            })
+      if (ordersListenHolder.current == null) {
+        ordersListenHolder.current = createFirestoreListenRetry(
+          ({ onError }) => {
+            const orderConstraints = [where('event_id', '==', eventId)]
+            if ('ordersEnterpriseId' in mergedOptions && mergedOptions.skipOrdersEnterpriseFilter !== true) {
+              // undefined を渡すと where() が実行時エラーになるため null に正規化する
+              orderConstraints.push(where('enterprise_id', '==', mergedOptions.ordersEnterpriseId ?? null))
+            }
+            const ordersQuery = query(collectionGroup(db, 'member_orders'), ...orderConstraints).withConverter(
+              memberOrderConverter,
+            )
+            return onSnapshot(
+              ordersQuery,
+              (ordersSnapshot) => {
+                ordersListenHolder.current?.markHealthy()
+                reportedOrdersError = false
+                _orders.value = ordersSnapshot.docs.flatMap((orderDoc) => {
+                  try {
+                    return orderDoc.data()
+                  } catch (err) {
+                    console.error(err)
+                    reportClientError(err, { documentPath: orderDoc.ref.path, severity: 'warn' })
+                    return []
+                  }
+                })
+              },
+              onError,
+            )
           },
-          (err) => {
-            console.error('subscribeOrders snapshot error', err)
-            reportClientError(err, { documentPath: `events/${eventId}/member_orders`, severity: 'warn' })
-            unsubscribeOrders?.()
-            unsubscribeOrders = null
+          {
+            onError: (err) => {
+              console.error('subscribeOrders snapshot error', err)
+              if (reportedOrdersError) {
+                return
+              }
+              reportedOrdersError = true
+              reportClientError(err, { documentPath: `events/${eventId}/member_orders`, severity: 'warn' })
+            },
           },
         )
       }
+      ordersListenHolder.current.ensure()
     }
 
-    let unsubscribeMenus: Unsubscribe | null = null
+    const menusListenHolder: { current: FirestoreListenRetry | null } = { current: null }
+    let reportedMenusError = false
     const subscribeMenus = (eventRef: DocumentReference) => {
-      if (unsubscribeMenus == null) {
+      if (menusListenHolder.current == null) {
         const menusRef = collection(eventRef, 'menus').withConverter(menuConverter)
-        unsubscribeMenus = onSnapshot(
-          menusRef,
-          (menusSnapshot) => {
-            _menus.value = menusSnapshot.docs.flatMap((m) => {
-              try {
-                return m.data()
-              } catch (err) {
-                console.error(err)
-                reportClientError(err, { documentPath: m.ref.path, severity: 'warn' })
-                return []
+        menusListenHolder.current = createFirestoreListenRetry(
+          ({ onError }) =>
+            onSnapshot(
+              menusRef,
+              (menusSnapshot) => {
+                menusListenHolder.current?.markHealthy()
+                reportedMenusError = false
+                _menus.value = menusSnapshot.docs.flatMap((m) => {
+                  try {
+                    return m.data()
+                  } catch (err) {
+                    console.error(err)
+                    reportClientError(err, { documentPath: m.ref.path, severity: 'warn' })
+                    return []
+                  }
+                })
+              },
+              onError,
+            ),
+          {
+            onError: (err) => {
+              console.error('subscribeMenus snapshot error', err)
+              if (reportedMenusError) {
+                return
               }
-            })
-          },
-          (err) => {
-            console.error('subscribeMenus snapshot error', err)
-            reportClientError(err, { documentPath: `${eventRef.path}/menus`, severity: 'warn' })
-            unsubscribeMenus?.()
-            unsubscribeMenus = null
+              reportedMenusError = true
+              reportClientError(err, { documentPath: `${eventRef.path}/menus`, severity: 'warn' })
+            },
+            onGiveUp: () => {
+              if (_menus.value == null) {
+                _menus.value = []
+              }
+            },
           },
         )
       }
+      menusListenHolder.current.ensure()
     }
 
     /**
@@ -627,8 +663,8 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           retry = 0
           _eventRef.value = eventRef
           subscribeEvent(eventRef)
-          // 遅延評価なので以下を呼ぶ必要はない
-          // subscribeOrders(eventRef)
+          // メニューは computed の副作用にしない。失敗時に再評価されずスピナーが残るため
+          subscribeMenus(eventRef)
         })
         .catch((err) => {
           console.error('event subscribe getDocs error', err)
@@ -640,14 +676,20 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       retry = 0
       unsubscribeEvent?.()
       unsubscribeEvent = null
-      unsubscribeOrders?.()
-      unsubscribeOrders = null
+      ordersListenHolder.current?.stop()
+      ordersListenHolder.current = null
+      reportedOrdersError = false
+      menusListenHolder.current?.stop()
+      menusListenHolder.current = null
+      reportedMenusError = false
     }
 
     if (_eventRef.value == null) {
       subscribe()
     } else {
-      subscribeEvent(toRaw(_eventRef.value))
+      const eventRef = toRaw(_eventRef.value)
+      subscribeEvent(eventRef)
+      subscribeMenus(eventRef)
     }
 
     return {
@@ -658,6 +700,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       orders,
       confirmedOrders,
       members,
+      previewMembers,
       menus,
       getLoadedEvent,
       getLoadedMembers,

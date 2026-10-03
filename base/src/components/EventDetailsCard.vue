@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCommunityPath, getLogin } from '@/router/utils'
 import { getEventUrl } from '@shokujii/common/utils/urls.js'
@@ -11,7 +11,7 @@ import CommunityContactDialog from '@shokujii/base/components/CommunityContactDi
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
-import { type BokudeliEvent } from '@shokujii/base/stores/event.js'
+import { EVENT_DETAIL_MEMBER_PREVIEW_LIMIT, type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { type BokudeliCommunity } from '@shokujii/base/stores/community.js'
 import CalendarAddDialog from '@shokujii/base/components/CalendarAddDialog.vue'
 import { shareSnsButton, isMobileDevice } from '@shokujii/base/utils/shareSnsButton'
@@ -94,12 +94,63 @@ const twitterHashTagSearchUrl = computed(() => {
 // TODO コンポーネントを分割する
 const eventStore = useAppEventStore(props.event)
 
-const members = computed(() =>
-  [...(eventStore.members ?? [])].sort(
+/** メニュー購読より後に、人数が多いときの users 購読を始める。メニューが来ないときも待ち続けない */
+const MEMBER_PREVIEW_FALLBACK_MS = 2000
+const allowMemberListeners = ref(false)
+let memberPreviewFallbackTimer: ReturnType<typeof setTimeout> | undefined
+
+const clearMemberPreviewFallback = () => {
+  if (memberPreviewFallbackTimer != null) {
+    clearTimeout(memberPreviewFallbackTimer)
+    memberPreviewFallbackTimer = undefined
+  }
+}
+
+const participantCount = computed(() => props.event.members.length)
+
+const enableMemberListeners = () => {
+  allowMemberListeners.value = true
+  clearMemberPreviewFallback()
+}
+
+watch(
+  [() => eventStore.menus, participantCount],
+  ([menus, count]) => {
+    // 少人数は従来どおりすぐ購読する。多人数はメニュー購読のあと（または待っても来ないとき）に限る
+    if (menus != null || count <= EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
+      enableMemberListeners()
+    }
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  if (allowMemberListeners.value) {
+    return
+  }
+  memberPreviewFallbackTimer = setTimeout(() => {
+    enableMemberListeners()
+  }, MEMBER_PREVIEW_FALLBACK_MS)
+})
+
+onUnmounted(() => {
+  clearMemberPreviewFallback()
+})
+
+const members = computed(() => {
+  if (!allowMemberListeners.value) {
+    return []
+  }
+  const preview = eventStore.previewMembers ?? []
+  return [...preview].sort(
     (a, b) =>
       a.orders.reduce((max, order) => Math.max(max, order.updated_at), 0) -
       b.orders.reduce((max, order) => Math.max(max, order.updated_at), 0),
-  ),
+  )
+})
+
+const isMemberPreviewTruncated = computed(
+  () => participantCount.value > EVENT_DETAIL_MEMBER_PREVIEW_LIMIT && members.value.length > 0,
 )
 
 const isOpenContactDialogVisible = ref(false)
@@ -386,7 +437,7 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
               <span class="event-details-card__section-title font-weight-black">
                 {{ $t('event_details.participants') }}
                 <span class="event-details-card__section-title-count">
-                  {{ members.length }} / {{ event.event_max_people }}
+                  {{ participantCount }} / {{ event.event_max_people }}
                 </span>
               </span>
               <div class="d-flex align-center flex-wrap ga-2 event-participant-actions">
@@ -445,6 +496,9 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
             :is-show-member="isShowMember"
             :member-tags-visible="showParticipantTags"
           />
+          <p v-if="isMemberPreviewTruncated" class="text-body-2 text-medium-emphasis px-5 mb-2">
+            {{ $t('event_details.participants_preview_note', [EVENT_DETAIL_MEMBER_PREVIEW_LIMIT]) }}
+          </p>
         </div>
         <v-card-text class="px-5" :class="{ 'mt-6': !shouldShowParticipantsSection }">
           <v-row align="center" no-gutters class="flex-nowrap">

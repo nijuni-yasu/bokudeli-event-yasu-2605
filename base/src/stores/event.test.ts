@@ -82,7 +82,11 @@ vi.mock('@shokujii/base/stores/user.js', () => ({
   useUserStore: (userId: string) => useUserStoreMock(userId),
 }))
 
-import { fetchEventInCommunityDocument, useEventStore } from '@shokujii/base/stores/event.js'
+import {
+  fetchEventInCommunityDocument,
+  EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
+  useEventStore,
+} from '@shokujii/base/stores/event.js'
 import {
   buildEventStoreOptions,
   resolveEventStoreOptionsFromInjectedEnterpriseId,
@@ -155,12 +159,17 @@ describe('useEventStore lazy members', () => {
       docs: [{ ref: mockEventRef }],
     })
     onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
       callback({
         ref: { path: mockEventRef.path },
+        exists: () => true,
         data: () =>
           ({
             members: ['user-a', 'user-b'],
           }) as BokudeliEvent,
+        docs: [],
       })
       return vi.fn()
     })
@@ -190,5 +199,43 @@ describe('useEventStore lazy members', () => {
     expect(useUserStoreMock).toHaveBeenCalledTimes(2)
     expect(useUserStoreMock).toHaveBeenCalledWith('user-a')
     expect(useUserStoreMock).toHaveBeenCalledWith('user-b')
+  })
+
+  it('event の購読と同時に menus を購読する', async () => {
+    const store = useEventStore('event-menus')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toEqual(['user-a', 'user-b'])
+    })
+    expect(onSnapshotMock).toHaveBeenCalledTimes(2)
+    expect(store.menus).toEqual([])
+  })
+
+  it('previewMembers は上限人数だけ useUserStore を呼ぶ', async () => {
+    onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
+      callback({
+        ref: { path: mockEventRef.path },
+        exists: () => true,
+        data: () =>
+          ({
+            members: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8 }, (_, index) => `user-${index}`),
+          }) as BokudeliEvent,
+        docs: [],
+      })
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8)
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).toHaveBeenCalledTimes(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).toHaveBeenCalledWith('user-0')
+    expect(useUserStoreMock).not.toHaveBeenCalledWith(`user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT}`)
   })
 })
