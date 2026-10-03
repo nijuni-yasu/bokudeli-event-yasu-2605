@@ -197,12 +197,15 @@ export const archiveCommunityForm = onCall(async (request): Promise<ArchiveCommu
   const uid = await requireAuthUid(request.auth?.uid)
   const { community_id, form_id, archived } = parseOrThrow(ArchiveCommunityFormRequestSchema, request.data)
   await requireCommunityManager(community_id, uid)
-  const existing = await getCommunityForm(community_id, form_id)
-  if (existing == null) {
-    throw new HttpsError('not-found', 'フォームが見つかりません')
-  }
-  const updated = new CommunityForm(existing.id, { ...existing, archived, updated_by: uid })
-  await saveCommunityForm(community_id, updated)
+  const updated = await getFirestore().runTransaction(async (transaction) => {
+    const existing = await getCommunityForm(community_id, form_id, transaction)
+    if (existing == null) {
+      throw new HttpsError('not-found', 'フォームが見つかりません')
+    }
+    const next = new CommunityForm(existing.id, { ...existing, archived, updated_by: uid })
+    await saveCommunityForm(community_id, next, transaction)
+    return next
+  })
   return { form: toCommunityFormDetail(updated) }
 })
 
