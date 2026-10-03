@@ -11,7 +11,6 @@ import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import CopyEventDialog from '@shokujii/base/components/manage/community/CopyEventDialog.vue'
 import EventLetter from '@shokujii/base/components/manage/event/EventLetter.vue'
 import EventSettings from '@shokujii/base/components/manage/event/EventSettings.vue'
-import EventFormResponsesPanel from '@shokujii/base/components/manage/event/EventFormResponsesPanel.vue'
 import EventFlyer from '@shokujii/base/components/manage/event/EventFlyer.vue'
 import EventCommunityBillAlert from '@shokujii/base/components/manage/event/EventCommunityBillAlert.vue'
 import EventOverviewActionPanel from '@shokujii/base/components/manage/event/EventOverviewActionPanel.vue'
@@ -33,7 +32,7 @@ import flyerLogo from '@/assets/images/shokujii/flyer_logo.png'
 const { t: $t } = useI18n()
 const router = useRouter()
 
-const tabs = ['overview', 'member', 'letter', 'flyer', 'form', 'settings'] as const
+const tabs = ['overview', 'member', 'letter', 'flyer', 'settings'] as const
 type Tabs = (typeof tabs)[number]
 
 const eventId = useRoute().params.eventId as string
@@ -41,7 +40,10 @@ const tabName = useRoute().params.tab as string
 const eventStore = useEventStore(eventId) as EventStore
 const event = computed(() => eventStore.event)
 
-const tab = ref<Tabs>(tabs.find((t) => t === tabName) ?? tabs[0])
+const tab = ref<Tabs>(tabName === 'form' ? 'member' : (tabs.find((t) => t === tabName) ?? tabs[0]))
+if (tabName === 'form') {
+  void router.replace(`/manage/event/${eventId}/member`)
+}
 
 const isSettingsTabActive = computed(() => tab.value === 'settings')
 provide(injectionKeyEventEditHostActive, isSettingsTabActive)
@@ -225,11 +227,6 @@ const openEventPublicPage = () => {
         </v-tabs-window-item>
         <v-tabs-window-item value="flyer">
           <EventFlyer :flyer-logo-url="flyerLogo" />
-        </v-tabs-window-item>
-        <v-tabs-window-item value="form">
-          <v-container class="manage-container">
-            <EventFormResponsesPanel v-if="event != null" :event="event" />
-          </v-container>
         </v-tabs-window-item>
         <v-tabs-window-item value="settings">
           <EventSettings />
