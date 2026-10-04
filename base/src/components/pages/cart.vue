@@ -1039,13 +1039,8 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
                       </div>
                     </td>
                     <td class="text-center" style="padding: 1px">¥{{ priceString(menu.menu_price) }}</td>
-                    <td
-                      v-if="hasCartCommunityBill(cartItem.event)"
-                      class="text-center"
-                      style="padding: 1px"
-                      :class="menu.totalDiscount > 0 ? 'text-caption text-discount' : ''"
-                    >
-                      <template v-if="menu.totalDiscount > 0"> -¥{{ priceString(menu.totalDiscount) }} </template>
+                    <td v-if="hasCartCommunityBill(cartItem.event)" class="text-center" style="padding: 1px">
+                      <template v-if="menu.totalDiscount > 0">¥{{ priceString(menu.totalDiscount) }}</template>
                       <template v-else>—</template>
                     </td>
                   </tr>
