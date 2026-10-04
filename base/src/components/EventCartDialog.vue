@@ -129,9 +129,29 @@ const toggleMultiple = (optionId: string, itemId: string, checked: boolean) => {
   selectedByOption.value = { ...selectedByOption.value, [optionId]: [...current] }
 }
 
-const formatDelta = (delta: number): string => {
-  const sign = delta > 0 ? '+' : delta < 0 ? '-' : ''
-  return `${sign}¥${priceString(Math.abs(delta))}`
+const optionAmountColumnCh = computed(() => {
+  const maxLength = menuOptions.value.reduce((max, option) => {
+    const optionMax = option.option_items.reduce(
+      (innerMax, item) => Math.max(innerMax, priceString(Math.abs(item.price_delta)).length),
+      0,
+    )
+    return Math.max(max, optionMax)
+  }, 1)
+  return maxLength
+})
+
+const optionPriceColumnStyle = computed(() => ({
+  '--cart-option-amount-ch': String(optionAmountColumnCh.value),
+}))
+
+const optionPriceSign = (delta: number): '+' | '-' | '' => {
+  if (delta > 0) {
+    return '+'
+  }
+  if (delta < 0) {
+    return '-'
+  }
+  return ''
 }
 
 watch(
@@ -234,7 +254,7 @@ const addCart = async () => {
 <template>
   <v-dialog v-model="isOpen" max-width="500px" scrollable :persistent="isAddingOrder" @click:outside="closeDialog()">
     <v-card>
-      <v-card-text class="pa-5 pa-sm-10">
+      <v-card-text class="pa-5 pa-sm-10" :style="optionPriceColumnStyle">
         <EventMenuImage
           v-if="eventStore.event != null"
           :event="eventStore.event"
@@ -300,8 +320,12 @@ const addCart = async () => {
             <v-radio v-for="item in option.option_items" :key="item.item_id" :value="item.item_id">
               <template #label>
                 <span class="cart-dialog-option-label">
-                  <span>{{ item.name }}</span>
-                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                  <span class="cart-dialog-option-name">{{ item.name }}</span>
+                  <span class="cart-dialog-option-price text-no-wrap text-medium-emphasis">
+                    <span class="cart-dialog-option-sign">{{ optionPriceSign(item.price_delta) }}</span>
+                    <span>¥</span>
+                    <span class="cart-dialog-option-amount">{{ priceString(Math.abs(item.price_delta)) }}</span>
+                  </span>
                 </span>
               </template>
             </v-radio>
@@ -316,8 +340,12 @@ const addCart = async () => {
             >
               <template #label>
                 <span class="cart-dialog-option-label">
-                  <span>{{ item.name }}</span>
-                  <span class="text-no-wrap text-medium-emphasis">{{ formatDelta(item.price_delta) }}</span>
+                  <span class="cart-dialog-option-name">{{ item.name }}</span>
+                  <span class="cart-dialog-option-price text-no-wrap text-medium-emphasis">
+                    <span class="cart-dialog-option-sign">{{ optionPriceSign(item.price_delta) }}</span>
+                    <span>¥</span>
+                    <span class="cart-dialog-option-amount">{{ priceString(Math.abs(item.price_delta)) }}</span>
+                  </span>
                 </span>
               </template>
             </v-checkbox>
@@ -370,19 +398,45 @@ const addCart = async () => {
 </template>
 
 <style scoped>
+.cart-dialog-options :deep(.v-selection-control) {
+  width: 100%;
+}
+
 .cart-dialog-options :deep(.v-label) {
   flex: 1;
+  width: 100%;
   min-width: 0;
+  opacity: 1;
+}
+
+.cart-dialog-option-name {
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .cart-dialog-option-label {
   display: flex;
-  flex: 1;
-  justify-content: space-between;
+  width: 100%;
   align-items: center;
   gap: 1rem;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.cart-dialog-option-price {
+  display: inline-grid;
+  grid-template-columns: 1ch auto calc(var(--cart-option-amount-ch, 1) * 1ch);
+  align-items: baseline;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.cart-dialog-option-sign {
+  text-align: center;
+}
+
+.cart-dialog-option-amount {
+  text-align: right;
 }
 
 .cart-dialog-count {
