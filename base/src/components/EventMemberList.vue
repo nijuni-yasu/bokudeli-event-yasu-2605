@@ -2,15 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { type BokudeliEventMember } from '@shokujii/base/stores/event.js'
-import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import UserAvatar from '@shokujii/base/components/UserAvatar.vue'
 import TagBadge from '@shokujii/base/components/TagBadge.vue'
 import TagAddChip from '@shokujii/base/components/TagAddChip.vue'
 import { getUserPath } from '@/router/utils'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
+import { groupOrderedMenus } from '@shokujii/base/utils/groupEventMemberOrders.js'
 import { orderTagsWithHighlightFirst } from '@shokujii/base/utils/tagDisplayOrder.js'
-import { formatOrderMenuDisplayName, getOrderMenuGroupKey } from '@shokujii/common/utils/menuOption.js'
 
 const { t: $t } = useI18n()
 
@@ -39,17 +38,6 @@ const orderedUserTags = (member: BokudeliEventMember) =>
 const isCurrentUser = (member: BokudeliEventMember) => member.user_id === currentUserStore.firebaseUser?.uid
 
 const hasMemberTagRow = (member: BokudeliEventMember) => (member.user_tags ?? []).length > 0 || isCurrentUser(member)
-
-function groupOrderedMenus(orders: EventMemberOrder[]): [string, { name: string; count: number }][] {
-  const map: Record<string, { name: string; count: number }> = {}
-  for (const o of orders) {
-    if (o.status !== 'ordered') continue
-    const key = getOrderMenuGroupKey(o)
-    if (!map[key]) map[key] = { name: formatOrderMenuDisplayName(o.menu_name, o.selected_options), count: 0 }
-    map[key].count++
-  }
-  return Object.entries(map)
-}
 </script>
 <template>
   <section>
