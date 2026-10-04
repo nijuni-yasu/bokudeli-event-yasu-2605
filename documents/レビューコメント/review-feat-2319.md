@@ -63,6 +63,8 @@
 | [x] | RC-57 | 4177469120 | 👌 修正不要 | — | — | 👤 UX | 👀 確認のみ | — | 旧 menu-zero の is_selected が編集画面で OFF<br>sandbox 残骸のみ |
 | [x] | RC-58 | 4177469126 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 挨拶文が名称のみで参加判定<br>予約 menu_id だけで除外 |
 | [x] | RC-59 | 5405972358 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
+| [x] | RC-60 | 4177776830 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 再生成時に existingMenus 未取得でも保存可<br>isLoadingMenu に existingMenus === null を含める |
+| [x] | RC-61 | 5406345779 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
 
 ---
 
@@ -2108,5 +2110,35 @@ Resolve legacy menu compatibility and non-atomic state transitions, and add the 
 - **方針**: レガシー注文なし参加データ（任意 `menu_id` + 旧名称 + 0円）は sandbox 残骸のため対応不要
 - **残す**: 予約 ID `no_order_participation` の読み取り正規化 / filter 除外（RC-45/46）、PartnerMenu の予約 ID 拒否（RC-52）、挨拶文は予約 ID のみ（RC-58）
 - **撤回**: RC-49/50/54/55/56/57 は 👌 修正不要。レガシー判定ヘルパーと自動修正を削除
+
+---
+
+## 評価セッション（2026-10-04 22:15・review-comments-evaluate auto）
+
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T13:05:54Z
+- **partial**: true（Codex は no_issues。レビュー非該当）
+- **レビュー非該当**: 2（依頼定型文 1、Codex no_issues 1）
+- **手順 4a 自動修正**: RC-60
+
+### RC-60（GitHub id: 4177776830）
+
+- **レビュワー**: Copilot
+- **指摘箇所**: `base/src/components/EventEdit.vue` L413
+- **評価**: 🚨 必須修正
+- **ステータス**: ✅ 対応済み
+- **PRスコープ**: 📌 スコープ内
+- **ラベル**: 🐛 実害
+- **種別**: 🔧 微修正
+- **工数**: S
+- **判断理由**: 再生成経路の `isLoadingMenu` が partner 側だけを待ち、`existingMenus === null` のとき `noOrderParticipationSelected` が false になる。保存で予約 ID が落ちる。
+- **対応**: 再生成時も `existingMenus === null` ならローディングにする
+- **該当コード**:
+
+```
++    const reservation = existingMenus.value?.find((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    return reservation?.is_selected ?? false
+```
+
+- **原文**: `[must] 再生成対象のイベントでは isLoadingMenu が partner menus/options だけを待ち、existingMenus が null（未取得）でも保存操作を許可します。…予約ドキュメントの取得完了をローディング／保存無効条件に含めるなど、未取得と未選択を分けてください。`
 
 ---

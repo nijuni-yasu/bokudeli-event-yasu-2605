@@ -379,7 +379,7 @@ const isLoadingMenu = computed(() => {
     return existingMenus.value === null
   }
   if (shouldRegenerateFromPartnerMenus(eventStatus)) {
-    return partnerMenus.value === null || partnerOptions.value === null
+    return partnerMenus.value === null || partnerOptions.value === null || existingMenus.value === null
   }
   return false
 })
