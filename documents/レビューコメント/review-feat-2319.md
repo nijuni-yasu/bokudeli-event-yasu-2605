@@ -43,6 +43,11 @@
 | [x] | RC-37 | 4176968988 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | 予約メニューに item_type が無いと店舗品目になる<br>addToCart の addingPartnerMenu が予約 ID でも true になる<br>価格 0 の未設定ドキュメントはスキーマで読めない<br>書き込みは常に organizer_menu。判定の誤作動は起きない |
 | [ ] | RC-38 | 4176969020 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | addToCart の排他がエミュレータで未検証<br>カート内・確定済み・決済中の拒否とカート内置換<br>純粋関数テストだけでは不足という指摘<br>RC-8 の続き。統合テストは工数 M のため未着手 |
 | [x] | RC-39 | 5979106773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | processing でも「確定」「キャンセル」案内になる<br>`cancelOrders` は ordered のみ受付<br>決済中用の文言を分離 |
+| [ ] | RC-40 | 4177207113 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | 並行 addToCart で排他が破れる<br>Transaction 内の読み取りだけでは直列化できない<br>決定的 ID か members 更新で直列化が必要 |
+| [x] | RC-41 | 4177211648 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 最小催行中止の一括キャンセルで補助件数を過少減算<br>注文なし参加を revert 対象から除外<br>店舗発注分だけ `revertEnterpriseSubsidyUsageOnCancelBulk` |
+| [x] | RC-42 | 5405630930 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次<br>リンク先は RC-40 等で評価 |
+| [ ] | RC-43 | 5979299879 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | イベント複製で店舗メニューと予約 upsert が別 Transaction<br>eventCopy の失敗時整合性。RC-3 と同系 |
+| [x] | RC-44 | 5979299879 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 持参のみでも enterprise 補助サマリーが表示される<br>持参のみのときサマリー非表示 |
 
 ---
 
@@ -1997,5 +2002,48 @@ Resolve legacy menu compatibility and non-atomic state transitions, and add the 
 **想定工数**: S
 
 **判断理由**: `addToCart` で `processing` と `ordered` を分岐し、`NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE` を追加。利用者向けマッピングとテストを更新。
+
+---
+
+## 評価セッション（2026-10-04 20:08・review-comments-evaluate auto）
+
+- **評価日時**: 2026-10-04 20:08 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・PR #2328 wake）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 5979245289、Codex 接続案内 5405626547）
+- **重複除外**: 4（Copilot 5979299879 内の EventMenu/EventMemberOrder/eventMenusSelection/addToCart テスト → RC-13/15/3/38）
+- **partial**: false
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T10:58:40Z
+- **手順 4a 自動修正**: RC-41、RC-44（🚨 1件・条件付き 🟡 1件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-40 | 4177207113 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | 並行 addToCart で排他が破れる<br>決定的 ID か members 更新で直列化が必要 |
+| [x] | RC-41 | 4177211648 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💰 金銭 | 🔧 微修正 | S | 最小催行中止で補助件数を過少減算<br>`applyBulkEventCancelInTransaction` で店舗発注分のみ revert |
+| [x] | RC-42 | 5405630930 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
+| [ ] | RC-43 | 5979299879 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | eventCopy で予約 upsert が別 Transaction |
+| [x] | RC-44 | 5979299879 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 持参のみでも enterprise 補助サマリー表示<br>持参のみは非表示 |
+
+**識別子**: RC-41（GitHub id: 4177211648）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/minimumParticipantsJudgment.ts:81`
+
+**レビュワーのコメント（原文）**:
+
+[must] `allOrdered` には注文なし参加も含まれるため、この配列を `applyBulkEventCancelInTransaction` の `preloadedOrdered` に渡すと、enterprise_subsidy の一括中止で `revertEnterpriseSubsidyUsageOnCancelBulk` が注文なし参加まで `orderCountDelta: -orders.length` として月次利用件数から減算します。…
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**判断理由**: `applyBulkEventCancelInTransaction` 内で補助 revert 対象を `isPartnerSuppliedItem` で絞り込み。キャンセル対象注文は従来どおり全件。
 
 ---

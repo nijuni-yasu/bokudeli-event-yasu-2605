@@ -1,5 +1,6 @@
 import type { Transaction } from 'firebase-admin/firestore'
 import type { EventMemberOrder, EventMemberOrderCancelSourceType } from '@shokujii/common/schemas/EventMemberOrder.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { orderRequiresStripeIdForCancelRefund } from '@shokujii/common/utils/orderStripeRefundRequirement.js'
 import { getEventInCommunity, type ShokujiiEvent } from './stores/event.js'
 import { getOrders, saveOrder } from './stores/memberOrder.js'
@@ -89,10 +90,11 @@ export async function applyBulkEventCancelInTransaction(
   }
 
   if (eventPayment === 'enterprise_subsidy' && enterpriseId != null && eventMonth != null) {
+    const partnerOrders = ordered.filter((order) => isPartnerSuppliedItem(order.item_type))
     await revertEnterpriseSubsidyUsageOnCancelBulk({
       enterpriseId,
       eventMonth,
-      ordersByUser: groupOrdersByUser(ordered),
+      ordersByUser: groupOrdersByUser(partnerOrders),
       transaction,
     })
   }

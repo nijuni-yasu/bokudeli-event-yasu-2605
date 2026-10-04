@@ -1072,7 +1072,10 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
             </v-card>
           </v-col>
         </v-row>
-        <v-row v-if="hasCartEnterpriseSubsidy(cartItem.event)" class="text-center align-center">
+        <v-row
+          v-if="hasCartEnterpriseSubsidy(cartItem.event) && !isNoOrderParticipationOnly(cartItem.orders)"
+          class="text-center align-center"
+        >
           <v-col cols="12" class="px-8 pb-2">
             <v-sheet rounded="lg" class="pa-4 cart-enterprise-subsidy-summary" border>
               <div
