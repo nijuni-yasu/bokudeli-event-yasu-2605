@@ -798,6 +798,19 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       stopPreviewUserListeners()
     }
 
+    /** 画面再入場時。Pinia store は残るが unsubscribe 後は listener を張り直す */
+    const ensureSubscribed = (): void => {
+      const eventRef = _eventRef.value
+      if (eventRef != null) {
+        subscribeEvent(toRaw(eventRef))
+        if (menusRequested) {
+          subscribeMenus(toRaw(eventRef))
+        }
+        return
+      }
+      subscribe()
+    }
+
     if (_eventRef.value == null) {
       subscribe()
     } else {
@@ -830,6 +843,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       deleteEvent,
       subscribe,
       unsubscribe,
+      ensureSubscribed,
       $reset: () => {
         unsubscribe()
         subscribe()
