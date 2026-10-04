@@ -550,6 +550,12 @@ export const countParticipatedEventsForUser = async (userId: string, enterpriseI
 
 /**
  * 注文済みフード数（`member_orders` collection group で `user_id == uid + status == 'ordered'`）。
+ *
+ * `item_type == partner_menu` の where や count aggregation にはしない。
+ * 既存の注文ドキュメントには `item_type` が無いものがあり、欠落フィールドは where に一致しない。
+ * コンバータが読むときに付ける既定値は、Firestore の where には効かない。仕様はバックフィルしない。
+ * そのため当該ユーザーの確定注文を読んでから、メモリ上で店舗発注分だけ数える。
+ * 対象はユーザー単位の注文履歴であり、コレクション全体ではない。
  */
 export const countOrderedFoodsForUser = async (userId: string, enterpriseId?: string): Promise<number> => {
   if (userId === '') {
