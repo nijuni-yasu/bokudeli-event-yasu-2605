@@ -38,6 +38,7 @@ import { buildEventMapsSearchUrl } from '@shokujii/base/utils/eventMapsSearchUrl
 import { buildTwitterHashTagSearchUrl } from '@shokujii/base/utils/hashTag.js'
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import EventDiscountChip from '@shokujii/base/components/EventDiscountChip.vue'
+import CommunityBillHelpButton from '@shokujii/base/components/CommunityBillHelpButton.vue'
 import PaymentFeeNoteButton from '@shokujii/base/components/PaymentFeeNoteButton.vue'
 import {
   mdiTrashCan,
@@ -881,29 +882,18 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
             <tr>
               <td>{{ $t('event_details.payment') }}</td>
               <td>
-                {{ $t(getEventPaymentI18nKey(cartItem.event)) }}
-                <EventDiscountChip
-                  v-if="
-                    cartItem.event.event_payment === 'community_bill' && cartItem.event.community_bill_settings != null
-                  "
-                  :settings="cartItem.event.community_bill_settings"
-                  size="small"
-                  class="ml-1"
-                />
-              </td>
-            </tr>
-            <tr
-              v-if="cartItem.event.event_payment === 'community_bill' && cartItem.event.community_bill_settings != null"
-            >
-              <td colspan="2" class="pt-0">
-                <v-alert variant="tonal" color="discount" class="mb-0 cart-community-bill-banner">
-                  <template v-if="cartItem.event.community_bill_settings.type === 'free'">
-                    {{ $t('discount_settings.banner_free') }}
+                <span class="custom-table-value-with-action">
+                  {{ $t(getEventPaymentI18nKey(cartItem.event)) }}
+                  <template
+                    v-if="
+                      cartItem.event.event_payment === 'community_bill' &&
+                      cartItem.event.community_bill_settings != null
+                    "
+                  >
+                    <EventDiscountChip :settings="cartItem.event.community_bill_settings" size="small" class="ml-1" />
+                    <CommunityBillHelpButton :settings="cartItem.event.community_bill_settings" />
                   </template>
-                  <template v-else-if="cartItem.event.community_bill_settings.type === 'discount'">
-                    {{ $t('discount_settings.banner_discount', [cartItem.event.community_bill_settings.off_amount]) }}
-                  </template>
-                </v-alert>
+                </span>
               </td>
             </tr>
             <tr>
@@ -1324,7 +1314,6 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
 }
 
 /* Materio が .v-alert__content に font-size を直指定するため text-body-2 が効かない。本文相当に揃える */
-.cart-community-bill-banner :deep(.v-alert__content),
 .cart-subsidy-summary-alert :deep(.v-alert__content) {
   font-size: 0.875rem;
   line-height: 1.375rem;
@@ -1347,7 +1336,6 @@ const openMinimumParticipantsDialog = (minimumParticipants: MinimumParticipantsT
     box-sizing: border-box;
   }
 
-  .cart-community-bill-banner :deep(.v-alert__content),
   .cart-subsidy-summary-alert :deep(.v-alert__content) {
     font-size: 0.75rem;
     line-height: 1.25rem;

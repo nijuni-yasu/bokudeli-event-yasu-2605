@@ -47,6 +47,8 @@ export default {
     banner_free: '全額、主催者負担でご注文いただけます。追加のお支払いは不要です。',
     banner_discount:
       'メニュー1個につき{0}円まで主催者負担でご注文いただけます。差額はオンライン決済（クレジットカード・Apple Pay・Google Pay・PayPay など）でお支払いください。',
+    help_title: '支払いについて',
+    help_aria: '主催者負担の説明を表示',
     original_price: '小計：¥{0}',
     discount_applied: 'おごり合計：¥{0}',
     free_by_organizer: '全額おごり',
