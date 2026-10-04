@@ -1,8 +1,8 @@
 /**
  * pstack 専用架空 fixture を Firestore / Auth に投入する（D-06）。
  *
- * 使い方（sandbox2606 例）:
- *   GCLOUD_PROJECT=bokudeli-event-yasu-2606 node scripts/pstack/seed-pstack-fixture.mjs
+ * 使い方（正本 sandbox2603 例）:
+ *   GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/seed-pstack-fixture.mjs
  *
  * 前提: Application Default Credentials で対象プロジェクトに書き込み権限があること。
  * 既存の pstack 固定 ID は merge 更新する。
@@ -31,6 +31,15 @@ const FIXTURE = {
 const projectId = process.env.GCLOUD_PROJECT
 if (projectId == null || projectId === '') {
   console.error('GCLOUD_PROJECT を設定してください')
+  process.exit(1)
+}
+
+/** 本番・共有 dev への誤投入防止（pstack sandbox 台帳の Firebase project ID 形式のみ） */
+const SANDBOX_PROJECT_ID_PATTERN = /^bokudeli-event-yasu-\d+(-\d+)?$/
+if (!SANDBOX_PROJECT_ID_PATTERN.test(projectId)) {
+  console.error(
+    `許可されていない GCLOUD_PROJECT: ${projectId}。sandbox 用 Firebase プロジェクト（例: bokudeli-event-yasu-2606）のみ指定してください。`,
+  )
   process.exit(1)
 }
 
