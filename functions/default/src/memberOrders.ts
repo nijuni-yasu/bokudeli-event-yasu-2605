@@ -18,6 +18,10 @@ import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/commo
 import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import {
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE,
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE,
+} from '@shokujii/common/utils/noOrderParticipationMessages.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
@@ -134,8 +138,11 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
     const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
     const replacedNoOrderIds = inCartNoOrderIdsToReplace(menus, eventMenus, existingCartOrders)
 
-    if (addingNoOrder && (hasExistingPartnerInCart || addingPartnerMenu)) {
-      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+    if (addingNoOrder && hasExistingPartnerInCart) {
+      throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE)
+    }
+    if (addingNoOrder && addingPartnerMenu) {
+      throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE)
     }
 
     const deleteReplacedNoOrders = async () => {
@@ -151,7 +158,7 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
           isPartnerSuppliedItem(order.item_type) && (order.status === 'ordered' || order.status === 'processing'),
       )
       if (hasActivePartnerOrder) {
-        throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+        throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE)
       }
       const existingNoOrders = memberOrders.filter(
         (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),

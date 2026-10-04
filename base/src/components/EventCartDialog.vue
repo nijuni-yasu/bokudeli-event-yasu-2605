@@ -380,7 +380,13 @@ const addCart = async () => {
             {{ displayedSubtotal == null ? $t('cart_dialog.price_pending') : `¥${priceString(displayedSubtotal)}` }}
           </div>
         </div>
-        <v-alert v-if="addErrorMessage !== ''" type="error" variant="tonal" class="mb-4">
+        <v-alert
+          v-if="addErrorMessage !== ''"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          class="cart-dialog-add-error mb-4"
+        >
           {{ addErrorMessage }}
         </v-alert>
         <div class="d-flex justify-end align-center flex-wrap ga-3">
@@ -461,5 +467,13 @@ const addCart = async () => {
   height: 200px;
   background-color: rgb(var(--v-theme-grey-100));
   border-radius: 4px;
+}
+
+/* Materio が .v-alert__content に font-size を直指定するため、複行の案内文は deep で揃える */
+.cart-dialog-add-error :deep(.v-alert__content) {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 </style>
