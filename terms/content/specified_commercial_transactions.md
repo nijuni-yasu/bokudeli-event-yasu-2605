@@ -23,7 +23,7 @@ import { USER_PAYMENT_FEE_AMOUNT } from '../../common/src/utils/paymentUserFee'
   〒101-0064
   東京都千代田区神田猿楽町２丁目８−１１ Vort水道橋III 9階
 - **電話番号**
-  050-1721-5838
+  050-3580-5122
   受付時間 10:00-18:00（土日祝を除く）
 - **メールアドレス** support@nijuni.jp
 - **サイトURL** [https://shokujii.jp/](https://shokujii.jp/)
