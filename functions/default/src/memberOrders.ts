@@ -39,6 +39,7 @@ import {
   deleteOrderedNoOrderParticipation,
   findOrderedNoOrderParticipationIdsToDelete,
 } from './utils/deleteOrderedNoOrderParticipation.js'
+import { inCartNoOrderIdsToReplace } from './utils/replaceInCartNoOrderParticipation.js'
 import {
   addEnterpriseSubsidyMenusToCart,
   assertActiveEnterpriseMember,
@@ -125,21 +126,22 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
 
     const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
 
-    const noOrderUnits = menus
-      .filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
-      .reduce((sum, menu) => sum + menu.count, 0)
-    if (noOrderUnits > 0 && noOrderUnits !== 1) {
+    const noOrderLines = menus.filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    if (noOrderLines.length > 1 || noOrderLines.some((menu) => !Number.isInteger(menu.count) || menu.count !== 1)) {
       throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
     }
 
-    const hasExistingNoOrderInCart = existingCartOrders.some((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
     const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
+    const replacedNoOrderIds = inCartNoOrderIdsToReplace(menus, eventMenus, existingCartOrders)
 
     if (addingNoOrder && (hasExistingPartnerInCart || addingPartnerMenu)) {
       throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
     }
-    if (addingPartnerMenu && hasExistingNoOrderInCart) {
-      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+
+    const deleteReplacedNoOrders = async () => {
+      for (const orderId of replacedNoOrderIds) {
+        await deleteOrder(community_id, event_id, uid, orderId, transaction)
+      }
     }
 
     if (addingNoOrder) {
@@ -184,7 +186,7 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
           'enterprise_id and resolved subsidy settings are required for enterprise_subsidy',
         )
       }
-      return addEnterpriseSubsidyMenusToCart({
+      const subsidyResult = await addEnterpriseSubsidyMenusToCart({
         communityId: community_id,
         eventId: event_id,
         userId: uid,
@@ -195,9 +197,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         eventMenus,
         transaction,
         enterpriseMember,
-        existingInCart: existingCartOrders,
+        existingInCart: existingCartOrders.filter((order) => order.menu_id !== NO_ORDER_PARTICIPATION_MENU_ID),
       })
+      await deleteReplacedNoOrders()
+      return subsidyResult
     }
+
+    await deleteReplacedNoOrders()
 
     for (const menu of menus) {
       const masterMenu = eventMenus.find((m) => m.id === menu.menu_id)
