@@ -10,8 +10,8 @@
 
 **Issue**: #2398（pstack 導入）に関連するフェーズ1検証
 **ブランチ**: `doc/2398-pstack`（または当該作業ブランチ）
-**検証スキル**: `.agents/skills/user-event-cart-verify/SKILL.md`
-**Feature Map**: `.agents/skills/user-event-cart-verify/feature-map.md`
+**検証スキル**: `.agents/skills/shokujii-user-event-cart-verify/SKILL.md`
+**Feature Map**: `.agents/skills/shokujii-user-event-cart-verify/feature-map.md`
 **予約**: [sandbox-pool.md](../../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) の sandbox2606（`pstack-res-20261004-001`）
 **Fixture**: [fixture-pstack-001.md](../../../../documents/AIエージェント/02_pstack/records/fixture-pstack-001.md)
 

@@ -10,7 +10,7 @@
 | --- | --- |
 | `/automate-me` で個人 `-mode` を履歴から生成する | 使わない。履歴採掘と PR 作成が入り、フェーズ2の対象外 |
 | `/reflect` でセッション教訓を Skill に残す | 使わない。同梱・個人 Skill を増やす作業は後続 |
-| `/poteto-mode` から Skill を書く | 使わない。検証スキルは既に [user-event-cart-verify](../../../.agents/skills/user-event-cart-verify/SKILL.md) がある |
+| `/poteto-mode` から Skill を書く | 使わない。検証スキルは既に [shokujii-user-event-cart-verify](../../../.agents/skills/shokujii-user-event-cart-verify/SKILL.md) がある |
 | `/create-verification-skill` | 使わない。正本は既存スキル。上書きしない |
 | 同梱 Playbook / Principle の直接編集 | **禁止**。更新で消える |
 
@@ -23,7 +23,7 @@
 1. [AGENTS.md](../../../AGENTS.md) と既存 Skill（コミット / PR / レビュー / sandbox / セルフレビュー）
 2. [導入計画 §6](01_pstack導入計画.md#6-既存ルールが優先される操作) の採用表
 3. 本ファイル
-4. 対象画面の検証は [user-event-cart-verify](../../../.agents/skills/user-event-cart-verify/SKILL.md) と [feature-map.md](../../../.agents/skills/user-event-cart-verify/feature-map.md)
+4. 対象画面の検証は [shokujii-user-event-cart-verify](../../../.agents/skills/shokujii-user-event-cart-verify/SKILL.md) と [feature-map.md](../../../.agents/skills/shokujii-user-event-cart-verify/feature-map.md)
 5. pstack 同梱 Playbook / Principle（上と衝突しない範囲だけ）
 
 `/poteto-mode` が Feature や Investigation を選んでも、C1〜C3 の操作・証拠・片付けは検証スキルを Playbook より優先する。Playbook の「verify」を別ハーネスで置き換えない。
@@ -32,7 +32,7 @@
 
 | 操作 | 使うもの | 使わないもの |
 | --- | --- | --- |
-| イベント→カート検証 | `user-event-cart-verify` | 同梱の verification 生成、control-ui |
+| イベント→カート検証 | `shokujii-user-event-cart-verify` | 同梱の verification 生成、control-ui |
 | コミット | `git-commit-workflow` / `git-commit-message` | Playbook の Conventional Commits 例をそのまま |
 | PR / push | `git-create-pull-request` / `git-reflect-after-commit` | Opening a PR を単独の正本にしない |
 | sandbox デプロイ | `github-actions-deploy`（予約済み環境） | 本番 `firebase deploy` |

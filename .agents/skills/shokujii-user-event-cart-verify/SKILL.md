@@ -1,5 +1,5 @@
 ---
-name: user-event-cart-verify
+name: shokujii-user-event-cart-verify
 description: Shokujii user アプリで、注文受付中イベントのメニューをカートに追加し /cart で内容を確認する検証手順。pstack フェーズ1・標準フローの画面証拠用。イベント→カート、D-14、検証スキル、画面確認、Playwright で触るときは必ずこのスキルを使う。
 ---
 
