@@ -748,7 +748,11 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     }
 
     let retry = 0
+    let subscribeSession = 0
+    let subscribeRetryTimer: ReturnType<typeof setTimeout> | null = null
+
     const subscribe = () => {
+      const session = subscribeSession
       const eventConstraints = [where('event_id', '==', eventId)]
       if ('eventsEnterpriseId' in mergedOptions) {
         // undefined を渡すと where() が実行時エラーになるため null に正規化する
@@ -756,13 +760,19 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       }
       getDocs(query(collectionGroup(db, 'events'), ...eventConstraints).withConverter(eventConverter))
         .then((querySnapshot) => {
+          if (session !== subscribeSession) {
+            return
+          }
           const eventRef = querySnapshot.docs[0]?.ref?.withConverter(eventConverter)
           if (eventRef == null) {
             if (retry++ < 16) {
               console.warn(
                 `The event "${eventId}" does not exist. It may not have been created yet. It will retry in 500 ms.`,
               )
-              window.setTimeout(subscribe, 500)
+              subscribeRetryTimer = setTimeout(() => {
+                subscribeRetryTimer = null
+                subscribe()
+              }, 500)
               return
             }
             exists.value = false
@@ -780,12 +790,20 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           }
         })
         .catch((err) => {
+          if (session !== subscribeSession) {
+            return
+          }
           console.error('event subscribe getDocs error', err)
           reportClientError(err, { documentPath: `events/${eventId}`, severity: 'warn' })
         })
     }
 
     const unsubscribe = () => {
+      subscribeSession += 1
+      if (subscribeRetryTimer != null) {
+        clearTimeout(subscribeRetryTimer)
+        subscribeRetryTimer = null
+      }
       retry = 0
       unsubscribeEvent?.()
       unsubscribeEvent = null

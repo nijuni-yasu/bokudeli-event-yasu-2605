@@ -24,6 +24,8 @@
 | [x] | RC-19 | 4177082519 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | M | 詳細画面 unmount で event store を止めずプレビュー購読が蓄積<br>useEventStorePageLifecycle で解除・再入場時 ensureSubscribed |
 | [ ] | RC-20 | 4177084537 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | チャット一覧のルーム表示だけで communities 購読が常駐<br>アクティブルームに限定する |
 | [x] | RC-21 | 5405485710 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview（目次）<br>RC-18〜20 等で評価 |
+| [ ] | RC-22 | 4177132806 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | 参加者ドロワーで全員分 users onSnapshot<br>詳細の12人制限と矛盾し resource-exhausted 再発の恐れ |
+| [x] | RC-23 | 4177132810 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | getDocs 完了前の離脱で subscribeEvent が残る<br>subscribeSession と再試行タイマー解除 |
 
 ---
 
@@ -863,4 +865,38 @@ Useful? React with 👍 / 👎.
 **PRスコープ**: 📌 スコープ内
 
 **判断理由**: イベント詳細の unmount で `unsubscribe()` し、再入場時は `ensureSubscribed()` で listener を復帰。user / enterprise の公開イベント詳細に `useEventStorePageLifecycle` を追加した。
+
+---
+
+## 評価セッション（2026-10-04 19:38 JST・wait-ai-pr-review auto）
+
+- **評価日時**: 2026-10-04 19:38 JST
+- **評価者**: Cursor Agent（review-comments-evaluate auto）
+- **ブランチ名**: feat/2391
+- **PR**: #2394
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T10:28:26Z
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 #5979028432、Codex 接続案内 #5405536081）
+- **重複除外**: #5979047309 → RC-3 / RC-6 / RC-13 / RC-14（差分なし）
+- **新規 RC**: RC-22, RC-23
+- **手順 4a 自動修正**: RC-23（`subscribeSession` + `subscribeRetryTimer` 解除）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-22 | 4177132806 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | ドロワーで全参加者 users 購読 |
+| [x] | RC-23 | 4177132810 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 離脱後の getDocs 完了で listener 残存 |
+
+**識別子**: RC-23（GitHub id: 4177132810）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/composable/useEventStorePageLifecycle.ts`
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**判断理由**: `event.ts` の `subscribe()` に購読世代を入れ、`unsubscribe()` で世代を進めて未完了の `getDocs` / 500ms 再試行を無効化した。
 
