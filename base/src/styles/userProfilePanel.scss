@@ -2,11 +2,9 @@
   max-width: 48px;
 }
 
-.profile-friend-preview-skeleton {
-  :deep(.v-skeleton-loader__avatar) {
-    width: 54px;
-    height: 54px;
-  }
+.profile-friend-preview-skeleton .v-skeleton-loader__avatar {
+  width: 54px;
+  height: 54px;
 }
 
 .profile-preview-skeleton {
@@ -116,11 +114,11 @@
   height: 18px;
   background-color: rgba(var(--v-theme-on-surface), 0.06);
   color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+}
 
-  :deep(.v-chip__content) {
-    padding-inline: 5px;
-    line-height: 1;
-  }
+.profile-preview-private-chip .v-chip__content {
+  padding-inline: 5px;
+  line-height: 1;
 }
 
 .community-preview-tile__text {

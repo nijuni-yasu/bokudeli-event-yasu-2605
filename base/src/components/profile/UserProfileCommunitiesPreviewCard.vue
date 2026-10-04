@@ -83,7 +83,3 @@ const communityLinkTo = (
     </v-card-text>
   </v-card>
 </template>
-
-<style scoped lang="scss">
-@import './userProfilePanel.scss';
-</style>

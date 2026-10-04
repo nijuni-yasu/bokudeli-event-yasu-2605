@@ -80,7 +80,3 @@ const canLink = (friend: UserProfileFriendPreviewItem): boolean => props.canLink
     </v-card-text>
   </v-card>
 </template>
-
-<style scoped lang="scss">
-@import './userProfilePanel.scss';
-</style>

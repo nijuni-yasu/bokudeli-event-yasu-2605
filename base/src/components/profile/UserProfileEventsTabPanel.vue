@@ -54,7 +54,3 @@ const handleLoadMore = () => {
     </v-col>
   </v-row>
 </template>
-
-<style scoped lang="scss">
-@import './userProfilePanel.scss';
-</style>

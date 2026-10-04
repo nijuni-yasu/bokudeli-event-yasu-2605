@@ -83,7 +83,3 @@ const { t: $t } = useI18n()
     </v-col>
   </v-row>
 </template>
-
-<style scoped lang="scss">
-@import './userProfilePanel.scss';
-</style>

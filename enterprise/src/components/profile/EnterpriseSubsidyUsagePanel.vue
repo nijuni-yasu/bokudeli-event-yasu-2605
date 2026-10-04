@@ -135,8 +135,6 @@ watch(
 </template>
 
 <style scoped lang="scss">
-@import '@shokujii/base/components/profile/userProfilePanel.scss';
-
 .usage-panel-card {
   border-color: rgba(var(--v-border-color), var(--v-border-opacity));
   background-color: rgb(var(--v-theme-surface));
