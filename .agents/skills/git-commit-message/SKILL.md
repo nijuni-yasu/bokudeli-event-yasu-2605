@@ -5,7 +5,9 @@ description: ステージング diff からコミットメッセージを生成�
 
 # コミットメッセージ生成
 
-git-commit-workflow / git-fixup / git-squash / git-split-commit から委譲される。本スキルはコミットメッセージの**生成まで**を担う。実際の `git commit` 実行は呼び出し元、または別途ユーザーの依頼を受けて行う。
+git-commit-workflow / git-fixup / git-squash / git-split-commit から委譲される。本スキルはコミットメッセージの**生成まで**を担う。`git commit` は呼び出し元が行う。単体で「メッセージだけ」と頼まれたときは生成して止め、コミットしない。実行依頼の途中で呼ばれたときは、メッセージを返したあと呼び出し元が同じターンでコミットする。メッセージ案の承認は待たない。
+
+実行依頼（「コミットして」等）で本スキルだけを開いた場合は、メッセージを出して止めない。`/git-commit-workflow` を読み、同じターンでコミットまで実行する。
 
 イシュー番号解決の正本は [issue-resolution.md](references/issue-resolution.md)。
 

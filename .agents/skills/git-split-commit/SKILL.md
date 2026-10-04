@@ -1,18 +1,18 @@
 ---
 name: git-split-commit
-description: 変更差分を論理単位で分割コミット案を検討する。各コミットのメッセージは git-commit-message に委譲する。「分割コミットして」「分割コミットを検討して」「コミットを分けて」と依頼された時に使用する。[common][doc][ai]については、必ず独立したコミットとする。
+description: 変更差分を論理単位で分割コミットする。各コミットのメッセージは git-commit-message に委譲する。「分割コミットして」「コミットを分けて」では承認を待たずにコミットまで実行する。「分割コミットを検討して」「分割案を出して」のときは案の出力までで止める。git-commit-workflow から分類 B として呼ばれたときも承認を待たずに実行する。[common][doc][ai] は必ず独立したコミットとする。
 ---
 
 # 分割コミット
 
-変更差分について、分割コミットを検討する。メッセージは [git-commit-message](../git-commit-message/SKILL.md) に委譲する。[common][doc][ai] については、必ず独立したコミットとする。
+変更差分を論理単位で分割する。メッセージは [git-commit-message](../git-commit-message/SKILL.md) に委譲する。[common][doc][ai] は必ず独立したコミットとする。
 
-git-commit-workflow / git-fixup / git-squash から「新規コミットが複数必要」と判断された場合、本スキルが呼ばれる。委譲時の流れ:
+## 実行と検討
 
-1. 本スキルで分割案とコミットメッセージを出力する（手順 4 まで。ここではコミットしない）
-2. ユーザーが分割案を承認する
-3. AI が承認された案どおりに B/C をコミットする
-4. 残りが A 向きなら、呼び出し元の fixup / squash / workflow を再開する
+| 依頼 | 動き |
+| :--- | :--- |
+| 「分割コミットして」「コミットを分けて」。git-commit-workflow / git-fixup / git-squash から分類 B として呼ばれた | 分割案を組み立て、承認を待たずに各コミットを実行する。残りが A 向きなら呼び出し元に戻る |
+| 「分割コミットを検討して」「分割案を出して」「メッセージだけ」 | 分割案とメッセージを出力して止める |
 
 対象の変更には、ステージング済みの変更のみ、未ステージのみ、両方がある場合がある。
 
@@ -68,17 +68,19 @@ git branch --show-current
 
 3. 各コミットのメッセージを生成する
 
-   分割案の **コミットごと** に次を行う。
+   分割案の **コミットごと** に、上のコミット順序で次を行う。
    1. `git restore --staged .` で全解除
    2. 当該コミットの対象ファイルのみ stage する
-   3. [git-commit-message](../git-commit-message/SKILL.md) を呼ぶ（内部で [issue-resolution full](../git-commit-message/references/issue-resolution.md#full-フロー) が走る。**コミットごとに Issue 番号が異なってよい**
-   4. 再度 `git restore --staged .` する（検討のみのためコミットしない）
+   3. [git-commit-message](../git-commit-message/SKILL.md) を呼ぶ（内部で [issue-resolution full](../git-commit-message/references/issue-resolution.md#full-フロー) が走る。**コミットごとに Issue 番号が異なってよい**）
+   4. **実行依頼**: 生成したメッセージで、承認を待たずにコミットする。`git commit` のメッセージは HEREDOC で渡す（タイトル、空行、本文）
+   5. **検討のみ**: `git restore --staged .` して次の案へ進む。コミットしない
 
    メッセージフォーマットの正本は git-commit-message のみ。本スキルにフォーマット節を書かない。
 
-4. 分割案とコミットメッセージを出力する
+4. 結果を出力する
 
-※ このスキルは分割案とコミットメッセージの検討・出力までとする。実際のコミット実行は別途 AI に依頼する
+   - 実行依頼: 各コミットのタイトルと `git log --oneline` の結果。未コミットが残っていれば呼び出し元に戻す
+   - 検討のみ: 下記の分割案とメッセージ。コミットしていない
 
 ## 出力形式
 

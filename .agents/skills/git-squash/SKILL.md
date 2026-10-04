@@ -1,6 +1,6 @@
 ---
 name: git-squash
-description: 変更を過去の適切なコミットに squash + autosquash で統合し、統合後のコミットメッセージを git-commit-message で生成する。分類は git-commit-workflow/references/classification.md に従う。squash 向きでない差分は git-split-commit または git-commit-message へ委譲。「squashして」「スカッシュして」「メッセージも直してまとめて」と依頼された時に使用。吸収先はいま作業中のブランチ上のコミットに限定する。
+description: 変更を過去の適切なコミットに squash + autosquash で統合し、統合後のコミットメッセージを git-commit-message で生成する。分類は git-commit-workflow/references/classification.md に従う。squash 向きでない差分は git-split-commit または git-commit-message へ委譲。「squashして」「スカッシュして」「メッセージも直してまとめて」と依頼された時は、確認せず同じターンで実行する。吸収先はいま作業中のブランチ上のコミットに限定する。
 ---
 
 # squash
@@ -37,9 +37,9 @@ git log --oneline --name-only
 
 **本スキル単独で呼ばれた場合の委譲**
 
-- **B** → **git-split-commit**
-- **C** → **git-commit-message** → `git commit`
-- **D** → 停止してユーザー確認
+- **B** → **git-split-commit** の実行モード
+- **C** → **git-commit-message** → 承認を待たず `git commit`
+- **D** → 実行依頼では **C**（git-commit-message → `git commit`）。検討のみでは停止する
 - **A0** → **git-commit-workflow** の A0 amend 手順
 - **A1** → **git-fixup** 手順5以降（A1-fast OK 時・A1 判定は手順3済み。ユーザーが squash 明示の場合は A2 として本スキルを続行）
 - **A2** → 本スキル手順4以降
