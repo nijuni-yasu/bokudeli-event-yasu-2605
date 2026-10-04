@@ -117,6 +117,27 @@ describe('sendOrderRemindMailToOrganizer', () => {
     expect(getUserMock).toHaveBeenCalledWith('user1', false)
     expect(sgMailSendMock).toHaveBeenCalledTimes(1)
   })
+
+  it('注文なし参加だけなら送信しない', async () => {
+    getAcceptingOrderEventsByTimeMock.mockResolvedValue([
+      createMockEvent({
+        enterprise_id: null,
+        getOrders: vi.fn().mockResolvedValue([
+          {
+            user_id: 'user1',
+            status: 'ordered',
+            menu_name: '注文なしで参加',
+            menu_price: 0,
+            item_type: 'organizer_menu',
+          },
+        ]),
+      }),
+    ])
+
+    await sendOrderRemindMailToOrganizer(0, 1, 5)
+
+    expect(sgMailSendMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('sendApplyingOrderRemindMailToShop', () => {

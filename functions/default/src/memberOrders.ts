@@ -15,7 +15,14 @@ import {
   isPaymentCommunityBillOffAmountConsistent,
 } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { findSoldOutMenuIds, SOLD_OUT_MENU_ERROR_MESSAGE } from '@shokujii/common/utils/assertEventMenusOrderable.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
+import {
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE,
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE,
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE,
+} from '@shokujii/common/utils/noOrderParticipationMessages.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
 import {
@@ -24,6 +31,7 @@ import {
   getOrder,
   getOrdersByIds,
   getOrdersInCart,
+  getMemberOrders,
   getMember,
   saveMember,
   saveOrder,
@@ -32,6 +40,11 @@ import { getEventInCommunity } from './stores/event.js'
 import { createModuleLogger } from './utils/logger.js'
 import { applyOrderConfirmedSideEffects } from './orderConfirmedSideEffects.js'
 import { applyAttemptToConfirmedResponse, planFormConfirmation } from './utils/formConfirm.js'
+import {
+  deleteOrderedNoOrderParticipation,
+  findOrderedNoOrderParticipationIdsToDelete,
+} from './utils/deleteOrderedNoOrderParticipation.js'
+import { inCartNoOrderIdsToReplace } from './utils/replaceInCartNoOrderParticipation.js'
 import {
   addEnterpriseSubsidyMenusToCart,
   assertActiveEnterpriseMember,
@@ -99,8 +112,16 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       transaction,
     })
 
+    const existingMember = await getMember(community_id, event_id, uid, transaction)
+
+    const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    const addingPartnerMenu = menus.some((m) => {
+      const eventMenu = eventMenus.find((em) => em.id === m.menu_id)
+      return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
+    })
+
     let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
-    if (eventData.event_payment === 'enterprise_subsidy') {
+    if (eventData.event_payment === 'enterprise_subsidy' && addingPartnerMenu) {
       if (enterpriseId == null || enterpriseMember == null) {
         throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
       }
@@ -108,12 +129,53 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       resolvedSubsidySettings = await loadResolvedSubsidySettings(enterpriseId, eventMonth, transaction)
     }
 
-    const existingMember = await getMember(community_id, event_id, uid, transaction)
+    const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
 
-    const existingCartOrders =
-      eventData.event_payment === 'enterprise_subsidy'
-        ? await getOrdersInCart(community_id, event_id, uid, transaction)
-        : undefined
+    const noOrderLines = menus.filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+    if (noOrderLines.length > 1 || noOrderLines.some((menu) => !Number.isInteger(menu.count) || menu.count !== 1)) {
+      throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
+    }
+
+    const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
+    const replacedNoOrderIds = inCartNoOrderIdsToReplace(menus, eventMenus, existingCartOrders)
+
+    if (addingNoOrder && hasExistingPartnerInCart) {
+      throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE)
+    }
+    if (addingNoOrder && addingPartnerMenu) {
+      throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE)
+    }
+
+    const deleteReplacedNoOrders = async () => {
+      for (const orderId of replacedNoOrderIds) {
+        await deleteOrder(community_id, event_id, uid, orderId, transaction)
+      }
+    }
+
+    if (addingNoOrder) {
+      const memberOrders = await getMemberOrders(community_id, event_id, uid, transaction)
+      const hasPartnerOrderProcessing = memberOrders.some(
+        (order) => isPartnerSuppliedItem(order.item_type) && order.status === 'processing',
+      )
+      if (hasPartnerOrderProcessing) {
+        throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE)
+      }
+      const hasPartnerOrderOrdered = memberOrders.some(
+        (order) => isPartnerSuppliedItem(order.item_type) && order.status === 'ordered',
+      )
+      if (hasPartnerOrderOrdered) {
+        throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE)
+      }
+      const existingNoOrders = memberOrders.filter(
+        (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),
+      )
+      if (existingNoOrders.some((o) => o.status === 'in_cart')) {
+        return null
+      }
+      if (existingNoOrders.length > 0) {
+        throw new HttpsError('failed-precondition', '注文なし参加は既に追加されています')
+      }
+    }
 
     if (existingMember == null) {
       const member = new EventMember(uid, {
@@ -128,14 +190,16 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       await saveMember(community_id, event_id, existingMember, transaction)
     }
 
-    if (eventData.event_payment === 'enterprise_subsidy') {
+    const isEnterpriseSubsidyOnlyPartnerMenus = eventData.event_payment === 'enterprise_subsidy' && !addingNoOrder
+
+    if (isEnterpriseSubsidyOnlyPartnerMenus) {
       if (resolvedSubsidySettings == null || enterpriseId == null || enterpriseMember == null) {
         throw new HttpsError(
           'failed-precondition',
           'enterprise_id and resolved subsidy settings are required for enterprise_subsidy',
         )
       }
-      return addEnterpriseSubsidyMenusToCart({
+      const subsidyResult = await addEnterpriseSubsidyMenusToCart({
         communityId: community_id,
         eventId: event_id,
         userId: uid,
@@ -146,9 +210,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         eventMenus,
         transaction,
         enterpriseMember,
-        existingInCart: existingCartOrders,
+        existingInCart: existingCartOrders.filter((order) => order.menu_id !== NO_ORDER_PARTICIPATION_MENU_ID),
       })
+      await deleteReplacedNoOrders()
+      return subsidyResult
     }
+
+    await deleteReplacedNoOrders()
 
     for (const menu of menus) {
       const masterMenu = eventMenus.find((m) => m.id === menu.menu_id)
@@ -165,11 +233,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
         throw new HttpsError(resolved.httpsCode, resolved.reason)
       }
 
-      const discount = computePaymentCommunityBillOffAmount(
-        eventData.event_payment,
-        eventData.community_bill_settings,
-        resolved.menu_price,
-      )
+      const discount = isPartnerSuppliedItem(masterMenu.item_type)
+        ? computePaymentCommunityBillOffAmount(
+            eventData.event_payment,
+            eventData.community_bill_settings,
+            resolved.menu_price,
+          )
+        : undefined
       for (let i = 0; i < menu.count; i++) {
         await createOrder(
           community_id,
@@ -183,6 +253,7 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
             menu_id: masterMenu.id,
             menu_name: masterMenu.menu_name,
             menu_price: resolved.menu_price,
+            item_type: masterMenu.item_type,
             enterprise_id: enterpriseId ?? null,
             ...(resolved.selected_options.length > 0 ? { selected_options: resolved.selected_options } : {}),
             ...(discount !== undefined ? { pay_community_bill_off_amount: discount } : {}),
@@ -322,31 +393,47 @@ export async function confirmOrderHandler(
       transaction,
     })
 
+    const noOrderIdsToDelete = await findOrderedNoOrderParticipationIdsToDelete(
+      community_id,
+      event_id,
+      uid,
+      orders,
+      transaction,
+    )
+
     if (eventData.event_payment === 'enterprise_subsidy') {
-      if (enterpriseId == null) {
-        throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+      const allOrganizerOnly = orders.every((o) => !isPartnerSuppliedItem(o.item_type))
+      if (!allOrganizerOnly) {
+        if (enterpriseId == null) {
+          throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+        }
+        const entMember = await loadEnterpriseMemberForSubsidy(enterpriseId, uid, transaction)
+        if (entMember == null) {
+          throw new HttpsError('failed-precondition', '企業メンバー情報が見つかりません')
+        }
+        const orderedAt = Timestamp.now().toMillis()
+        const finalized = await finalizeEnterpriseSubsidyZeroPaymentOrder({
+          enterpriseId,
+          userId: uid,
+          communityId: community_id,
+          eventId: event_id,
+          event: eventData,
+          orders,
+          orderIds: order_ids,
+          member: entMember,
+          transaction,
+          orderedAt,
+        })
+        if (!finalized.recalculated) {
+          await deleteOrderedNoOrderParticipation(community_id, event_id, uid, noOrderIdsToDelete, transaction)
+        }
+        return finalized
       }
-      const entMember = await loadEnterpriseMemberForSubsidy(enterpriseId, uid, transaction)
-      if (entMember == null) {
-        throw new HttpsError('failed-precondition', '企業メンバー情報が見つかりません')
-      }
-      const orderedAt = Timestamp.now().toMillis()
-      return finalizeEnterpriseSubsidyZeroPaymentOrder({
-        enterpriseId,
-        userId: uid,
-        communityId: community_id,
-        eventId: event_id,
-        event: eventData,
-        orders,
-        orderIds: order_ids,
-        member: entMember,
-        transaction,
-        orderedAt,
-      })
     }
 
     for (const order of orders) {
       if (
+        isPartnerSuppliedItem(order.item_type) &&
         !isPaymentCommunityBillOffAmountConsistent(eventData.event_payment, eventData.community_bill_settings, order)
       ) {
         throw new HttpsError('failed-precondition', '割引金額が一致しません')
@@ -386,6 +473,7 @@ export async function confirmOrderHandler(
       order.ordered_at = orderedAt
       saveOrder(community_id, event_id, uid, order, transaction)
     }
+    await deleteOrderedNoOrderParticipation(community_id, event_id, uid, noOrderIdsToDelete, transaction)
     return null
   })
 

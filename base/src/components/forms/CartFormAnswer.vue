@@ -15,6 +15,7 @@ import {
   findProfileGap,
   PROFILE_GAP_MESSAGE_KEY,
 } from '@shokujii/base/composable/cartOrderGate.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 import { computeTotalPayment } from '@shokujii/common/utils/paymentCommunityBillOffAmount.js'
 import { sortOrderIdsForEnterpriseSubsidyReplay } from '@shokujii/common/utils/eventMemberOrderSort.js'
 import { getUserFacingFailedPreconditionMessage } from '@shokujii/common/utils/failedPreconditionMessage.js'
@@ -82,9 +83,14 @@ const cartItemKey = computed(() =>
   cartItem.value == null ? '' : `${cartItem.value.event.community_id}\0${cartItem.value.event.event_id}`,
 )
 
+const isNoOrderParticipationOnly = computed(() => {
+  const orders = cartItem.value?.orders ?? []
+  return orders.length > 0 && orders.every((order) => order.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+})
+
 const needsStripe = computed(() => {
   const item = cartItem.value
-  if (item == null) {
+  if (item == null || isNoOrderParticipationOnly.value) {
     return false
   }
   if (item.event.event_payment === 'user_advance') {
@@ -268,8 +274,9 @@ const onPrimary = async () => {
       await startOrder(attemptId)
       return
     }
-    confirmDialogMessage.value =
-      cartItem.value?.event.event_payment === 'user_on_day'
+    confirmDialogMessage.value = isNoOrderParticipationOnly.value
+      ? $t('cart.confirm_no_order_participation')
+      : cartItem.value?.event.event_payment === 'user_on_day'
         ? $t('cart.confirm_order_participant_on_day')
         : $t('cart.confirm_order_community_bill')
     pendingAttemptId.value = attemptId
@@ -336,7 +343,13 @@ const confirmOrderNow = async () => {
             :disabled="openConfirmOrder"
             @click="onPrimary"
           >
-            {{ needsStripe ? $t('cart.proceed_to_payment') : $t('cart.order_and_attend_event') }}
+            {{
+              isNoOrderParticipationOnly
+                ? $t('cart.confirm_no_order_participation_button')
+                : needsStripe
+                  ? $t('cart.proceed_to_payment')
+                  : $t('cart.order_and_attend_event')
+            }}
           </v-btn>
         </v-col>
       </v-row>

@@ -1,12 +1,10 @@
 import type { HistoryState, RouteLocationRaw, Router } from 'vue-router'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 import type { SelectedOptionType } from '@shokujii/common/schemas/menuOption.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 /** history.state に載せる、挨拶案内の対象ルーム ID */
 export const CHAT_GREETING_PROMPT_STATE_KEY = 'promptChatGreetingRoomId'
-
-/** メニュー文に含めない参加専用メニュー名 */
-const PARTICIPATION_ONLY_MENU_NAME = '注文なしで参加'
 
 export const CHAT_GREETING_NAMED_INTRO_KEYS = [
   'chat.greeting.intro.named_hello',
@@ -106,7 +104,12 @@ export type ChatGreetingChoice = {
 export type ChatGreetingOrderLine = {
   status: string
   menu_name: string
+  menu_id?: string
   selected_options?: readonly SelectedOptionType[] | null
+}
+
+const isParticipationOnlyOrder = (order: ChatGreetingOrderLine): boolean => {
+  return order.menu_id === NO_ORDER_PARTICIPATION_MENU_ID
 }
 
 const pickIndex = (length: number, random: () => number): number => {
@@ -134,7 +137,7 @@ export const formatChatGreetingMenuPhrase = (orders: readonly ChatGreetingOrderL
   const menuCounts = new Map<string, number>()
   const menuNameOrder: string[] = []
   for (const order of orders) {
-    if (order.status !== 'ordered' || order.menu_name === PARTICIPATION_ONLY_MENU_NAME) {
+    if (order.status !== 'ordered' || isParticipationOnlyOrder(order)) {
       continue
     }
     const name = formatOrderMenuDisplayName(order.menu_name, order.selected_options)
@@ -159,6 +162,18 @@ export const formatChatGreetingMenuPhrase = (orders: readonly ChatGreetingOrderL
 
 type ChatGreetingTranslate = (key: string, values?: Record<string, string>) => string
 
+/** 確定注文から挨拶の注文文を組み立てる。「食事は持参」のみのときは空（2行目を付けない） */
+export const resolveChatGreetingOrderSentence = (
+  orders: readonly ChatGreetingOrderLine[] | null,
+  translate: ChatGreetingTranslate,
+): string => {
+  if (orders == null) {
+    return ''
+  }
+  const menus = formatChatGreetingMenuPhrase(orders)
+  return menus === '' ? '' : translate('chat.greeting.order', { menus })
+}
+
 /** 自己紹介・注文・一言を選んで連結する。orders が null のときは注文文を付けない */
 export const buildChatGreetingText = (
   userName: string,
@@ -170,8 +185,7 @@ export const buildChatGreetingText = (
   const choice = pickChatGreeting(userName, random)
   const intro = choice.introKey == null ? '' : translate(choice.introKey, { name: choice.name ?? '' })
   const closing = translate(choice.closingKey, { emoji: translate(choice.emojiKey) })
-  const menus = orders == null ? '' : formatChatGreetingMenuPhrase(orders)
-  const orderSentence = menus === '' ? '' : translate('chat.greeting.order', { menus })
+  const orderSentence = resolveChatGreetingOrderSentence(orders, translate)
   return composeChatGreetingBody(intro, orderSentence, closing, maxLength)
 }
 

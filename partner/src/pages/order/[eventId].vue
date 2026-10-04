@@ -7,6 +7,7 @@ import {
   ordersCount,
   sortEventMemberOrdersForPartnerDetail,
 } from '@shokujii/base/utils/orders.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { useValidators } from '@shokujii/base/composable/validators.js'
 import { getAuth } from 'firebase/auth'
 import { usePartnerStore } from '@shokujii/base/stores/partner.js'
@@ -118,7 +119,7 @@ const isOwner = computed<boolean | null>(() => {
 /** オーダー詳細明細テーブル・名前印刷 PDF と同一の並び（@shokujii/base/utils/orders.js 経由で common と同一のソート） */
 const sortedConfirmedOrders = computed(() => {
   const o = eventStore.confirmedOrders
-  return o == null ? [] : sortEventMemberOrdersForPartnerDetail(o)
+  return o == null ? [] : sortEventMemberOrdersForPartnerDetail(filterPartnerSuppliedOrders(o))
 })
 
 const minimumParticipants = computed(() => eventStore.event?.minimum_participants ?? null)
@@ -319,7 +320,7 @@ const downloadNamesPrint = async () => {
             </ConfirmDialog>
           </v-form>
         </template>
-        <v-card-text v-else-if="eventStore.confirmedOrders != null && eventStore.confirmedOrders.length !== 0">
+        <v-card-text v-else-if="sortedConfirmedOrders.length !== 0">
           <v-btn @click="downloadNamesPrint" :loading="isLoading">{{
             $t('order_detail.names_sheet_print_button')
           }}</v-btn>
@@ -374,10 +375,7 @@ const downloadNamesPrint = async () => {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="(subtotalOrder, key) in getSubtotalsOfOrders(eventStore.confirmedOrders)"
-                :key="`total-${key}`"
-              >
+              <tr v-for="(subtotalOrder, key) in getSubtotalsOfOrders(sortedConfirmedOrders)" :key="`total-${key}`">
                 <td>{{ key + 1 }}</td>
                 <td>{{ subtotalOrder.name }}</td>
                 <td class="order-options">
@@ -405,10 +403,10 @@ const downloadNamesPrint = async () => {
             <tbody>
               <tr>
                 <td>
-                  <h1>{{ ordersCount(eventStore.confirmedOrders) }}</h1>
+                  <h1>{{ ordersCount(sortedConfirmedOrders) }}</h1>
                 </td>
                 <td>
-                  <h1>{{ $n(ordersTotalPrice(eventStore.confirmedOrders), 'currency') }}</h1>
+                  <h1>{{ $n(ordersTotalPrice(sortedConfirmedOrders), 'currency') }}</h1>
                 </td>
               </tr>
             </tbody>

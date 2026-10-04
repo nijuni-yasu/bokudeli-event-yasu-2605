@@ -3,33 +3,49 @@ import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
 import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
 import { EventMenuOptionSchema } from './menuOption.js'
+import { EventItemTypeSchema, NO_ORDER_PARTICIPATION_MENU_ID, type EventItemTypeType } from './EventItemType.js'
 
-const EventMenuDbSchema = z.object({
-  updatedAt: TimestampSchema,
-  menu_description: MenuDescriptionDbFieldSchema,
-  menu_name: z.string().nonempty(),
-  // 0 は「注文なしで参加」。負数は拒否する。
-  menu_price: z.number().int().nonnegative(),
-  is_sold_out: z.boolean(),
-  menu_sort_number: z.number().int().nonnegative(),
-  is_selected: z.boolean(),
-  limit_per_event: LimitPerEventDbFieldSchema,
-  options: z.array(EventMenuOptionSchema).optional(),
-})
+const partnerMenuPriceRefine = (data: { item_type: EventItemTypeType; menu_price: number }, ctx: z.RefinementCtx) => {
+  if (data.item_type === 'partner_menu' && data.menu_price <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'partner_menu requires menu_price > 0',
+      path: ['menu_price'],
+    })
+  }
+}
 
-const EventMenuAppSchema = z.object({
-  // Mandatory
-  menu_name: z.string().nonempty(),
-  // Default
-  menu_price: z.number().int().nonnegative().default(100),
-  menu_description: MenuDescriptionAppFieldSchema,
-  is_sold_out: z.boolean().default(false),
-  is_selected: z.boolean().default(true),
-  // Mandatory
-  menu_sort_number: z.number().int().nonnegative(),
-  limit_per_event: LimitPerEventAppFieldSchema,
-  options: z.array(EventMenuOptionSchema).default([]),
-})
+const EventMenuDbSchema = z
+  .object({
+    updatedAt: TimestampSchema,
+    menu_description: MenuDescriptionDbFieldSchema,
+    menu_name: z.string().nonempty(),
+    menu_price: z.number().int().nonnegative(),
+    is_sold_out: z.boolean(),
+    menu_sort_number: z.number().int().nonnegative(),
+    is_selected: z.boolean(),
+    limit_per_event: LimitPerEventDbFieldSchema,
+    options: z.array(EventMenuOptionSchema).optional(),
+    item_type: EventItemTypeSchema,
+  })
+  .superRefine(partnerMenuPriceRefine)
+
+const EventMenuAppSchema = z
+  .object({
+    // Mandatory
+    menu_name: z.string().nonempty(),
+    // Default
+    menu_price: z.number().int().nonnegative().default(100),
+    menu_description: MenuDescriptionAppFieldSchema,
+    is_sold_out: z.boolean().default(false),
+    is_selected: z.boolean().default(true),
+    item_type: EventItemTypeSchema,
+    // Mandatory
+    menu_sort_number: z.number().int().nonnegative(),
+    limit_per_event: LimitPerEventAppFieldSchema,
+    options: z.array(EventMenuOptionSchema).default([]),
+  })
+  .superRefine(partnerMenuPriceRefine)
 
 const convertToDb = (menu: EventMenu) => {
   return {
@@ -52,9 +68,12 @@ export class EventMenu {
   is_selected!: boolean
   limit_per_event!: number | null
   options!: z.infer<typeof EventMenuOptionSchema>[]
+  item_type!: EventItemTypeType
 
   constructor(event_id: string, menu_id: string, src: Partial<EventMenu>) {
-    Object.assign(this, EventMenuAppSchema.parse(src))
+    const normalizedSrc =
+      menu_id === NO_ORDER_PARTICIPATION_MENU_ID ? { ...src, item_type: 'organizer_menu' as const } : src
+    Object.assign(this, EventMenuAppSchema.parse(normalizedSrc))
     this.event_id = event_id
     this.id = menu_id
     this.menu_id = menu_id

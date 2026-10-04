@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '../schemas/EventItemType.js'
 import { sortMenusWithSoldOutLast } from './menuSort.js'
 
 describe('sortMenusWithSoldOutLast', () => {
@@ -16,6 +17,16 @@ describe('sortMenusWithSoldOutLast', () => {
       'sold-out-1',
       'sold-out-2',
     ])
+  })
+
+  it('注文なし参加を売り切れより後ろの末尾に置く', () => {
+    const menus = [
+      { id: 'sold-out', menu_id: 'sold-out', is_sold_out: true },
+      { id: 'no-order', menu_id: NO_ORDER_PARTICIPATION_MENU_ID, is_sold_out: false },
+      { id: 'available', menu_id: 'available', is_sold_out: false },
+    ]
+
+    expect(sortMenusWithSoldOutLast(menus).map((menu) => menu.id)).toEqual(['available', 'sold-out', 'no-order'])
   })
 
   it('元の配列を変更しない', () => {

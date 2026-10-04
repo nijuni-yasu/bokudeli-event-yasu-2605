@@ -4,6 +4,7 @@ import { minimalMemberOrderFields } from '../schemas/partnerCompatTestDummyData.
 import {
   aggregateOrderMenus,
   calculateInvoiceTaxBreakdown,
+  calculateOrdersTotal,
   computeInclusive8ExTaxAndTax,
   computeInclusive10ExTaxAndTax,
   groupOrderedCommunityBillOffByAmount,
@@ -98,6 +99,26 @@ describe('aggregateOrderMenus', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({ name: 'ランチ', count: 2, price: 1000 })
   })
+
+  it('organizer_menu は集計から除外する', () => {
+    const partner = new EventMemberOrder('o1', {
+      ...minimalMemberOrderFields,
+      menu_id: 'm1',
+      menu_name: 'ランチ',
+      menu_price: 1000,
+      item_type: 'partner_menu',
+    })
+    const organizer = new EventMemberOrder('o2', {
+      ...minimalMemberOrderFields,
+      menu_id: 'no_order_participation',
+      menu_name: '注文なし',
+      menu_price: 0,
+      item_type: 'organizer_menu',
+    })
+    const rows = aggregateOrderMenus([partner, organizer])
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ name: 'ランチ', count: 1, price: 1000 })
+  })
 })
 
 describe('groupOrderedCommunityBillOffByAmount', () => {
@@ -119,5 +140,35 @@ describe('groupOrderedCommunityBillOffByAmount', () => {
     })
     const rows = groupOrderedCommunityBillOffByAmount([a, b])
     expect(rows).toHaveLength(2)
+  })
+})
+
+describe('calculateOrdersTotal', () => {
+  it('organizer_menu は合計から除外する', () => {
+    const orders = [
+      new EventMemberOrder('o1', {
+        order_id: 'o1',
+        user_id: 'u1',
+        event_id: 'e1',
+        community_id: 'c1',
+        menu_id: 'm1',
+        menu_name: 'A',
+        menu_price: 1000,
+        item_type: 'partner_menu',
+        status: 'ordered',
+      }),
+      new EventMemberOrder('o2', {
+        order_id: 'o2',
+        user_id: 'u1',
+        event_id: 'e1',
+        community_id: 'c1',
+        menu_id: 'no_order_participation',
+        menu_name: '注文なし',
+        menu_price: 0,
+        item_type: 'organizer_menu',
+        status: 'ordered',
+      }),
+    ]
+    expect(calculateOrdersTotal(orders)).toBe(1000)
   })
 })

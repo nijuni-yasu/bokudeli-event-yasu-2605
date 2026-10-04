@@ -9,6 +9,7 @@ import {
 } from 'firebase-admin/firestore'
 import { EventMember, EventMemberOrder, EventMemberOrderStatusType } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { EventStripe } from '@shokujii/common/schemas/EventStripe.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import type { ShokujiiEvent } from './event.js'
 import { MAX_PROFILE_PREVIEW_SKIP_PAGES } from '../utils/profileItemVisibility.js'
 
@@ -183,6 +184,17 @@ export const getOrdersInCart = async (
     .where('status', '==', 'in_cart')
     .withConverter(new EventMemberOrderConverter())
 
+  const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
+  return snapshot.docs.map((doc) => doc.data())
+}
+
+export const getMemberOrders = async (
+  communityId: string,
+  eventId: string,
+  userId: string,
+  transaction?: Transaction,
+): Promise<EventMemberOrder[]> => {
+  const query = ordersCollection(communityId, eventId, userId).withConverter(new EventMemberOrderConverter())
   const snapshot = await (transaction === undefined ? query.get() : transaction.get(query))
   return snapshot.docs.map((doc) => doc.data())
 }
@@ -421,7 +433,7 @@ const filterOrdersForProfile = async (
   const eventsByKey = await getEventsInCommunities(eventRefs)
 
   const visibleOrders: EventMemberOrder[] = []
-  for (const order of orders) {
+  for (const order of filterPartnerSuppliedOrders(orders)) {
     const event = eventsByKey.get(getCommunityEventKey(order.community_id, order.event_id))
     if (event == null || event.is_deleted) {
       continue
@@ -538,18 +550,29 @@ export const countParticipatedEventsForUser = async (userId: string, enterpriseI
 
 /**
  * 注文済みフード数（`member_orders` collection group で `user_id == uid + status == 'ordered'`）。
+ *
+ * `item_type == partner_menu` の where や count aggregation にはしない。
+ * 既存の注文ドキュメントには `item_type` が無いものがあり、欠落フィールドは where に一致しない。
+ * コンバータが読むときに付ける既定値は、Firestore の where には効かない。仕様はバックフィルしない。
+ * そのため当該ユーザーの確定注文を読んでから、メモリ上で店舗発注分だけ数える。
+ * 対象はユーザー単位の注文履歴であり、コレクション全体ではない。
  */
 export const countOrderedFoodsForUser = async (userId: string, enterpriseId?: string): Promise<number> => {
   if (userId === '') {
     return 0
   }
   const db = getFirestore()
-  let q = db.collectionGroup('member_orders').where('user_id', '==', userId).where('status', '==', 'ordered')
+  let q = db
+    .collectionGroup('member_orders')
+    .where('user_id', '==', userId)
+    .where('status', '==', 'ordered')
+    .withConverter(new EventMemberOrderConverter())
   if (enterpriseId != null && enterpriseId !== '') {
     q = q.where('enterprise_id', '==', enterpriseId)
   }
-  const snapshot = await q.count().get()
-  return snapshot.data().count
+  const snapshot = await q.get()
+  const orders = snapshot.docs.map((doc) => doc.data())
+  return filterPartnerSuppliedOrders(orders).length
 }
 
 export const getInCartMemberOrdersByUpdatedTime = async (

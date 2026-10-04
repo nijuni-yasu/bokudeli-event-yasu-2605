@@ -10,6 +10,7 @@ import {
   formatChatGreetingMenuPhrase,
   pickChatGreeting,
   readChatGreetingPromptRoomId,
+  resolveChatGreetingOrderSentence,
   withChatGreetingPrompt,
 } from './chatGreetingPrompt.js'
 
@@ -98,18 +99,59 @@ describe('formatChatGreetingMenuPhrase', () => {
     ).toBe('チーズバーガー（大盛、チーズ）')
   })
 
-  it('注文なしで参加はメニュー文に含めない', () => {
-    expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '注文なしで参加' }])).toBe('')
+  it('予約 menu_id の参加専用はメニュー文に含めない', () => {
+    expect(
+      formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '唐揚げ', menu_id: 'no_order_participation' }]),
+    ).toBe('')
     expect(
       formatChatGreetingMenuPhrase([
-        { status: 'ordered', menu_name: '注文なしで参加' },
+        { status: 'ordered', menu_name: '食事は持参', menu_id: 'no_order_participation' },
         { status: 'ordered', menu_name: '唐揚げ' },
       ]),
     ).toBe('唐揚げ')
   })
 
+  it('表示名が参加専用と同名でも予約 ID でなければメニュー文に含める', () => {
+    expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '食事は持参' }])).toBe('食事は持参')
+  })
+
   it('表示名が空の行は含めない', () => {
     expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '' }])).toBe('')
+  })
+})
+
+describe('resolveChatGreetingOrderSentence', () => {
+  const messages: Record<string, string> = {
+    'chat.greeting.order': '{menus}を注文しました。',
+  }
+  const translate = (key: string, values?: Record<string, string>): string => {
+    let text = messages[key] ?? key
+    if (values == null) {
+      return text
+    }
+    for (const [name, value] of Object.entries(values)) {
+      text = text.split(`{${name}}`).join(value)
+    }
+    return text
+  }
+
+  it('店舗メニュー確定時は従来どおりメニュー名を入れる', () => {
+    expect(resolveChatGreetingOrderSentence([{ status: 'ordered', menu_name: '唐揚げ' }], translate)).toBe(
+      '唐揚げを注文しました。',
+    )
+  })
+
+  it('食事は持参のみのときは注文文を付けない', () => {
+    expect(
+      resolveChatGreetingOrderSentence(
+        [{ status: 'ordered', menu_name: '食事は持参', menu_id: 'no_order_participation' }],
+        translate,
+      ),
+    ).toBe('')
+  })
+
+  it('orders が null のときは空', () => {
+    expect(resolveChatGreetingOrderSentence(null, translate)).toBe('')
   })
 })
 
@@ -178,6 +220,19 @@ describe('buildChatGreetingText', () => {
     const withoutOrder = 'こんにちは！山田です。みなさん、よろしくお願いします😊'
     expect(buildChatGreetingText('山田', [], translate, 2000, () => 0)).toBe(withoutOrder)
     expect(buildChatGreetingText('山田', null, translate, 2000, () => 0)).toBe(withoutOrder)
+  })
+
+  it('食事は持参のみのときは注文文を付けない', () => {
+    const withoutOrder = 'こんにちは！山田です。みなさん、よろしくお願いします😊'
+    expect(
+      buildChatGreetingText(
+        '山田',
+        [{ status: 'ordered', menu_name: '食事は持参', menu_id: 'no_order_participation' }],
+        translate,
+        2000,
+        () => 0,
+      ),
+    ).toBe(withoutOrder)
   })
 
   it('名前が空のときは名前なしの自己紹介から始める', () => {

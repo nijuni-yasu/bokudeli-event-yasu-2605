@@ -6,10 +6,13 @@ import { priceString } from '@shokujii/base/schemes/converter'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { type BokudeliEventMenu } from '@shokujii/base/stores/event.js'
-import { mdiFoodForkDrink } from '@mdi/js'
+import { mdiFoodForkDrink, mdiFoodOffOutline } from '@mdi/js'
 import EventMenuImage from '@shokujii/base/components/EventMenuImage.vue'
 import MenuStatusChips from '@shokujii/base/components/MenuStatusChips.vue'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
 import { sortMenusWithSoldOutLast } from '@shokujii/common/utils/menuSort.js'
+
+const isNoOrderParticipationMenu = (menuId: string) => menuId === NO_ORDER_PARTICIPATION_MENU_ID
 
 /** 横長レイアウトを適用するメニュー数の上限（この数以下は横長、超えるとグリッド） */
 const HORIZONTAL_LAYOUT_MAX_COUNT = 2
@@ -38,6 +41,9 @@ const getMenuJoinButtonLabel = (menu: BokudeliEventMenu): string => {
   }
   if (isMenuLimitSoldOut(menu)) {
     return $t('event_menu.limit_sold_out')
+  }
+  if (isNoOrderParticipationMenu(menu.menu_id)) {
+    return $t('event_details.no_order_participation_join_button')
   }
   return $t('event_details.menu_join_button')
 }
@@ -86,7 +92,13 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="4" class="d-flex flex-shrink-0 align-stretch">
                 <div class="menu-image-wrapper menu-image-wrapper-horizontal">
-                  <EventMenuImage :event="eventStore.event" :menu="menu" :alt="menu.menu_name" cover />
+                  <div
+                    v-if="isNoOrderParticipationMenu(menu.menu_id)"
+                    class="d-flex align-center justify-center no-order-icon-area"
+                  >
+                    <v-icon :icon="mdiFoodOffOutline" size="64" color="grey-darken-1" />
+                  </div>
+                  <EventMenuImage v-else :event="eventStore.event" :menu="menu" :alt="menu.menu_name" cover />
                 </div>
               </v-col>
               <v-col cols="8" class="pa-4 pa-md-5 d-flex flex-column menu-content-col">
@@ -118,7 +130,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     color="primary"
                     rounded="pill"
                     elevation="5"
-                    :prepend-icon="mdiFoodForkDrink"
+                    :prepend-icon="isNoOrderParticipationMenu(menu.menu_id) ? mdiFoodOffOutline : mdiFoodForkDrink"
                     @click="emit('selectMenu', menu)"
                   >
                     {{ getMenuJoinButtonLabel(menu) }}
@@ -144,7 +156,14 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
             <v-row no-gutters class="flex-grow-1">
               <v-col cols="6" sm="12" class="d-flex flex-shrink-0">
                 <div class="menu-image-wrapper">
+                  <div
+                    v-if="isNoOrderParticipationMenu(menu.menu_id)"
+                    class="d-flex align-center justify-center no-order-icon-area"
+                  >
+                    <v-icon :icon="mdiFoodOffOutline" size="64" color="grey-darken-1" />
+                  </div>
                   <EventMenuImage
+                    v-else
                     :event="eventStore.event"
                     :menu="menu"
                     :alt="menu.menu_name"
@@ -186,7 +205,7 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                         color="primary"
                         rounded="pill"
                         elevation="5"
-                        :prepend-icon="mdiFoodForkDrink"
+                        :prepend-icon="isNoOrderParticipationMenu(menu.menu_id) ? mdiFoodOffOutline : mdiFoodForkDrink"
                         @click="emit('selectMenu', menu)"
                       >
                         {{ getMenuJoinButtonLabel(menu) }}
@@ -235,6 +254,13 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
   flex-shrink: 0;
   width: 100%;
   position: relative;
+}
+
+.no-order-icon-area {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  background-color: rgb(var(--v-theme-grey-100));
 }
 
 /* グリッドレイアウト: 画像を正方形で揃える */

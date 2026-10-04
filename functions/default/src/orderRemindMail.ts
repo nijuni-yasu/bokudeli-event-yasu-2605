@@ -13,6 +13,7 @@ import {
   convertToDuration,
 } from '@shokujii/common/utils/datetime.js'
 import { getShopReservationApprovalDeadlineMillis } from '@shokujii/common/constants/eventReservation.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 const logger = createModuleLogger('orderRemindMail')
@@ -160,7 +161,7 @@ export async function sendApplyingOrderRemindMailToShop(start: number, end: numb
  * 主催者リマインド用の注文データを作成
  */
 async function createOrdersForOrganizerRemind(event: ShokujiiEvent): Promise<OrdersByStatus> {
-  const allOrders = await event.getOrders()
+  const allOrders = filterPartnerSuppliedOrders(await event.getOrders())
   const ordersByStatus: OrdersByStatus = {}
 
   const promises = allOrders.map(async (order) => {
@@ -228,8 +229,8 @@ export async function sendOrderRemindMailToOrganizer(
         if (isEnterpriseEvent(event)) {
           return
         }
-        const hasOrders = await event.hasOrderedOrders()
-        if (!hasOrders) {
+        const partnerOrdered = filterPartnerSuppliedOrders(await event.getOrders('ordered'))
+        if (partnerOrdered.length === 0) {
           return
         }
 

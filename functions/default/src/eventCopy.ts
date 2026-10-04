@@ -7,9 +7,12 @@ import { buildMinimumParticipantsForEventCopy } from '@shokujii/common/utils/min
 import { getEventCoverStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import { getConfigGlobal } from './stores/config.js'
 import { getCommunity } from './stores/community.js'
-import { getEvent, saveEvent, ShokujiiEvent } from './stores/event.js'
+import { getEvent, getEventInCommunity, saveEvent, ShokujiiEvent } from './stores/event.js'
 import { getPartner } from './stores/partner.js'
 import { savePartnerMenusToEventMenus } from './eventMenusSnapshot.js'
+import { getFirestore } from 'firebase-admin/firestore'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '@shokujii/common/schemas/EventItemType.js'
+import { buildNoOrderParticipationEventMenu } from '@shokujii/common/utils/eventMenuConverter.js'
 import { createModuleLogger } from './utils/logger.js'
 import { isEnterpriseEvent } from './utils/enterpriseMail.js'
 import { assertEnterpriseEventPaymentAllowed } from './utils/enterpriseSubsidyOrders.js'
@@ -126,7 +129,10 @@ export const copyEventCore = async (
   await saveEvent(uid, newEvent)
 
   const srcEventMenus = await srcEvent.getMenus()
-  const selectedMenuIds = srcEventMenus.filter((m) => m.is_selected).map((m) => m.menu_id)
+  const noOrderSelected = srcEventMenus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && m.is_selected)
+  const selectedMenuIds = srcEventMenus
+    .filter((m) => m.is_selected && m.menu_id !== NO_ORDER_PARTICIPATION_MENU_ID)
+    .map((m) => m.menu_id)
   await savePartnerMenusToEventMenus(
     srcEvent.partner_id,
     newEvent.id,
@@ -141,6 +147,17 @@ export const copyEventCore = async (
       source_form_id: srcFormConfig.source_form_id,
     })
     await saveEventFormConfig(srcEvent.community_id, newEvent.id, copiedConfig)
+  }
+
+  if (noOrderSelected) {
+    await getFirestore().runTransaction(async (transaction) => {
+      const copiedEvent = await getEventInCommunity(srcEvent.community_id, newEvent.id, transaction)
+      if (copiedEvent == null) {
+        throw new Error(`Event ${newEvent.id} not found`)
+      }
+      const menu = buildNoOrderParticipationEventMenu(newEvent.id, true)
+      await copiedEvent.saveMenu(menu, transaction)
+    })
   }
 
   return {

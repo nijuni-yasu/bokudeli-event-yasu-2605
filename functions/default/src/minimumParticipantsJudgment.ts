@@ -1,6 +1,7 @@
 import { getFirestore } from 'firebase-admin/firestore'
 import type { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { MINIMUM_PARTICIPANTS_CANCEL_REASON } from '@shokujii/common/utils/minimumParticipants.js'
+import { filterPartnerSuppliedOrders } from '@shokujii/common/utils/eventItemType.js'
 import { getEventInCommunity } from './stores/event.js'
 import { getOrders } from './stores/memberOrder.js'
 import {
@@ -52,8 +53,9 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
       return { kind: 'skipped' }
     }
 
-    const ordered = await getOrders(community_id, event_id, 'ordered', transaction)
-    const uniqueCount = countUniqueOrderedUserIds(ordered)
+    const allOrdered = await getOrders(community_id, event_id, 'ordered', transaction)
+    const partnerOrdered = filterPartnerSuppliedOrders(allOrdered)
+    const uniqueCount = countUniqueOrderedUserIds(partnerOrdered)
 
     const evaluatedMp = {
       ...mp,
@@ -61,7 +63,7 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
     }
 
     if (uniqueCount >= mp.count) {
-      await syncEventMembersFromOrderedInTransaction(tEvent, ordered, transaction)
+      await syncEventMembersFromOrderedInTransaction(tEvent, allOrdered, transaction)
       await tEvent.updateEvent({ minimum_participants: evaluatedMp }, 'system', transaction)
       return { kind: 'continued' }
     }
@@ -76,14 +78,14 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
       nowMillis,
       transaction,
       preloadedEvent: tEvent,
-      preloadedOrdered: ordered,
+      preloadedOrdered: allOrdered,
     })
 
     if (canceledOrders == null) {
       return { kind: 'skipped' }
     }
 
-    await syncEventMembersFromOrderedInTransaction(tEvent, ordered, transaction)
+    await syncEventMembersFromOrderedInTransaction(tEvent, allOrdered, transaction)
     // applyBulkEventCancelInTransaction が同一インスタンス（tEvent）を更新済みのため、
     // event_canceled 等の変更を保ったまま judgment_evaluated_at を確定できる
     await tEvent.updateEvent({ minimum_participants: evaluatedMp }, 'system', transaction)

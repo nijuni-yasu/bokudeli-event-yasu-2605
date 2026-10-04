@@ -1,6 +1,12 @@
 import { PartnerMenu } from '../schemas/PartnerMenu.js'
 import { EventMenu } from '../schemas/EventMenu.js'
 import { RawEventStatusType } from '../schemas/Event.js'
+import {
+  NO_ORDER_PARTICIPATION_MENU_DESCRIPTION,
+  NO_ORDER_PARTICIPATION_MENU_ID,
+  NO_ORDER_PARTICIPATION_MENU_NAME,
+  NO_ORDER_PARTICIPATION_SORT_NUMBER,
+} from '../schemas/EventItemType.js'
 import { isMenuMinTotalValid, snapshotPartnerOptionsForMenu, type MenuOptionDefinition } from './menuOption.js'
 
 /**
@@ -85,6 +91,22 @@ export function convertFromPartnerMenuToEventMenu(
     limit_per_event: partnerMenu.limit_per_event,
     is_selected: selectedMenuIds.includes(partnerMenu.menu_id),
     options,
+    item_type: 'partner_menu',
+  })
+}
+
+/**
+ * 注文なし参加の予約 EventMenu を生成する
+ */
+export function buildNoOrderParticipationEventMenu(eventId: string, isSelected: boolean): EventMenu {
+  return new EventMenu(eventId, NO_ORDER_PARTICIPATION_MENU_ID, {
+    menu_name: NO_ORDER_PARTICIPATION_MENU_NAME,
+    menu_description: NO_ORDER_PARTICIPATION_MENU_DESCRIPTION,
+    menu_price: 0,
+    is_sold_out: false,
+    menu_sort_number: NO_ORDER_PARTICIPATION_SORT_NUMBER,
+    is_selected: isSelected,
+    item_type: 'organizer_menu',
   })
 }
 
