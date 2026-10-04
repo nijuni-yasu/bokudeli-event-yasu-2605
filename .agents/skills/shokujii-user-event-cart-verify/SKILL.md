@@ -7,7 +7,7 @@ description: Shokujii user アプリで、注文受付中イベントのメニ�
 
 正本はこのファイル。正本経路は **予約 sandbox**（現状は sandbox2603）。`feature-map.md` は機能の地図、実行ログは `documents/AIエージェント/02_pstack/records/` に置く。2606〜2608 へはデータ構築の別 PR まで push / seed / `FUNCTIONS_ENV` 変更をしない。
 
-ローカル `npm -w user run dev` は主経路の成功判定に使わない（末尾の「副経路」参照）。
+D-05 / D-14 によりローカル UI と予約 sandbox の両方で C1〜C3 を証明する。現時点の成功記録は sandbox のみであり、ローカルの接続先・実機証拠が揃うまでフェーズ1全体は未完了（末尾の「ローカル」参照）。
 
 ## いつ使うか
 
@@ -19,12 +19,12 @@ description: Shokujii user アプリで、注文受付中イベントのメニ�
 
 dev サーバーは起動しない。ブラウザは Hosting URL を開く。
 
-1. [sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) で予約を確認する。#2398 の正本は **sandbox2603**（予約 ID `pstack-res-20261004-002`）。予約のない環境へ push / dispatch しない。2606〜2608 へはデータ構築の別 PR まで触れない。
+1. [sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) で予約を確認する。正本 JSON の現在の作業ブランチに対応する予約 ID・世代・環境を取得する。#2398 の過去の予約 ID をコピーしない。現状の候補は **sandbox2603**。予約のない環境へ push / dispatch しない。2606〜2608 へはデータ構築の別 PR まで触れない。
 2. `git rev-parse HEAD` で対象 SHA を記録する。未コミット差分がある場合は証拠に明記する。
-3. 作業ブランチを sandbox リモートへ push する（例: `git push --force-with-lease sandbox2603 HEAD:doc/2398-pstack`）。手順は [github-actions-deploy](../github-actions-deploy/SKILL.md)。
+3. 作業ブランチを、現行予約のロックを保持する `sandbox_reservation.py run -- ...` 経由で sandbox リモートへ push する。手順は [github-actions-deploy](../github-actions-deploy/SKILL.md)。
 4. 最低限 `deploy_user.yml` / `deploy_functions.yml` / `deploy_firestore.yml` を発火する。`deploy_enterprise.yml` は sandbox で hosting target 未設定のためスキップしてよい。
-5. 6 本一括発火すると、同じブランチの Deploy functions が重なり **cancelled** になり得る。functions が cancelled または長時間 in_progress なら **`deploy_functions.yml` を単体で再発火**する。
-6. 成功判定: 対象 Hosting URL が開き、検証に必要な Callable（`requestEmailLogin` / `fetchVerificationTestPassCode` / `addToCart`）が応答する。デプロイ run が success ならそれを優先記録する。run 未完了でも Callable が動けば画面検証は進めてよい（証拠に「run 未確定」と書く）。
+5. 6 本一括発火すると、同じブランチの Deploy functions が重なり **cancelled** になり得る。functions が in_progress なら完了を待つ。cancelled の場合は原因を確認し、D-11 の一時障害に限って同じ SHA・予約で最大2回再試行する。予約ロック経由で発火する。
+6. 成功判定: 必要な user / functions / firestore の全 run が `completed` / `success`、各 `headSha` が対象 PR HEAD と一致することを `gh run view <run-id> --repo <repo> --json headSha,status,conclusion,url` で確認する。その後に新しいブラウザで C1〜C3 を実行する。途中の画面確認は参考証拠であり、旧 Functions が応答しても最新版の成功に数えない。
 
 ## 接続先と外部作用（1-2-2）
 
@@ -65,10 +65,12 @@ dev サーバーは起動しない。ブラウザは Hosting URL を開く。
 
 ### データの準備・復元
 
-リポジトリルートで seed する（再検証前は再実行を推奨。seed は当該ユーザーの当該イベントの `in_cart` を削除する）。
+D-12 に従い、新しい作業・別ブランチへの割当で `seed=true` のときだけ、旧 run の終了確認後に初期化する。同じ作業の再検証・修正・再デプロイ・人の確認待ちでは seed しない。seed は当該ユーザー・イベントの `status=in_cart` だけを削除する。
 
 ```text
-GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/seed-pstack-fixture.mjs
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  env GCLOUD_PROJECT="$GCLOUD_PROJECT" node scripts/pstack/seed-pstack-fixture.mjs
 ```
 
 実ユーザー情報・秘密は記録しない。メールは fixture の架空アドレスのみ使う。
@@ -80,7 +82,7 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/seed-pstack-fixture.
 1. 実行ごとに `verification_run_id` を新規生成する（例: `pstack-YYYYMMDDTHHMMSSZ`。秘密ではない）。
 2. `{hosting}/login?verification_run_id={RUN_ID}` を開く。アプリは query または `sessionStorage` キー `pstack_verification_run_id` を `requestEmailLogin` に渡す。
 3. メール欄に `pstack.participant@verify.shokujii.test` を入れ、「メールアドレスでログイン」を押す。`/pass-code` へ遷移する。
-4. OTP を取得する（トークン・コードを実行記録に残さない。取得成功の有無だけ書く）。
+4. 既存の Application Default Credentials（ADC）の Firestore 読取権限で OTP を取得する。公開 Callable は廃止。事前に `npm -w common run build` と `npm -w functions/default run build` を実行する。ADC 未設定・権限不足なら停止し、不足を報告する。追加権限を自動付与しない。トークン・コードを実行記録に残さず取得成否だけ書く。
 
 ```text
 GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code.mjs \
@@ -99,7 +101,7 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code
 | 予約なし / 他作業の占有 | sandbox-pool の予約行 | push / dispatch しない |
 | user デプロイ失敗 | Actions の `deploy_user.yml` | ビルド/Hosting ログを証拠に停止 |
 | functions cancelled | 同ブランチの重複 dispatch | `deploy_functions.yml` を単体再発火 |
-| OTP が取れない / not-found | 受け口 off、functions 未デプロイ、`run_id` 不一致、許可ドメイン外 | 受け口設定または seed を直す。製品不具合なら D-15 |
+| OTP が取れない / not-found | ADC 不足、Functions 受け口 off、functions 未デプロイ、`run_id` 不一致、許可ドメイン外 | 受け口設定または seed を直す。製品不具合なら D-15 |
 | `/login` が `/register/complete` 等へ飛ぶ | Playwright MCP が前実行の Firebase Auth（IndexedDB）を残している | cookie と IndexedDB を消してから `/login?verification_run_id=...` を開き直す。新しいタブだけでは足りない |
 | ログインできない | 上記 + `/pass-code` の email 欠落（history.state） | ログインからやり直す |
 | メニューが選べない / 未ログイン要求 | セッション未確立、イベントが `accepting_order` でない | seed またはログインをやり直す |
@@ -107,13 +109,13 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code
 
 ## 操作（1-2-6）
 
-初期状態: seed 済み、新しいブラウザ、未ログイン。操作対象はスナップショット上の日本語文言。
+初期状態: 新規割当は seed 済み。同じ作業の再検証では既存データを保持する。新しいブラウザ、未ログイン。ログイン後、追加前の `/cart` で対象メニューの数量 N を記録する（行がなければ N=0）。操作対象はスナップショット上の日本語文言。
 
 1. 起動〜ログイン（1-2-1〜1-2-4）を完了する。C1: ログイン後にイベント URL を開いてもログイン要求に戻されない。
 2. `{hosting}/c/pstack-verify/e/pstack-event-cart-001` を開く。見出し `pstackカート検証イベント`、状態 `参加受付中`、メニュー `pstack検証弁当` / `¥800` を確認する。
 3. メニューの「注文して参加する」を押す。ダイアログで個数 `1`、名称 `pstack検証弁当`、金額 `¥800` を確認する。
 4. 「カートに追加」を押す。`/cart` へ遷移し、エラーアラートが出ないこと（C2）。
-5. カート表でメニュー `pstack検証弁当`、個数 `1`、メニュー金額 `¥800` を確認する（C3）。決済（「お支払いに進む」）はしない。
+5. カート表でメニュー `pstack検証弁当`、個数 `N+1`、単価 `¥800`・行合計 `¥800 × (N+1)` を確認する（C3）。決済（「お支払いに進む」）はしない。
 
 ## 証拠（1-2-7）
 
@@ -123,13 +125,13 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code
 | --- | --- |
 | C1 | Hosting URL、`/login` → `/pass-code` → ログイン後画面のスナップショットまたはスクショ。人のメール閲覧なし |
 | C2 | イベント URL、追加後 `/cart` のスナップショット。エラーなし |
-| C3 | カート行の名称・数量が fixture と一致するスナップショットまたはスクショ |
+| C3 | カート行の名称と追加前後の数量差 +1 が一致するスナップショットまたはスクショ |
 
 共通して記録する:
 
 - 接続先 Hosting URL と `GCLOUD_PROJECT`
 - `git rev-parse HEAD`（未コミット差分があればその旨）
-- デプロイ run URL（分かれば）
+- 必要な全デプロイの run URL・headSha・status・conclusion（必須）。PR HEAD と一致する証拠
 - 実行時刻（UTC または JST）
 - Playwright の a11y スナップショット **または** スクリーンショット（`records/evidence/` は Git 任意）
 
@@ -165,12 +167,12 @@ OTP・カスタムトークン・メール本文は記録しない。
 | `scripts/pstack/fetch-test-pass-code.mjs` | 受け口から OTP 取得 |
 | `scripts/pstack/request-test-login.mjs` | UI を使わない OTP 発行（代替） |
 
-## 副経路（任意・ローカル）
+## ローカル（D-05 / D-14 必須・実機証明は未完了）
 
-主経路の成功判定には使わない。開発中の目視だけに使う。
+sandbox とは別に、新しいブラウザで C1〜C3 を実行し、ローカル URL・接続先 project・対象 HEAD・証拠を記録する。未整備の経路を成功扱いにしない。
 
-- コマンド: `npm -w user run dev -- -m development`。URL は起動ログを正とする（ポート固定禁止）。
-- 接続先は `user/.env.development`。Emulator を使うなら Auth / Firestore / Functions をすべて揃える（Firestore だけを隔離とみなさない）。
+- 前提: Node はルート package.json の engines に従い npm を使う。`npm install`、`npm -w common run build` を行う。予約 sandbox を指す user のローカル env（Git 非管理）を用意して `npm -w user run dev -- -m <sandboxのenv接尾辞>` で起動する。URL は起動ログを正とする（ポート固定禁止）。
+- env の Auth / Firestore / Functions は同じ予約 sandbox を指すことを確認する。組織本流 development / 本番への接続は禁止。Emulator を使うなら Auth / Firestore / Functions をすべて揃える（Firestore だけを隔離とみなさない）。
 - 受け口・fixture・OTP 取得は、接続先 Functions / Firestore を自分で揃えるまで停止する。未整備のまま C1〜C3 を主張しない。
 
 ## 参照

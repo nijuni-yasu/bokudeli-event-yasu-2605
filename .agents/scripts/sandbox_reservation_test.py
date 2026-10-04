@@ -7,6 +7,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -71,6 +72,51 @@ def sample_ledger() -> dict:
 
 
 class SandboxReservationTest(unittest.TestCase):
+    def setUp(self) -> None:
+        idle = patch.object(res, "require_idle", return_value={"ok": True})
+        idle.start()
+        self.addCleanup(idle.stop)
+        state = patch.object(res, "fetch_pr_state", return_value="OPEN")
+        state.start()
+        self.addCleanup(state.stop)
+
+    def test_active_runs_prevent_switch_release_and_reconcile(self) -> None:
+        with patch.object(res, "require_idle", return_value={"ok": False, "error": "deploy_active"}):
+            ledger = sample_ledger()
+            self.assertFalse(res.switch(ledger, env_id="sandbox2603", branch="feat/new")["ok"])
+            self.assertFalse(res.release(ledger, env_id="sandbox2603", reservation_id="pstack-res-20261004-002")["ok"])
+            res.reconcile(ledger, pr_state_fn=lambda _pr: "MERGED")
+            self.assertEqual(ledger["environments"]["sandbox2603"]["reservation"]["branch"], "doc/2398-pstack")
+
+    def test_stale_owner_cannot_execute_command_after_switch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            ledger = sample_ledger()
+            res.switch(ledger, env_id="sandbox2603", branch="feat/new")
+            path.write_text(json.dumps(ledger))
+            with patch.object(res.subprocess, "run") as runner:
+                result = res.run_reserved(path, env_id="sandbox2603", reservation_id="pstack-res-20261004-002", generation=1, command=["must-not-execute"])
+                self.assertFalse(result["ok"])
+                runner.assert_not_called()
+
+    def test_dispatch_is_pending_until_matching_run_completes(self) -> None:
+        ledger = sample_ledger()
+        reservation = ledger["environments"]["sandbox2603"]["reservation"]
+        reservation["target_sha"] = "abc123"
+        reservation["pending_dispatches"] = [{"workflow": "deploy_user.yml", "since": "2026-10-04T00:00:00Z"}]
+        run = {"status": "in_progress", "head_sha": "abc123", "head_branch": "doc/2398-pstack", "path": ".github/workflows/deploy_user.yml", "created_at": "2026-10-04T00:00:01Z"}
+        from subprocess import CompletedProcess
+        with patch.object(res.subprocess, "run") as api:
+            api.return_value = CompletedProcess([], 0, json.dumps(run), "")
+            args = dict(env_id="sandbox2603", reservation_id=reservation["id"], generation=1, run_id=123)
+            self.assertFalse(res.record_run(ledger, **args)["ok"])
+            self.assertEqual(len(reservation["pending_dispatches"]), 1)
+            run["status"] = "completed"
+            api.return_value = CompletedProcess([], 0, json.dumps(run), "")
+            self.assertTrue(res.record_run(ledger, **args)["ok"])
+            self.assertEqual(reservation["pending_dispatches"], [])
+            self.assertTrue(res.record_run(ledger, **args)["already_recorded"])
+
     def test_pick_reuses_same_branch(self) -> None:
         ledger = sample_ledger()
         result = res.pick(ledger, branch="doc/2398-pstack", pr=2399)
@@ -195,6 +241,22 @@ class SandboxReservationTest(unittest.TestCase):
             stored = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(stored["environments"]["sandbox2603"]["status"], "empty")
             self.assertIsNone(stored["environments"]["sandbox2603"]["reservation"])
+
+
+
+
+class IdleCheckTest(unittest.TestCase):
+    def test_pending_dispatch_blocks_before_actions_registration(self) -> None:
+        env = sample_ledger()["environments"]["sandbox2603"]
+        env["reservation"]["pending_dispatches"] = [{"workflow": "deploy_user.yml", "since": "2026-10-04T00:00:00Z"}]
+        with patch.object(res.subprocess, "run") as api:
+            self.assertEqual(res.require_idle(env)["error"], "dispatch_unconfirmed")
+            api.assert_not_called()
+
+    def test_actions_api_failure_is_not_idle(self) -> None:
+        from subprocess import CompletedProcess
+        with patch.object(res.subprocess, "run", return_value=CompletedProcess([], 1, "", "network error")):
+            self.assertEqual(res.require_idle(sample_ledger()["environments"]["sandbox2603"])["error"], "runs_unavailable")
 
 
 if __name__ == "__main__":

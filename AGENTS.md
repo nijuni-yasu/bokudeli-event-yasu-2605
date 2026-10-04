@@ -140,6 +140,8 @@ npm -w <pkg> run format:check
 
 ## 作業前の確認事項
 
+標準フローの実装開始・再開時は、コード編集より先に `git-commit-workflow` 手順 0 の基点確認を行う。マージ検知時、push・デプロイ前、引き渡し直前にも fetch し直す。祖先判定は `git merge-base --is-ancestor origin/development HEAD`（0:取込済み、1:rebase必要、その他:停止）。調査・レビューだけの依頼では履歴を書き換えない。
+
 1. `documents/` 内の仕様書・各パッケージの `README.md` を読んでプロジェクトの文脈を理解する
 2. `common` / `base` にある再利用可能なコードを優先的に使用し、重複実装を避ける
 3. Firebase Security Rules (`firestore.rules`, `storage.rules`) へのセキュリティ影響を意識する

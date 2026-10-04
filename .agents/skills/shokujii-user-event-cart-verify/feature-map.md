@@ -77,8 +77,8 @@ sandbox2603 のイベント URL: `https://bokudeli-event-yasu-2603.web.app/c/pst
 | カートダイアログ | `base/src/components/EventCartDialog.vue` |
 | カートページ | `base/src/components/pages/cart.vue` |
 | ログイン | `user/src/pages/login.vue`（`verification_run_id`） |
-| Callable | `functions/default` の `addToCart` / `requestEmailLogin` / `fetchVerificationTestPassCode` |
-| API クライアント | `base/src/apis/order.ts` / `base/src/apis/verificationTest.ts` |
+| Callable | `functions/default` の `addToCart` / `requestEmailLogin` |
+| API クライアント | `base/src/apis/order.ts` |
 
 ## 対象外
 

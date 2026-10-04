@@ -135,11 +135,11 @@ python3 .agents/scripts/github_actions_deploy_wake.py list \
 python3 .agents/scripts/sandbox_reservation.py path
 ```
 
-1. 人が「この sandbox を別ブランチで使う」と明示したときだけ `switch`。リモート名を書いただけでは奪わない
+1. 人が「この sandbox を別ブランチで使う」と明示したときだけ `switch`。旧 deploy run の停止・完了を確認するまで切り替えない。スクリプトも active run / API 検査失敗時には予約を保持して拒否する。リモート名を書いただけでは奪わない
 2. それ以外は `pick`（内部で `reconcile`）。同じブランチなら既存予約。selectable かつ空きが無ければ **中止**
 3. 予約成功後、必要なら `git config branch."$BRANCH".sandboxRemote` に remote を記憶する
 4. `new_assignment` が true のときだけ fixture を戻す（手順 2.6）
-5. push の直前に `check`。失敗したら **push しない**
+5. push の直前に `check`。失敗したら **push しない**。seed・push・dispatch は必ず `run -- ...` 経由で実行し、チェックから副作用の終了まで台帳ロックを保持する
 
 ```bash
 python3 .agents/scripts/sandbox_reservation.py pick \
@@ -148,12 +148,24 @@ python3 .agents/scripts/sandbox_reservation.py check \
   --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION"
 ```
 
+`gh workflow run` の前に必ず `record-deploy --sha <対象HEAD>` を行う（単体発火・再試行も同じ）。`run` は対象 SHA 未記録なら拒否し、発火前に pending 記録を保存する。Actions に run がまだ表示されない時間も、switch / release / reconcile は解放しない。全ての発火済み run（失敗・cancelled を含む）の終了を確認したら、各 ID を `record-run` に渡す。対象 SHA・ブランチ・workflow・発火時刻との一致をスクリプトで確認する。未知の発火結果は予約保持のまま診断する。
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py record-run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --run-id "$RUN_ID"
+```
+
+mode=report の結果報告時も現行予約の ID・世代が一致する場合だけ同じ記録を行う。重複 run ID では pending を再消費しない。
+
 ### 2.6 新規割当の fixture（該当時だけ）
 
 `pick` / `switch` の `seed` が true のときだけ、予約した環境の `GCLOUD_PROJECT` で seed する。同じブランチの再デプロイでは走らせない。プロジェクト全体は消さない。
 
 ```bash
-GCLOUD_PROJECT="$GCLOUD_PROJECT" node scripts/pstack/seed-pstack-fixture.mjs
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  env GCLOUD_PROJECT="$GCLOUD_PROJECT" node scripts/pstack/seed-pstack-fixture.mjs
 python3 .agents/scripts/sandbox_reservation.py record-fixture \
   --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
   --result ok
@@ -173,7 +185,9 @@ python3 .agents/scripts/sandbox_reservation.py record-fixture \
 push 直前に手順 2.5 の `check` が成功していること。
 
 ```bash
-git push --force-with-lease "$REMOTE" HEAD:"$REF"
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  git push --force-with-lease "$REMOTE" HEAD:"$REF"
 ```
 
 - `-u`（`--set-upstream`）は付けない（追跡設定を変えないため）
@@ -213,7 +227,9 @@ git push --force-with-lease "$REMOTE" HEAD:"$REF"
 **1 本だけ発火する場合**
 
 ```bash
-gh workflow run deploy_user.yml --repo OWNER/REPO --ref REF -f environment=development
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  gh workflow run deploy_user.yml --repo OWNER/REPO --ref REF -f environment=development
 ```
 
 **6 本一括発火する場合（デフォルト・発火のみ・監視は手順 7）**
@@ -230,7 +246,9 @@ SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 for WF in deploy_user.yml deploy_partner.yml deploy_enterprise.yml \
           deploy_functions.yml deploy_firestore.yml deploy_storage.yml; do
-  gh workflow run "$WF" --repo OWNER/REPO --ref REF -f environment=development
+  python3 .agents/scripts/sandbox_reservation.py run \
+    --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+    gh workflow run "$WF" --repo OWNER/REPO --ref REF -f environment=development
 done
 ```
 

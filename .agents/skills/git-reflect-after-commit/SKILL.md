@@ -32,7 +32,7 @@ push / デプロイ / 引き渡しの前に次を行う。
 - `git fetch origin development`
 - `origin/development` の SHA と確認時刻を記録する
 - `git worktree list` で同じブランチが別 worktree にあれば止める
-- HEAD がそれを祖先にしていなければ rebase する
+- `git merge-base --is-ancestor origin/development HEAD` が 1 なら rebase する。0 は取込済み、その他は検査失敗として停止する
 - 未コミット差分があるときは `git stash push -u` で退避する。`--all` は使わず、gitignored の `.env` は含めない。rebase 後に戻す。競合したら意図を読んで解消し、仕様判断が必要なら止めて stash は残す
 - 複数 Issue のコミットは rebase で 1 つにまとめない
 - 未知の remote 専用コミットがある diverge、lease 不一致では無条件 force しない（手順 4 の既存判定）
@@ -125,6 +125,8 @@ A の wait 起動のあと、レビュー完了を待たずに B を始める。
 - AI レビュー監視（A 実行時・手順 13）: PR 番号、`REVIEW_REQUEST_SINCE`、watcher 起動済み
 - sandbox デプロイは **reflect 完了時点では監視中**になり得る（wake 後に手順 9〜10 で結果報告）
 - `branch.<branch>.sandboxRemote` を新規保存した場合はその旨（B 実行時）
+
+引き渡し直前に手順 1b を再実行する。更新を取り込んで HEAD が変わったら、その HEAD への CI・必要な画面検証・レビュー更新・再デプロイが揃うまで完了扱いにしない。
 
 ## 注意
 

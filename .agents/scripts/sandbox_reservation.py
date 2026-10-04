@@ -170,6 +170,52 @@ def fetch_pr_state(pr: int, *, repo: str = DEFAULT_ORIGIN_REPO) -> str | None:
     return state if state else None
 
 
+def require_idle(env: dict[str, Any]) -> dict[str, Any]:
+    """旧 run が環境へ書き込まなくなるまで再割当しない。API 失敗も空きと扱わない。"""
+    reservation = env.get("reservation") or {}
+    if reservation.get("pending_dispatches"):
+        return _err("dispatch_unconfirmed", "発火済み run の終了確認が台帳に無い。予約を保持する")
+    repo = env.get("github_repo")
+    if not isinstance(repo, str) or repo == "":
+        return _err("unknown_repo", "旧デプロイを確認する github_repo が無い")
+    result = subprocess.run(
+        ["gh", "api", "--paginate", "--slurp", f"repos/{repo}/actions/runs?per_page=100"],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        return _err("runs_unavailable", "旧デプロイの終了を確認できない。予約は保持する")
+    try:
+        pages = json.loads(result.stdout)
+        active = [run["id"] for page in pages for run in page["workflow_runs"]
+                  if Path(run.get("path", "")).name.startswith("deploy_") and run["status"] != "completed"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return _err("runs_unavailable", "Actions 応答を確認できない。予約は保持する")
+    if active:
+        return _err("deploy_active", "旧デプロイが残っている。停止または完了を確認する", runs=active)
+    return _ok({})
+
+
+def run_reserved(path: Path, *, env_id: str, reservation_id: str, generation: int, command: list[str]) -> dict[str, Any]:
+    # check と副作用の間で switch/release が入らないよう、同じ台帳ロックで実行する。
+    with ledger_lock(path):
+        checked = check(_load_ledger(path), env_id=env_id, reservation_id=reservation_id, generation=generation)
+        if not checked["ok"]:
+            return checked
+        if not command:
+            return _err("empty_command", "実行するコマンドが無い")
+        ledger = _load_ledger(path)
+        reservation = _env(ledger, env_id)["reservation"]
+        if len(command) >= 4 and Path(command[0]).name == "gh" and command[1:3] == ["workflow", "run"]:
+            if not reservation.get("target_sha"):
+                return _err("no_target_sha", "dispatch 前に record-deploy で対象 SHA を記録する")
+            reservation.setdefault("pending_dispatches", []).append({"workflow": command[3], "since": utc_now()})
+            _save_ledger(path, ledger)
+        result = subprocess.run(command, check=False)
+        if result.returncode != 0:
+            return _err("command_failed", "予約内のコマンドが失敗した", exit_code=result.returncode)
+        return _ok({"env_id": env_id})
+
+
 def reconcile(
     ledger: dict[str, Any],
     *,
@@ -188,6 +234,9 @@ def reconcile(
             continue
         state = lookup(pr)
         if state in {"MERGED", "CLOSED"}:
+            idle = require_idle(env)
+            if not idle["ok"]:
+                continue
             reason = "reconcile_merged" if state == "MERGED" else "reconcile_closed"
             _append_history(ledger, env_id=env_id, reservation=reservation, reason=reason)
             env["reservation"] = None
@@ -233,6 +282,8 @@ def pick(
 
     for env_id, env in ledger["environments"].items():
         if env.get("selectable") is True and env.get("status") == "empty":
+            if not require_idle(env)["ok"]:
+                continue
             reservation = {
                 "id": next_reservation_id(ledger),
                 "generation": 1,
@@ -310,6 +361,10 @@ def reserve(
     if env.get("selectable") is not True:
         return _err("not_selectable", f"{env_id} は予約候補ではない")
 
+    idle = require_idle(env)
+    if not idle["ok"]:
+        return idle
+
     reservation = {
         "id": next_reservation_id(ledger),
         "generation": 1,
@@ -366,11 +421,17 @@ def switch(
     owner: str = "",
 ) -> dict[str, Any]:
     env = _env(ledger, env_id)
+    if env.get("selectable") is not True:
+        return _err("not_selectable", f"{env_id} は予約候補ではない")
+    idle = require_idle(env)
+    if not idle["ok"]:
+        return idle
     previous = env.get("reservation")
     previous_generation = 0
     if isinstance(previous, dict):
         previous_generation = int(previous.get("generation") or 0)
         _append_history(ledger, env_id=env_id, reservation=previous, reason="switched")
+
     reservation = {
         "id": next_reservation_id(ledger),
         "generation": previous_generation + 1 if previous_generation else 1,
@@ -412,6 +473,9 @@ def release(
         return _err("no_reservation", f"{env_id} に現行予約が無い")
     if reservation.get("id") != reservation_id:
         return _err("stale_id", "予約 ID が現行と違う", current=reservation)
+    idle = require_idle(env)
+    if not idle["ok"]:
+        return idle
     _append_history(ledger, env_id=env_id, reservation=reservation, reason="released")
     env["reservation"] = None
     env["status"] = "empty"
@@ -433,6 +497,33 @@ def record_deploy(
     reservation["target_sha"] = sha
     reservation["updated_at"] = utc_now()
     return _ok({"env_id": env_id, "reservation": reservation})
+
+
+def record_run(ledger: dict[str, Any], *, env_id: str, reservation_id: str, generation: int, run_id: int) -> dict[str, Any]:
+    checked = check(ledger, env_id=env_id, reservation_id=reservation_id, generation=generation)
+    if not checked["ok"]:
+        return checked
+    env = _env(ledger, env_id)
+    reservation = env["reservation"]
+    recorded = reservation.setdefault("completed_runs", [])
+    if run_id in recorded:
+        return _ok({"already_recorded": True})
+    result = subprocess.run(["gh", "api", f"repos/{env['github_repo']}/actions/runs/{run_id}"], capture_output=True, text=True, check=False)
+    if result.returncode != 0:
+        return _err("run_unavailable", "run の終了を確認できない")
+    try:
+        run = json.loads(result.stdout)
+        if run["status"] != "completed" or run["head_sha"] != reservation.get("target_sha") or run["head_branch"] != reservation["branch"]:
+            return _err("run_mismatch", "対象 SHA・ブランチの終了済み run ではない")
+        pending = reservation.get("pending_dispatches", [])
+        index = next((i for i, item in enumerate(pending) if item["workflow"] == Path(run["path"]).name and run["created_at"] >= item["since"]), None)
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return _err("run_unavailable", "run 応答を検証できない")
+    if index is None:
+        return _err("run_mismatch", "発火記録に一致しない run")
+    pending.pop(index)
+    recorded.append(run_id)
+    return _ok({"env_id": env_id, "run_id": run_id})
 
 
 def record_fixture(
@@ -523,6 +614,12 @@ def main() -> int:
     check_p.add_argument("--reservation-id", required=True)
     check_p.add_argument("--generation", type=int, required=True)
 
+    run_p = sub.add_parser("run", help="Check reservation and run a command under the ledger lock")
+    run_p.add_argument("--env", required=True)
+    run_p.add_argument("--reservation-id", required=True)
+    run_p.add_argument("--generation", type=int, required=True)
+    run_p.add_argument("exec_command", nargs=argparse.REMAINDER)
+
     switch_p = sub.add_parser("switch", help="Move an env to another branch and bump generation")
     switch_p.add_argument("--env", required=True)
     switch_p.add_argument("--branch", required=True)
@@ -539,6 +636,12 @@ def main() -> int:
     deploy_p.add_argument("--reservation-id", required=True)
     deploy_p.add_argument("--generation", type=int, required=True)
     deploy_p.add_argument("--sha", required=True)
+
+    run_record_p = sub.add_parser("record-run", help="Confirm completed dispatch before handover")
+    run_record_p.add_argument("--env", required=True)
+    run_record_p.add_argument("--reservation-id", required=True)
+    run_record_p.add_argument("--generation", type=int, required=True)
+    run_record_p.add_argument("--run-id", type=int, required=True)
 
     fixture_p = sub.add_parser("record-fixture", help="Store fixture restore result")
     fixture_p.add_argument("--env", required=True)
@@ -610,6 +713,13 @@ def main() -> int:
                 )
             )
 
+    if args.command == "run":
+        command = args.exec_command
+        if command and command[0] == "--":
+            command = command[1:]
+        return _print(run_reserved(ledger_path, env_id=args.env, reservation_id=args.reservation_id,
+                                  generation=args.generation, command=command))
+
     if args.command == "switch":
         return _print(
             update_ledger(
@@ -650,6 +760,10 @@ def main() -> int:
                 ),
             )
         )
+
+    if args.command == "record-run":
+        return _print(update_ledger(ledger_path, lambda ledger: record_run(ledger, env_id=args.env,
+            reservation_id=args.reservation_id, generation=args.generation, run_id=args.run_id)))
 
     if args.command == "record-fixture":
         return _print(
