@@ -11,7 +11,11 @@ import CommunityContactDialog from '@shokujii/base/components/CommunityContactDi
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
-import { EVENT_DETAIL_MEMBER_PREVIEW_LIMIT, type BokudeliEvent } from '@shokujii/base/stores/event.js'
+import {
+  EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
+  latestOrderUpdatedAt,
+  type BokudeliEvent,
+} from '@shokujii/base/stores/event.js'
 import { type BokudeliCommunity } from '@shokujii/base/stores/community.js'
 import CalendarAddDialog from '@shokujii/base/components/CalendarAddDialog.vue'
 import { shareSnsButton, isMobileDevice } from '@shokujii/base/utils/shareSnsButton'
@@ -142,11 +146,7 @@ const members = computed(() => {
     return []
   }
   const preview = eventStore.previewMembers ?? []
-  return [...preview].sort(
-    (a, b) =>
-      a.orders.reduce((max, order) => Math.max(max, order.updated_at), 0) -
-      b.orders.reduce((max, order) => Math.max(max, order.updated_at), 0),
-  )
+  return [...preview].sort((a, b) => latestOrderUpdatedAt(a.orders) - latestOrderUpdatedAt(b.orders))
 })
 
 const isMemberPreviewTruncated = computed(

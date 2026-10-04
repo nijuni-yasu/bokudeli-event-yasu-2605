@@ -85,6 +85,8 @@ vi.mock('@shokujii/base/stores/user.js', () => ({
 import {
   fetchEventInCommunityDocument,
   EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
+  latestOrderUpdatedAt,
+  selectPreviewMemberIds,
   useEventStore,
 } from '@shokujii/base/stores/event.js'
 import {
@@ -141,6 +143,37 @@ describe('buildEventStoreOptions', () => {
     const options = buildEventStoreOptions(undefined)
     expect(options.eventsEnterpriseId).toBeNull()
     expect('eventsEnterpriseId' in options).toBe(true)
+  })
+})
+
+describe('selectPreviewMemberIds', () => {
+  const limit = 2
+
+  it('上限以下は並びを変えず全員を返す', () => {
+    expect(selectPreviewMemberIds(['user-b', 'user-a'], [{ user_id: 'user-a', updated_at: 1 }], limit)).toEqual([
+      'user-b',
+      'user-a',
+    ])
+  })
+
+  it('注文未取得の間は配列の先頭だけ返す', () => {
+    expect(selectPreviewMemberIds(['user-0', 'user-1', 'user-2'], null, limit)).toEqual(['user-0', 'user-1'])
+  })
+
+  it('注文取得後は詳細カードと同じ順の先頭だけ返す', () => {
+    const memberIds = ['user-0', 'user-1', 'user-2']
+    const orders = [
+      { user_id: 'user-0', updated_at: 300 },
+      { user_id: 'user-2', updated_at: 10 },
+    ]
+    const selected = selectPreviewMemberIds(memberIds, orders, limit)
+    const byCardOrder = [...memberIds].sort(
+      (memberIdA, memberIdB) =>
+        latestOrderUpdatedAt(orders.filter((order) => order.user_id === memberIdA)) -
+        latestOrderUpdatedAt(orders.filter((order) => order.user_id === memberIdB)),
+    )
+    expect(selected).toEqual(byCardOrder.slice(0, limit))
+    expect(selected).toEqual(['user-1', 'user-2'])
   })
 })
 
@@ -201,13 +234,14 @@ describe('useEventStore lazy members', () => {
     expect(useUserStoreMock).toHaveBeenCalledWith('user-b')
   })
 
-  it('event の購読と同時に menus を購読する', async () => {
+  it('menus は参照するまで購読しない', async () => {
     const store = useEventStore('event-menus')
     await vi.waitFor(() => {
       expect(store.event?.members).toEqual(['user-a', 'user-b'])
     })
-    expect(onSnapshotMock).toHaveBeenCalledTimes(2)
+    expect(onSnapshotMock).toHaveBeenCalledTimes(1)
     expect(store.menus).toEqual([])
+    expect(onSnapshotMock).toHaveBeenCalledTimes(2)
   })
 
   it('previewMembers は上限人数だけ useUserStore を呼ぶ', async () => {
@@ -237,5 +271,38 @@ describe('useEventStore lazy members', () => {
     expect(useUserStoreMock).toHaveBeenCalledTimes(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
     expect(useUserStoreMock).toHaveBeenCalledWith('user-0')
     expect(useUserStoreMock).not.toHaveBeenCalledWith(`user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT}`)
+  })
+
+  it('previewMembers は注文の並びで上限人数を選ぶ', async () => {
+    const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
+    onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
+      callback({
+        ref: { path: mockEventRef.path },
+        exists: () => true,
+        data: () =>
+          ({
+            members: Array.from({ length: memberCount }, (_, index) => `user-${index}`),
+          }) as BokudeliEvent,
+        docs: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT }, (_, index) => ({
+          ref: { path: `orders/user-${index}` },
+          data: () => ({ user_id: `user-${index}`, updated_at: 500 }),
+        })),
+      })
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview-by-order')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(memberCount)
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).toHaveBeenCalledTimes(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).toHaveBeenCalledWith(`user-${memberCount - 1}`)
+    expect(useUserStoreMock).not.toHaveBeenCalledWith(`user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT - 1}`)
   })
 })

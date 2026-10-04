@@ -57,6 +57,38 @@ const TINYMCE_MAX_IMAGE_SIZE = 600
 /** イベント詳細で同時に users/{uid} を購読する人数。全員分張るとメニュー・バナー購読が失敗しやすい。 */
 export const EVENT_DETAIL_MEMBER_PREVIEW_LIMIT = 12
 
+/** 詳細カードの並びと同じ。注文 updated_at の最大。注文が無い参加者は 0。 */
+export const latestOrderUpdatedAt = (orders: readonly { updated_at: number }[]): number => {
+  return orders.reduce((max, order) => Math.max(max, order.updated_at), 0)
+}
+
+/**
+ * イベント詳細に出す参加者 id。
+ * 上限以下はそのまま。注文未取得の間は配列の先頭。取得後は詳細カードと同じ順の先頭だけ。
+ */
+export const selectPreviewMemberIds = (
+  memberIds: readonly string[],
+  orders: readonly { user_id: string; updated_at: number }[] | null,
+  limit: number = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
+): string[] => {
+  if (memberIds.length <= limit) {
+    return [...memberIds]
+  }
+  if (orders == null) {
+    return memberIds.slice(0, limit)
+  }
+  const latestByUserId = new Map<string, number>()
+  for (const order of orders) {
+    const latest = latestByUserId.get(order.user_id)
+    if (latest == null || order.updated_at > latest) {
+      latestByUserId.set(order.user_id, order.updated_at)
+    }
+  }
+  return [...memberIds]
+    .sort((memberIdA, memberIdB) => (latestByUserId.get(memberIdA) ?? 0) - (latestByUserId.get(memberIdB) ?? 0))
+    .slice(0, limit)
+}
+
 class EventRefUpdatedEvent extends Event {
   constructor(
     type: string,
@@ -293,6 +325,8 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     })
 
     const menus = computed<EventMenu[] | null>(() => {
+      // 参照されたときだけ購読を始める。失敗後の張り直しは retry が行い、再評価されなくても続く。
+      ensureMenusSubscription()
       if (_menus.value == null) {
         return null
       }
@@ -346,7 +380,11 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       if (_memberIds.value == null) {
         return null
       }
-      return buildMembers(_memberIds.value.slice(0, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT))
+      // 並び替えに注文が要る。collection group は 1 購読のまま、user 文書は選んだ人数だけ張る。
+      if (_memberIds.value.length > EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
+        subscribeOrders()
+      }
+      return buildMembers(selectPreviewMemberIds(_memberIds.value, _orders.value, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT))
     })
 
     const coverImageUrl = computed<string | undefined>(() => {
@@ -540,6 +578,17 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       menusListenHolder.current.ensure()
     }
 
+    /** menus を読んだ、または getLoadedMenus を待ったあとに true。一覧カードだけでは購読しない。 */
+    let menusRequested = false
+    const ensureMenusSubscription = (): void => {
+      menusRequested = true
+      const eventRef = _eventRef.value
+      if (eventRef == null) {
+        return
+      }
+      subscribeMenus(toRaw(eventRef))
+    }
+
     /**
      * Wait for the event to be loaded.
      * It's better not to use this method in UI components because of the performance issue.
@@ -616,6 +665,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
      * @throws Error when the menus are not loaded within the timeout
      */
     const getLoadedMenus = async (timeout: number = 5000): Promise<EventMenu[]> => {
+      ensureMenusSubscription()
       return await new Promise((resolve, reject) => {
         let unwatch: (() => void) | undefined
         const timeoutId = setTimeout(() => {
@@ -663,8 +713,10 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           retry = 0
           _eventRef.value = eventRef
           subscribeEvent(eventRef)
-          // メニューは computed の副作用にしない。失敗時に再評価されずスピナーが残るため
-          subscribeMenus(eventRef)
+          // メニューをまだ読んでいなければ張らない。読んだあとの ref 解決ではここで開始する。
+          if (menusRequested) {
+            subscribeMenus(eventRef)
+          }
         })
         .catch((err) => {
           console.error('event subscribe getDocs error', err)
@@ -689,7 +741,9 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     } else {
       const eventRef = toRaw(_eventRef.value)
       subscribeEvent(eventRef)
-      subscribeMenus(eventRef)
+      if (menusRequested) {
+        subscribeMenus(eventRef)
+      }
     }
 
     return {
