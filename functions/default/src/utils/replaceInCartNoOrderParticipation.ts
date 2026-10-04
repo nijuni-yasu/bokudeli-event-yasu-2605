@@ -23,14 +23,14 @@ export function inCartNoOrderIdsToReplace(
   eventMenus: readonly CartMenuMaster[],
   existingCartOrders: readonly InCartOrder[],
 ): string[] {
-  const partnerUnits = menus.reduce((sum, menu) => {
+  const hasPositivePartnerCount = menus.some((menu) => {
     const eventMenu = eventMenus.find((candidate) => candidate.id === menu.menu_id)
     if (eventMenu == null || !isPartnerSuppliedItem(eventMenu.item_type)) {
-      return sum
+      return false
     }
-    return sum + menu.count
-  }, 0)
-  if (!(partnerUnits > 0)) {
+    return menu.count > 0
+  })
+  if (!hasPositivePartnerCount) {
     return []
   }
   return existingCartOrders

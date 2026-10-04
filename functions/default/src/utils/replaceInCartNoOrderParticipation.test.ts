@@ -27,6 +27,19 @@ describe('inCartNoOrderIdsToReplace', () => {
     expect(inCartNoOrderIdsToReplace([{ menu_id: 'food', count: 0 }], [partnerMenu], [noOrderInCart])).toEqual([])
   })
 
+  it('正数と負数が相殺されても店舗メニューの追加として削除する', () => {
+    expect(
+      inCartNoOrderIdsToReplace(
+        [
+          { menu_id: 'food', count: 1 },
+          { menu_id: 'food', count: -1 },
+        ],
+        [partnerMenu],
+        [noOrderInCart],
+      ),
+    ).toEqual(['cart-no-order'])
+  })
+
   it('item_type 未設定の店舗メニューでも削除する', () => {
     expect(
       inCartNoOrderIdsToReplace(
