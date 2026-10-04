@@ -117,7 +117,7 @@
 ### Rules CI
 
 - 既存 `test_firestore_rules.yml` を維持（paths: `firestore.rules`, `tests/firestore-rules/**`）
-- branch protection の required check: **`Test Firestore Rules / test`**（[03_branch_protection.md](../../AIエージェント/03_branch_protection.md) 参照）
+- branch protection の required check: **`Test Firestore Rules / test`**（[03_branch_protection.md](../../AIエージェント/01_Loop_Engineering/03_branch_protection.md) 参照）
 - `pr-verify` とは別 workflow のため、Rules 変更 PR では両方 green が必要
 
 ---

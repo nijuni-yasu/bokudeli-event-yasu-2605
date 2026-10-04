@@ -237,7 +237,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 | `ui/` | UI 改善・見た目調整 | `ui/2093` |
 | `refactor/` | 挙動不変のリファクタ（Issue スコープが明確な場合） | `refactor/2200` |
 
-**リリース・同期**（[`03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) 参照。エージェントは通常の feature 系と同様 PR 更新用に push 可）:
+**リリース・同期**（[`03_branch_protection.md`](documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md) 参照。エージェントは通常の feature 系と同様 PR 更新用に push 可）:
 
 | プレフィックス | 用途 |
 | :-- | :-- |
@@ -265,7 +265,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 
 ### エージェント向け Git 操作の禁止（本番・リリース系）
 
-背景: [`documents/AIエージェント/03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) §5。
+背景: [`documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md`](documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md) §5。
 
 **エージェントは次を実行してはならない**（人間のリリース作業専用）:
 

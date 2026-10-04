@@ -3,7 +3,7 @@
 [`02_導入チェックリスト.md`](./02_導入チェックリスト.md) の **0-3（マージ条件 / branch protection）** の実装詳細と、**AI による本番系操作（`main` / `production` / リリースタグへの push）を防ぐためのガード設計**をまとめた実装メモ。
 
 - 関連イシュー: [#2080 Loop Engineering 導入の検討と環境整備](https://github.com/nijuniinc/bokudeli-event-new/issues/2080)
-- 関連: [`デプロイ手順.md`](../デプロイ手順/デプロイ手順.md) / [`01_Loop_Engineering_方針.md`](./01_Loop_Engineering_方針.md)（第 13 章 denylist）
+- 関連: [`デプロイ手順.md`](../../デプロイ手順/デプロイ手順.md) / [`01_Loop_Engineering_方針.md`](./01_Loop_Engineering_方針.md)（第 13 章 denylist）
 
 ---
 
@@ -99,12 +99,12 @@ GitHub の Branch protection（または Rulesets）で **`development`** に次
 
 ## 4. ② リリース手順の B 版（development を完全 PR 化）
 
-現行の [`デプロイ手順.md`](../デプロイ手順/デプロイ手順.md) は、通常リリース・hotfix の両方で **`development` への直 push** がある。
+現行の [`デプロイ手順.md`](../../デプロイ手順/デプロイ手順.md) は、通常リリース・hotfix の両方で **`development` への直 push** がある。
 
 - 通常リリース（手順 6）: `git push origin development main production v2.6.0`
 - hotfix（手順 7）: `git switch development && git merge main && git push origin development`（B 版では同期ブランチ + PR に置換済み）
 
-`development` を「PR 以外更新不可」にする B 版では、これらを **PR 経由**に置き換える。具体的な改訂手順は [`デプロイ手順.md`](../デプロイ手順/デプロイ手順.md) に反映済み。要点は次のとおり。
+`development` を「PR 以外更新不可」にする B 版では、これらを **PR 経由**に置き換える。具体的な改訂手順は [`デプロイ手順.md`](../../デプロイ手順/デプロイ手順.md) に反映済み。要点は次のとおり。
 
 ### B 版の要点
 
@@ -201,7 +201,7 @@ AI 用の認証情報（PAT / トークン）を **push 不可・PR 作成のみ
 | 0-3-2b | Rules CI 必須チェック（WS-A / A-5） | `firestore.rules` または `tests/firestore-rules/**` を変更する PR では **`Test Firestore Rules / test`** も green 必須。branch protection の required checks に `test` を追加する。`test_firestore_rules.yml` は PR では path filter なしで常時起動し、job 単位 `if:` で Rules 非変更時は skip（Success 報告）とする（workflow レベル path filter だと status が Pending のまま merge 不可になる） | - | ✅ DONE（2026-06-27。`development` protection に context `test` 追加。#2119） |
 | 0-3-3 | main / production の push 制限 | `main` / `production` に **Restrict who can push**（リリース担当のみ）。`production` は force push を限定許可（ロールバック用） | - | Todo |
 | 0-3-3b | `production` トリガー方針 | §3「`production` トリガー」を確認し、`pr-verify.yml` を現状維持 or `development` のみに修正 | - | ✅ DONE（現状維持） |
-| 0-3-4 | リリース手順の B 版反映 | [`デプロイ手順.md`](../デプロイ手順/デプロイ手順.md) を B 版（release ブランチ + PR、タグ付け替え、hotfix の development 反映も PR）に改訂 | - | ✅ DONE |
+| 0-3-4 | リリース手順の B 版反映 | [`デプロイ手順.md`](../../デプロイ手順/デプロイ手順.md) を B 版（release ブランチ + PR、タグ付け替え、hotfix の development 反映も PR）に改訂 | - | ✅ DONE |
 | 0-3-5 | 実地確認（development） | CI 失敗 PR がマージブロックされること、release ブランチ PR 経由で development が更新できることを確認 | - | Todo |
 | 0-3-6 | AI ガード明文化 | §5.2 ① AGENTS.md に `main`/`production`/タグ push・`npm version`・`branch -f`・`development` 直 push の AI 禁止を追記 | - | ✅ DONE |
 | 0-3-7 | スキルのホワイトリスト化 | §5.2 ② `git-reflect-after-commit` の push 先を feature / release / sync ブランチ限定に強化。保護 ref（完全一致）/ タグ ref の push を拒否 | - | ✅ DONE |
