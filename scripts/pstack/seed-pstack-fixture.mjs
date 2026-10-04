@@ -35,8 +35,13 @@ if (projectId == null || projectId === '') {
 }
 
 /** 本番・共有 dev への誤投入防止（pstack sandbox 台帳の Firebase project ID 形式のみ） */
-const SANDBOX_PROJECT_ID_PATTERN = /^bokudeli-event-yasu-\d+(-\d+)?$/
-if (!SANDBOX_PROJECT_ID_PATTERN.test(projectId)) {
+const SANDBOX_PROJECT_IDS = new Set([
+  'bokudeli-event-yasu-2603',
+  'bokudeli-event-yasu-2606',
+  'bokudeli-event-yasu-2607',
+  'bokudeli-event-yasu-2608',
+])
+if (!SANDBOX_PROJECT_IDS.has(projectId)) {
   console.error(
     `許可されていない GCLOUD_PROJECT: ${projectId}。sandbox 用 Firebase プロジェクト（例: bokudeli-event-yasu-2606）のみ指定してください。`,
   )
@@ -164,7 +169,12 @@ await menuRef.set(
 )
 
 // カート初期化（当該ユーザーの in_cart を削除）
-const ordersSnap = await eventRef.collection('members').doc(FIXTURE.userId).collection('member_orders').get()
+const ordersSnap = await eventRef
+  .collection('members')
+  .doc(FIXTURE.userId)
+  .collection('member_orders')
+  .where('status', '==', 'in_cart')
+  .get()
 const batch = db.batch()
 for (const doc of ordersSnap.docs) {
   batch.delete(doc.ref)

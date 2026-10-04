@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 const modeValue = vi.hoisted(() => ({ current: 'off' as string }))
 
@@ -10,24 +10,20 @@ vi.mock('firebase-functions/params', () => ({
 
 vi.mock('../stores/verificationTestOutbox.js', () => ({
   saveVerificationTestOutboxRecord: vi.fn(),
-  getLatestVerificationTestPassCode: vi.fn(),
 }))
 
 import {
   deliverUserPassCodeForLogin,
-  fetchPassCodeFromTestOutbox,
   isVerificationTestEmail,
+  getVerificationTestOutboxMode,
 } from './verificationTestOutbox.js'
-import {
-  saveVerificationTestOutboxRecord,
-  getLatestVerificationTestPassCode,
-} from '../stores/verificationTestOutbox.js'
+import { saveVerificationTestOutboxRecord } from '../stores/verificationTestOutbox.js'
 
 describe('verificationTestOutbox', () => {
   beforeEach(() => {
+    vi.stubEnv('GCLOUD_PROJECT', 'bokudeli-event-yasu-2603')
     modeValue.current = 'off'
     vi.mocked(saveVerificationTestOutboxRecord).mockReset()
-    vi.mocked(getLatestVerificationTestPassCode).mockReset()
   })
 
   it('isVerificationTestEmail は verify.shokujii.test のみ true', () => {
@@ -60,17 +56,27 @@ describe('verificationTestOutbox', () => {
     expect(saveVerificationTestOutboxRecord).not.toHaveBeenCalled()
   })
 
-  it('fetchPassCodeFromTestOutbox は off で undefined', async () => {
-    const result = await fetchPassCodeFromTestOutbox('a@verify.shokujii.test', null)
-    expect(result).toBeUndefined()
-    expect(getLatestVerificationTestPassCode).not.toHaveBeenCalled()
-  })
+  afterEach(() => vi.unstubAllEnvs())
 
-  it('fetchPassCodeFromTestOutbox は record_skip_send で store を読む', async () => {
+  it.each(['bokudeli-event-new', 'unknown', 'bokudeli-event-yasu-9999', ''])(
+    '未許可プロジェクト %s は有効設定でも off',
+    (project) => {
+      vi.stubEnv('GCLOUD_PROJECT', project)
+      modeValue.current = 'record_skip_send'
+      expect(getVerificationTestOutboxMode()).toBe('off')
+    },
+  )
+
+  it('通常宛先にはテスト環境でも通常配送する', async () => {
     modeValue.current = 'record_skip_send'
-    vi.mocked(getLatestVerificationTestPassCode).mockResolvedValue('999999')
-    const result = await fetchPassCodeFromTestOutbox('a@verify.shokujii.test', 'run-2')
-    expect(result).toBe('999999')
-    expect(getLatestVerificationTestPassCode).toHaveBeenCalledWith('a@verify.shokujii.test', 'run-2')
+    const send = vi.fn()
+    await deliverUserPassCodeForLogin({
+      email: 'user@example.com',
+      passCode: '123456',
+      verificationRunId: 'run',
+      sendViaSendGrid: send,
+    })
+    expect(send).toHaveBeenCalledOnce()
+    expect(saveVerificationTestOutboxRecord).not.toHaveBeenCalled()
   })
 })

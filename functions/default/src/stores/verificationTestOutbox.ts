@@ -5,35 +5,26 @@ import {
   Timestamp,
   type DocumentData,
 } from 'firebase-admin/firestore'
-
-export type VerificationTestOutboxRecord = {
-  id: string
-  email: string
-  pass_code: string
-  kind: 'user_pass_code'
-  verification_run_id: string | null
-  created_at: Timestamp
-}
+import {
+  VerificationTestOutboxDbSchema,
+  VerificationTestOutboxAppSchema,
+  type VerificationTestOutboxRecord,
+} from '@shokujii/common/schemas/VerificationTestOutbox.js'
 
 const converter: FirestoreDataConverter<VerificationTestOutboxRecord> = {
   toFirestore(record: VerificationTestOutboxRecord): DocumentData {
-    return {
+    return VerificationTestOutboxDbSchema.parse({
       email: record.email,
       pass_code: record.pass_code,
       kind: record.kind,
       verification_run_id: record.verification_run_id,
       created_at: record.created_at,
-    }
+    })
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): VerificationTestOutboxRecord {
-    const data = snapshot.data()
     return {
+      ...VerificationTestOutboxAppSchema.parse(snapshot.data()),
       id: snapshot.id,
-      email: typeof data.email === 'string' ? data.email : '',
-      pass_code: typeof data.pass_code === 'string' ? data.pass_code : '',
-      kind: 'user_pass_code',
-      verification_run_id: typeof data.verification_run_id === 'string' ? data.verification_run_id : null,
-      created_at: data.created_at instanceof Timestamp ? data.created_at : Timestamp.now(),
     }
   },
 }
@@ -52,7 +43,7 @@ export const saveVerificationTestOutboxRecord = async (input: {
     pass_code: input.pass_code,
     kind: 'user_pass_code',
     verification_run_id: input.verification_run_id,
-    created_at: Timestamp.now(),
+    created_at: Timestamp.now().toMillis(),
   })
 }
 
@@ -60,7 +51,7 @@ export const getLatestVerificationTestPassCode = async (
   email: string,
   verificationRunId: string | null,
 ): Promise<string | undefined> => {
-  let query = collection().where('email', '==', email).orderBy('created_at', 'desc').limit(5)
+  let query = collection().where('email', '==', email).orderBy('created_at', 'desc').limit(1)
   if (verificationRunId != null && verificationRunId !== '') {
     query = collection()
       .where('email', '==', email)

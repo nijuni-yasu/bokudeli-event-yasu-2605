@@ -1,9 +1,6 @@
 import { defineString } from 'firebase-functions/params'
 import type { VerificationTestOutboxMode } from '@shokujii/common/apis/verificationTest.js'
-import {
-  getLatestVerificationTestPassCode,
-  saveVerificationTestOutboxRecord,
-} from '../stores/verificationTestOutbox.js'
+import { saveVerificationTestOutboxRecord } from '../stores/verificationTestOutbox.js'
 
 const VERIFICATION_TEST_OUTBOX_MODE = defineString('VERIFICATION_TEST_OUTBOX_MODE', {
   default: 'off',
@@ -12,9 +9,16 @@ const VERIFICATION_TEST_OUTBOX_MODE = defineString('VERIFICATION_TEST_OUTBOX_MOD
 /** 通常検証用。本番では off のまま。 */
 const ALLOWED_EMAIL_SUFFIX = '@verify.shokujii.test'
 
+const VERIFICATION_PROJECTS = new Set([
+  'bokudeli-event-yasu-2603',
+  'bokudeli-event-yasu-2606',
+  'bokudeli-event-yasu-2607',
+  'bokudeli-event-yasu-2608',
+])
+
 export const getVerificationTestOutboxMode = (): VerificationTestOutboxMode => {
   const raw = VERIFICATION_TEST_OUTBOX_MODE.value()
-  if (raw === 'record_skip_send') {
+  if (raw === 'record_skip_send' && VERIFICATION_PROJECTS.has(process.env.GCLOUD_PROJECT ?? '')) {
     return 'record_skip_send'
   }
   return 'off'
@@ -44,17 +48,4 @@ export const deliverUserPassCodeForLogin = async (params: {
   }
 
   await params.sendViaSendGrid()
-}
-
-export const fetchPassCodeFromTestOutbox = async (
-  email: string,
-  verificationRunId: string | null,
-): Promise<string | undefined> => {
-  if (getVerificationTestOutboxMode() === 'off') {
-    return undefined
-  }
-  if (!isVerificationTestEmail(email)) {
-    return undefined
-  }
-  return getLatestVerificationTestPassCode(email.trim().toLowerCase(), verificationRunId)
 }

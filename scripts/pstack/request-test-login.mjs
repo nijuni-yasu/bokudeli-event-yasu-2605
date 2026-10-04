@@ -1,7 +1,6 @@
 /**
  * requestEmailLogin を HTTP で呼ぶ（UI 操作の代替・検証用）。
  */
-import { initializeApp } from 'firebase-admin/app'
 
 const args = process.argv.slice(2)
 const emailIdx = args.indexOf('--email')
@@ -20,7 +19,17 @@ if (projectId == null || projectId === '') {
   process.exit(1)
 }
 
-initializeApp({ projectId })
+if (
+  ![
+    'bokudeli-event-yasu-2603',
+    'bokudeli-event-yasu-2606',
+    'bokudeli-event-yasu-2607',
+    'bokudeli-event-yasu-2608',
+  ].includes(projectId) ||
+  !email.endsWith('@verify.shokujii.test')
+) {
+  throw new Error('検証用 sandbox と架空メールアドレスのみ指定できます')
+}
 
 const region = 'asia-northeast1'
 const url = `https://${region}-${projectId}.cloudfunctions.net/requestEmailLogin`
