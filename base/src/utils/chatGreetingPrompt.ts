@@ -1,12 +1,16 @@
 import type { HistoryState, RouteLocationRaw, Router } from 'vue-router'
+import {
+  NO_ORDER_PARTICIPATION_MENU_ID,
+  NO_ORDER_PARTICIPATION_MENU_NAME,
+} from '@shokujii/common/schemas/EventItemType.js'
 import type { SelectedOptionType } from '@shokujii/common/schemas/menuOption.js'
 import { formatOrderMenuDisplayName } from '@shokujii/common/utils/menuOption.js'
 
 /** history.state に載せる、挨拶案内の対象ルーム ID */
 export const CHAT_GREETING_PROMPT_STATE_KEY = 'promptChatGreetingRoomId'
 
-/** メニュー文に含めない参加専用メニュー名 */
-const PARTICIPATION_ONLY_MENU_NAME = '注文なしで参加'
+/** 表示名変更前に保存された注文なし参加のメニュー名 */
+const LEGACY_PARTICIPATION_ONLY_MENU_NAME = '注文なしで参加'
 
 export const CHAT_GREETING_NAMED_INTRO_KEYS = [
   'chat.greeting.intro.named_hello',
@@ -106,7 +110,16 @@ export type ChatGreetingChoice = {
 export type ChatGreetingOrderLine = {
   status: string
   menu_name: string
+  menu_id?: string
   selected_options?: readonly SelectedOptionType[] | null
+}
+
+const isParticipationOnlyOrder = (order: ChatGreetingOrderLine): boolean => {
+  return (
+    order.menu_id === NO_ORDER_PARTICIPATION_MENU_ID ||
+    order.menu_name === NO_ORDER_PARTICIPATION_MENU_NAME ||
+    order.menu_name === LEGACY_PARTICIPATION_ONLY_MENU_NAME
+  )
 }
 
 const pickIndex = (length: number, random: () => number): number => {
@@ -134,7 +147,7 @@ export const formatChatGreetingMenuPhrase = (orders: readonly ChatGreetingOrderL
   const menuCounts = new Map<string, number>()
   const menuNameOrder: string[] = []
   for (const order of orders) {
-    if (order.status !== 'ordered' || order.menu_name === PARTICIPATION_ONLY_MENU_NAME) {
+    if (order.status !== 'ordered' || isParticipationOnlyOrder(order)) {
       continue
     }
     const name = formatOrderMenuDisplayName(order.menu_name, order.selected_options)

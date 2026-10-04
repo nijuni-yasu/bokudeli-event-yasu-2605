@@ -100,6 +100,10 @@ describe('formatChatGreetingMenuPhrase', () => {
 
   it('注文なしで参加はメニュー文に含めない', () => {
     expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '注文なしで参加' }])).toBe('')
+    expect(formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '食事は持参' }])).toBe('')
+    expect(
+      formatChatGreetingMenuPhrase([{ status: 'ordered', menu_name: '唐揚げ', menu_id: 'no_order_participation' }]),
+    ).toBe('')
     expect(
       formatChatGreetingMenuPhrase([
         { status: 'ordered', menu_name: '注文なしで参加' },
