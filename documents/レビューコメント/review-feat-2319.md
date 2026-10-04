@@ -27,6 +27,13 @@
 | [x] | RC-21 | 5970583745 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 最小催行の中止と参加者同期が店舗注文だけを見ている<br>人数判定だけ店舗注文にし、中止と同期は全注文 |
 | [x] | RC-22 | 5970583745 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📑 仕様書 | 🔧 微修正 | S | リマインドとプロフィール一覧が注文なし参加を店舗注文として扱う<br>主催者リマインドは店舗の確定注文があるときだけ。食事一覧も店舗注文だけ |
 | [x] | RC-23 | 5970583745 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 店舗の注文詳細で小計と合計が注文なし参加を含む<br>明細と同じ店舗発注分だけを集計する |
+| [x] | RC-24 | 5404430702 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>個別指摘は各インラインと既存 RC で扱う |
+| [x] | RC-25 | 4176246983 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | カート追加ダイアログで注文なし参加の価格が隠れる<br>数量だけ隠し、価格行は ¥0 を出す |
+| [x] | RC-26 | 4176246981 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 事前アンケートがあると注文なし参加の確定文言にならない<br>フォーム画面でも参加確定のボタンと確認文にする |
+| [x] | RC-27 | 4176237530 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | メニュー再生成と予約更新が別 Transaction<br>同一内容は RC-3 で未着手のまま追う |
+| [x] | RC-28 | 4176246977 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 小数の複数行で注文なし参加を2件作れる<br>1行かつ整数1だけ許可する |
+| [x] | RC-29 | 4176237550 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | count 0 の注文なし参加が通り参加だけ残る<br>1行かつ整数1以外は拒否する |
+| [ ] | RC-30 | 4176237558 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | 注文なし参加削除の統合テストが無い<br>エミュレータで確定成功と再計算スキップの2経路 |
 
 ---
 
@@ -1048,3 +1055,332 @@ if (
 
 ---
 
+## 評価セッション（2026-10-04 14:18・review-comments-evaluate）
+
+- **評価日時**: 2026-10-04 14:18 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼定型文 GitHub id 5976785837、Codex 接続案内のみ GitHub id 5404440025）
+- **重複除外**: 1（GitHub id 5976852251 → 既存 RC-2 と RC-3、差分なし）
+- **partial**: false
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T05:03:52Z
+- **手順 4a 自動修正**: RC-25、RC-26、RC-28、RC-29。RC-30 は工数 M のため未着手。RC-24 と RC-27 は修正不要
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-24 | 5404430702 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>個別指摘は各インラインと既存 RC で扱う |
+| [x] | RC-25 | 4176246983 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 📑 仕様書 | 🔧 微修正 | S | カート追加ダイアログで注文なし参加の価格が隠れる<br>数量だけ隠し、価格行は ¥0 を出す |
+| [x] | RC-26 | 4176246981 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 事前アンケートがあると注文なし参加の確定文言にならない<br>フォーム画面でも参加確定のボタンと確認文にする |
+| [x] | RC-27 | 4176237530 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | メニュー再生成と予約更新が別 Transaction<br>同一内容は RC-3 で未着手のまま追う |
+| [x] | RC-28 | 4176246977 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 小数の複数行で注文なし参加を2件作れる<br>1行かつ整数1だけ許可する |
+| [x] | RC-29 | 4176237550 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | count 0 の注文なし参加が通り参加だけ残る<br>1行かつ整数1以外は拒否する |
+| [ ] | RC-30 | 4176237558 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | 注文なし参加削除の統合テストが無い<br>エミュレータで確定成功と再計算スキップの2経路 |
+
+**識別子**: RC-24（GitHub id: 5404430702）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: （レビュー本文）
+
+**該当コード（レビュー時点の diff）**: （インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+未解決のmoderateおよびcriticalな指摘があり、非原子的更新、数量検証、店舗一覧フィルタなどの修正が必要です。
+
+**Review effort:** Lite  
+**Findings:** 6  · 9  · 2 
+
+<details open>
+<summary><strong>Open (17)</strong></summary>
+
+-  [店舗メニューと予約更新が別Transactionで不整合になる](#discussion_r4176237530) · New
+-  [確定済み注文なし参加との併存をトランザクションで防止する](#discussion_r4173589682)
+-  [既存の0円データとスキーマ検証の互換性を確保する](#discussion_r4173589672)
+-  [0円注文の品目種別と価格整合性検証が不足](#discussion_r4173376354)
+-  [\[must\] メニュー再生成パスで `savePartnerMenusToEventMenus`（内部 Transaction）と、注文なし参加の upsert（別…](#discussion_r3934369485)
+-  [\[must\] イベントコピー時に、店舗メニュー再生成（`savePartnerMenusToEventMenus`）と注文なし参加メニューの作成が別 Transaction…](#discussion_r3934369415)
+-  [注文なし参加で数量0や負数が許可される](#discussion_r4176237550) · New
+-  [注文なし参加削除の成功・再計算時挙動を検証していない](#discussion_r4176237558) · New
+-  [メニュー再生成と予約更新の失敗時に状態不整合が起きる](#discussion_r4173376380)
+-  [注文なし参加除外後の一覧を空状態と名札表示にも適用する](#discussion_r4151936570)
+-  [プロフィール再集計で全注文ドキュメント取得を避ける](#discussion_r4151936540)
+-  [\[must\] `countOrderedFoodsForUser` が collectionGroup を全件 `get()`…](#discussion_r3934369615)
+-  [\[must\] `confirmOrder` の `user_advance` 例外（全件が店舗発注対象外かつ合計0円なら確定OK）は決済・参加確定に直結する重要ロジックなので、Functions…](#discussion_r3934369563)
+-  [\[must\] `isPartnerSuppliedItem` が `undefined` を `partner_menu` と同等に扱うため、`item_type`…](#discussion_r3934369519)
+-  [現状の `upsertNoOrderParticipationMenu` は `isSelected=false` でも `existing == null`…](#discussion_r3869290052)
+-  [バリデーションエラーメッセージが英語固定になっており、他のエラーメッセージ（日本語）と混在します。ユーザー入力に近い層で露出する可能性があるなら、日本語化するか、少なくともプロジェクト内で一貫した言語…](#discussion_r3869290103)
+-  [テスト名が実際の期待値と矛盾しています（`undefined` も `true` を期待しているため「partner_menu のみ…](#discussion_r3869290081)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (3)</strong></summary>
+
+-  [注文なし参加で確定ボタンまで非表示になる](#discussion_r4173376315)
+-  [注文なし参加エントリをリクエスト内で1件に制限する](#discussion_r4151936481)
+-  [注文なし参加で補助設定の不要な読み込みが失敗する](#discussion_r4173376400)
+</details>
+
+**コメント要約**: Copilot の未解決指摘一覧。<br>個別指摘は各インラインと既存 RC で扱う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 目次であり、修正要求そのものはリンク先にある。新規リンクは RC-25 以降、既存リンクは記録済み RC で扱う。
+
+---
+
+**識別子**: RC-25（GitHub id: 4176246983）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/EventCartDialog.vue:342`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+…（diff 先頭省略）
+-        <div class="d-flex align-center justify-space-between ga-4 mb-4">
++        <div v-if="!isNoOrderParticipation" class="d-flex align-center justify-space-between ga-4 mb-4">
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  注文なし参加でもダイアログに価格を表示する**
+
+注文なし参加ではこの `v-if` が数量セレクトだけでなく、同じ行にある価格表示までまとめて非表示にします。そのためメニュー一覧では「¥0」と表示されていても、最終的にカートへ追加するダイアログでは価格を確認できず、仕様書の「カート追加ダイアログの価格行も¥0表示」と一致しません。数量入力だけを隠し、価格部分は注文なし参加でも表示してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: カート追加ダイアログで注文なし参加の価格が隠れる。<br>数量だけ隠し、価格行は ¥0 を出す。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX, 📑 仕様書
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 仕様 4.3 はダイアログの価格行も ¥0。数量セレクトだけを隠し、価格行は残した。
+
+---
+
+**識別子**: RC-26（GitHub id: 4176246981）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/pages/cart.vue:503`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+  if (formPresenceOf(item.event) === 'yes') {
+    return $t('cart.answer_pre_event_form')
+  }
++  if (isNoOrderParticipationOnly(item.orders)) {
++    return $t('cart.confirm_no_order_participation_button')
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  事前フォーム経路にも注文なし参加の文言を適用する**
+
+事前アンケートがある注文なし参加では、この分岐より先にフォーム経路へ進むため、追加した注文なし参加向け文言が適用されません。遷移先の `CartFormAnswer.vue` はボタンを常に「注文してイベントに参加する」とし、確認文も `user_on_day` 以外では「主催者請求書払い」とするため、たとえば `user_advance` の注文なし参加者に存在しない支払い方法を案内します。フォーム側でもカート品目を判定し、同じ参加確定ボタンと確認文へ分岐してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 事前アンケートがあると注文なし参加の確定文言にならない。<br>フォーム画面でも参加確定のボタンと確認文にする。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: カートのボタンはフォームへ進むため、文言の分岐は `CartFormAnswer.vue` に置いた。注文なし参加だけなら決済にも進まない。
+
+---
+
+**識別子**: RC-27（GitHub id: 4176237530）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/eventMenusSelection.ts:169`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+      await getFirestore().runTransaction(async (transaction) => {
+        const event = await getEventInCommunity(communityId, eventId, transaction)
+        if (event == null) {
+          throw new HttpsError('not-found', `Event ${eventId} not found`)
+        }
+        const existingMenus = await event.getMenus(transaction)
+        await upsertNoOrderParticipationMenu(event, existingMenus, regenerateParams.noOrderSelected, transaction)
+      })
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] メニュー再生成経路では、`savePartnerMenusToEventMenus` 内の Transaction が完了した後に、注文なし参加の upsert を別 Transaction で実行しています。後者が失敗すると店舗メニューだけ更新されて注文なし参加の選択状態が旧状態のまま残り、Callable はエラーを返すため再試行でも不整合が起こり得ます。店舗メニュー保存と予約ドキュメント更新を同一 Transaction に含め、Firestore 上の更新を原子的にしてください。
+
+**コメント要約**: メニュー再生成と予約更新が別 Transaction。<br>同一内容は RC-3 で未着手のまま追う。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 💾 データ
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: RC-3 と同一。原子化は API 変更を伴い工数 M のため、このコメントでは重ねて自動修正しない。
+
+---
+
+**識別子**: RC-28（GitHub id: 4176246977）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:131`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+    const noOrderUnits = menus
+      .filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+      .reduce((sum, menu) => sum + menu.count, 0)
+    if (noOrderUnits > 0 && noOrderUnits !== 1) {
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  各注文なし参加行を整数1件に制約する**
+
+Callable を直接呼び出して注文なし参加を `count: 0.5` の2行で送ると、合計値は1なのでこの検査を通過しますが、後段の各 `for (let i = 0; i < menu.count; i++)` はそれぞれ1回実行され、注文ドキュメントが2件作成されます。既存の重複入力指摘後に追加された合計ガードにもこの新しい迂回経路が残っているため、予約IDの出現数を1件に制限し、その行の `count` が整数の1であることを個別に検証してください。
+
+Useful? React with 👍 / 👎.
+
+**コメント要約**: 小数の複数行で注文なし参加を2件作れる。<br>1行かつ整数1だけ許可する。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-18 の合計チェックを、1行かつ整数の 1 だけに変えた。RC-29 と同じ修正。
+
+---
+
+**識別子**: RC-29（GitHub id: 4176237550）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:132`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+    const noOrderUnits = menus
+      .filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+      .reduce((sum, menu) => sum + menu.count, 0)
+    if (noOrderUnits > 0 && noOrderUnits !== 1) {
+      throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 仕様は注文なし参加の同一リクエスト合計数量を **1 のみ**許可していますが、`noOrderUnits > 0` の条件では `count: 0` や負数が通ります。単独の `count: 0` は注文を作成せずに成功し、参加者だけ作成され得ます。`addingNoOrder` のときは `noOrderUnits !== 1` を無条件に拒否してください。
+
+**コメント要約**: count 0 の注文なし参加が通り参加だけ残る。<br>1行かつ整数1以外は拒否する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 0 や負数は合計チェックを素通りし、参加だけ作られ得る。行数と整数 1 で拒否する。
+
+---
+
+**識別子**: RC-30（GitHub id: 4176237558）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:410`
+
+**該当コード（レビュー時点の diff）**:
+
+```
+        if (!finalized.recalculated) {
+          await deleteOrderedNoOrderParticipation(community_id, event_id, uid, noOrderIdsToDelete, transaction)
+        }
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] この条件分岐は、店舗メニュー確定時に ordered の注文なし参加を削除する一方、企業補助の再計算で確定しなかった場合は削除しないというデータ整合性に関わる挙動を追加しています。しかし現状のテストは純粋関数の削除対象 ID 判定だけで、`confirmOrderHandler` の成功時に同一 Transaction で削除されることや `recalculated === true` では削除されないことを検証していません。Firestore Emulator 等でこの2経路を統合テストしてください。
+
+**コメント要約**: 注文なし参加削除の統合テストが無い。<br>エミュレータで確定成功と再計算スキップの2経路。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: 削除判定の単体テストはある。Callable とエミュレータをまたぐ統合テストは工数 M のため自動修正しない。
+
+---
