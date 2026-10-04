@@ -29,6 +29,20 @@ const linkRequestDialogParams = computed(() =>
   getLinkRequestDialogParams(parseLoginQueryPids(route.query.pid1, route.query.pid2)),
 )
 
+/** pstack / 検証用受け口で OTP 記録を分離する任意 ID（verify.shokujii.test 向け） */
+const getVerificationRunId = (): string | undefined => {
+  const fromQuery = route.query.verification_run_id
+  if (typeof fromQuery === 'string' && fromQuery !== '') {
+    return fromQuery
+  }
+  try {
+    const fromStorage = sessionStorage.getItem('pstack_verification_run_id')
+    return fromStorage != null && fromStorage !== '' ? fromStorage : undefined
+  } catch {
+    return undefined
+  }
+}
+
 onMounted(() => {
   const params = runLoginPageMountAutoLinkage(route.query.pid1, route.query.pid2)
   if (params != null) {
@@ -48,8 +62,10 @@ const handleLogin = async (providerId: ProviderIdType | 'custom', emailInput?: s
       if (emailInput == null) {
         throw new Error('Email is required')
       }
+      const verificationRunId = getVerificationRunId()
       await requestEmailLogin({
         email: emailInput,
+        ...(verificationRunId != null ? { verification_run_id: verificationRunId } : {}),
       })
       await router.push(getPassCode(emailInput, 'login'))
     } else {

@@ -25,6 +25,7 @@ import { savePassCode, ShokujiiPassCode, getValidPassCodeFromEmail, deletePassCo
 import { send } from './utils/sendgrid.js'
 import { DEFAULT_FROM } from './utils/mail.js'
 import { createModuleLogger } from './utils/logger.js'
+import { deliverUserPassCodeForLogin } from './utils/verificationTestOutbox.js'
 
 const logger = createModuleLogger('user')
 const USER_PASS_CODE_TEMPLATE_ID = 'd-84540f5feaf8422484b65bdc2be739fe'
@@ -34,7 +35,7 @@ export const requestEmailLogin = onCall<RequestEmailLoginRequest, Promise<Reques
     secrets: ['SENDGRID_API_KEY'],
   },
   async (request) => {
-    const { email } = request.data
+    const { email, verification_run_id: verificationRunId } = request.data
     if (email == null) {
       throw new HttpsError('invalid-argument', 'email is null')
     }
@@ -43,17 +44,21 @@ export const requestEmailLogin = onCall<RequestEmailLoginRequest, Promise<Reques
       throw new HttpsError('not-found', 'user not registered')
     }
     const passCode = new ShokujiiPassCode(null, { user_id: userId, user_email: email })
-    await Promise.all([
-      savePassCode(passCode),
-      send({
-        to: email,
-        from: DEFAULT_FROM,
-        templateId: USER_PASS_CODE_TEMPLATE_ID,
-        dynamicTemplateData: {
-          user_pass_code: passCode.pass_code,
-        },
-      }),
-    ])
+    await savePassCode(passCode)
+    await deliverUserPassCodeForLogin({
+      email,
+      passCode: passCode.pass_code,
+      verificationRunId: verificationRunId == null || verificationRunId === '' ? null : verificationRunId,
+      sendViaSendGrid: () =>
+        send({
+          to: email,
+          from: DEFAULT_FROM,
+          templateId: USER_PASS_CODE_TEMPLATE_ID,
+          dynamicTemplateData: {
+            user_pass_code: passCode.pass_code,
+          },
+        }),
+    })
     return { success: true }
   },
 )

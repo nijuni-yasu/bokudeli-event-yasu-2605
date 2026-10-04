@@ -28,14 +28,23 @@ description: Shokujii user アプリで、注文受付中イベントのメニ�
 | メニューが選べない | イベント状態が `accepting_order` か、売切・上限 | fixture またはイベント状態を直す |
 | `addToCart` 失敗 | Functions 接続、Rules、Callable エラー | コンソール・Network のエラーを証拠に停止 |
 
-## 操作（下書き）
+## ログイン（sandbox / 受け口有効時）
 
-`feature-map.md` の Fixture が埋まっていること。
+前提: `VERIFICATION_TEST_OUTBOX_MODE=record_skip_send` が Functions にデプロイ済み。fixture は [fixture-pstack-001.md](../../../documents/AIエージェント/02_pstack/records/fixture-pstack-001.md)。
 
-1. 新しいブラウザコンテキストでログイン（D-05: 人の補助なし）。
-2. `/c/{communityAccount}/e/{eventId}` を開く。
-3. fixture メニューを選択し、数量を指定してカートに追加。
-4. `/cart` で名称・数量を確認。
+1. `verification_run_id` をその実行ごとに新規生成する（例: ISO 日時 + 乱数。秘密ではない）。
+2. `/login` で fixture の `userEmail` を入力し、ログインコードを送信（`requestEmailLogin` に `verification_run_id` を渡す実装はアプリ側が対応後に UI から送る。未対応時はエージェントが Callable を直接呼んでもよい）。
+3. `fetchVerificationTestPassCode` で `{ email, verification_run_id }` を渡し OTP を取得（`base/src/apis/verificationTest.ts` または同等の Callable）。
+4. `/pass-code` で OTP を入力し `signInWithCustomToken` まで完了する。
+5. 新しいブラウザコンテキストで手順 2〜4 を再実行できること（人の既存セッションの再利用だけでは未達）。
+
+## 操作
+
+`feature-map.md` の Fixture を投入済みであること（`scripts/pstack/seed-pstack-fixture.mjs`）。
+
+1. ログイン完了後、`/c/{communityAccount}/e/{eventId}` を開く。
+2. fixture メニュー（表示名 `pstack検証弁当`）を選択し、数量 1 でカートに追加。
+3. `/cart` で名称・数量が一致することを確認。
 
 操作対象は DOM または画面上の日本語文言で特定する（固定 sleep だけを成功判定にしない）。
 

@@ -13,19 +13,20 @@
 | イベントページ | `/c/{communityAccount}/e/{eventId}` | イベントが注文受付可能（`accepting_order`）、ユーザーがログイン済み |
 | カート | `/cart` | 直前に当該イベントから `addToCart` 成功 |
 
-## Fixture（未投入 — 更新待ち）
+## Fixture（`pstack-001`）
 
-データ投入後に次の列を具体値で埋める。
+正本: [fixture-pstack-001.md](../../../documents/AIエージェント/02_pstack/records/fixture-pstack-001.md)
 
-| キー | 用途 | 現状 |
-| --- | --- | --- |
-| `communityAccount` | URL | TBD |
-| `eventId` | URL | TBD |
-| `menuDisplayName` | 操作・期待表示 | TBD |
-| `quantity` | 操作（初期 1） | `1` |
-| `testUser` | 認証（メール等は記録しない） | TBD（UID のみ検証ログに可） |
+| キー | 値 |
+| --- | --- |
+| `communityAccount` | `pstack-verify` |
+| `eventId` | `pstack-event-cart-001` |
+| `menuDisplayName` | `pstack検証弁当` |
+| `menuPrice` | 800 |
+| `quantity` | 1 |
+| `userEmail` | `pstack.participant@verify.shokujii.test`（ログ記録に UID `pstack-user-participant-001` 可） |
 
-初期状態: 当該ユーザーのカートに同一イベントの未確定行が無いこと。
+初期状態: seed 実行後、当該ユーザーの当該イベントに `in_cart` 行が無いこと。
 
 ## 操作（要約）
 
