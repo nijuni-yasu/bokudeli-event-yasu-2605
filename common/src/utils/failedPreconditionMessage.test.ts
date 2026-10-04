@@ -16,6 +16,8 @@ describe('getUserFacingFailedPreconditionMessage', () => {
   })
 
   it('returns null for unknown failed-precondition messages', () => {
-    expect(getUserFacingFailedPreconditionMessage('注文なし参加と店舗メニューは同時にカートに追加できません')).toBeNull()
+    expect(
+      getUserFacingFailedPreconditionMessage('注文なし参加と店舗メニューは同時にカートに追加できません'),
+    ).toBeNull()
   })
 })
