@@ -317,9 +317,10 @@ describe('useEventStore lazy members', () => {
   it('previewMembers は選外になった users 購読を外す', async () => {
     const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
     const userUnsubscribes = new Map<string, ReturnType<typeof vi.fn>>()
-    let ordersCallback:
-      | ((snapshot: { docs: { data: () => { user_id: string; updated_at: number } }[] }) => void)
-      | null = null
+    type PreviewOrdersSnapshot = {
+      docs: { data: () => { user_id: string; updated_at: number } }[]
+    }
+    const ordersCallbacks: Array<(snapshot: PreviewOrdersSnapshot) => void> = []
     onSnapshotMock.mockImplementation((ref: { path?: string }, callback: (snapshot: unknown) => void) => {
       const path = ref?.path ?? ''
       if (path.startsWith('users/')) {
@@ -339,7 +340,9 @@ describe('useEventStore lazy members', () => {
         })
         return vi.fn()
       }
-      ordersCallback = callback as typeof ordersCallback
+      ordersCallbacks.push((snapshot: PreviewOrdersSnapshot) => {
+        callback(snapshot)
+      })
       return vi.fn()
     })
 
@@ -350,9 +353,12 @@ describe('useEventStore lazy members', () => {
 
     expect(store.previewMembers).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
     expect(userUnsubscribes.size).toBe(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-    expect(ordersCallback).not.toBeNull()
-
-    ordersCallback?.({
+    const notifyOrders = ordersCallbacks[0]
+    expect(notifyOrders).toBeTypeOf('function')
+    if (notifyOrders == null) {
+      throw new Error('orders listener was not registered')
+    }
+    notifyOrders({
       docs: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT }, (_, index) => ({
         data: () => ({ user_id: `user-${index}`, updated_at: 500 }),
       })),
