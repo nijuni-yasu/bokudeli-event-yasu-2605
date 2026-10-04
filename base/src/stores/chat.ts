@@ -299,12 +299,19 @@ export const useChatStore = defineStore('chat', () => {
     const prevById = new Map(prevRooms.map((room) => [room.roomId, room]))
     return nextRooms.map((newRoom) => {
       const prev = prevById.get(newRoom.roomId)
-      if (prev?.displayTitleReady) {
+      if (prev?.displayTitleReady === true) {
         return {
           ...newRoom,
           displayTitle: prev.displayTitle,
           displayTitleReady: prev.displayTitleReady,
           coverImageUrl: prev.coverImageUrl,
+          memberIds: prev.memberIds,
+          eventMaxPeople: prev.eventMaxPeople,
+          membersVisibleMinCount: prev.membersVisibleMinCount,
+          enterpriseId: prev.enterpriseId,
+          communityAccount: prev.communityAccount,
+          isShowMember: prev.isShowMember,
+          participantMetaReady: prev.participantMetaReady,
         }
       }
       return newRoom

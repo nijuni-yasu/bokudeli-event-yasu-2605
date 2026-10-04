@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ChatApp from '@shokujii/base/components/chat/ChatApp.vue'
 import { useChatOpenEvent } from '@shokujii/base/composable/useChatOpenEvent.js'
-import { getChatPath, getEventPath, getUserPath } from '@/router/utils'
+import { getChatPath, getEventMembersPath, getEventPath, getUserPath } from '@/router/utils'
 
 definePage({
   meta: {
@@ -12,7 +12,7 @@ definePage({
 const route = useRoute()
 const router = useRouter()
 const roomId = computed(() => String(route.params.roomId ?? ''))
-const { onOpenEvent } = useChatOpenEvent({ getEventPath })
+const { onOpenEvent, onOpenMembers } = useChatOpenEvent({ getEventPath, getEventMembersPath })
 
 const onNavigateRoom = (payload: { path: Parameters<typeof router.push>[0]; replace?: boolean }) => {
   if (payload.replace === true) {
@@ -32,6 +32,7 @@ const onNavigateRoom = (payload: { path: Parameters<typeof router.push>[0]; repl
         :resolve-chat-room-path="getChatPath"
         @navigate-room="onNavigateRoom"
         @open-event="onOpenEvent"
+        @open-members="onOpenMembers"
       />
     </VCard>
   </div>

@@ -4,6 +4,8 @@ export const getHomePath = () => '/'
 export const getCommunityListPath = () => '/communitylist'
 export const getCommunityPath = (communityAccount: string) => `/c/${communityAccount}`
 export const getEventPath = (communityAccount: string, eventId: string) => `/c/${communityAccount}/e/${eventId}`
+export const getEventMembersPath = (communityAccount: string, eventId: string): string =>
+  `${getEventPath(communityAccount, eventId)}/members`
 export const getUserPath = (userId: string) => `/u/${userId}`
 /** PF には利用状況セクションが無いため `?tab=usage` は扱わない（enterprise 限定） */
 export const getOrdersPath = () => '/orders'

@@ -1362,6 +1362,12 @@ export default {
     open_user_profile: '{name}のプロフィールを見る',
     open_room_aria: '{name}のチャットを開く',
     open_event_page: '{name}のイベントページを開く',
+    participants: {
+      open: '参加者一覧',
+      close: '参加者一覧を閉じる',
+      count: '{count} / {max}',
+      open_profiles: '参加者のプロフィールを見る',
+    },
     recall_message: '送信を取り消す',
     recall_confirm_title: '送信を取り消す',
     recall_confirm_message: 'このメッセージを取り消しますか？取り消し後は元に戻せません。',

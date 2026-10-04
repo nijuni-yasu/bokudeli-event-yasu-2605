@@ -9,6 +9,13 @@ export type ChatRoomListItem = {
   coverImageUrl?: string
   communityId?: string
   eventId?: string
+  memberIds?: string[]
+  eventMaxPeople?: number
+  membersVisibleMinCount?: number
+  enterpriseId?: string | null
+  communityAccount?: string
+  isShowMember?: boolean | null
+  participantMetaReady?: boolean
   isActive: boolean
   unreadCount: number
   lastMessageAt?: number
@@ -39,4 +46,11 @@ export type ChatActiveRoom = {
   roomType: ChatRoomType
   communityId?: string
   eventId?: string
+  memberIds?: string[]
+  eventMaxPeople?: number
+  membersVisibleMinCount?: number
+  enterpriseId?: string | null
+  communityAccount?: string
+  isShowMember?: boolean | null
+  participantMetaReady?: boolean
 }

@@ -3,6 +3,7 @@ import { fetchEventInCommunityDocument } from '@shokujii/base/stores/event.js'
 
 type UseChatOpenEventOptions = {
   getEventPath: (communityAccount: string, eventId: string) => string
+  getEventMembersPath: (communityAccount: string, eventId: string) => string
 }
 
 export const useChatOpenEvent = (options: UseChatOpenEventOptions) => {
@@ -20,5 +21,12 @@ export const useChatOpenEvent = (options: UseChatOpenEventOptions) => {
     }
   }
 
-  return { onOpenEvent }
+  const onOpenMembers = (payload: { communityAccount: string; eventId: string }): void => {
+    if (payload.communityAccount === '' || payload.eventId === '') {
+      return
+    }
+    void router.push(options.getEventMembersPath(payload.communityAccount, payload.eventId))
+  }
+
+  return { onOpenEvent, onOpenMembers }
 }

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
 import { useRouter } from 'vue-router'
-import { mdiClose, mdiImageOutline, mdiMenu, mdiMessageOutline, mdiPlus, mdiSend } from '@mdi/js'
+import { mdiAccountGroup, mdiClose, mdiImageOutline, mdiMenu, mdiMessageOutline, mdiPlus, mdiSend } from '@mdi/js'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
 import { useResponsiveLeftSidebar } from '@shokujii/base/composable/useResponsiveSidebar.js'
 import { avatarText } from '@shokujii/base/utils/avatarText.js'
+import { shouldShowChatEventParticipants } from '@shokujii/base/utils/chatEventParticipantsVisibility.js'
 import {
   CHAT_ATTACHMENT_MAX_BYTE_SIZE,
   CHAT_ATTACHMENT_MAX_COUNT,
@@ -29,6 +30,7 @@ import {
   clearChatGreetingPromptState,
   readChatGreetingPromptRoomId,
 } from '@shokujii/base/utils/chatGreetingPrompt.js'
+import ChatEventParticipantsDrawer from './ChatEventParticipantsDrawer.vue'
 import ChatLeftSidebarContent from './ChatLeftSidebarContent.vue'
 import ChatLog from './ChatLog.vue'
 
@@ -57,6 +59,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   openEvent: [payload: { communityId: string; eventId: string }]
+  openMembers: [payload: { communityAccount: string; eventId: string }]
   'navigate-room': [payload: { path: RouteLocationRaw; replace?: boolean }]
 }>()
 
@@ -624,6 +627,60 @@ const canOpenActiveEvent = computed(() => {
   )
 })
 
+const isParticipantsDrawerOpen = ref(false)
+const isParticipantsIconOnly = computed((): boolean => vuetifyDisplays.smAndDown.value)
+
+const participantTarget = computed(() => {
+  const room = store.activeRoom
+  if (room == null || room.roomType !== 'event') {
+    return null
+  }
+  if (room.communityId == null || room.communityId === '' || room.eventId == null || room.eventId === '') {
+    return null
+  }
+  return {
+    communityId: room.communityId,
+    eventId: room.eventId,
+    communityAccount: room.communityAccount ?? '',
+    eventMaxPeople: room.eventMaxPeople ?? 0,
+    memberIds: room.memberIds ?? [],
+    participantMetaReady: room.participantMetaReady === true,
+    isShowMember: room.isShowMember ?? null,
+    enterpriseId: room.enterpriseId,
+    membersVisibleMinCount: room.membersVisibleMinCount,
+  }
+})
+
+const participantMemberIds = computed((): string[] => participantTarget.value?.memberIds ?? [])
+
+const showParticipantsButton = computed((): boolean => {
+  const target = participantTarget.value
+  if (target == null) {
+    return false
+  }
+  return shouldShowChatEventParticipants({
+    roomType: 'event',
+    participantMetaReady: target.participantMetaReady,
+    isShowMember: target.isShowMember,
+    memberCount: target.memberIds.length,
+    enterpriseId: target.enterpriseId,
+    membersVisibleMinCount: target.membersVisibleMinCount,
+  })
+})
+
+watch(showParticipantsButton, (visible) => {
+  if (visible !== true) {
+    isParticipantsDrawerOpen.value = false
+  }
+})
+
+watch(
+  () => store.activeRoomId,
+  () => {
+    isParticipantsDrawerOpen.value = false
+  },
+)
+
 const activeRoomAvatarLabel = computed(() => avatarText(store.activeRoom?.displayTitle ?? ''))
 
 const onActiveRoomAvatarClick = () => {
@@ -808,6 +865,17 @@ onBeforeUnmount(() => {
       />
     </VNavigationDrawer>
 
+    <ChatEventParticipantsDrawer
+      v-if="participantTarget != null && showParticipantsButton"
+      v-model="isParticipantsDrawerOpen"
+      :event-id="participantTarget.eventId"
+      :member-ids="participantMemberIds"
+      :event-max-people="participantTarget.eventMaxPeople"
+      :community-account="participantTarget.communityAccount"
+      :resolve-profile-path="resolveProfilePath"
+      @open-members="emit('openMembers', $event)"
+    />
+
     <VMain class="chat-content-container h-100">
       <div v-if="store.activeRoom != null" class="active-chat-panel d-flex flex-column h-100 w-100">
         <div class="active-chat-header d-flex align-center text-medium-emphasis px-4">
@@ -860,6 +928,21 @@ onBeforeUnmount(() => {
               </VChip>
             </div>
           </div>
+
+          <VBtn
+            v-if="showParticipantsButton"
+            class="flex-shrink-0 ms-2"
+            variant="text"
+            color="primary"
+            size="small"
+            :icon="isParticipantsIconOnly || undefined"
+            :prepend-icon="isParticipantsIconOnly ? undefined : mdiAccountGroup"
+            :aria-label="t('chat.participants.open')"
+            @click="isParticipantsDrawerOpen = true"
+          >
+            <VIcon v-if="isParticipantsIconOnly" :icon="mdiAccountGroup" />
+            <span v-else>{{ t('chat.participants.open') }}</span>
+          </VBtn>
         </div>
 
         <VDivider />

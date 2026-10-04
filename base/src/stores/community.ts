@@ -127,6 +127,11 @@ export const communityConverter: FirestoreDataConverter<BokudeliCommunity> = {
   },
 }
 
+/** communities/{communityId} への直接参照（withConverter 付き） */
+export const getCommunityRef = (communityId: string): DocumentReference<BokudeliCommunity> => {
+  return doc(db, 'communities', communityId).withConverter(communityConverter)
+}
+
 const communityMemberConverter: FirestoreDataConverter<CommunityMember> = {
   toFirestore(member: CommunityMember): DocumentData {
     return member.toFirestore()
