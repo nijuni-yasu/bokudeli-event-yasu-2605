@@ -3,6 +3,7 @@ import { EpochMillisSchema } from '../schemas/firebase/index.js'
 import { LimitPerEventDbFieldSchema } from '../schemas/limitPerEventField.js'
 import { MenuDescriptionDbFieldSchema } from '../schemas/menuDescriptionField.js'
 import { OptionIdListSchema, OptionItemListSchema, OptionSelectionSchema } from '../schemas/menuOption.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '../schemas/EventItemType.js'
 
 const PartnerDocumentIdSchema = z
   .string()
@@ -32,6 +33,10 @@ export const SavePartnerMenuRequestSchema = z
     option_ids: OptionIdListSchema.pipe(z.array(PartnerDocumentIdSchema)),
   })
   .strict()
+  .refine((data) => data.menu_id !== NO_ORDER_PARTICIPATION_MENU_ID, {
+    message: 'menu_id is reserved for no-order participation',
+    path: ['menu_id'],
+  })
 export type SavePartnerMenuRequest = z.infer<typeof SavePartnerMenuRequestSchema>
 
 export const SavePartnerOptionRequestSchema = z

@@ -65,6 +65,7 @@ describe('店舗メニュー・オプションの Callable 入力', () => {
   })
   it('メニュー説明文と参照配列も検証する', () => {
     expect(SavePartnerMenuRequestSchema.safeParse(menu).success).toBe(true)
+    expect(SavePartnerMenuRequestSchema.safeParse({ ...menu, menu_id: 'no_order_participation' }).success).toBe(false)
     for (const patch of [
       { menu_description: '' },
       { menu_description: 'あ'.repeat(301) },

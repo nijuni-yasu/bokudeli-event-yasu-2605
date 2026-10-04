@@ -52,6 +52,17 @@
 | [x] | RC-46 | 4177247861 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 参加専用 menu_id が filterPartnerSuppliedOrders を通過<br>menu_id で除外 |
 | [ ] | RC-47 | 4177251157 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | 並行 addToCart（RC-40 と同一） |
 | [x] | RC-48 | 5405671971 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
+| [x] | RC-49 | 4177324032 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | レガシー menu-zero 等の 0 円参加メニュー正規化<br>sandbox 残骸のみ。予約 ID 以外は対象外 |
+| [x] | RC-50 | 4177324040 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | レガシー menu_id の参加注文を filter から除外<br>sandbox 残骸のみ。予約 ID 以外は対象外 |
+| [ ] | RC-51 | 4177324047 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | eventCopy の別 Transaction（RC-43 と同一） |
+| [x] | RC-52 | 4177329184 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | PartnerMenu が予約 menu_id を保存可能<br>SavePartnerMenuRequest で拒否 |
+| [x] | RC-53 | 5405770422 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
+| [x] | RC-54 | 4177461592 | 👌 修正不要 | — | — | 🐛 実害 | 👀 確認のみ | — | 旧参加注文の item_type 既定が partner のまま<br>sandbox 残骸のみ。注文コンストラクタでの正規化はしない |
+| [x] | RC-55 | 4177461637 | 👌 修正不要 | — | — | 🐛 実害 | 👀 確認のみ | — | Slack 通知が予約 menu_id のみ判定<br>現行仕様どおり。レガシー ID は対象外 |
+| [x] | RC-56 | 4177469116 | 👌 修正不要 | — | — | 🐛 実害 | 👀 確認のみ | — | 旧参加キャンセルで補助件数が誤減算<br>sandbox 残骸のみ |
+| [x] | RC-57 | 4177469120 | 👌 修正不要 | — | — | 👤 UX | 👀 確認のみ | — | 旧 menu-zero の is_selected が編集画面で OFF<br>sandbox 残骸のみ |
+| [x] | RC-58 | 4177469126 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 挨拶文が名称のみで参加判定<br>予約 menu_id だけで除外 |
+| [x] | RC-59 | 5405972358 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
 
 ---
 
@@ -2072,6 +2083,30 @@ Resolve legacy menu compatibility and non-atomic state transitions, and add the 
 | [x] | RC-45 | 4177247855 | 🚨 必須修正 | ✅ 対応済み | 予約 menu_id の 0 円メニューを organizer_menu として読み取り |
 | [x] | RC-46 | 4177247861 | 🚨 必須修正 | ✅ 対応済み | 参加専用 menu_id を店舗向け filter から除外 |
 | [ ] | RC-47 | 4177251157 | 🚨 必須修正 | 未着手 | 並行 addToCart（RC-40 と同一） |
-| [x] | RC-48 | 5405671971 | 👌 修正不要 | — | Copilot overview |
+| [x] | RC-48 | 5405770422 | 👌 修正不要 | — | Copilot overview |
+
+---
+
+## 評価セッション（2026-10-04 20:38・review-comments-evaluate auto）
+
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T11:28:17Z
+- **手順 4a 自動修正**: RC-49、RC-50、RC-52（🚨 2件・🟡 S 1件）
+- **未着手**: RC-51（eventCopy・RC-43 同一）、RC-47/40（並行 addToCart）
+
+---
+
+## 評価セッション（2026-10-04 21:10・review-comments-evaluate auto）
+
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T11:57:22Z
+- **手順 4a 自動修正**: RC-54、RC-55、RC-56、RC-58（🚨 3件・🟡 S 1件）
+- **未着手**: RC-57（旧 menu-zero の is_selected 引き継ぎ・M）
+
+---
+
+## 評価セッション（2026-10-04 21:41・レガシー対応撤回）
+
+- **方針**: レガシー注文なし参加データ（任意 `menu_id` + 旧名称 + 0円）は sandbox 残骸のため対応不要
+- **残す**: 予約 ID `no_order_participation` の読み取り正規化 / filter 除外（RC-45/46）、PartnerMenu の予約 ID 拒否（RC-52）、挨拶文は予約 ID のみ（RC-58）
+- **撤回**: RC-49/50/54/55/56/57 は 👌 修正不要。レガシー判定ヘルパーと自動修正を削除
 
 ---
