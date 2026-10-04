@@ -317,8 +317,9 @@ describe('useEventStore lazy members', () => {
   it('previewMembers は選外になった users 購読を外す', async () => {
     const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
     const userUnsubscribes = new Map<string, ReturnType<typeof vi.fn>>()
-    let ordersCallback: ((snapshot: { docs: { data: () => { user_id: string; updated_at: number } }[] }) => void) | null =
-      null
+    let ordersCallback:
+      | ((snapshot: { docs: { data: () => { user_id: string; updated_at: number } }[] }) => void)
+      | null = null
     onSnapshotMock.mockImplementation((ref: { path?: string }, callback: (snapshot: unknown) => void) => {
       const path = ref?.path ?? ''
       if (path.startsWith('users/')) {

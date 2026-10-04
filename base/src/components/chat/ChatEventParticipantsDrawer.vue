@@ -102,8 +102,7 @@ const rows = computed((): ParticipantRow[] => {
       let name = ''
       if (loaded) {
         const guestLabel = t('chat.default_user_name')
-        name =
-          user != null ? resolveMemberDisplayName(user.user_name, guestLabel) : guestLabel
+        name = user != null ? resolveMemberDisplayName(user.user_name, guestLabel) : guestLabel
       }
       const profileTo = props.resolveProfilePath == null || memberId === '' ? null : props.resolveProfilePath(memberId)
       return {
