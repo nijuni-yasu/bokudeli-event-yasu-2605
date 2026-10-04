@@ -26,6 +26,18 @@ describe('EventMenu item_type', () => {
     expect(menu.isValidForDatabase()).toBe(true)
   })
 
+  it('予約 menu_id かつ item_type 未指定の 0 円メニューは organizer_menu として読める', () => {
+    const menu = new EventMenu('event-1', NO_ORDER_PARTICIPATION_MENU_ID, {
+      menu_name: '注文なしで参加',
+      menu_description: '説明',
+      menu_price: 0,
+      menu_sort_number: 999999,
+      is_selected: false,
+    })
+    expect(menu.item_type).toBe('organizer_menu')
+    expect(menu.isValidForDatabase()).toBe(true)
+  })
+
   it('partner_menu で menu_price 0 は拒否する', () => {
     expect(
       () =>

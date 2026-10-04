@@ -48,6 +48,10 @@
 | [x] | RC-42 | 5405630930 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次<br>リンク先は RC-40 等で評価 |
 | [ ] | RC-43 | 5979299879 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | イベント複製で店舗メニューと予約 upsert が別 Transaction<br>eventCopy の失敗時整合性。RC-3 と同系 |
 | [x] | RC-44 | 5979299879 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | 持参のみでも enterprise 補助サマリーが表示される<br>持参のみのときサマリー非表示 |
+| [x] | RC-45 | 4177247855 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 予約 menu_id の 0 円メニューが partner 既定で読めない<br>constructor で organizer_menu に正規化 |
+| [x] | RC-46 | 4177247861 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 🔧 微修正 | S | 参加専用 menu_id が filterPartnerSuppliedOrders を通過<br>menu_id で除外 |
+| [ ] | RC-47 | 4177251157 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 📐 リファクタ | M | 並行 addToCart（RC-40 と同一） |
+| [x] | RC-48 | 5405671971 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview 目次 |
 
 ---
 
@@ -2045,5 +2049,29 @@ Resolve legacy menu compatibility and non-atomic state transitions, and add the 
 **PRスコープ**: 📌 スコープ内
 
 **判断理由**: `applyBulkEventCancelInTransaction` 内で補助 revert 対象を `isPartnerSuppliedItem` で絞り込み。キャンセル対象注文は従来どおり全件。
+
+---
+
+## 評価セッション（2026-10-04 20:23・review-comments-evaluate auto）
+
+- **評価日時**: 2026-10-04 20:23 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・PR #2328 wake）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 5979347220、Codex 接続案内 5405667762）
+- **重複除外**: 1（Copilot 4177251157 → RC-40 / RC-47）
+- **partial**: false
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T11:13:05Z
+- **手順 4a 自動修正**: RC-45、RC-46（🚨 2件）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | 要約 |
+|:----:|:---|:---|:---|:---|:---|
+| [x] | RC-45 | 4177247855 | 🚨 必須修正 | ✅ 対応済み | 予約 menu_id の 0 円メニューを organizer_menu として読み取り |
+| [x] | RC-46 | 4177247861 | 🚨 必須修正 | ✅ 対応済み | 参加専用 menu_id を店舗向け filter から除外 |
+| [ ] | RC-47 | 4177251157 | 🚨 必須修正 | 未着手 | 並行 addToCart（RC-40 と同一） |
+| [x] | RC-48 | 5405671971 | 👌 修正不要 | — | Copilot overview |
 
 ---

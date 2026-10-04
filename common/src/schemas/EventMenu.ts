@@ -3,7 +3,7 @@ import { TimestampSchema } from './firebase/index.js'
 import { LimitPerEventAppFieldSchema, LimitPerEventDbFieldSchema } from './limitPerEventField.js'
 import { MenuDescriptionAppFieldSchema, MenuDescriptionDbFieldSchema } from './menuDescriptionField.js'
 import { EventMenuOptionSchema } from './menuOption.js'
-import { EventItemTypeSchema, type EventItemTypeType } from './EventItemType.js'
+import { EventItemTypeSchema, NO_ORDER_PARTICIPATION_MENU_ID, type EventItemTypeType } from './EventItemType.js'
 
 const partnerMenuPriceRefine = (data: { item_type: EventItemTypeType; menu_price: number }, ctx: z.RefinementCtx) => {
   if (data.item_type === 'partner_menu' && data.menu_price <= 0) {
@@ -71,7 +71,9 @@ export class EventMenu {
   item_type!: EventItemTypeType
 
   constructor(event_id: string, menu_id: string, src: Partial<EventMenu>) {
-    Object.assign(this, EventMenuAppSchema.parse(src))
+    const normalizedSrc =
+      menu_id === NO_ORDER_PARTICIPATION_MENU_ID ? { ...src, item_type: 'organizer_menu' as const } : src
+    Object.assign(this, EventMenuAppSchema.parse(normalizedSrc))
     this.event_id = event_id
     this.id = menu_id
     this.menu_id = menu_id

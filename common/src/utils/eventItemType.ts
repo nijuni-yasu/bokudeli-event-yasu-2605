@@ -1,4 +1,5 @@
 import type { EventItemTypeType } from '../schemas/EventItemType.js'
+import { NO_ORDER_PARTICIPATION_MENU_ID } from '../schemas/EventItemType.js'
 import type { EventMemberOrder } from '../schemas/EventMemberOrder.js'
 
 /** 店舗に発注し、店舗へ支払う品目か（発注情報・主催者請求書の対象判定） */
@@ -18,5 +19,7 @@ export function isTicketItem(itemType: EventItemTypeType): boolean {
 
 /** 店舗発注・請求の対象となる注文のみを抽出する */
 export function filterPartnerSuppliedOrders(orders: EventMemberOrder[]): EventMemberOrder[] {
-  return orders.filter((order) => isPartnerSuppliedItem(order.item_type))
+  return orders.filter(
+    (order) => order.menu_id !== NO_ORDER_PARTICIPATION_MENU_ID && isPartnerSuppliedItem(order.item_type),
+  )
 }

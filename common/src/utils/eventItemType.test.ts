@@ -50,4 +50,19 @@ describe('eventItemType', () => {
     expect(filtered).toHaveLength(1)
     expect(filtered[0]?.menu_id).toBe('m1')
   })
+
+  it('filterPartnerSuppliedOrders は item_type 未設定の参加専用 menu_id も除外する', () => {
+    const legacyParticipation = new EventMemberOrder('o3', {
+      order_id: 'o3',
+      user_id: 'u1',
+      event_id: 'e1',
+      community_id: 'c1',
+      menu_id: 'no_order_participation',
+      menu_name: '注文なしで参加',
+      menu_price: 0,
+      status: 'ordered',
+    })
+    expect(legacyParticipation.item_type).toBe('partner_menu')
+    expect(filterPartnerSuppliedOrders([legacyParticipation])).toHaveLength(0)
+  })
 })
