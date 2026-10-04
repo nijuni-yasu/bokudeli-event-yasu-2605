@@ -3,6 +3,7 @@ import { getUserFacingFailedPreconditionMessage } from './failedPreconditionMess
 import {
   NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE,
   NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE,
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE,
 } from './noOrderParticipationMessages.js'
 
 describe('getUserFacingFailedPreconditionMessage', () => {
@@ -12,6 +13,9 @@ describe('getUserFacingFailedPreconditionMessage', () => {
     )
     expect(getUserFacingFailedPreconditionMessage(NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE)).toBe(
       NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE,
+    )
+    expect(getUserFacingFailedPreconditionMessage(NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE)).toBe(
+      NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE,
     )
   })
 

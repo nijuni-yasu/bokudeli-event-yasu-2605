@@ -21,6 +21,7 @@ import { resolveEventMenuCartOrder } from '@shokujii/common/utils/menuOption.js'
 import {
   NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_IN_CART_MESSAGE,
   NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE,
+  NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE,
 } from '@shokujii/common/utils/noOrderParticipationMessages.js'
 import { assertMenuLimitsForCartAdd, assertMenuLimitsForConfirm } from './utils/menuLimitValidation.js'
 import { writeAuditLog } from './utils/auditLog.js'
@@ -153,11 +154,16 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
 
     if (addingNoOrder) {
       const memberOrders = await getMemberOrders(community_id, event_id, uid, transaction)
-      const hasActivePartnerOrder = memberOrders.some(
-        (order) =>
-          isPartnerSuppliedItem(order.item_type) && (order.status === 'ordered' || order.status === 'processing'),
+      const hasPartnerOrderProcessing = memberOrders.some(
+        (order) => isPartnerSuppliedItem(order.item_type) && order.status === 'processing',
       )
-      if (hasActivePartnerOrder) {
+      if (hasPartnerOrderProcessing) {
+        throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE)
+      }
+      const hasPartnerOrderOrdered = memberOrders.some(
+        (order) => isPartnerSuppliedItem(order.item_type) && order.status === 'ordered',
+      )
+      if (hasPartnerOrderOrdered) {
         throw new HttpsError('failed-precondition', NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE)
       }
       const existingNoOrders = memberOrders.filter(

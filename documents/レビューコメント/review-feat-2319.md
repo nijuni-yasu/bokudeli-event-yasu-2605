@@ -42,6 +42,7 @@
 | [x] | RC-36 | 5405315857 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>新規は予約メニューの item_type 既定と addToCart の統合テスト<br>目次自体に追加の修正要求はない<br>リンク先は各 RC で評価する |
 | [x] | RC-37 | 4176968988 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | 予約メニューに item_type が無いと店舗品目になる<br>addToCart の addingPartnerMenu が予約 ID でも true になる<br>価格 0 の未設定ドキュメントはスキーマで読めない<br>書き込みは常に organizer_menu。判定の誤作動は起きない |
 | [ ] | RC-38 | 4176969020 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | addToCart の排他がエミュレータで未検証<br>カート内・確定済み・決済中の拒否とカート内置換<br>純粋関数テストだけでは不足という指摘<br>RC-8 の続き。統合テストは工数 M のため未着手 |
+| [x] | RC-39 | 5979106773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | processing でも「確定」「キャンセル」案内になる<br>`cancelOrders` は ordered のみ受付<br>決済中用の文言を分離 |
 
 ---
 
@@ -1936,5 +1937,65 @@ Resolve legacy menu compatibility and non-atomic state transitions, and add the 
 **想定工数**: M
 
 **判断理由**: RC-8 の続き。増えた点は、`addToCart` をエミュレータで通し、カート内・確定済み・決済中の拒否と、カート内の注文なし参加だけを置換することを見ること。Callable とエミュレータの統合は工数 M のため自動修正しない。
+
+---
+
+## 評価セッション（2026-10-04 19:43・review-comments-evaluate auto）
+
+- **評価日時**: 2026-10-04 19:43 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto・PR #2328 wake）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（依頼定型文 5979083450、Codex 問題なし 5979110256）
+- **重複除外**: 2（`eventMenusSelection` 別 Transaction → RC-3、`confirmOrderHandler` 統合テスト → RC-30）
+- **partial**: true（Codex は `Didn't find any major issues` のみ）
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T10:36:39Z
+- **手順 4a 自動修正**: RC-39（決済中案内文言の分離）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-39 | 5979106773 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 👤 UX | 🔧 微修正 | S | processing でも「確定」「キャンセル」案内になる<br>`cancelOrders` は ordered のみ受付<br>決済中用の文言を分離 |
+
+**識別子**: RC-39（GitHub id: 5979106773）
+
+**レビュワー**: Copilot（トップレベル返信）
+
+**指摘箇所**: `common/src/utils/noOrderParticipationMessages.ts:7`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++export const NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_ORDERED_MESSAGE =
++  '店舗メニューの注文が確定しているため、「食事は持参」は追加できません。注文をキャンセルしてから、もう一度「カートに追加」してください。'
+```
+
+**レビュワーのコメント（原文）**:
+
+> @codex この PR の Files changed をコードレビューしてください。指摘は shokujii-code-review チェックリストに沿って日本語でお願いします。
+>
+> @copilot この PR ...
+
+差分を確認しました。Files changed への直接のインライン投稿機能がこの環境にないため、該当箇所を返信します。
+
+- 🟡 **修正提案** [🔧微修正/S] `common/src/utils/noOrderParticipationMessages.ts:7`: 店舗注文が `processing` の場合も「注文が確定している」と断定し、「注文をキャンセルして」と案内します。しかし `cancelOrders` は `ordered` 以外を受け付けないため、決済中の利用者は案内された操作を実行できません。状態を区別するか、決済中に実行可能な案内にしてください。
+
+**コメント要約**: processing でも確定済みと同じ案内になる。<br>キャンセルは ordered のみで決済中は実行できない。<br>状態別の日本語メッセージが必要。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 👤 UX
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `addToCart` で `processing` と `ordered` を分岐し、`NO_ORDER_PARTICIPATION_BLOCKED_PARTNER_PROCESSING_MESSAGE` を追加。利用者向けマッピングとテストを更新。
 
 ---
