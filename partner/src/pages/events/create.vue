@@ -9,7 +9,6 @@ import { useEventListStore } from '@shokujii/base/stores/eventList.js'
 import EventDetailCard from '@shokujii/base/components/eventcreate/EventDetailCard.vue'
 import EventBasicInfoCard from '@shokujii/base/components/eventcreate/EventBasicInfoCard.vue'
 import { eventPaymentUiStrategyFromEnterpriseId } from '@shokujii/base/composable/eventPaymentUiStrategy.js'
-import { DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT } from '@shokujii/common/utils/eventParticipantsVisibility.js'
 import { type BokudeliCommunity } from '@shokujii/base/stores/community.js'
 import { mdiOpenInNew } from '@mdi/js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
@@ -127,7 +126,6 @@ if (route.query.id != null) {
     shop_id: shop.shop_id,
     shop_name: shop.shop_name ?? '',
     event_status: { value: 'in_draft', shop_comment: '' },
-    ...(!paymentUiStrategy.isEnterpriseMode ? { members_visible_min_count: DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT } : {}),
   })
 }
 

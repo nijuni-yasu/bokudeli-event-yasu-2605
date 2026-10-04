@@ -31,7 +31,11 @@ import {
   PF_EVENT_PAYMENT_UI_STRATEGY,
   type EventPaymentUiStrategy,
 } from '@shokujii/base/composable/eventPaymentUiStrategy.js'
-import { DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT } from '@shokujii/common/utils/eventParticipantsVisibility.js'
+import {
+  DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT,
+  membersVisibleMinCountForMode,
+  type PfMembersVisibleMode,
+} from '@shokujii/common/utils/eventParticipantsVisibility.js'
 import {
   createDefaultMinimumParticipants,
   computeMinimumParticipantsJudgmentDatetime,
@@ -74,8 +78,6 @@ const { t: $t } = useI18n()
 /** おごり金額（UI）の最小値・単位（円） */
 const OFF_AMOUNT_MIN = 100
 const OFF_AMOUNT_STEP = 100
-
-type MembersVisibleMode = 'always' | 'threshold'
 
 const event = defineModel<BokudeliEvent>({ required: true })
 const coverImage = defineModel<File | null>('coverImage', { required: true })
@@ -150,16 +152,10 @@ const offAmountValidator = (v: number | string | undefined) => {
   return true
 }
 
-const membersVisibleMode = computed<MembersVisibleMode>({
+const membersVisibleMode = computed<PfMembersVisibleMode>({
   get: () => (event.value.members_visible_min_count == null ? 'always' : 'threshold'),
-  set: (mode: MembersVisibleMode) => {
-    if (mode === 'always') {
-      event.value.members_visible_min_count = undefined
-      return
-    }
-    if (event.value.members_visible_min_count == null) {
-      event.value.members_visible_min_count = DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT
-    }
+  set: (mode: PfMembersVisibleMode) => {
+    event.value.members_visible_min_count = membersVisibleMinCountForMode(mode, event.value.members_visible_min_count)
   },
 })
 
