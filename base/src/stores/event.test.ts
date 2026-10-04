@@ -80,6 +80,7 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('@shokujii/base/stores/user.js', () => ({
   useUserStore: (userId: string) => useUserStoreMock(userId),
+  getUserRef: (userId: string) => ({ path: `users/${userId}` }),
 }))
 
 import {
@@ -268,9 +269,13 @@ describe('useEventStore lazy members', () => {
 
     const preview = store.previewMembers
     expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-    expect(useUserStoreMock).toHaveBeenCalledTimes(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-    expect(useUserStoreMock).toHaveBeenCalledWith('user-0')
-    expect(useUserStoreMock).not.toHaveBeenCalledWith(`user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT}`)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
+    const userListenerPaths = onSnapshotMock.mock.calls
+      .map((call) => call[0]?.path)
+      .filter((path): path is string => typeof path === 'string' && path.startsWith('users/'))
+    expect(userListenerPaths).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userListenerPaths).toContain('users/user-0')
+    expect(userListenerPaths).not.toContain(`users/user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT}`)
   })
 
   it('previewMembers は注文の並びで上限人数を選ぶ', async () => {
@@ -301,8 +306,62 @@ describe('useEventStore lazy members', () => {
 
     const preview = store.previewMembers
     expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-    expect(useUserStoreMock).toHaveBeenCalledTimes(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-    expect(useUserStoreMock).toHaveBeenCalledWith(`user-${memberCount - 1}`)
-    expect(useUserStoreMock).not.toHaveBeenCalledWith(`user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT - 1}`)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
+    const userListenerPaths = onSnapshotMock.mock.calls
+      .map((call) => call[0]?.path)
+      .filter((path): path is string => typeof path === 'string' && path.startsWith('users/'))
+    expect(userListenerPaths).toContain(`users/user-${memberCount - 1}`)
+    expect(userListenerPaths).not.toContain(`users/user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT - 1}`)
+  })
+
+  it('previewMembers は選外になった users 購読を外す', async () => {
+    const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
+    const userUnsubscribes = new Map<string, ReturnType<typeof vi.fn>>()
+    let ordersCallback: ((snapshot: { docs: { data: () => { user_id: string; updated_at: number } }[] }) => void) | null =
+      null
+    onSnapshotMock.mockImplementation((ref: { path?: string }, callback: (snapshot: unknown) => void) => {
+      const path = ref?.path ?? ''
+      if (path.startsWith('users/')) {
+        const unsubscribe = vi.fn()
+        userUnsubscribes.set(path, unsubscribe)
+        return unsubscribe
+      }
+      if (path.startsWith('communities/')) {
+        callback({
+          ref: { path },
+          exists: () => true,
+          data: () =>
+            ({
+              members: Array.from({ length: memberCount }, (_, index) => `user-${index}`),
+            }) as BokudeliEvent,
+          docs: [],
+        })
+        return vi.fn()
+      }
+      ordersCallback = callback as typeof ordersCallback
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview-release')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(memberCount)
+    })
+
+    expect(store.previewMembers).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userUnsubscribes.size).toBe(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(ordersCallback).not.toBeNull()
+
+    ordersCallback?.({
+      docs: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT }, (_, index) => ({
+        data: () => ({ user_id: `user-${index}`, updated_at: 500 }),
+      })),
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userUnsubscribes.get('users/user-4')).toHaveBeenCalled()
+    expect(userUnsubscribes.get('users/user-0')).not.toHaveBeenCalled()
+    expect(userUnsubscribes.has('users/user-12')).toBe(true)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
   })
 })

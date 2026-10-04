@@ -22,7 +22,7 @@ import { db } from '@shokujii/base/firebase.js'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import { User } from '@shokujii/common/schemas/User.js'
-import { useUserStore, type UserStore } from './user.js'
+import { getUserRef, useUserStore, type UserStore } from './user.js'
 import { Event as _Event } from '@shokujii/common/schemas/Event.js'
 import { getAuth } from 'firebase/auth'
 import {
@@ -347,25 +347,83 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       return store
     }
 
-    const buildMembers = (memberIds: string[]): BokudeliEventMember[] => {
-      return memberIds.flatMap((memberId) => {
-        const memberStore = getMemberUserStore(memberId)
-        const target = _orders.value?.filter((order) => order.user_id === memberId) ?? ([] as EventMemberOrder[])
-        const orders = new Proxy(target, {
-          get: (target, prop, receiver) => {
-            subscribeOrders()
-            return Reflect.get(target, prop, receiver)
-          },
-        })
-        const m: BokudeliEventMember =
-          memberStore.user == null
-            ? // User をローディングする間にダミーの写真を表示するためにダミーユーザーを作成するが、
-              // この一時代入は良くないので、明示的にローディング中であることを判断できる仕組みが必要
-              new BokudeliEventMember(memberId, { user_name: '' })
-            : new BokudeliEventMember(memberId, memberStore.user)
-        m.orders = orders
-        return m
+    const memberWithOrders = (memberId: string, user: User | null): BokudeliEventMember => {
+      const target = _orders.value?.filter((order) => order.user_id === memberId) ?? ([] as EventMemberOrder[])
+      const orders = new Proxy(target, {
+        get: (target, prop, receiver) => {
+          subscribeOrders()
+          return Reflect.get(target, prop, receiver)
+        },
       })
+      const member =
+        user == null
+          ? // User をローディングする間にダミーの写真を表示するためにダミーユーザーを作成するが、
+            // この一時代入は良くないので、明示的にローディング中であることを判断できる仕組みが必要
+            new BokudeliEventMember(memberId, { user_name: '' })
+          : new BokudeliEventMember(memberId, user)
+      member.orders = orders
+      return member
+    }
+
+    const buildMembers = (memberIds: string[]): BokudeliEventMember[] => {
+      return memberIds.flatMap((memberId) => memberWithOrders(memberId, getMemberUserStore(memberId).user))
+    }
+
+    /** プレビュー専用。useUserStore は共有なので外すと他画面の購読も切れる */
+    const previewUserUnsubscribes = new Map<string, Unsubscribe>()
+    const previewUsers = ref(new Map<string, User | null>())
+
+    const replacePreviewUsers = (mutate: (draft: Map<string, User | null>) => void): void => {
+      const next = new Map(previewUsers.value)
+      mutate(next)
+      previewUsers.value = next
+    }
+
+    const stopPreviewUserListener = (memberId: string): void => {
+      previewUserUnsubscribes.get(memberId)?.()
+      previewUserUnsubscribes.delete(memberId)
+      replacePreviewUsers((draft) => {
+        draft.delete(memberId)
+      })
+    }
+
+    const syncPreviewUserListeners = (memberIds: readonly string[]): void => {
+      const keep = new Set(memberIds)
+      for (const memberId of [...previewUserUnsubscribes.keys()]) {
+        if (!keep.has(memberId)) {
+          stopPreviewUserListener(memberId)
+        }
+      }
+      for (const memberId of memberIds) {
+        if (previewUserUnsubscribes.has(memberId)) {
+          continue
+        }
+        const unsubscribe = onSnapshot(
+          getUserRef(memberId),
+          (snapshot) => {
+            try {
+              replacePreviewUsers((draft) => {
+                draft.set(memberId, snapshot.data() ?? new User(memberId, {}))
+              })
+            } catch (err) {
+              console.error(err)
+              reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
+            }
+          },
+          (err) => {
+            console.error('preview user snapshot error', err)
+            reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
+            previewUserUnsubscribes.delete(memberId)
+          },
+        )
+        previewUserUnsubscribes.set(memberId, unsubscribe)
+      }
+    }
+
+    const stopPreviewUserListeners = (): void => {
+      for (const memberId of [...previewUserUnsubscribes.keys()]) {
+        stopPreviewUserListener(memberId)
+      }
     }
 
     const members = computed<BokudeliEventMember[] | null>(() => {
@@ -384,7 +442,10 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       if (_memberIds.value.length > EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
         subscribeOrders()
       }
-      return buildMembers(selectPreviewMemberIds(_memberIds.value, _orders.value, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT))
+      const ids = selectPreviewMemberIds(_memberIds.value, _orders.value, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+      syncPreviewUserListeners(ids)
+      const users = previewUsers.value
+      return ids.map((memberId) => memberWithOrders(memberId, users.get(memberId) ?? null))
     })
 
     const coverImageUrl = computed<string | undefined>(() => {
@@ -734,6 +795,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       menusListenHolder.current?.stop()
       menusListenHolder.current = null
       reportedMenusError = false
+      stopPreviewUserListeners()
     }
 
     if (_eventRef.value == null) {
