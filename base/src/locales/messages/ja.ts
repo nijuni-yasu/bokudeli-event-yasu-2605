@@ -465,7 +465,7 @@ export default {
     sold_out: '売り切れ',
     remaining_count: '残り {0} 食',
     limit_sold_out: '完売',
-    no_order_participation_title: '注文なしで参加（食事は持参）',
+    no_order_participation_title: '食事は持参',
     no_order_participation_description:
       'メニューを注文できない方向けです。アレルギー、好みが合わない、お弁当持参など、どうしても注文できない場合のみこちらをお選びください。当日の食事はご自身でご用意いただきます。',
   },
