@@ -367,9 +367,9 @@ const addCart = async () => {
       </v-card-text>
       <v-divider />
       <div class="pa-5 px-sm-10 py-sm-6 flex-shrink-0">
-        <div v-if="!isNoOrderParticipation" class="d-flex align-center justify-space-between ga-4 mb-4">
+        <div class="d-flex align-center justify-space-between ga-4 mb-4">
           <v-select
-            v-if="countOptions.length > 0"
+            v-if="!isNoOrderParticipation && countOptions.length > 0"
             v-model="selectedCount"
             :items="countOptions"
             :label="$t('cart_dialog.count')"
