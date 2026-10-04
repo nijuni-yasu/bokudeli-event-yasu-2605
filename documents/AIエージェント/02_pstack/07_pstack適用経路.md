@@ -37,7 +37,7 @@
 | イベント→カート検証 | `shokujii-user-event-cart-verify` | 同梱の verification 生成、control-ui |
 | コミット | `git-commit-workflow` / `git-commit-message` | Playbook の Conventional Commits 例をそのまま |
 | PR / push | `git-create-pull-request` / `git-reflect-after-commit` | Opening a PR を単独の正本にしない |
-| sandbox デプロイ | `github-actions-deploy`（予約済み環境。正本は sandbox2603） | 本番 `firebase deploy`、2606〜2608 への無断 push |
+| sandbox デプロイ | `github-actions-deploy`（台帳で pick / check。正本はメインクローンの `sandbox-reservations.json`。候補は sandbox2603） | 本番 `firebase deploy`、2606〜2608 への無断 push |
 | セルフレビュー | `shokujii-code-review`（[§4 の slop](06_モデル運用と品質管理.md#4-少なく質の高いコードを書く) を含む） | `/interrogate` だけを完了条件にしない、`/deslop` |
 | 仕様未決 | `grill-me` | 観察実験だけで仕様を決める |
 | マージ / 本番 / 保護ブランチ / `tree/` | 禁止（フックと AGENTS） | Shipping / Babysit の land |
@@ -51,9 +51,9 @@
 | 一致する Issue の再利用、無ければ起票（Project / Status / milestone） | 「イシューを作って」だけの依頼（確認を残す） |
 | 作業ブランチ、コミット、push、`development` 向け PR | マージ、本番、保護ブランチ直 push、`tree/` へのコミット |
 | Copilot/Codex レビュー依頼と評価・対象修正 | 仕様・方針の未決、D-15 を超えるスコープ、権限・費用の追加 |
-| 予約済み sandbox（正本は sandbox2603）へのデプロイ | 調査だけ / PRまで / デプロイ不要 / 「コミットして」だけの限定 |
+| 空き sandbox の予約（selectable のみ。現状 sandbox2603）とデプロイ。レビューと並行し、修正後は同じ予約で再デプロイして SHA を揃える | 調査だけ / PRまで / デプロイ不要 / 「コミットして」だけの限定 |
 
-「コミットして」だけの依頼は [`git-commit-workflow`](../../../.agents/skills/git-commit-workflow/SKILL.md) の reflect **提案**で止める。標準フローの実装依頼のときだけ、提案せず reflect へ進む。レビューとデプロイの並行、最終 SHA の揃え、一時障害の再試行は `F-3` のまま残し、この節だけでは完了にしない。
+「コミットして」だけの依頼は [`git-commit-workflow`](../../../.agents/skills/git-commit-workflow/SKILL.md) の reflect **提案**で止める。標準フローの実装依頼のときだけ、提案せず reflect へ進む。PR 作成は確認せず実行する。予約台帳はメインクローンの `.agents/state/sandbox-reservations.json`。`pick` が空きを選び、`check` が世代を見る。人がマージまたはクローズした PR は次回 `reconcile` で空きに戻す。別ブランチへの新規割当だけ fixture を戻す。一時障害は同じ SHA・同じ予約で失敗工程を最大 2 回再試行する。
 
 ## 4. `/poteto-mode` の範囲
 
