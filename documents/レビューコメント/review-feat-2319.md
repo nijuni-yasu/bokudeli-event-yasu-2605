@@ -39,6 +39,9 @@
 | [x] | RC-33 | 4176398555 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | 表示名変更で挨拶文の除外が外れる<br>`chatGreetingPrompt` が旧名称だけを見ている<br>食事は持参が注文メニューとして挨拶に入る<br>menu_id と現行・旧名称の両方で除外する |
 | [x] | RC-34 | 4176401322 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 満席だと既存の注文なし参加者が店舗注文へ切り替えられない<br>`addToCart` と `confirmOrder` の定員判定、満席 UI<br>仕様書は定員チェックを現行のまま維持すると書いてある<br>人数を増やさない切替の免除は仕様に無い |
 | [x] | RC-35 | 4176398525 | 👌 修正不要 | — | — | 💰 金銭 | 👀 確認のみ | — | Stripe Checkout 中も注文が in_cart のまま<br>カート内の店舗注文は `hasExistingPartnerInCart` が先に拒否する<br>Checkout を processing にする必要はない |
+| [x] | RC-36 | 5405315857 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>新規は予約メニューの item_type 既定と addToCart の統合テスト<br>目次自体に追加の修正要求はない<br>リンク先は各 RC で評価する |
+| [x] | RC-37 | 4176968988 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | 予約メニューに item_type が無いと店舗品目になる<br>addToCart の addingPartnerMenu が予約 ID でも true になる<br>価格 0 の未設定ドキュメントはスキーマで読めない<br>書き込みは常に organizer_menu。判定の誤作動は起きない |
+| [ ] | RC-38 | 4176969020 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | addToCart の排他がエミュレータで未検証<br>カート内・確定済み・決済中の拒否とカート内置換<br>純粋関数テストだけでは不足という指摘<br>RC-8 の続き。統合テストは工数 M のため未着手 |
 
 ---
 
@@ -1722,5 +1725,216 @@ Useful? React with 👍 / 👎.
 **想定工数**: —
 
 **判断理由**: `createStripeCheckoutSession` はセッション作成後も status を in_cart のままにする。注文なし参加の追加は、その in_cart の店舗注文を `hasExistingPartnerInCart` が見つけた時点で拒否する。ordered と processing の判定は、カートを出たあとの注文向け。Webhook 確定時には `deleteOrderedNoOrderParticipation` も走る。Checkout 中の注文を processing に変える必要はない。
+
+---
+
+## 評価セッション（2026-10-04 18:40・review-comments-evaluate）
+
+- **評価日時**: 2026-10-04 18:40 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: feat/2319
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2328
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（レビュー依頼定型文 5978527638、Codex 問題なし 5978559371）
+- **重複除外**: なし
+- **partial**: true（sentinel。Codex は `Didn't find any major issues` を返しており、limits/connect 文面ではない）
+- **REVIEW_REQUEST_SINCE**: 2026-10-04T09:29:46Z
+- **手順 4a 自動修正**: なし（🚨 なし。RC-38 は工数 M のため未着手）
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-36 | 5405315857 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>新規は予約メニューの item_type 既定と addToCart の統合テスト<br>目次自体に追加の修正要求はない<br>リンク先は各 RC で評価する |
+| [x] | RC-37 | 4176968988 | 👌 修正不要 | — | — | 💾 データ | 👀 確認のみ | — | 予約メニューに item_type が無いと店舗品目になる<br>addToCart の addingPartnerMenu が予約 ID でも true になる<br>価格 0 の未設定ドキュメントはスキーマで読めない<br>書き込みは常に organizer_menu。判定の誤作動は起きない |
+| [ ] | RC-38 | 4176969020 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 🔧 微修正 | M | addToCart の排他がエミュレータで未検証<br>カート内・確定済み・決済中の拒否とカート内置換<br>純粋関数テストだけでは不足という指摘<br>RC-8 の続き。統合テストは工数 M のため未着手 |
+
+**識別子**: RC-36（GitHub id: 5405315857）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: （レビュー本文・インライン行なし）
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+Resolve legacy menu compatibility and non-atomic state transitions, and add the requested transaction-level integration tests.
+
+**Review effort:** Lite  
+**Findings:** 8 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> · 10 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> · 2 <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture>
+
+<details open>
+<summary><strong>Open (20)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [旧予約メニューが店舗品目として誤処理される](#discussion_r4176968988) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [Checkout開始中の注文なし参加追加を防止できない](#discussion_r4176398525)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [店舗メニューと予約更新が別Transactionで不整合になる](#discussion_r4176237530)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [確定済み注文なし参加との併存をトランザクションで防止する](#discussion_r4173589682)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [既存の0円データとスキーマ検証の互換性を確保する](#discussion_r4173589672)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [0円注文の品目種別と価格整合性検証が不足](#discussion_r4173376354)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [\[must\] メニュー再生成パスで `savePartnerMenusToEventMenus`（内部 Transaction）と、注文なし参加の upsert（別…](#discussion_r3934369485)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [\[must\] イベントコピー時に、店舗メニュー再生成（`savePartnerMenusToEventMenus`）と注文なし参加メニューの作成が別 Transaction…](#discussion_r3934369415)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [注文なし参加のカート排他を実経路で検証していない](#discussion_r4176969020) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [参加専用メニューの除外判定が旧定数のまま](#discussion_r4176398555)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [注文なし参加削除の成功・再計算時挙動を検証していない](#discussion_r4176237558)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [メニュー再生成と予約更新の失敗時に状態不整合が起きる](#discussion_r4173376380)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [注文なし参加除外後の一覧を空状態と名札表示にも適用する](#discussion_r4151936570)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [プロフィール再集計で全注文ドキュメント取得を避ける](#discussion_r4151936540)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [\[must\] `countOrderedFoodsForUser` が collectionGroup を全件 `get()`…](#discussion_r3934369615)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [\[must\] `confirmOrder` の `user_advance` 例外（全件が店舗発注対象外かつ合計0円なら確定OK）は決済・参加確定に直結する重要ロジックなので、Functions…](#discussion_r3934369563)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [\[must\] `isPartnerSuppliedItem` が `undefined` を `partner_menu` と同等に扱うため、`item_type`…](#discussion_r3934369519)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [現状の `upsertNoOrderParticipationMenu` は `isSelected=false` でも `existing == null`…](#discussion_r3869290052)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [バリデーションエラーメッセージが英語固定になっており、他のエラーメッセージ（日本語）と混在します。ユーザー入力に近い層で露出する可能性があるなら、日本語化するか、少なくともプロジェクト内で一貫した言語…](#discussion_r3869290103)
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/low-v2-light.png" alt="Low severity" width="62" height="18" align="texttop"></picture> [テスト名が実際の期待値と矛盾しています（`undefined` も `true` を期待しているため「partner_menu のみ…](#discussion_r3869290081)
+</details>
+
+<details>
+<summary><strong>Resolved since last review (1)</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/high-v2-light.png" alt="High severity" width="62" height="18" align="texttop"></picture> [注文数量の相殺で注文なし参加の削除判定を誤る](#discussion_r4176398543)
+</details>
+**コメント要約**: Copilot の未解決指摘一覧。<br>新規は予約メニューの item_type 既定と addToCart の統合テスト。<br>目次自体に追加の修正要求はない。<br>リンク先は各 RC で評価する。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 目次である。新規リンクは RC-37 と RC-38。それ以外は既存 RC または前回セッションで重複除外済みの再掲。目次自体に追加の修正要求はない。
+
+---
+
+**識別子**: RC-37（GitHub id: 4176968988）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:116`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -99,21 +107,62 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
+       transaction,
+     })
+ 
++    const existingMember = await getMember(community_id, event_id, uid, transaction)
++
++    const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    const addingPartnerMenu = menus.some((m) => {
++      const eventMenu = eventMenus.find((em) => em.id === m.menu_id)
++      return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
++    })
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 予約メニューの既存ドキュメントに `item_type` がない場合、スキーマの既定値で `partner_menu` になるため、`menu_id === no_order_participation` でもここで `addingPartnerMenu` が `true` になります。その結果、`enterprise_subsidy` で補助設定の読み込みを要求し、後続の注文にも店舗品目として割引・`item_type` を付けて店舗向け出口へ流れる可能性があります。予約 ID を優先して `organizer_menu` として扱うか、既存予約ドキュメントを必ず正規化してください。
+
+**コメント要約**: 予約メニューに item_type が無いと店舗品目になる。<br>addToCart の addingPartnerMenu が予約 ID でも true になる。<br>価格 0 の未設定ドキュメントはスキーマで読めない。<br>書き込みは常に organizer_menu。判定の誤作動は起きない。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: 💾 データ
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: `EventMenu` は `item_type` 未設定を `partner_menu` にしたあと、価格 0 を拒否する。予約メニューは価格 0 なので、未設定ドキュメントは店舗品目として読み込まれず、`addingPartnerMenu` は true にならない。この機能の upsert は予約メニューを常に `organizer_menu` で書く。本番にこの ID の既存ドキュメントはない。
+
+---
+
+**識別子**: RC-38（GitHub id: 4176969020）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/memberOrders.ts:141`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
+@@ -99,21 +107,62 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
+       transaction,
+     })
+
++    const existingMember = await getMember(community_id, event_id, uid, transaction)
++
++    const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    const addingPartnerMenu = menus.some((m) => {
++      const eventMenu = eventMenus.find((em) => em.id === m.menu_id)
++      return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
++    })
++
+     let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
+-    if (eventData.event_payment === 'enterprise_subsidy') {
++    if (eventData.event_payment === 'enterprise_subsidy' && addingPartnerMenu) {
+       if (enterpriseId == null || enterpriseMember == null) {
+         throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+       }
+       const eventMonth = formatYearMonth(eventData.event_start_datetime)
+       resolvedSubsidySettings = await loadResolvedSubsidySettings(enterpriseId, eventMonth, transaction)
+     }
+ 
+-    const existingMember = await getMember(community_id, event_id, uid, transaction)
++    const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
+ 
+-    const existingCartOrders =
+-      eventData.event_payment === 'enterprise_subsidy'
+-        ? await getOrdersInCart(community_id, event_id, uid, transaction)
+-        : undefined
++    const noOrderLines = menus.filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
++    if (noOrderLines.length > 1 || noOrderLines.some((menu) => !Number.isInteger(menu.count) || menu.count !== 1)) {
++      throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
++    }
++
++    const hasExistingPartnerInCart = existingCartOrders.some((o) => isPartnerSuppliedItem(o.item_type))
++    const replacedNoOrderIds = inCartNoOrderIdsToReplace(menus, eventMenus, existingCartOrders)
++
++    if (addingNoOrder && (hasExistingPartnerInCart || addingPartnerMenu)) {
++      throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
++    }
++
++    const deleteReplacedNoOrders = async () => {
+```
+
+**レビュワーのコメント（原文）**:
+
+[imo] ここで追加した注文なし参加のカート排他・既存注文（ordered / processing）チェックは Transaction を伴う重要な分岐ですが、現在のテストは判定用の純粋関数テストに留まり、`addToCart` 経由で店舗注文との併存を拒否し、カート内の注文なし参加だけを置換することを検証していません。Firestore Emulator 等で、カート内・確定済み・決済中の店舗注文それぞれのケースを追加してください。
+
+**コメント要約**: addToCart の排他がエミュレータで未検証。<br>カート内・確定済み・決済中の拒否とカート内置換。<br>純粋関数テストだけでは不足という指摘。<br>RC-8 の続き。統合テストは工数 M のため未着手。
+
+**評価**: 🟡 修正提案
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: —
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: M
+
+**判断理由**: RC-8 の続き。増えた点は、`addToCart` をエミュレータで通し、カート内・確定済み・決済中の拒否と、カート内の注文なし参加だけを置換することを見ること。Callable とエミュレータの統合は工数 M のため自動修正しない。
 
 ---
