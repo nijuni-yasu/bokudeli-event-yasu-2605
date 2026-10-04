@@ -433,7 +433,7 @@ const filterOrdersForProfile = async (
   const eventsByKey = await getEventsInCommunities(eventRefs)
 
   const visibleOrders: EventMemberOrder[] = []
-  for (const order of orders) {
+  for (const order of filterPartnerSuppliedOrders(orders)) {
     const event = eventsByKey.get(getCommunityEventKey(order.community_id, order.event_id))
     if (event == null || event.is_deleted) {
       continue

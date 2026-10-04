@@ -53,8 +53,9 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
       return { kind: 'skipped' }
     }
 
-    const ordered = filterPartnerSuppliedOrders(await getOrders(community_id, event_id, 'ordered', transaction))
-    const uniqueCount = countUniqueOrderedUserIds(ordered)
+    const allOrdered = await getOrders(community_id, event_id, 'ordered', transaction)
+    const partnerOrdered = filterPartnerSuppliedOrders(allOrdered)
+    const uniqueCount = countUniqueOrderedUserIds(partnerOrdered)
 
     const evaluatedMp = {
       ...mp,
@@ -62,7 +63,7 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
     }
 
     if (uniqueCount >= mp.count) {
-      await syncEventMembersFromOrderedInTransaction(tEvent, ordered, transaction)
+      await syncEventMembersFromOrderedInTransaction(tEvent, allOrdered, transaction)
       await tEvent.updateEvent({ minimum_participants: evaluatedMp }, 'system', transaction)
       return { kind: 'continued' }
     }
@@ -77,14 +78,14 @@ export async function runMinimumParticipantsJudgmentTransaction(params: {
       nowMillis,
       transaction,
       preloadedEvent: tEvent,
-      preloadedOrdered: ordered,
+      preloadedOrdered: allOrdered,
     })
 
     if (canceledOrders == null) {
       return { kind: 'skipped' }
     }
 
-    await syncEventMembersFromOrderedInTransaction(tEvent, ordered, transaction)
+    await syncEventMembersFromOrderedInTransaction(tEvent, allOrdered, transaction)
     // applyBulkEventCancelInTransaction が同一インスタンス（tEvent）を更新済みのため、
     // event_canceled 等の変更を保ったまま judgment_evaluated_at を確定できる
     await tEvent.updateEvent({ minimum_participants: evaluatedMp }, 'system', transaction)

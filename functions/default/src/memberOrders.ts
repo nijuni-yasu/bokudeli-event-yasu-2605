@@ -106,15 +106,6 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       transaction,
     })
 
-    let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
-    if (eventData.event_payment === 'enterprise_subsidy') {
-      if (enterpriseId == null || enterpriseMember == null) {
-        throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
-      }
-      const eventMonth = formatYearMonth(eventData.event_start_datetime)
-      resolvedSubsidySettings = await loadResolvedSubsidySettings(enterpriseId, eventMonth, transaction)
-    }
-
     const existingMember = await getMember(community_id, event_id, uid, transaction)
 
     const addingNoOrder = menus.some((m) => m.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
@@ -123,12 +114,22 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
       return eventMenu != null && isPartnerSuppliedItem(eventMenu.item_type)
     })
 
+    let resolvedSubsidySettings: EnterpriseSubsidySettingsType | undefined
+    if (eventData.event_payment === 'enterprise_subsidy' && addingPartnerMenu) {
+      if (enterpriseId == null || enterpriseMember == null) {
+        throw new HttpsError('failed-precondition', 'enterprise_id is required for enterprise_subsidy')
+      }
+      const eventMonth = formatYearMonth(eventData.event_start_datetime)
+      resolvedSubsidySettings = await loadResolvedSubsidySettings(enterpriseId, eventMonth, transaction)
+    }
+
     const existingCartOrders = await getOrdersInCart(community_id, event_id, uid, transaction)
 
-    for (const menu of menus) {
-      if (menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && menu.count !== 1) {
-        throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
-      }
+    const noOrderUnits = menus
+      .filter((menu) => menu.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
+      .reduce((sum, menu) => sum + menu.count, 0)
+    if (noOrderUnits > 0 && noOrderUnits !== 1) {
+      throw new HttpsError('failed-precondition', '注文なし参加は数量1のみ指定できます')
     }
 
     const hasExistingNoOrderInCart = existingCartOrders.some((o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID)
@@ -143,6 +144,13 @@ export const addToCart = onCall<AddToCartRequest, Promise<void>>(async (request)
 
     if (addingNoOrder) {
       const memberOrders = await getMemberOrders(community_id, event_id, uid, transaction)
+      const hasActivePartnerOrder = memberOrders.some(
+        (order) =>
+          isPartnerSuppliedItem(order.item_type) && (order.status === 'ordered' || order.status === 'processing'),
+      )
+      if (hasActivePartnerOrder) {
+        throw new HttpsError('failed-precondition', '注文なし参加と店舗メニューは同時にカートに追加できません')
+      }
       const existingNoOrders = memberOrders.filter(
         (o) => o.menu_id === NO_ORDER_PARTICIPATION_MENU_ID && (o.status === 'in_cart' || o.status === 'ordered'),
       )

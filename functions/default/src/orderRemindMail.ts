@@ -229,8 +229,8 @@ export async function sendOrderRemindMailToOrganizer(
         if (isEnterpriseEvent(event)) {
           return
         }
-        const hasOrders = await event.hasOrderedOrders()
-        if (!hasOrders) {
+        const partnerOrdered = filterPartnerSuppliedOrders(await event.getOrders('ordered'))
+        if (partnerOrdered.length === 0) {
           return
         }
 

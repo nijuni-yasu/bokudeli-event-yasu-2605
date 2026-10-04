@@ -320,7 +320,7 @@ const downloadNamesPrint = async () => {
             </ConfirmDialog>
           </v-form>
         </template>
-        <v-card-text v-else-if="eventStore.confirmedOrders != null && eventStore.confirmedOrders.length !== 0">
+        <v-card-text v-else-if="sortedConfirmedOrders.length !== 0">
           <v-btn @click="downloadNamesPrint" :loading="isLoading">{{
             $t('order_detail.names_sheet_print_button')
           }}</v-btn>
@@ -376,7 +376,7 @@ const downloadNamesPrint = async () => {
             </thead>
             <tbody>
               <tr
-                v-for="(subtotalOrder, key) in getSubtotalsOfOrders(eventStore.confirmedOrders)"
+                v-for="(subtotalOrder, key) in getSubtotalsOfOrders(sortedConfirmedOrders)"
                 :key="`total-${key}`"
               >
                 <td>{{ key + 1 }}</td>
@@ -406,10 +406,10 @@ const downloadNamesPrint = async () => {
             <tbody>
               <tr>
                 <td>
-                  <h1>{{ ordersCount(eventStore.confirmedOrders) }}</h1>
+                  <h1>{{ ordersCount(sortedConfirmedOrders) }}</h1>
                 </td>
                 <td>
-                  <h1>{{ $n(ordersTotalPrice(eventStore.confirmedOrders), 'currency') }}</h1>
+                  <h1>{{ $n(ordersTotalPrice(sortedConfirmedOrders), 'currency') }}</h1>
                 </td>
               </tr>
             </tbody>

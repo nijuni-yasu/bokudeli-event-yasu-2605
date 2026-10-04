@@ -8,6 +8,7 @@ import { getOrdersByIds, saveOrder } from './stores/memberOrder.js'
 import { getEventInCommunity } from './stores/event.js'
 import { formatYearMonth } from '@shokujii/common/utils/datetime.js'
 import { orderRequiresStripeIdForCancelRefund } from '@shokujii/common/utils/orderStripeRefundRequirement.js'
+import { isPartnerSuppliedItem } from '@shokujii/common/utils/eventItemType.js'
 import {
   getEventEnterpriseId,
   revertEnterpriseSubsidyUsageOnCancel,
@@ -103,13 +104,16 @@ export const cancelOrders = onCall<CancelOrdersRequest, Promise<CancelOrdersResp
       }
 
       if (eventPayment === 'enterprise_subsidy' && enterpriseId != null && eventMonth != null) {
-        await revertEnterpriseSubsidyUsageOnCancel({
-          enterpriseId,
-          userId: uid,
-          eventMonth,
-          orders: fetchedOrders,
-          transaction,
-        })
+        const subsidyOrders = fetchedOrders.filter((order) => isPartnerSuppliedItem(order.item_type))
+        if (subsidyOrders.length > 0) {
+          await revertEnterpriseSubsidyUsageOnCancel({
+            enterpriseId,
+            userId: uid,
+            eventMonth,
+            orders: subsidyOrders,
+            transaction,
+          })
+        }
       }
 
       for (const order of fetchedOrders) {
