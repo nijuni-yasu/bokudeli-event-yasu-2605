@@ -52,7 +52,7 @@ AIエージェント向けプロジェクトガイド。
 
 ## pstack（会話単位）
 
-`/poteto-mode` は対象会話の先頭だけ使う。全チャットの Custom Mode 固定はしない。同梱 Playbook は編集しない。衝突時は本ファイルと [導入計画§6](documents/AIエージェント/02_pstack/01_pstack導入計画.md#6-既存ルールが優先される操作) と [適用経路](documents/AIエージェント/02_pstack/07_pstack適用経路.md) を優先する。user のイベント→カート検証は [shokujii-user-event-cart-verify](.agents/skills/shokujii-user-event-cart-verify/SKILL.md) を Playbook より先に読む。コミット / PR / sandbox は既存 Skill。マージと本番操作は禁止のまま。
+`/poteto-mode` は対象会話の先頭だけ使う。全チャットの Custom Mode 固定はしない。同梱 Playbook は編集しない。衝突時は本ファイルと [導入計画§6](documents/AIエージェント/02_pstack/01_pstack導入計画.md#6-既存ルールが優先される操作) と [適用経路](documents/AIエージェント/02_pstack/07_pstack適用経路.md) を優先する。バグ修正を頼まれたら [適用経路のバグ修正節](documents/AIエージェント/02_pstack/07_pstack適用経路.md#5-バグ修正) を、画面検証より先に読む。user のイベント→カート検証は [shokujii-user-event-cart-verify](.agents/skills/shokujii-user-event-cart-verify/SKILL.md) を Playbook より先に読む。コミット / PR / sandbox は既存 Skill。マージと本番操作は禁止のまま。
 
 ## プロジェクト概要
 
