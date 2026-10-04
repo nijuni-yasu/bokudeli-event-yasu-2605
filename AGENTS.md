@@ -50,6 +50,10 @@ AIエージェント向けプロジェクトガイド。
 | ユニットテスト (Vitest)                | `/vitest`                            | テスト作成時、common/functions のロジックテスト時                                                    |
 | 実装前の設計インタビュー（要件明確化） | `/grill-me`                          | 実装前の設計フェーズ、要件が固まっていない時、設計の壁打ち時                                         |
 
+## pstack（会話単位）
+
+`/poteto-mode` は対象会話の先頭だけ使う。全チャットの Custom Mode 固定はしない。同梱 Playbook は編集しない。衝突時は本ファイルと [導入計画§6](documents/AIエージェント/02_pstack/01_pstack導入計画.md#6-既存ルールが優先される操作) と [適用経路](documents/AIエージェント/02_pstack/07_pstack適用経路.md) を優先する。user のイベント→カート検証は [user-event-cart-verify](.agents/skills/user-event-cart-verify/SKILL.md) を Playbook より先に読む。コミット / PR / sandbox は既存 Skill。マージと本番操作は禁止のまま。
+
 ## プロジェクト概要
 
 **プロジェクト名**: Shokujii（食事でつながる）

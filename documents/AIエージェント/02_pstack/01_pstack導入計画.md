@@ -15,6 +15,7 @@ Shokujii（bokudeli-event-new）に [pstack](https://github.com/cursor/plugins/t
 | 検証用ログインの方式比較 | [`03_検証用ログインの検討.md`](03_検証用ログインの検討.md) |
 | 作業依頼から人の確認まで | [`04_作業依頼からsandbox確認までの標準フロー.md`](04_作業依頼からsandbox確認までの標準フロー.md) |
 | モデル・最新基点・コード品質 | [06_モデル運用と品質管理.md](06_モデル運用と品質管理.md) |
+| 既存ルールの適用経路 | [07_pstack適用経路.md](07_pstack適用経路.md) |
 | プロジェクトルール | [`AGENTS.md`](../../../AGENTS.md) |
 
 pstack は更新が速い。実装に入る時点の README の件数・モデル名が本書と違っていたら、README を正本にして本書との差をこのファイルの改訂履歴に残す。
@@ -271,3 +272,4 @@ cursor-team-kit の `control-ui` / `control-cli` は、このフェーズでは�
 | 2026-10-04 | 表記をフェーズ0〜5に統一。認証の停止箇所の調査と検証用ログインの検討をフェーズ1へ追加 |
 | 2026-10-04 | 作業依頼からIssue・PR・AIレビュー対応・sandbox確認待ちまでを標準フローとして追加。人の確認中も環境を保持する排他予約と既存Skillの整備をTODO化 |
 | 2026-10-04 | Composer中心の役割別モデル運用、含有枠の予算管理、最新developmentへのrebase、slopの差分確認を追加。Grok Botの人が依頼する調査と自律起動を区別 |
+| 2026-10-04 | 公式 pstack を再読。`main` の `pstack/` 最新 path commit は `e43c7ee`、plugin.json version は **0.15.9**。本の「はじめに」と同じ SHA。件数・導入コマンドの差分なし |
