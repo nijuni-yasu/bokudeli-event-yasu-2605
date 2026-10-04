@@ -1,6 +1,6 @@
 ---
 name: git-reflect-after-commit
-description: コミット完了後の次ステップ。origin へ push して PR 作成/更新（git-create-pull-request 全手順・手順 13 の AI レビュー待ち含む）し、ブランチに紐づく sandbox へ push・デプロイ（github-actions-deploy へ委譲）する。git-commit-workflow / git-commit-message / git-split-commit / git-fixup / git-squash でコミットが完了した直後、エージェントはユーザーへ「/git-reflect-after-commit を実行しますか？」と提案する。ユーザーが「して」「お願い」「反映して」等と答えたら本スキルを実行する。「push して PR 作って sandbox にもデプロイ」「コミット後の反映」でも使用。本番 nijuniinc/bokudeli-event-new へはデプロイ発火しない。
+description: コミット完了後の次ステップ。origin へ push して PR 作成/更新（git-create-pull-request 全手順・手順 13 の AI レビュー待ち含む）し、ブランチに紐づく sandbox へ push・デプロイ（github-actions-deploy へ委譲）する。標準フローの実装依頼では git-commit-workflow から提案せず委譲する。コミットだけの依頼では、完了直後に「/git-reflect-after-commit を実行しますか？」と提案し、ユーザーが「して」「お願い」「反映して」等と答えたら実行する。「push して PR 作って sandbox にもデプロイ」「コミット後の反映」でも使用。本番 nijuniinc/bokudeli-event-new へはデプロイ発火しない。
 ---
 
 # コミット後の反映（PR + sandbox デプロイ）
@@ -8,6 +8,8 @@ description: コミット完了後の次ステップ。origin へ push して PR
 ローカルのコミット完了を起点に、PR 反映と sandbox デプロイをまとめて行うオーケストレーター。
 コミット作成自体（新規/分割/fixup/squash）はこのスキルの範囲外で、完了済みを前提とする。
 それぞれの詳細手順は委譲先スキルに従い、本スキルはルールを上書きしない。
+
+標準フローの実装依頼の入口でもある（新しい委譲スキルは作らない）。レビューとデプロイの並行、最終 SHA の揃え、一時障害の再試行は `F-3` で足す。予約先の正本は sandbox2603（[sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。2606〜2608 へはデータ構築の別 PR まで push しない。
 
 ## 本番リポジトリは対象外（厳守）
 
@@ -22,6 +24,16 @@ B は `github-actions-deploy` に委譲し、同スキル内で本番ブロッ�
 - `git status` で未コミット変更が無いか確認する（このスキルはコミット完了が前提）。
 - 直前が git-commit-workflow / git-fixup / git-squash の場合は rebase により履歴が書き換わっていることがある。
   upstream（本番 origin）へは fixup/squash 側で push していないことが多い（本番 upstream ブロックのため）。
+
+### 1b. 最新 `origin/development`（R-1）
+
+push / デプロイ / 引き渡しの前に次を行う。
+
+- `git fetch origin development`
+- `origin/development` の SHA と確認時刻を記録する
+- HEAD がそれを祖先にしていなければ rebase する。未コミット差分があれば先に止める
+- 未知の remote 専用コミットがある diverge、lease 不一致では無条件 force しない（手順 4 の既存判定）
+- 基点 SHA と確認時刻を結果報告に含める
 
 ### 2. 実行範囲の決定
 

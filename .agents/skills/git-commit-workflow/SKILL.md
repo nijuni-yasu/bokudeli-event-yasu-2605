@@ -25,6 +25,13 @@ description: 未コミット変更を分析し fixup / squash / 分割 / 新規 
 
 ## 手順
 
+0. **最新 `origin/development` を確認する（R-1）**
+   - `git fetch origin development` する
+   - `origin/development` の SHA と確認時刻を控える
+   - 作業ブランチが `origin/development` の祖先でない（未取り込みがある）ときは、未コミット差分を失わない方法で退避してから rebase する。競合は意図を読んで解消し、仕様判断が必要なら止める
+   - 未知の remote 専用コミットがある diverge では無条件 force しない（[`git-reflect-after-commit`](../git-reflect-after-commit/SKILL.md) の既存判定）
+   - 基点 SHA と確認時刻を完了報告に書く
+
 1. [classification.md](references/classification.md) を読む
 
 2. 分類を実行する
@@ -55,7 +62,9 @@ description: 未コミット変更を分析し fixup / squash / 分割 / 新規 
    | A1   | [git-fixup](../git-fixup/SKILL.md) **手順5以降**（A1-fast 済み。full は classification 側で完了していること）                          |
    | A2   | [git-squash](../git-squash/SKILL.md) **手順4以降**（issue-resolution full 含む。手順3は本スキルで済みとしてスキップ可）                  |
 
-6. working tree が clean になったら [git-reflect-after-commit](../git-reflect-after-commit/SKILL.md) を提案する（勝手に実行しない）
+6. working tree が clean になったら [git-reflect-after-commit](../git-reflect-after-commit/SKILL.md) へ進む
+   - **標準フローの実装依頼**（目的・対象・完了条件がある実装。調査だけ / PRまで / デプロイ不要 / 「コミットして」だけの限定がない）: 提案で止まらず、同じターンで reflect を実行する
+   - **「コミットして」だけ**、または限定依頼: 下記の提案文を出し、勝手に実行しない
 
 ## A0 amend（HEAD 向け）
 
@@ -81,8 +90,9 @@ description: 未コミット変更を分析し fixup / squash / 分割 / 新規 
 
 ## コミット完了後の提案
 
-すべての実行が正常に完了し、working tree が clean になったら:
+「コミットして」だけ、または限定依頼で、すべての実行が正常に完了し、working tree が clean になったら:
 
 > コミットが完了しました。`/git-reflect-after-commit` で origin への PR 反映と sandbox デプロイをまとめて実行しますか？
 
+- 標準フローの実装依頼ではこの提案を出さず、reflect を実行する
 - 未コミット変更が残っている・途中失敗時は提案しない

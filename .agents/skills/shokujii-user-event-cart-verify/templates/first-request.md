@@ -12,13 +12,13 @@
 **ブランチ**: `doc/2398-pstack`（または当該作業ブランチ）
 **検証スキル**: `.agents/skills/shokujii-user-event-cart-verify/SKILL.md`
 **Feature Map**: `.agents/skills/shokujii-user-event-cart-verify/feature-map.md`
-**予約**: [sandbox-pool.md](../../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) の sandbox2606（`pstack-res-20261004-001`）
+**予約**: [sandbox-pool.md](../../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) の sandbox2603（`pstack-res-20261004-002`）
 **Fixture**: [fixture-pstack-001.md](../../../../documents/AIエージェント/02_pstack/records/fixture-pstack-001.md)
 
 ### 完了条件
 
 1. 予約 sandbox で、新しいブラウザから**人のログイン補助なし**に `pstack.participant@verify.shokujii.test` として認証する（D-05）。`verification_run_id` と受け口 OTP を使う。
-2. `https://bokudeli-event-yasu-2606.web.app/c/pstack-verify/e/pstack-event-cart-001` を開き、`pstack検証弁当` を数量 1 でカートに追加する。
+2. `https://bokudeli-event-yasu-2603.web.app/c/pstack-verify/e/pstack-event-cart-001` を開き、`pstack検証弁当` を数量 1 でカートに追加する。
 3. `/cart` でメニュー名 `pstack検証弁当` と個数 `1` が一致することを確認する。決済確定はしない。
 
 ### 許可範囲

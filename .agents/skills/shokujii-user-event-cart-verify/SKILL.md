@@ -5,7 +5,7 @@ description: Shokujii user アプリで、注文受付中イベントのメニ�
 
 # user イベント → カート検証
 
-正本はこのファイル。正本経路は **予約 sandbox**（現状は sandbox2606）。`feature-map.md` は機能の地図、実行ログは `documents/AIエージェント/02_pstack/records/` に置く。
+正本はこのファイル。正本経路は **予約 sandbox**（現状は sandbox2603）。`feature-map.md` は機能の地図、実行ログは `documents/AIエージェント/02_pstack/records/` に置く。2606〜2608 へはデータ構築の別 PR まで push / seed / `FUNCTIONS_ENV` 変更をしない。
 
 ローカル `npm -w user run dev` は主経路の成功判定に使わない（末尾の「副経路」参照）。
 
@@ -19,21 +19,21 @@ description: Shokujii user アプリで、注文受付中イベントのメニ�
 
 dev サーバーは起動しない。ブラウザは Hosting URL を開く。
 
-1. [sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) で予約を確認する。#2398 の正本は **sandbox2606**（予約 ID `pstack-res-20261004-001`）。予約のない環境へ push / dispatch しない。
+1. [sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md) で予約を確認する。#2398 の正本は **sandbox2603**（予約 ID `pstack-res-20261004-002`）。予約のない環境へ push / dispatch しない。2606〜2608 へはデータ構築の別 PR まで触れない。
 2. `git rev-parse HEAD` で対象 SHA を記録する。未コミット差分がある場合は証拠に明記する。
-3. 作業ブランチを sandbox リモートへ push する（例: `git push --force-with-lease sandbox2606 HEAD:doc/2398-pstack`）。手順は [github-actions-deploy](../github-actions-deploy/SKILL.md)。
+3. 作業ブランチを sandbox リモートへ push する（例: `git push --force-with-lease sandbox2603 HEAD:doc/2398-pstack`）。手順は [github-actions-deploy](../github-actions-deploy/SKILL.md)。
 4. 最低限 `deploy_user.yml` / `deploy_functions.yml` / `deploy_firestore.yml` を発火する。`deploy_enterprise.yml` は sandbox で hosting target 未設定のためスキップしてよい。
-5. 6 本一括発火すると、同じブランチの Deploy functions が重なり **cancelled** になり得る（例: [run 37195101053](https://github.com/nijuni-yasu/bokudeli-event-yasu-2606/actions/runs/37195101053/job/111415224952)）。functions が cancelled または長時間 in_progress なら **`deploy_functions.yml` を単体で再発火**する。
+5. 6 本一括発火すると、同じブランチの Deploy functions が重なり **cancelled** になり得る。functions が cancelled または長時間 in_progress なら **`deploy_functions.yml` を単体で再発火**する。
 6. 成功判定: 対象 Hosting URL が開き、検証に必要な Callable（`requestEmailLogin` / `fetchVerificationTestPassCode` / `addToCart`）が応答する。デプロイ run が success ならそれを優先記録する。run 未完了でも Callable が動けば画面検証は進めてよい（証拠に「run 未確定」と書く）。
 
 ## 接続先と外部作用（1-2-2）
 
 他の予約環境では、台帳の環境 ID に合わせて Hosting URL と `GCLOUD_PROJECT` を置換する。
 
-| 項目 | sandbox2606 |
+| 項目 | sandbox2603 |
 | --- | --- |
-| Hosting user | `https://bokudeli-event-yasu-2606.web.app` |
-| GCP / `GCLOUD_PROJECT` | `bokudeli-event-yasu-2606` |
+| Hosting user | `https://bokudeli-event-yasu-2603.web.app` |
+| GCP / `GCLOUD_PROJECT` | `bokudeli-event-yasu-2603` |
 | Functions リージョン | `asia-northeast1` |
 | 受け口 | `VERIFICATION_TEST_OUTBOX_MODE=record_skip_send`（GitHub Variables の `FUNCTIONS_ENV` + functions デプロイ） |
 | 本番 | 接続禁止（D-06 / 0-1-3） |
@@ -68,7 +68,7 @@ dev サーバーは起動しない。ブラウザは Hosting URL を開く。
 リポジトリルートで seed する（再検証前は再実行を推奨。seed は当該ユーザーの当該イベントの `in_cart` を削除する）。
 
 ```text
-GCLOUD_PROJECT=bokudeli-event-yasu-2606 node scripts/pstack/seed-pstack-fixture.mjs
+GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/seed-pstack-fixture.mjs
 ```
 
 実ユーザー情報・秘密は記録しない。メールは fixture の架空アドレスのみ使う。
@@ -83,7 +83,7 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2606 node scripts/pstack/seed-pstack-fixture.
 4. OTP を取得する（トークン・コードを実行記録に残さない。取得成功の有無だけ書く）。
 
 ```text
-GCLOUD_PROJECT=bokudeli-event-yasu-2606 node scripts/pstack/fetch-test-pass-code.mjs \
+GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code.mjs \
   --email pstack.participant@verify.shokujii.test --run-id {RUN_ID}
 ```
 

@@ -14,7 +14,7 @@
 | イベントページ | `/c/{communityAccount}/e/{eventId}` | イベントが `accepting_order`、ユーザーがログイン済み |
 | カート | `/cart` | 直前に当該イベントから `addToCart` 成功 |
 
-sandbox2606 のイベント URL: `https://bokudeli-event-yasu-2606.web.app/c/pstack-verify/e/pstack-event-cart-001`
+sandbox2603 のイベント URL: `https://bokudeli-event-yasu-2603.web.app/c/pstack-verify/e/pstack-event-cart-001`
 
 ## Fixture（`pstack-001`）
 
