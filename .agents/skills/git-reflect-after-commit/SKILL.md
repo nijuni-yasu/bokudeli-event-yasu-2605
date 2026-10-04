@@ -9,7 +9,7 @@ description: コミット完了後の次ステップ。origin へ push して PR
 コミット作成自体（新規/分割/fixup/squash）はこのスキルの範囲外で、完了済みを前提とする。
 それぞれの詳細手順は委譲先スキルに従い、本スキルはルールを上書きしない。
 
-標準フローの実装依頼の入口でもある（新しい委譲スキルは作らない）。レビューとデプロイの並行、最終 SHA の揃え、一時障害の再試行は `F-3` で足す。予約先の正本は sandbox2603（[sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。2606〜2608 へはデータ構築の別 PR まで push しない。
+標準フローの実装依頼の入口でもある（新しい委譲スキルは作らない）。A（PR）と B（予約してデプロイ）を同じターンで始め、レビュー待ちをデプロイの前条件にしない。修正で HEAD が変わったら同じ予約で再デプロイし、PR HEAD とデプロイ SHA を揃える。予約正本はメインクローンの `.agents/state/sandbox-reservations.json`（[sandbox-pool.md](../../../documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。候補は selectable な環境だけ（現状 sandbox2603）。2606〜2608 へはデータ構築の別 PR まで push しない。
 
 ## 本番リポジトリは対象外（厳守）
 
@@ -25,19 +25,22 @@ B は `github-actions-deploy` に委譲し、同スキル内で本番ブロッ�
 - 直前が git-commit-workflow / git-fixup / git-squash の場合は rebase により履歴が書き換わっていることがある。
   upstream（本番 origin）へは fixup/squash 側で push していないことが多い（本番 upstream ブロックのため）。
 
-### 1b. 最新 `origin/development`（R-1）
+### 1b. 最新 `origin/development`（R-1 / R-2）
 
 push / デプロイ / 引き渡しの前に次を行う。
 
 - `git fetch origin development`
 - `origin/development` の SHA と確認時刻を記録する
-- HEAD がそれを祖先にしていなければ rebase する。未コミット差分があれば先に止める
+- `git worktree list` で同じブランチが別 worktree にあれば止める
+- HEAD がそれを祖先にしていなければ rebase する
+- 未コミット差分があるときは `git stash push -u` で退避する。`--all` は使わず、gitignored の `.env` は含めない。rebase 後に戻す。競合したら意図を読んで解消し、仕様判断が必要なら止めて stash は残す
+- 複数 Issue のコミットは rebase で 1 つにまとめない
 - 未知の remote 専用コミットがある diverge、lease 不一致では無条件 force しない（手順 4 の既存判定）
 - 基点 SHA と確認時刻を結果報告に含める
 
 ### 2. 実行範囲の決定
 
-- ユーザー指定が無ければ **A・B の両方**を実行する。
+- ユーザー指定が無ければ **A・B の両方**を実行する。標準フローからの委譲も両方。A の完了を待ってから B を始めない。
 - 「PR だけ」「sandbox だけ」と指定された場合はその片方に絞る。
 - **AI レビュー待ち → evaluate** は `git-create-pull-request` 手順 13 で **デフォルト ON**（create-pr 内で `wait-ai-pr-review` を起動。本スキルで二重起動しない）。
 - 会話に「評価待ちなし」「evaluate しない」「review wait しない」があれば create-pr 手順 13 もスキップする（手順 4 委譲時に伝播）。
@@ -84,31 +87,43 @@ push / デプロイ / 引き渡しの前に次を行う。
   **手順 9（origin push）は本手順 4 で push 済みのため create-pr 側でスキップ**される。
 - 手順 13 委譲時は **wait-ai-pr-review 手順 3** の Shell 要件（`block_until_ms: 0` + `notify_on_output: ^AGENT_LOOP_WAKE_pr_review`）を満たすこと（reflect 側で watcher を二重起動しないが、Shell 要件は省略しない）。
 
-### 5. B) sandbox へ push してデプロイ
+### 5. B) sandbox を予約してデプロイ
 
 git-commit-workflow / git-fixup / git-squash の upstream push（`branch.<branch>.remote`）とは **別系統**である。
-PR 用は **origin**（手順 4）、動作確認用は **`branch.<branch>.sandboxRemote`**（`github-actions-deploy` が解決・記憶）とする。
+PR 用は **origin**（手順 4）、動作確認用は台帳の予約と **`branch.<branch>.sandboxRemote`**（記憶）とする。
 
-**`github-actions-deploy` スキルの手順 0〜10** に委譲する（sandboxRemote 解決・push・本番ブロック・発火・**バックグラウンド watch**・wake 時結果報告を含む）。
-本スキルでは B 専用の push 手順を **重複実施しない**。
+A の wait 起動のあと、レビュー完了を待たずに B を始める。
+
+1. 現在ブランチ・Issue・PR 番号を控える
+2. [`github-actions-deploy`](../github-actions-deploy/SKILL.md) に委譲する（手順 2.5 の `pick` / seed / `check`、push、発火、一時障害の再試行、watch を含む）
+3. 本スキルでは B 専用の push を **重複実施しない**
 
 - 手順 1 で clean 確認済みのため、`github-actions-deploy` 手順 0 は省略してよい
 - B 実行時は `github-actions-deploy` の **1b** が委譲をトリガーとして成立する（会話に sandbox と書かなくてよい）
-- ユーザーが sandbox 向けに **`sandbox*` リモート名/ブランチ名** を明示している場合は、`github-actions-deploy` 手順 1a がそれを優先する
-- デプロイが失敗した場合は **解析結果をユーザーに報告するに留め、修正や自動再実行はしない**
+- ユーザーが sandbox 向けに **`sandbox*` リモート名/ブランチ名** を明示している場合は、`github-actions-deploy` 手順 1a がそれを優先する。占有中の環境を別名の作業が取るには人が `switch` を指示する
+- `pick` が空き無しで失敗したらデプロイせず報告する。PR とレビューは続ける
+- レビュー修正で HEAD が変わったら、同じ予約のまま再デプロイする。fixture は戻さない。台帳の `target_sha` と一致する run だけ成功にする
+- 一時障害の再試行は deploy スキルが行う。ビルド失敗は再試行しない
 
 ### 6. 結果報告
 
-- PR の URL（A 実行時）
-- AI レビュー監視（A 実行時・手順 13）:
-  - PR 番号、`REVIEW_REQUEST_SINCE`、watcher 起動済み（Shell に `notify_on_output` 付与済みであること）
-  - Copilot 実質レビュー typical: 依頼後 4〜5 分
-  - evaluate 開始目安: Copilot 完了後 quiet 2 分 + Codex 条件（limits/connect は quiet 後、無応答は最大 12 分）。**Copilot 完了 ≠ evaluate 開始**
-  - 全体タイムアウト 20 分、Codex limits 時は partial evaluate あり得る旨
-  - オプトアウト時はスキップした旨
-- sandbox の remote 名・OWNER/REPO・ref、発火したワークフロー（B 実行時・`github-actions-deploy` 手順 8 の内容を含む）
+標準フローの引き渡しでは [標準フロー §7](../../../documents/AIエージェント/02_pstack/04_作業依頼からsandbox確認までの標準フロー.md) の項目を書く。PR HEAD とデプロイ SHA が揃い、必要な workflow が成功するまで完了にしない。
+
+- Issue / PR
+- 確認 URL / sandbox ID / 予約 ID / 世代
+- PR HEAD / デプロイ SHA / 対象コンポーネント
+- CI・Copilot・Codex・RC 対応の結果
+- デプロイ run と成否（台帳の `target_sha` と一致するもの）
+- AI がデプロイ先で確認した操作・証拠。イベント→カートなら [`shokujii-user-event-cart-verify`](../shokujii-user-event-cart-verify/SKILL.md)。それ以外は開いた URL と未確認の操作
+- 人のログイン方法・テストデータ・確認手順
+- 未解決事項・未証明の範囲
+- 予約の解放条件・切替履歴
+- 人に依頼すること: sandbox 確認、PR 承認、development へのマージ
+
+あわせて次も書く。
+
+- AI レビュー監視（A 実行時・手順 13）: PR 番号、`REVIEW_REQUEST_SINCE`、watcher 起動済み
 - sandbox デプロイは **reflect 完了時点では監視中**になり得る（wake 後に手順 9〜10 で結果報告）
-- sandbox デプロイの各ワークフローの **成否・run URL**（wake 受信後・`github-actions-deploy` 手順 10）、失敗時は **エラー分類と原因サマリ**（B 実行時）
 - `branch.<branch>.sandboxRemote` を新規保存した場合はその旨（B 実行時）
 
 ## 注意

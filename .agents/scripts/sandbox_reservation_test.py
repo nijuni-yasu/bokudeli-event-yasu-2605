@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""sandbox_reservation のユニットテスト。実台帳は触らない。"""
+
+from __future__ import annotations
+
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+SCRIPTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS))
+
+import sandbox_reservation as res  # noqa: E402
+
+
+def sample_ledger() -> dict:
+    return {
+        "version": 1,
+        "updated_at": "2026-10-04T00:00:00Z",
+        "environments": {
+            "sandbox2603": {
+                "id": "sandbox2603",
+                "remote": "sandbox2603",
+                "github_repo": "nijuni-yasu/bokudeli-event-yasu-2603-2",
+                "gcloud_project": "bokudeli-event-yasu-2603",
+                "user_url": "https://bokudeli-event-yasu-2603.web.app",
+                "selectable": True,
+                "status": "occupied",
+                "reservation": {
+                    "id": "pstack-res-20261004-002",
+                    "generation": 1,
+                    "branch": "doc/2398-pstack",
+                    "issue": 2398,
+                    "pr": 2399,
+                    "owner": "pstack",
+                    "acquired_at": "2026-10-04T00:00:00Z",
+                    "updated_at": "2026-10-04T00:00:00Z",
+                    "release_condition": "PR merge/close or explicit release",
+                    "target_sha": None,
+                    "fixture": None,
+                    "retry": {"count": 0, "workflows": []},
+                },
+            },
+            "sandbox2606": {
+                "id": "sandbox2606",
+                "remote": "sandbox2606",
+                "selectable": False,
+                "status": "switched",
+                "reservation": None,
+            },
+            "sandbox2607": {
+                "id": "sandbox2607",
+                "remote": "sandbox2607",
+                "selectable": False,
+                "status": "empty",
+                "reservation": None,
+            },
+        },
+        "history": [
+            {
+                "reservation_id": "pstack-res-20261004-001",
+                "generation": 1,
+                "env_id": "sandbox2606",
+                "branch": "doc/2398-pstack",
+                "reason": "switched",
+            }
+        ],
+    }
+
+
+class SandboxReservationTest(unittest.TestCase):
+    def test_pick_reuses_same_branch(self) -> None:
+        ledger = sample_ledger()
+        result = res.pick(ledger, branch="doc/2398-pstack", pr=2399)
+        self.assertTrue(result["ok"])
+        self.assertFalse(result["new_assignment"])
+        self.assertFalse(result["seed"])
+        self.assertEqual(result["env_id"], "sandbox2603")
+        self.assertEqual(result["reservation"]["id"], "pstack-res-20261004-002")
+
+    def test_pick_vacant_after_reconcile(self) -> None:
+        ledger = sample_ledger()
+        result = res.pick(
+            ledger,
+            branch="feat/2400",
+            issue=2400,
+            pr_state_fn=lambda pr: "MERGED" if pr == 2399 else None,
+        )
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["new_assignment"])
+        self.assertTrue(result["seed"])
+        self.assertEqual(result["env_id"], "sandbox2603")
+        self.assertEqual(result["reservation"]["branch"], "feat/2400")
+        self.assertEqual(ledger["environments"]["sandbox2603"]["status"], "occupied")
+        self.assertEqual(ledger["history"][-1]["reason"], "reconcile_merged")
+
+    def test_pick_no_vacancy(self) -> None:
+        ledger = sample_ledger()
+        result = res.pick(ledger, branch="feat/other", pr_state_fn=lambda _pr: "OPEN")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "no_vacancy")
+
+    def test_check_and_stale_generation(self) -> None:
+        ledger = sample_ledger()
+        ok = res.check(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+        )
+        self.assertTrue(ok["ok"])
+        stale = res.check(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=2,
+        )
+        self.assertFalse(stale["ok"])
+        self.assertEqual(stale["error"], "stale_generation")
+
+    def test_switch_bumps_generation(self) -> None:
+        ledger = sample_ledger()
+        result = res.switch(ledger, env_id="sandbox2603", branch="feat/2401", issue=2401)
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["seed"])
+        self.assertEqual(result["reservation"]["generation"], 2)
+        self.assertEqual(result["previous_reservation_id"], "pstack-res-20261004-002")
+        self.assertEqual(ledger["history"][-1]["reason"], "switched")
+
+    def test_release_then_pick(self) -> None:
+        ledger = sample_ledger()
+        released = res.release(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+        )
+        self.assertTrue(released["ok"])
+        self.assertEqual(ledger["environments"]["sandbox2603"]["status"], "empty")
+        picked = res.pick(ledger, branch="feat/2402")
+        self.assertTrue(picked["ok"])
+        self.assertTrue(picked["new_assignment"])
+
+    def test_reserve_rejects_other_branch(self) -> None:
+        ledger = sample_ledger()
+        result = res.reserve(ledger, env_id="sandbox2603", branch="feat/other")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "occupied")
+
+    def test_record_helpers(self) -> None:
+        ledger = sample_ledger()
+        deploy = res.record_deploy(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+            sha="abc123",
+        )
+        self.assertTrue(deploy["ok"])
+        self.assertEqual(deploy["reservation"]["target_sha"], "abc123")
+        fixture = res.record_fixture(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+            result="ok",
+        )
+        self.assertTrue(fixture["ok"])
+        self.assertEqual(fixture["reservation"]["fixture"]["version"], "pstack-001")
+        retry = res.record_retry(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+            workflow="deploy_user.yml",
+            count=1,
+        )
+        self.assertTrue(retry["ok"])
+        self.assertEqual(retry["reservation"]["retry"]["count"], 1)
+
+    def test_cli_uses_temp_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sandbox-reservations.json"
+            path.write_text(json.dumps(sample_ledger()), encoding="utf-8")
+            result = res.update_ledger(
+                path,
+                lambda ledger: res.release(
+                    ledger,
+                    env_id="sandbox2603",
+                    reservation_id="pstack-res-20261004-002",
+                ),
+            )
+            self.assertTrue(result["ok"])
+            stored = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(stored["environments"]["sandbox2603"]["status"], "empty")
+            self.assertIsNone(stored["environments"]["sandbox2603"]["reservation"])
+
+
+if __name__ == "__main__":
+    unittest.main()

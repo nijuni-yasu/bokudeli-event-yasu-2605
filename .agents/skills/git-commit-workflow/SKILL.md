@@ -25,10 +25,13 @@ description: 未コミット変更を分析し fixup / squash / 分割 / 新規 
 
 ## 手順
 
-0. **最新 `origin/development` を確認する（R-1）**
+0. **最新 `origin/development` を確認する（R-1 / R-2）**
    - `git fetch origin development` する
    - `origin/development` の SHA と確認時刻を控える
-   - 作業ブランチが `origin/development` の祖先でない（未取り込みがある）ときは、未コミット差分を失わない方法で退避してから rebase する。競合は意図を読んで解消し、仕様判断が必要なら止める
+   - `git worktree list` で同じブランチが別 worktree にあれば止める
+   - 作業ブランチが `origin/development` の祖先でない（未取り込みがある）ときは rebase する
+   - 未コミット差分があるときは `git stash push -u` で退避する。`--all` は使わず、gitignored の `.env` は含めない。rebase 後に戻す。競合したら意図を読んで解消し、仕様判断が必要なら止めて stash は残す
+   - 複数 Issue のコミットは rebase で 1 つにまとめない
    - 未知の remote 専用コミットがある diverge では無条件 force しない（[`git-reflect-after-commit`](../git-reflect-after-commit/SKILL.md) の既存判定）
    - 基点 SHA と確認時刻を完了報告に書く
 
