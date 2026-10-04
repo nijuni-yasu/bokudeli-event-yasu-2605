@@ -8,6 +8,7 @@ import {
   subscribeChatEventParticipantRoster,
   type ChatEventParticipantRoster,
 } from '@shokujii/base/stores/chatEventParticipants.js'
+import { resolveMemberDisplayName } from '@shokujii/base/utils/displayMemberName.js'
 import type { ResolveUserPathFn } from '@shokujii/base/types/profilePathResolvers.js'
 import type { RouteLocationRaw } from 'vue-router'
 
@@ -100,7 +101,9 @@ const rows = computed((): ParticipantRow[] => {
       const loaded = roster.value.usersById.has(memberId)
       let name = ''
       if (loaded) {
-        name = user != null && user.user_name !== '' ? user.user_name : t('chat.default_user_name')
+        const guestLabel = t('chat.default_user_name')
+        name =
+          user != null ? resolveMemberDisplayName(user.user_name, guestLabel) : guestLabel
       }
       const profileTo = props.resolveProfilePath == null || memberId === '' ? null : props.resolveProfilePath(memberId)
       return {
