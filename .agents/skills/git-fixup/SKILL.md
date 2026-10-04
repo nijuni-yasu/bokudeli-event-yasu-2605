@@ -1,6 +1,6 @@
 ---
 name: git-fixup
-description: 変更を過去の適切なコミットに fixup + autosquash で統合する。コミットメッセージはそのまま。A1-fast（軽量判定）で通し、昇格時のみ A2 squash へ委譲。分類は git-commit-workflow/references/classification.md に従う。fixup 向きでない差分は git-split-commit または git-commit-message へ委譲。「fixupして」「フィックスアップして」と明示依頼された時に使用。吸収先はいま作業中のブランチ上のコミットに限定する。
+description: 変更を過去の適切なコミットに fixup + autosquash で統合する。コミットメッセージはそのまま。A1-fast（軽量判定）で通し、昇格時のみ A2 squash へ委譲。分類は git-commit-workflow/references/classification.md に従う。fixup 向きでない差分は git-split-commit または git-commit-message へ委譲。「fixupして」「フィックスアップして」と依頼された時は、確認せず同じターンで実行する。吸収先はいま作業中のブランチ上のコミットに限定する。
 ---
 
 # fixup
@@ -34,15 +34,15 @@ git log --oneline --name-only
 
 3. 分類（必須）
 
-[git-commit-workflow/references/classification.md](../git-commit-workflow/references/classification.md) に従い、各未コミット変更を B / C / D / A0 / A1 / A2 に分類する。分類結果をユーザーに短く示してから進む。
+[git-commit-workflow/references/classification.md](../git-commit-workflow/references/classification.md) に従い、各未コミット変更を B / C / D / A0 / A1 / A2 に分類する。実行依頼では分類を示してターンを終えず、委譲または手順4以降へ進む。
 
 **git-commit-workflow から呼ばれた場合**: 手順3は済みとしてスキップし、A1 のみ本スキル手順5以降を実行する。
 
 **本スキル単独で呼ばれた場合の委譲**
 
-- **B** → **git-split-commit**（fixup は実行しない）
-- **C** → **git-commit-message** → `git commit`
-- **D** → 停止してユーザー確認
+- **B** → **git-split-commit** の実行モード（fixup は実行しない）
+- **C** → **git-commit-message** → 承認を待たず `git commit`
+- **D** → 実行依頼では **C**（git-commit-message → `git commit`）。検討のみでは停止する
 - **A0** → **git-commit-workflow** の A0 amend 手順
 - **A2** → **git-squash** 手順4以降（メッセージ乖離）
 - **A1 のみ** → 本スキル手順4以降

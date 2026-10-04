@@ -229,7 +229,7 @@ const supports = [
     title: t('manage.top.supports.step3.title'),
     description: t('manage.top.supports.step3.description'),
     buttonText: t('manage.top.supports.step3.button'),
-    buttonHref: 'tel:05017215838',
+    buttonHref: 'tel:05035805122',
     imageSrc: support03,
   },
 ]

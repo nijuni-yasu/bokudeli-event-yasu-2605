@@ -6,6 +6,8 @@ export const getHomePath = () => '/'
 export const getCommunityListPath = () => '/communitylist'
 export const getCommunityPath = (communityAccount: string) => `/c/${communityAccount}`
 export const getEventPath = (communityAccount: string, eventId: string) => `/c/${communityAccount}/e/${eventId}`
+export const getEventMembersPath = (communityAccount: string, eventId: string): string =>
+  `${getEventPath(communityAccount, eventId)}/members`
 export const getUserPath = (userId: string) => `/u/${userId}`
 export const getChatPath = (roomId?: string) => (roomId != null && roomId !== '' ? `/chat/${roomId}` : '/chat')
 export const getOrdersPath = (tab?: 'usage') =>

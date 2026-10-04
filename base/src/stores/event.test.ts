@@ -80,9 +80,16 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('@shokujii/base/stores/user.js', () => ({
   useUserStore: (userId: string) => useUserStoreMock(userId),
+  getUserRef: (userId: string) => ({ path: `users/${userId}` }),
 }))
 
-import { fetchEventInCommunityDocument, useEventStore } from '@shokujii/base/stores/event.js'
+import {
+  fetchEventInCommunityDocument,
+  EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
+  latestOrderUpdatedAt,
+  selectPreviewMemberIds,
+  useEventStore,
+} from '@shokujii/base/stores/event.js'
 import {
   buildEventStoreOptions,
   resolveEventStoreOptionsFromInjectedEnterpriseId,
@@ -140,6 +147,37 @@ describe('buildEventStoreOptions', () => {
   })
 })
 
+describe('selectPreviewMemberIds', () => {
+  const limit = 2
+
+  it('上限以下は並びを変えず全員を返す', () => {
+    expect(selectPreviewMemberIds(['user-b', 'user-a'], [{ user_id: 'user-a', updated_at: 1 }], limit)).toEqual([
+      'user-b',
+      'user-a',
+    ])
+  })
+
+  it('注文未取得の間は配列の先頭だけ返す', () => {
+    expect(selectPreviewMemberIds(['user-0', 'user-1', 'user-2'], null, limit)).toEqual(['user-0', 'user-1'])
+  })
+
+  it('注文取得後は詳細カードと同じ順の先頭だけ返す', () => {
+    const memberIds = ['user-0', 'user-1', 'user-2']
+    const orders = [
+      { user_id: 'user-0', updated_at: 300 },
+      { user_id: 'user-2', updated_at: 10 },
+    ]
+    const selected = selectPreviewMemberIds(memberIds, orders, limit)
+    const byCardOrder = [...memberIds].sort(
+      (memberIdA, memberIdB) =>
+        latestOrderUpdatedAt(orders.filter((order) => order.user_id === memberIdA)) -
+        latestOrderUpdatedAt(orders.filter((order) => order.user_id === memberIdB)),
+    )
+    expect(selected).toEqual(byCardOrder.slice(0, limit))
+    expect(selected).toEqual(['user-1', 'user-2'])
+  })
+})
+
 describe('useEventStore lazy members', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -155,12 +193,17 @@ describe('useEventStore lazy members', () => {
       docs: [{ ref: mockEventRef }],
     })
     onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
       callback({
         ref: { path: mockEventRef.path },
+        exists: () => true,
         data: () =>
           ({
             members: ['user-a', 'user-b'],
           }) as BokudeliEvent,
+        docs: [],
       })
       return vi.fn()
     })
@@ -190,5 +233,142 @@ describe('useEventStore lazy members', () => {
     expect(useUserStoreMock).toHaveBeenCalledTimes(2)
     expect(useUserStoreMock).toHaveBeenCalledWith('user-a')
     expect(useUserStoreMock).toHaveBeenCalledWith('user-b')
+  })
+
+  it('menus は参照するまで購読しない', async () => {
+    const store = useEventStore('event-menus')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toEqual(['user-a', 'user-b'])
+    })
+    expect(onSnapshotMock).toHaveBeenCalledTimes(1)
+    expect(store.menus).toEqual([])
+    expect(onSnapshotMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('previewMembers は上限人数だけ useUserStore を呼ぶ', async () => {
+    onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
+      callback({
+        ref: { path: mockEventRef.path },
+        exists: () => true,
+        data: () =>
+          ({
+            members: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8 }, (_, index) => `user-${index}`),
+          }) as BokudeliEvent,
+        docs: [],
+      })
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8)
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
+    const userListenerPaths = onSnapshotMock.mock.calls
+      .map((call) => call[0]?.path)
+      .filter((path): path is string => typeof path === 'string' && path.startsWith('users/'))
+    expect(userListenerPaths).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userListenerPaths).toContain('users/user-0')
+    expect(userListenerPaths).not.toContain(`users/user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT}`)
+  })
+
+  it('previewMembers は注文の並びで上限人数を選ぶ', async () => {
+    const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
+    onSnapshotMock.mockImplementation((_ref, callback) => {
+      if (typeof callback !== 'function') {
+        return vi.fn()
+      }
+      callback({
+        ref: { path: mockEventRef.path },
+        exists: () => true,
+        data: () =>
+          ({
+            members: Array.from({ length: memberCount }, (_, index) => `user-${index}`),
+          }) as BokudeliEvent,
+        docs: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT }, (_, index) => ({
+          ref: { path: `orders/user-${index}` },
+          data: () => ({ user_id: `user-${index}`, updated_at: 500 }),
+        })),
+      })
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview-by-order')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(memberCount)
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
+    const userListenerPaths = onSnapshotMock.mock.calls
+      .map((call) => call[0]?.path)
+      .filter((path): path is string => typeof path === 'string' && path.startsWith('users/'))
+    expect(userListenerPaths).toContain(`users/user-${memberCount - 1}`)
+    expect(userListenerPaths).not.toContain(`users/user-${EVENT_DETAIL_MEMBER_PREVIEW_LIMIT - 1}`)
+  })
+
+  it('previewMembers は選外になった users 購読を外す', async () => {
+    const memberCount = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT + 8
+    const userUnsubscribes = new Map<string, ReturnType<typeof vi.fn>>()
+    type PreviewOrdersSnapshot = {
+      docs: { data: () => { user_id: string; updated_at: number } }[]
+    }
+    const ordersCallbacks: Array<(snapshot: PreviewOrdersSnapshot) => void> = []
+    onSnapshotMock.mockImplementation((ref: { path?: string }, callback: (snapshot: unknown) => void) => {
+      const path = ref?.path ?? ''
+      if (path.startsWith('users/')) {
+        const unsubscribe = vi.fn()
+        userUnsubscribes.set(path, unsubscribe)
+        return unsubscribe
+      }
+      if (path.startsWith('communities/')) {
+        callback({
+          ref: { path },
+          exists: () => true,
+          data: () =>
+            ({
+              members: Array.from({ length: memberCount }, (_, index) => `user-${index}`),
+            }) as BokudeliEvent,
+          docs: [],
+        })
+        return vi.fn()
+      }
+      ordersCallbacks.push((snapshot: PreviewOrdersSnapshot) => {
+        callback(snapshot)
+      })
+      return vi.fn()
+    })
+
+    const store = useEventStore('event-preview-release')
+    await vi.waitFor(() => {
+      expect(store.event?.members).toHaveLength(memberCount)
+    })
+
+    expect(store.previewMembers).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userUnsubscribes.size).toBe(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    const notifyOrders = ordersCallbacks[0]
+    expect(notifyOrders).toBeTypeOf('function')
+    if (notifyOrders == null) {
+      throw new Error('orders listener was not registered')
+    }
+    notifyOrders({
+      docs: Array.from({ length: EVENT_DETAIL_MEMBER_PREVIEW_LIMIT }, (_, index) => ({
+        data: () => ({ user_id: `user-${index}`, updated_at: 500 }),
+      })),
+    })
+
+    const preview = store.previewMembers
+    expect(preview).toHaveLength(EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
+    expect(userUnsubscribes.get('users/user-4')).toHaveBeenCalled()
+    expect(userUnsubscribes.get('users/user-0')).not.toHaveBeenCalled()
+    expect(userUnsubscribes.has('users/user-12')).toBe(true)
+    expect(useUserStoreMock).not.toHaveBeenCalled()
   })
 })

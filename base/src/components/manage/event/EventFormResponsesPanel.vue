@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getCommunityForm, getEventFormConfig, listEventFormResponses } from '@shokujii/base/apis/form.js'
 import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
+import FormLinkedText from '@shokujii/base/components/forms/FormLinkedText.vue'
 import UserAvatar from '@shokujii/base/components/UserAvatar.vue'
 import { buildEventFormResponseCsv, downloadMemberCsv } from '@shokujii/base/composable/memberCsvExport.js'
 import type { EventFormResponseFilter, EventFormResponseListItem } from '@shokujii/common/apis/form.js'
@@ -257,7 +258,7 @@ const download = () => {
             <v-alert type="info" variant="tonal" class="mb-6">{{ $t('manage.forms.preview_notice') }}</v-alert>
             <h2 class="text-h6 mb-2 form-response-copy">{{ assignedForm.name }}</h2>
             <p v-if="assignedForm.description !== ''" class="text-body-2 text-medium-emphasis mb-6 form-response-copy">
-              {{ assignedForm.description }}
+              <FormLinkedText :text="assignedForm.description" />
             </p>
             <FormAnswerFields
               v-if="assignedForm.fields.length > 0"

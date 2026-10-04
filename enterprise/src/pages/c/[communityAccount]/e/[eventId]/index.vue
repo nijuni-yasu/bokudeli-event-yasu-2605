@@ -31,6 +31,7 @@ import { getChatPath } from '@/router/utils'
 import { useNavigateToEventChat } from '@shokujii/base/composable/useNavigateToEventChat.js'
 import { useMenuLimitRemaining } from '@shokujii/base/composable/useMenuLimitRemaining.js'
 import { usePublicEventNotFoundRedirect } from '@shokujii/base/composable/usePublicEventNotFoundRedirect.js'
+import { useEventStorePageLifecycle } from '@shokujii/base/composable/useEventStorePageLifecycle.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -46,6 +47,7 @@ if (enterpriseId.value == null) {
 usePublicEventNotFoundRedirect(eventId, communityAccount, buildEventStoreOptions(enterpriseId.value))
 
 const eventStore = useEventStore(eventId, buildEventStoreOptions(enterpriseId.value)) as EventStore
+useEventStorePageLifecycle(eventStore)
 const { isMenuLimitSoldOut } = useMenuLimitRemaining(eventId)
 const communityStore = useEnterpriseCommunityStore(communityAccount)
 const eventEnterpriseId = computed(() => eventStore.event?.enterprise_id)

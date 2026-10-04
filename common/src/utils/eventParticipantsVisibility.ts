@@ -3,8 +3,24 @@ export type EventParticipantsVisibilitySource = {
   members_visible_min_count?: number
 }
 
-/** PF 新規イベントの参加者表示開始人数デフォルト（#2289） */
+/** 「指定人数に達してから表示」を選んだときの人数初期値（#2289）。新規イベントの初期選択は常時表示（#2395） */
 export const DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT = 3
+
+export type PfMembersVisibleMode = 'always' | 'threshold'
+
+/** 参加者一覧の表示モードに対応する `members_visible_min_count`。人数指定で未設定なら 3。 */
+export function membersVisibleMinCountForMode(
+  mode: PfMembersVisibleMode,
+  current: number | undefined,
+): number | undefined {
+  if (mode === 'always') {
+    return undefined
+  }
+  if (current == null) {
+    return DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT
+  }
+  return current
+}
 
 /**
  * イベント詳細の参加者セクション表示可否。

@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { shouldShowEventParticipantsSection } from './eventParticipantsVisibility.js'
+import { membersVisibleMinCountForMode, shouldShowEventParticipantsSection } from './eventParticipantsVisibility.js'
+
+describe('membersVisibleMinCountForMode', () => {
+  it('常時表示はしきい値を外す', () => {
+    expect(membersVisibleMinCountForMode('always', undefined)).toBeUndefined()
+    expect(membersVisibleMinCountForMode('always', 3)).toBeUndefined()
+  })
+
+  it('人数指定で未設定なら初期値 3', () => {
+    expect(membersVisibleMinCountForMode('threshold', undefined)).toBe(3)
+  })
+
+  it('人数指定で既存の人数はそのまま', () => {
+    expect(membersVisibleMinCountForMode('threshold', 5)).toBe(5)
+  })
+})
 
 describe('shouldShowEventParticipantsSection', () => {
   it('参加者 0 人のとき PF / enterprise とも非表示', () => {

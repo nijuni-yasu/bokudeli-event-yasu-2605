@@ -28,7 +28,6 @@ import { isEventFormEditableStatus } from '@shokujii/common/schemas/formFields.j
 import EventShopNotice from '@shokujii/base/components/eventcreate/EventShopNotice.vue'
 import EventEditStepNav from '@shokujii/base/components/eventcreate/EventEditStepNav.vue'
 import { eventPaymentUiStrategyFromEnterpriseId } from '@shokujii/base/composable/eventPaymentUiStrategy.js'
-import { DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT } from '@shokujii/common/utils/eventParticipantsVisibility.js'
 import { eventDraftPreparerFromEnterpriseId } from '@shokujii/base/stores/eventDraft.js'
 import { BokudeliEvent, createNewEvent, updateEventMenus } from '@shokujii/base/stores/event.js'
 import { usePartnerStore, type BokudeliPartnerMenu, type BokudeliPartnerShop } from '@shokujii/base/stores/partner.js'
@@ -179,7 +178,6 @@ watch(
       event_name: eventName,
       event_desc: eventDesc,
       ...(draftPayment != null ? { event_payment: draftPayment } : {}),
-      ...(!draftStrategy.isEnterpriseMode ? { members_visible_min_count: DEFAULT_PF_MEMBERS_VISIBLE_MIN_COUNT } : {}),
     })
 
     // コミュニティの郵便番号と住所をPostcodeJP APIから取得して、イベントの郵便番号と住所にコピー

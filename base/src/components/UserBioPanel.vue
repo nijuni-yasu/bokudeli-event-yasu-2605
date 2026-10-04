@@ -59,6 +59,9 @@ const instagramUrl = computed(() =>
 const websiteUrl = computed(() =>
   props.userData.user_sns_website === '' ? undefined : props.userData.user_sns_website,
 )
+const hasSnsLinks = computed(
+  () => twitterUrl.value != null || facebookUrl.value != null || instagramUrl.value != null || websiteUrl.value != null,
+)
 
 const displayTags = computed(() => props.userData.user_tags ?? [])
 
@@ -74,25 +77,9 @@ const isHighlighted = (tag: string) => myTags.value.has(tag)
         <v-card-title class="d-flex align-center flex-column mb-4">
           <UserAvatar :user="userData" :size="180" />
         </v-card-title>
-        <v-card-text>
-          <div class="text-h4 text-center">{{ userName }}</div>
+        <v-card-text class="user-bio-panel__name-wrap">
+          <div class="user-bio-panel__name">{{ userName }}</div>
         </v-card-text>
-        <v-row v-if="!hideSns" class="justify-center">
-          <v-col cols="auto">
-            <a v-if="twitterUrl" :href="twitterUrl" target="_blank" rel="noopener noreferrer">
-              <v-btn :icon="mdiAlphaXCircle" size="small" class="ma-1"></v-btn>
-            </a>
-            <a v-if="facebookUrl" :href="facebookUrl" target="_blank" rel="noopener noreferrer">
-              <v-btn :icon="mdiFacebook" size="small" class="ma-1"></v-btn>
-            </a>
-            <a v-if="instagramUrl" :href="instagramUrl" target="_blank" rel="noopener noreferrer">
-              <v-btn :icon="mdiInstagram" size="small" class="ma-1"></v-btn>
-            </a>
-            <a v-if="websiteUrl" :href="websiteUrl" target="_blank" rel="noopener noreferrer">
-              <v-btn :icon="mdiWeb" size="small" class="ma-1"></v-btn>
-            </a>
-          </v-col>
-        </v-row>
         <v-card-text
           v-linkify
           class="text-subtitle-1"
@@ -119,9 +106,82 @@ const isHighlighted = (tag: string) => myTags.value.has(tag)
             {{ $t('user_profile.profile_settings') }}
           </v-btn>
         </v-card-actions>
+        <div v-if="!hideSns && hasSnsLinks" class="user-bio-panel__sns">
+          <v-btn
+            v-if="twitterUrl"
+            :href="twitterUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            :icon="mdiAlphaXCircle"
+            size="small"
+            variant="outlined"
+            class="user-bio-panel__sns-btn"
+            :aria-label="$t('event_members.sns_x')"
+          />
+          <v-btn
+            v-if="facebookUrl"
+            :href="facebookUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            :icon="mdiFacebook"
+            size="small"
+            variant="outlined"
+            class="user-bio-panel__sns-btn"
+            :aria-label="$t('event_members.sns_facebook')"
+          />
+          <v-btn
+            v-if="instagramUrl"
+            :href="instagramUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            :icon="mdiInstagram"
+            size="small"
+            variant="outlined"
+            class="user-bio-panel__sns-btn"
+            :aria-label="$t('event_members.sns_instagram')"
+          />
+          <v-btn
+            v-if="websiteUrl"
+            :href="websiteUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            :icon="mdiWeb"
+            size="small"
+            variant="outlined"
+            class="user-bio-panel__sns-btn"
+            :aria-label="$t('event_members.sns_website')"
+          />
+        </div>
       </v-card>
     </v-col>
   </v-row>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.user-bio-panel__name-wrap {
+  padding-top: 0;
+}
+
+.user-bio-panel__name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  text-align: center;
+  word-break: break-word;
+}
+
+.user-bio-panel__sns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: auto;
+  padding: 8px 16px 20px;
+}
+
+.user-bio-panel__sns-btn {
+  color: rgba(var(--v-theme-on-surface), 0.72) !important;
+  border-color: rgba(var(--v-theme-on-surface), 0.18) !important;
+}
+</style>
