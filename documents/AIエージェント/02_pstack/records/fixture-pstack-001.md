@@ -29,5 +29,5 @@
 
 ## 認証（D-05 / D-07）
 
-- メールログイン + `VERIFICATION_TEST_OUTBOX_MODE=record_skip_send` で OTP を `fetchVerificationTestPassCode` から取得する（`@verify.shokujii.test` のみ）。
+- メールログイン + `VERIFICATION_TEST_OUTBOX_MODE=record_skip_send` で OTP を 既存 ADC 認証の CLI から取得する（`@verify.shokujii.test` のみ）。
 - 詳細: [2026-10-04-検証用ログイン採用.md](./2026-10-04-検証用ログイン採用.md)
