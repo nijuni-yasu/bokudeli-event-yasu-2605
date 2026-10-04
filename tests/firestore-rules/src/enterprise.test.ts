@@ -313,6 +313,23 @@ describe('enterprise firestore rules', () => {
     await assertFails(member.firestore().collection('pass_code').doc('code-1').set({ pass_code: '999999' }))
   })
 
+  it('verification_test_outbox はクライアントから read/write できない', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await context
+        .firestore()
+        .collection('verification_test_outbox')
+        .doc('run-1')
+        .set({ email: 'a@verify.shokujii.test', pass_code: '123456' })
+    })
+
+    const member = enterpriseAuth('user-a', 'ent-a', TENANT_A)
+    await assertFails(member.firestore().collection('verification_test_outbox').doc('run-1').get())
+    await assertFails(
+      member.firestore().collection('verification_test_outbox').doc('run-1').set({ pass_code: '999999' }),
+    )
+    await assertFails(testEnv.unauthenticatedContext().firestore().collection('verification_test_outbox').doc('run-1').get())
+  })
+
   it('PF 既存データ（enterprise_id なし）の events read は許可', async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await context
