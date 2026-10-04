@@ -64,7 +64,7 @@ GitHub の Branch protection（または Rulesets）で **`development`** に次
 | 設定 | 推奨値 | 備考 |
 |:-----|:-------|:-----|
 | Require a pull request before merging | ✅ | feature / release → development をすべて PR 経由に強制 |
-| Require status checks to pass | ✅ `verify`（UI 表示: `PR verify / verify`） | `pr-verify.yml` の **job 名 `verify`**。workflow 表示名 `PR verify` とは別 |
+| Require status checks to pass | ✅ `verify` と `test`（UI 表示: `PR verify / verify`、`Test Firestore Rules / test`） | `pr-verify.yml` の **job 名 `verify`** と Rules CI の **job 名 `test`**（0-3-2b）。workflow 表示名とは別 |
 | Require branches to be up to date | 任意 | 厳格にするならコンフリクトを PR 側で解消 |
 | Require approvals | 任意（0〜1） | 運用に合わせる |
 | Restrict who can push | 任意 | PR 必須なら実質不要 |
@@ -248,7 +248,7 @@ GitHub UI 推奨（Settings → Branches → Add rule → `development`）:
 | 設定 | 値 |
 |:-----|:---|
 | Require a pull request before merging | ✅ |
-| Require status checks to pass | ✅ `PR verify / verify`（0-1-10 後に UI から選択） |
+| Require status checks to pass | ✅ `PR verify / verify` と `Test Firestore Rules / test`（0-1-10 / 0-3-2b 後に UI から選択） |
 | Do not allow bypassing the above settings | ✅ |
 | Allow force pushes | ❌ |
 | Allow deletions | ❌ |
@@ -259,13 +259,13 @@ gh API 例（**0-1-10 完了後**、`verify` が Checks に存在することを
 gh api -X PUT repos/nijuniinc/bokudeli-event-new/branches/development/protection \
   -f enforce_admins=true \
   -f required_pull_request_reviews='{"required_approving_review_count":0}' \
-  -f required_status_checks='{"strict":false,"checks":[{"context":"verify"}]}' \
+  -f required_status_checks='{"strict":false,"checks":[{"context":"verify"},{"context":"test"}]}' \
   -f restrictions=null \
   -f allow_force_pushes=false \
   -f allow_deletions=false
 ```
 
-> API の `context` は job 名 `verify`。UI 表示と異なる場合は [GitHub Docs](https://docs.github.com/en/rest/branches/branch-protection) を参照し、実際の check-run name に合わせる。
+> API の `context` は job 名（`verify` / `test`）。UI 表示と異なる場合は [GitHub Docs](https://docs.github.com/en/rest/branches/branch-protection) を参照し、実際の check-run name に合わせる。`test` は 0-3-2b の Rules CI 必須チェック。
 
 ### 0-3-3: `main` / `production` の push 制限
 
