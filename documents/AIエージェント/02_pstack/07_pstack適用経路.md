@@ -32,14 +32,28 @@
 
 | 操作 | 使うもの | 使わないもの |
 | --- | --- | --- |
+| 標準フローの実装依頼 | [§3.1](#31-標準フローの実装依頼)。入口は `git-reflect-after-commit` | 工程ごとの再確認、同梱 Shipping |
 | バグ修正 | 本ファイル [§5](#5-バグ修正) | 同梱 Bugfix Playbook を正本にしない |
 | イベント→カート検証 | `shokujii-user-event-cart-verify` | 同梱の verification 生成、control-ui |
 | コミット | `git-commit-workflow` / `git-commit-message` | Playbook の Conventional Commits 例をそのまま |
 | PR / push | `git-create-pull-request` / `git-reflect-after-commit` | Opening a PR を単独の正本にしない |
-| sandbox デプロイ | `github-actions-deploy`（予約済み環境） | 本番 `firebase deploy` |
-| セルフレビュー | `shokujii-code-review` | `/interrogate` だけを完了条件にしない |
+| sandbox デプロイ | `github-actions-deploy`（予約済み環境。正本は sandbox2603） | 本番 `firebase deploy`、2606〜2608 への無断 push |
+| セルフレビュー | `shokujii-code-review`（[§4 の slop](06_モデル運用と品質管理.md#4-少なく質の高いコードを書く) を含む） | `/interrogate` だけを完了条件にしない、`/deslop` |
 | 仕様未決 | `grill-me` | 観察実験だけで仕様を決める |
 | マージ / 本番 / 保護ブランチ / `tree/` | 禁止（フックと AGENTS） | Shipping / Babysit の land |
+
+### 3.1 標準フローの実装依頼
+
+人が目的・対象・完了条件を付けて実装を依頼したら、[標準フロー](04_作業依頼からsandbox確認までの標準フロー.md) の一括範囲で進める。入口は [`git-reflect-after-commit`](../../../.agents/skills/git-reflect-after-commit/SKILL.md) の拡張であり、新しい委譲スキルは作らない。
+
+| 含む | 含まない / 人に残す |
+| --- | --- |
+| 一致する Issue の再利用、無ければ起票（Project / Status / milestone） | 「イシューを作って」だけの依頼（確認を残す） |
+| 作業ブランチ、コミット、push、`development` 向け PR | マージ、本番、保護ブランチ直 push、`tree/` へのコミット |
+| Copilot/Codex レビュー依頼と評価・対象修正 | 仕様・方針の未決、D-15 を超えるスコープ、権限・費用の追加 |
+| 予約済み sandbox（正本は sandbox2603）へのデプロイ | 調査だけ / PRまで / デプロイ不要 / 「コミットして」だけの限定 |
+
+「コミットして」だけの依頼は [`git-commit-workflow`](../../../.agents/skills/git-commit-workflow/SKILL.md) の reflect **提案**で止める。標準フローの実装依頼のときだけ、提案せず reflect へ進む。レビューとデプロイの並行、最終 SHA の揃え、一時障害の再試行は `F-3` のまま残し、この節だけでは完了にしない。
 
 ## 4. `/poteto-mode` の範囲
 

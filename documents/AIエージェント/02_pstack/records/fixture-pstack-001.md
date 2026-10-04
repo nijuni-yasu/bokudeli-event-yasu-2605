@@ -18,7 +18,8 @@
 
 | 環境 | イベント URL |
 | --- | --- |
-| sandbox2606 user | https://bokudeli-event-yasu-2606.web.app/c/pstack-verify/e/pstack-event-cart-001 |
+| sandbox2603 user（正本） | https://bokudeli-event-yasu-2603.web.app/c/pstack-verify/e/pstack-event-cart-001 |
+| sandbox2606 user（データ構築は別 PR） | https://bokudeli-event-yasu-2606.web.app/c/pstack-verify/e/pstack-event-cart-001 |
 | ローカル | `http://<dev-server>/c/pstack-verify/e/pstack-event-cart-001` |
 
 ## 初期状態
