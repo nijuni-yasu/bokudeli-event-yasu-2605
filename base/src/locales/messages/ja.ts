@@ -1208,6 +1208,8 @@ export default {
       unarchive: 'アーカイブ解除',
       archived: 'アーカイブ済み',
       description: '説明',
+      description_privacy_hint:
+        '個人情報を取得する場合は、プライバシーポリシーの同意を促してください。リンクを貼り付けてください。',
       fields: '設問',
       add_field: '設問を追加',
       field_label: '設問文',

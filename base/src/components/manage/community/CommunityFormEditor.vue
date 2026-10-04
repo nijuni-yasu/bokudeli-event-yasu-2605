@@ -4,6 +4,7 @@ import type { VForm } from 'vuetify/components'
 import { mdiArrowLeft, mdiContentSaveOutline, mdiEyeOutline } from '@mdi/js'
 import FormFieldsEditor from '@shokujii/base/components/forms/FormFieldsEditor.vue'
 import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
+import FormLinkedText from '@shokujii/base/components/forms/FormLinkedText.vue'
 import { useCreateAppCommunityStore } from '@shokujii/base/composable/useAppCommunityStore.js'
 import { useNotification } from '@shokujii/base/composable/notification.js'
 import { createCommunityForm, updateCommunityForm } from '@shokujii/base/apis/form.js'
@@ -281,10 +282,11 @@ const openPreview = (): void => {
                 <v-textarea
                   v-model="description"
                   :label="$t('manage.forms.description')"
+                  :hint="$t('manage.forms.description_privacy_hint')"
+                  persistent-hint
                   :maxlength="FORM_FIELD_LIMITS.maxDescription"
                   rows="2"
                   auto-grow
-                  hide-details="auto"
                   class="mt-4"
                 />
               </v-col>
@@ -318,7 +320,7 @@ const openPreview = (): void => {
           <v-alert type="info" variant="tonal" class="mb-6">{{ $t('manage.forms.preview_notice') }}</v-alert>
           <h2 class="text-h6 mb-2 form-editor-copy">{{ name }}</h2>
           <p v-if="description !== ''" class="text-body-2 text-medium-emphasis mb-6 form-editor-copy">
-            {{ description }}
+            <FormLinkedText :text="description" />
           </p>
           <FormAnswerFields v-if="previewFields.length > 0" v-model="previewAnswers" :fields="previewFields" />
           <v-alert v-else type="info" variant="tonal">{{ $t('manage.forms.preview_empty') }}</v-alert>

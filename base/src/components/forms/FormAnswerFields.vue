@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormLinkedText from '@shokujii/base/components/forms/FormLinkedText.vue'
 import type { FormField } from '@shokujii/common/schemas/formFields.js'
 import type { FormAnswerInput, FormValidationIssue } from '@shokujii/common/utils/validateFormAnswers.js'
 
@@ -116,7 +117,7 @@ const canClearSelection = (field: FormField): boolean => {
       </div>
       <div class="text-subtitle-1 font-weight-medium mb-2 form-answer-copy">{{ field.label }}</div>
       <div v-if="field.description !== ''" class="text-body-2 text-medium-emphasis mb-4 form-answer-copy">
-        {{ field.description }}
+        <FormLinkedText :text="field.description" />
       </div>
       <v-text-field
         v-if="field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'date'"

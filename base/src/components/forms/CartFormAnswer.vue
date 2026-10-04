@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { mdiClipboardTextOutline } from '@mdi/js'
 import { FirebaseError } from 'firebase/app'
 import FormAnswerFields from '@shokujii/base/components/forms/FormAnswerFields.vue'
+import FormLinkedText from '@shokujii/base/components/forms/FormLinkedText.vue'
 import ConfirmDialog from '@shokujii/base/components/ConfirmDialog.vue'
 import { getOrderFormForCart, saveOrderFormAttempt } from '@shokujii/base/apis/form.js'
 import { createStripeCheckoutSession } from '@shokujii/base/apis/stripe'
@@ -315,7 +316,7 @@ const confirmOrderNow = async () => {
           {{ formName }}
         </h2>
         <p v-if="formDescription !== ''" class="text-body-2 text-medium-emphasis mb-0 cart-form-copy">
-          {{ formDescription }}
+          <FormLinkedText :text="formDescription" />
         </p>
       </v-sheet>
       <FormAnswerFields v-model="answers" :fields="fields" :issues="issues" :disabled="saving || openConfirmOrder" />
