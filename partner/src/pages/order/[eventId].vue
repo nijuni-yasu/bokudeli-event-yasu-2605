@@ -375,10 +375,7 @@ const downloadNamesPrint = async () => {
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="(subtotalOrder, key) in getSubtotalsOfOrders(sortedConfirmedOrders)"
-                :key="`total-${key}`"
-              >
+              <tr v-for="(subtotalOrder, key) in getSubtotalsOfOrders(sortedConfirmedOrders)" :key="`total-${key}`">
                 <td>{{ key + 1 }}</td>
                 <td>{{ subtotalOrder.name }}</td>
                 <td class="order-options">
