@@ -5,7 +5,7 @@
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-1 | 5435157935 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `clearShopSelectionForDraft` で `_noOrderParticipationSelected` の null 代入が2行重複<br>コピペミス。1行削除 |
-| [ ] | RC-2 | 5435157935 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>読み取りコスト増。設計再検討または許容範囲の明記が必要 |
+| [x] | RC-2 | 5435157935 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 📄 ドキュメントのみ | S | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>`item_type` 未設定の既存注文を落とさないため全件読みを維持し、理由をコメントに明記 |
 | [ ] | RC-3 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | メニュー再生成パスで店舗メニュー保存と no-order upsert が別 Transaction<br>片方失敗時の不整合リスク。単一 Transaction 化を検討 |
 | [x] | RC-4 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventMenu.item_type` の型を `EventItemTypeType` に統一<br>`EventMemberOrder` と揃える |
 | [x] | RC-5 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description を EventItemType 定数化<br>文言・アイコン・ボタン分岐も更新 |
@@ -38,7 +38,7 @@
 | [x] | RC-32 | 5404599240 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>新規は数量相殺、決済中、挨拶文。既存リンクは記録済み RC<br>目次自体に追加の修正要求はない<br>リンク先は各 RC で評価する |
 | [x] | RC-33 | 4176398555 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | 表示名変更で挨拶文の除外が外れる<br>`chatGreetingPrompt` が旧名称だけを見ている<br>食事は持参が注文メニューとして挨拶に入る<br>menu_id と現行・旧名称の両方で除外する |
 | [x] | RC-34 | 4176401322 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 満席だと既存の注文なし参加者が店舗注文へ切り替えられない<br>`addToCart` と `confirmOrder` の定員判定、満席 UI<br>仕様書は定員チェックを現行のまま維持すると書いてある<br>人数を増やさない切替の免除は仕様に無い |
-| [ ] | RC-35 | 4176398525 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 🔧 微修正 | M | Stripe Checkout 中も注文が in_cart のまま<br>`addToCart` は ordered と processing だけを決済中とみなす<br>その間に注文なし参加を足すと確定後に両方が残る<br>決済開始の識別が必要。決済状態の変更なので未着手 |
+| [x] | RC-35 | 4176398525 | 👌 修正不要 | — | — | 💰 金銭 | 👀 確認のみ | — | Stripe Checkout 中も注文が in_cart のまま<br>カート内の店舗注文は `hasExistingPartnerInCart` が先に拒否する<br>Checkout を processing にする必要はない |
 
 ---
 
@@ -59,7 +59,7 @@
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-1 | 5435157935 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | `clearShopSelectionForDraft` で `_noOrderParticipationSelected` の null 代入が2行重複<br>コピペミス。1行削除 |
-| [ ] | RC-2 | 5435157935 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>読み取りコスト増。設計再検討または許容範囲の明記が必要 |
+| [x] | RC-2 | 5435157935 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 💾 データ | 📄 ドキュメントのみ | S | `countOrderedFoodsForUser` が count aggregation から全件取得+メモリフィルタに変更<br>`item_type` 未設定の既存注文を落とさないため全件読みを維持し、理由をコメントに明記 |
 | [ ] | RC-3 | 5435157935 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 💾 データ | 📐 リファクタ | M | メニュー再生成パスで店舗メニュー保存と no-order upsert が別 Transaction<br>片方失敗時の不整合リスク。単一 Transaction 化を検討 |
 | [x] | RC-4 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | `EventMenu.item_type` の型を `EventItemTypeType` に統一<br>`EventMemberOrder` と揃える |
 | [x] | RC-5 | 5435157935 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | `buildNoOrderParticipationEventMenu` の menu_name/description を EventItemType 定数化<br>文言・アイコン・ボタン分岐も更新 |
@@ -131,17 +131,17 @@ Firestore の count aggregation（`.count().get()`）から全件ドキュメン
 
 **評価**: 🚨 必須修正
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
 **ラベル**: 💾 データ
 
-**変更種別**: 📐 リファクタ
+**変更種別**: 📄 ドキュメントのみ
 
-**想定工数**: M
+**想定工数**: S
 
-**判断理由**: パフォーマンス懸念は妥当。ただし `item_type` 未設定ドキュメントの後方互換と Firestore クエリ制約により、count aggregation への単純復帰は設計判断が必要。自動修正対象外（仕様判断）。
+**判断理由**: count aggregation や `item_type == partner_menu` の where に戻すと、`item_type` 未設定の既存注文が件数から落ちる。欠落フィールドは where に一致せず、コンバータの既定値は読み取り後にしか付かない。仕様はバックフィルしない。当該ユーザーの確定注文を読んでから店舗発注分だけ数える実装を維持し、その理由を `countOrderedFoodsForUser` のコメントに明記した。
 
 ---
 
@@ -1413,7 +1413,7 @@ Useful? React with 👍 / 👎.
 | [x] | RC-32 | 5404599240 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot の未解決指摘一覧<br>新規は数量相殺、決済中、挨拶文。既存リンクは記録済み RC<br>目次自体に追加の修正要求はない<br>リンク先は各 RC で評価する |
 | [x] | RC-33 | 4176398555 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | 表示名変更で挨拶文の除外が外れる<br>`chatGreetingPrompt` が旧名称だけを見ている<br>食事は持参が注文メニューとして挨拶に入る<br>menu_id と現行・旧名称の両方で除外する |
 | [x] | RC-34 | 4176401322 | 👌 修正不要 | — | — | 📑 仕様書 | 👀 確認のみ | — | 満席だと既存の注文なし参加者が店舗注文へ切り替えられない<br>`addToCart` と `confirmOrder` の定員判定、満席 UI<br>仕様書は定員チェックを現行のまま維持すると書いてある<br>人数を増やさない切替の免除は仕様に無い |
-| [ ] | RC-35 | 4176398525 | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 💰 金銭, 🐛 実害 | 🔧 微修正 | M | Stripe Checkout 中も注文が in_cart のまま<br>`addToCart` は ordered と processing だけを決済中とみなす<br>その間に注文なし参加を足すと確定後に両方が残る<br>決済開始の識別が必要。決済状態の変更なので未着手 |
+| [x] | RC-35 | 4176398525 | 👌 修正不要 | — | — | 💰 金銭 | 👀 確認のみ | — | Stripe Checkout 中も注文が in_cart のまま<br>カート内の店舗注文は `hasExistingPartnerInCart` が先に拒否する<br>Checkout を processing にする必要はない |
 
 **識別子**: RC-31（GitHub id: 5977270873）
 
@@ -1709,18 +1709,18 @@ Useful? React with 👍 / 👎.
 
 **コメント要約**: Stripe Checkout 中も注文が in_cart のまま。<br>`addToCart` は ordered と processing だけを決済中とみなす。<br>その間に注文なし参加を足すと確定後に両方が残る。<br>決済開始の識別が必要。決済状態の変更なので未着手。
 
-**評価**: 🚨 必須修正
+**評価**: 👌 修正不要
 
-**ステータス**: 未着手
+**ステータス**: —
 
-**PRスコープ**: 📌 スコープ内
+**PRスコープ**: —
 
-**ラベル**: 💰 金銭, 🐛 実害
+**ラベル**: 💰 金銭
 
-**変更種別**: 🔧 微修正
+**変更種別**: 👀 確認のみ
 
-**想定工数**: M
+**想定工数**: —
 
-**判断理由**: `createStripeCheckoutSession` はセッション作成後も status を in_cart のままにする。決済中の拒否は仕様 §5.4.3 にあるが、Checkout 開始を processing にするか別フラグにするかは決済状態の変更なので自動修正しない。
+**判断理由**: `createStripeCheckoutSession` はセッション作成後も status を in_cart のままにする。注文なし参加の追加は、その in_cart の店舗注文を `hasExistingPartnerInCart` が見つけた時点で拒否する。ordered と processing の判定は、カートを出たあとの注文向け。Webhook 確定時には `deleteOrderedNoOrderParticipation` も走る。Checkout 中の注文を processing に変える必要はない。
 
 ---
