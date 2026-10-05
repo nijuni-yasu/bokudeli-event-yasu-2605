@@ -89,6 +89,8 @@ GCLOUD_PROJECT=bokudeli-event-yasu-2603 node scripts/pstack/fetch-test-pass-code
   --email pstack.participant@verify.shokujii.test --run-id {RUN_ID}
 ```
 
+受け口は認証本体と同じ24時間で失効する。期限切れの OTP は取得できない。新しい検証用 OTP を発行する際に24時間以上前の記録を最大100件ずつ削除する（既存の期限フィールドなし記録も対象）。発行が止まった期間は物理削除も次の発行まで止まる。ADC の読取 CLI に削除権限を追加しない。
+
 5. `/pass-code` の 6 桁入力に OTP を入れる。ホーム等へ遷移したら C1 達成。
 6. UI を使わず OTP だけ発行したい場合の代替: `scripts/pstack/request-test-login.mjs`（画面証拠の主経路ではない）。
 

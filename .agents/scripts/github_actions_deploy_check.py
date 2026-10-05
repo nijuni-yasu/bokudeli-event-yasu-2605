@@ -23,6 +23,7 @@ def discover_run_id(
     ref: str,
     since: str,
     workflow: str,
+    target_sha: str,
     retries: int = 10,
     sleep_sec: int = 3,
     gh_run: list[str] | None = None,
@@ -46,9 +47,9 @@ def discover_run_id(
             "--created",
             f">={since}",
             "--limit",
-            "1",
+            "100",
             "--json",
-            "databaseId",
+            "databaseId,headSha",
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if proc.returncode == 0 and proc.stdout.strip():
@@ -56,10 +57,11 @@ def discover_run_id(
                 rows = json.loads(proc.stdout)
             except json.JSONDecodeError:
                 rows = []
-            if rows and isinstance(rows[0], dict):
-                run_id = rows[0].get("databaseId")
-                if isinstance(run_id, int):
-                    return run_id
+            for row in rows if isinstance(rows, list) else []:
+                if isinstance(row, dict) and row.get("headSha") == target_sha:
+                    run_id = row.get("databaseId")
+                    if isinstance(run_id, int):
+                        return run_id
         time.sleep(sleep_sec)
     return None
 
@@ -115,11 +117,17 @@ def build_results_payload(
     repo: str,
     ref: str,
     since: str,
+    target_sha: str,
     workflows: list[str],
     runs: list[dict[str, Any]],
 ) -> dict[str, Any]:
     any_failed = any(r.get("success") is False for r in runs)
-    any_missing = any(r.get("run_id") is None for r in runs)
+    any_missing = (
+        not workflows or len(runs) != len(workflows)
+        or {r.get("workflow") for r in runs} != set(workflows)
+        or any(r.get("run_id") is None or r.get("headSha") != target_sha
+               or r.get("status") != "completed" or not isinstance(r.get("success"), bool) for r in runs)
+    )
 
     if any_missing:
         overall = "partial"
@@ -134,6 +142,7 @@ def build_results_payload(
         "repo": repo,
         "ref": ref,
         "since": since,
+        "target_sha": target_sha,
         "workflows": workflows,
         "overall_status": overall,
         "runs": runs,
@@ -147,7 +156,7 @@ def write_results(path: Path, payload: dict[str, Any]) -> None:
 
 def validate_results_payload(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    for key in ("deploy_id", "owner", "repo", "ref", "since", "overall_status", "runs"):
+    for key in ("deploy_id", "owner", "repo", "ref", "since", "target_sha", "overall_status", "runs"):
         if key not in payload:
             errors.append(f"missing key: {key}")
     runs = payload.get("runs")
@@ -175,6 +184,7 @@ def main() -> int:
     disc.add_argument("--ref", required=True)
     disc.add_argument("--since", required=True)
     disc.add_argument("--workflow", required=True)
+    disc.add_argument("--target-sha", required=True)
 
     url_p = sub.add_parser("fetch-run-url")
     url_p.add_argument("--owner", required=True)
@@ -188,6 +198,7 @@ def main() -> int:
     write_p.add_argument("--repo", required=True)
     write_p.add_argument("--ref", required=True)
     write_p.add_argument("--since", required=True)
+    write_p.add_argument("--target-sha", required=True)
     write_p.add_argument("--runs-json", required=True, help="Path to runs JSON file")
 
     args = parser.parse_args()
@@ -199,6 +210,7 @@ def main() -> int:
             ref=args.ref,
             since=args.since,
             workflow=args.workflow,
+            target_sha=args.target_sha,
         )
         print(run_id or "")
     elif args.command == "fetch-run-url":
@@ -206,6 +218,21 @@ def main() -> int:
         print(url or "")
     elif args.command == "write-results":
         runs = json.loads(Path(args.runs_json).read_text(encoding="utf-8"))
+        for run in runs:
+            if run.get("run_id") is None:
+                continue
+            proc = subprocess.run(["gh", "run", "view", str(run["run_id"]), "--repo",
+                                   f"{args.owner}/{args.repo}", "--json", "headSha,status,conclusion,url"],
+                                  capture_output=True, text=True, check=False)
+            try:
+                metadata = json.loads(proc.stdout) if proc.returncode == 0 else {}
+            except json.JSONDecodeError:
+                metadata = {}
+            if not isinstance(metadata, dict):
+                metadata = {}
+            run.update({key: metadata.get(key) for key in ("headSha", "status", "conclusion", "url")})
+            run["success"] = (run.get("success") is True and run.get("headSha") == args.target_sha
+                              and run.get("status") == "completed" and run.get("conclusion") == "success")
         workflows = [str(r.get("workflow")) for r in runs if isinstance(r, dict)]
         payload = build_results_payload(
             deploy_id=args.deploy_id,
@@ -213,6 +240,7 @@ def main() -> int:
             repo=args.repo,
             ref=args.ref,
             since=args.since,
+            target_sha=args.target_sha,
             workflows=workflows,
             runs=runs,
         )

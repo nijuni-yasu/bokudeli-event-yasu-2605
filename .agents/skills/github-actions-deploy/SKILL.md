@@ -136,10 +136,11 @@ python3 .agents/scripts/sandbox_reservation.py path
 ```
 
 1. 人が「この sandbox を別ブランチで使う」と明示したときだけ `switch`。旧 deploy run の停止・完了を確認するまで切り替えない。スクリプトも active run / API 検査失敗時には予約を保持して拒否する。リモート名を書いただけでは奪わない
-2. それ以外は `pick`（内部で `reconcile`）。同じブランチなら既存予約。selectable かつ空きが無ければ **中止**
-3. 予約成功後、必要なら `git config branch."$BRANCH".sandboxRemote` に remote を記憶する
-4. `new_assignment` が true のときだけ fixture を戻す（手順 2.6）
-5. push の直前に `check`。失敗したら **push しない**。seed・push・dispatch は必ず `run -- ...` 経由で実行し、チェックから副作用の終了まで台帳ロックを保持する
+2. 明示先または記憶済み REMOTE / OWNER/REPO がある場合は、台帳で remote / github_repo に対応する環境 ID を解決し、その環境を `reserve --env "$ENV_ID"` する。他環境への自動フォールバックは禁止。未登録・non-selectable・他作業の占有中なら中止する。指定がない場合だけ `pick`（内部で `reconcile`）。空きが無ければ中止する。
+3. 予約結果の `remote` / `github_repo` / `gcloud_project` / `user_url` を REMOTE / OWNER/REPO / GCLOUD_PROJECT / 確認URL の唯一の入力とする。先に決めた宛先と一致しなければ副作用前に停止する
+4. 予約成功後、必要なら `git config branch."$BRANCH".sandboxRemote` に remote を記憶する
+5. `new_assignment` が true のときだけ fixture を戻す（手順 2.6）
+6. push の直前に `check`。失敗したら **push しない**。seed・push・dispatch は必ず `run -- ...` 経由で実行し、チェックから副作用の終了まで台帳ロックを保持する
 
 ```bash
 python3 .agents/scripts/sandbox_reservation.py pick \
@@ -227,6 +228,10 @@ python3 .agents/scripts/sandbox_reservation.py run \
 **1 本だけ発火する場合**
 
 ```bash
+python3 .agents/scripts/sandbox_reservation.py record-deploy \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --sha "$(git rev-parse HEAD)"
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 python3 .agents/scripts/sandbox_reservation.py run \
   --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
   gh workflow run deploy_user.yml --repo OWNER/REPO --ref REF -f environment=development
@@ -258,6 +263,8 @@ done
 
 手順 6 の発火後、**エージェント内で `gh run watch` してはならない**。バックグラウンド watcher に委譲する。
 
+発火前に `TARGET_SHA=$(git rev-parse HEAD)` を固定し、台帳の target_sha と一致させる。watcher はこの SHA に一致する run のみを監視し、終了後の headSha / status / conclusion を results に保存・再照合する。不一致・取得不能は success にしない。
+
 発火前に **`DEPLOY_ID`**（UUID）と **`SINCE`**（手順 6 で控えた値）、発火した **`WORKFLOWS`**（カンマ区切り）を控える。
 
 | パラメータ | 値 |
@@ -278,7 +285,8 @@ WORKFLOWS="deploy_user.yml,deploy_partner.yml,deploy_enterprise.yml,deploy_funct
   --ref "$REF" \
   --since "$SINCE" \
   --workflows "$WORKFLOWS" \
-  --deploy-id "$DEPLOY_ID"
+  --deploy-id "$DEPLOY_ID" \
+  --target-sha "$TARGET_SHA"
 ```
 
 - **`notify_on_output` を付けない起動は未完成**とみなし、手順 7 完了と報告してはならない

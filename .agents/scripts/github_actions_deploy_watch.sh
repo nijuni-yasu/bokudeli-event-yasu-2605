@@ -13,7 +13,7 @@ WAKE="${SCRIPT_DIR}/github_actions_deploy_wake.py"
 CHECK="${SCRIPT_DIR}/github_actions_deploy_check.py"
 
 usage() {
-  echo "Usage: $0 --owner OWNER --repo REPO --ref REF --since ISO8601 --workflows CSV --deploy-id UUID" >&2
+  echo "Usage: $0 --owner OWNER --repo REPO --ref REF --since ISO8601 --workflows CSV --deploy-id UUID --target-sha SHA" >&2
   exit 2
 }
 
@@ -23,6 +23,7 @@ REF=""
 SINCE=""
 WORKFLOWS=""
 DEPLOY_ID=""
+TARGET_SHA=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -46,6 +47,10 @@ while [[ $# -gt 0 ]]; do
       WORKFLOWS="$2"
       shift 2
       ;;
+    --target-sha)
+      TARGET_SHA="$2"
+      shift 2
+      ;;
     --deploy-id)
       DEPLOY_ID="$2"
       shift 2
@@ -60,7 +65,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${OWNER}" || -z "${REPO}" || -z "${REF}" || -z "${SINCE}" || -z "${WORKFLOWS}" || -z "${DEPLOY_ID}" ]]; then
+if [[ -z "${OWNER}" || -z "${REPO}" || -z "${REF}" || -z "${SINCE}" || -z "${WORKFLOWS}" || -z "${DEPLOY_ID}" || -z "${TARGET_SHA}" ]]; then
   usage
 fi
 
@@ -117,6 +122,7 @@ discover_run_id() {
     --repo "${REPO}" \
     --ref "${REF}" \
     --since "${SINCE}" \
+    --target-sha "${TARGET_SHA}" \
     --workflow "${wf}"
 }
 
@@ -223,6 +229,7 @@ python3 "${CHECK}" write-results \
   --repo "${REPO}" \
   --ref "${REF}" \
   --since "${SINCE}" \
+  --target-sha "${TARGET_SHA}" \
   --runs-json "${RUNS_TMP}"
 
 rm -f "${RUNS_TMP}"

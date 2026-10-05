@@ -99,6 +99,23 @@ class SandboxReservationTest(unittest.TestCase):
                 self.assertFalse(result["ok"])
                 runner.assert_not_called()
 
+    def test_run_rejects_other_deploy_destinations(self) -> None:
+        commands = [
+            ["git", "push", "sandbox2606", "HEAD:doc/2398-pstack"],
+            ["git", "push", "sandbox2603", "HEAD:other/branch"],
+            ["gh", "workflow", "run", "deploy_user.yml", "--repo", "other/repo", "--ref", "doc/2398-pstack"],
+            ["gh", "workflow", "run", "deploy_user.yml", "--repo", "nijuni-yasu/bokudeli-event-yasu-2603-2", "--ref", "other/branch"],
+            ["env", "GCLOUD_PROJECT=bokudeli-event-yasu-2606", "node", "seed.mjs"],
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            res._save_ledger(path, sample_ledger())
+            with patch.object(res.subprocess, "run") as run:
+                for command in commands:
+                    result = res.run_reserved(path, env_id="sandbox2603", reservation_id="pstack-res-20261004-002", generation=1, command=command)
+                    self.assertEqual(result["error"], "destination_mismatch")
+                run.assert_not_called()
+
     def test_dispatch_is_pending_until_matching_run_completes(self) -> None:
         ledger = sample_ledger()
         reservation = ledger["environments"]["sandbox2603"]["reservation"]
@@ -205,6 +222,23 @@ class SandboxReservationTest(unittest.TestCase):
         )
         self.assertTrue(deploy["ok"])
         self.assertEqual(deploy["reservation"]["target_sha"], "abc123")
+        res.record_retry(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+            workflow="deploy_user.yml",
+            count=2,
+        )
+        redeploy = res.record_deploy(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id="pstack-res-20261004-002",
+            generation=1,
+            sha="def456",
+        )
+        self.assertTrue(redeploy["ok"])
+        self.assertEqual(redeploy["reservation"]["retry"], {"count": 0, "workflows": []})
         fixture = res.record_fixture(
             ledger,
             env_id="sandbox2603",

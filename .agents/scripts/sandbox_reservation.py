@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Callable
@@ -74,7 +75,10 @@ def _load_ledger(path: Path) -> dict[str, Any]:
 def _save_ledger(path: Path, ledger: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     ledger["updated_at"] = utc_now()
-    path.write_text(json.dumps(ledger, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    payload = json.dumps(ledger, ensure_ascii=False, indent=2) + "\n"
+    temporary = path.with_name(f".{path.name}.tmp")
+    temporary.write_text(payload, encoding="utf-8")
+    os.replace(temporary, path)
 
 
 @contextmanager
@@ -204,7 +208,22 @@ def run_reserved(path: Path, *, env_id: str, reservation_id: str, generation: in
         if not command:
             return _err("empty_command", "実行するコマンドが無い")
         ledger = _load_ledger(path)
-        reservation = _env(ledger, env_id)["reservation"]
+        env = _env(ledger, env_id)
+        reservation = env["reservation"]
+        if len(command) >= 3 and Path(command[0]).name == "git" and command[1] == "push":
+            # リモート名を同じ台帳から選び、予約外の環境を上書きしない。
+            push_targets = [arg for arg in command[2:] if not arg.startswith("-")]
+            if (not push_targets or push_targets[0] != env.get("remote")
+                    or len(push_targets) != 2
+                    or push_targets[1] not in (reservation["branch"], f"HEAD:{reservation['branch']}")):
+                return _err("destination_mismatch", "push 先が予約環境と一致しない")
+        if len(command) >= 4 and Path(command[0]).name == "gh" and command[1:3] == ["workflow", "run"]:
+            for flag, expected in (("--repo", env.get("github_repo")), ("--ref", reservation["branch"])):
+                if flag not in command or command.index(flag) + 1 >= len(command) or command[command.index(flag) + 1] != expected:
+                    return _err("destination_mismatch", "dispatch 先 repo/ref が予約と一致しない")
+        for arg in command:
+            if arg.startswith("GCLOUD_PROJECT=") and arg.split("=", 1)[1] != env.get("gcloud_project"):
+                return _err("destination_mismatch", "seed の project が予約環境と一致しない")
         if len(command) >= 4 and Path(command[0]).name == "gh" and command[1:3] == ["workflow", "run"]:
             if not reservation.get("target_sha"):
                 return _err("no_target_sha", "dispatch 前に record-deploy で対象 SHA を記録する")
@@ -350,6 +369,8 @@ def reserve(
                     "env_id": env_id,
                     "remote": env.get("remote"),
                     "gcloud_project": env.get("gcloud_project"),
+                    "github_repo": env.get("github_repo"),
+                    "user_url": env.get("user_url"),
                     "reservation": reservation,
                 }
             )
@@ -388,6 +409,8 @@ def reserve(
             "env_id": env_id,
             "remote": env.get("remote"),
             "gcloud_project": env.get("gcloud_project"),
+            "github_repo": env.get("github_repo"),
+            "user_url": env.get("user_url"),
             "reservation": reservation,
         }
     )
@@ -455,6 +478,8 @@ def switch(
             "env_id": env_id,
             "remote": env.get("remote"),
             "gcloud_project": env.get("gcloud_project"),
+            "github_repo": env.get("github_repo"),
+            "user_url": env.get("user_url"),
             "reservation": reservation,
             "previous_reservation_id": previous.get("id") if isinstance(previous, dict) else None,
         }
@@ -494,6 +519,8 @@ def record_deploy(
     if not checked["ok"]:
         return checked
     reservation = _env(ledger, env_id)["reservation"]
+    if reservation.get("target_sha") != sha:
+        reservation["retry"] = {"count": 0, "workflows": []}
     reservation["target_sha"] = sha
     reservation["updated_at"] = utc_now()
     return _ok({"env_id": env_id, "reservation": reservation})

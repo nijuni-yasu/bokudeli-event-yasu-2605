@@ -54,7 +54,7 @@ AIエージェント向けプロジェクトガイド。
 
 `/poteto-mode` は対象会話の先頭だけ使う。全チャットの Custom Mode 固定はしない。同梱 Playbook は編集しない。衝突時は本ファイルと [導入計画§6](documents/AIエージェント/02_pstack/01_pstack導入計画.md#6-既存ルールが優先される操作) と [適用経路](documents/AIエージェント/02_pstack/07_pstack適用経路.md) を優先する。バグ修正を頼まれたら [適用経路のバグ修正節](documents/AIエージェント/02_pstack/07_pstack適用経路.md#5-バグ修正) を、画面検証より先に読む。user のイベント→カート検証は [shokujii-user-event-cart-verify](.agents/skills/shokujii-user-event-cart-verify/SKILL.md) を Playbook より先に読む。コミット / PR / sandbox は既存 Skill。マージと本番操作は禁止のまま。
 
-**標準フローの実装依頼**（目的・対象・完了条件がある実装。調査・相談・計画だけの依頼ではない）では、スコープ内の Issue 作成、作業ブランチ、コミット、push、PR、Copilot/Codex レビュー対応、空いている sandbox の予約とデプロイまでを一括範囲とする。工程ごとに同じ許可を聞き直さない。入口は [`git-reflect-after-commit`](.agents/skills/git-reflect-after-commit/SKILL.md)。レビュー待ちとデプロイは並行し、修正後は同じ予約で再デプロイして PR HEAD とデプロイ SHA を揃える。予約正本はメインクローンの `.agents/state/sandbox-reservations.json`（[sandbox-pool.md](documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。候補は selectable な環境だけ（現状 sandbox2603）。空きが無ければデプロイせず報告する。「調査だけ」「PRまで」「デプロイ不要」「コミットして」などの限定依頼は優先する。仕様・方針の未決、D-15 を超えるスコープ変更、権限・費用の追加、マージ、本番、`tree/` へのコミットは人に残す。
+**標準フローの実装依頼**（目的・対象・完了条件がある実装。調査・相談・計画だけの依頼ではない）では、スコープ内の Issue 作成、作業ブランチ、コミット、push、PR、Copilot/Codex レビュー対応、空いている sandbox の予約とデプロイまでを一括範囲とする。工程ごとに同じ許可を聞き直さない。実装前に既存 Issue を確認し、なければ `git-create-issue` で作成して Issue に対応する作業ブランチで始める。再開時は重複作成しない。入口は [`git-reflect-after-commit`](.agents/skills/git-reflect-after-commit/SKILL.md)。レビュー待ちとデプロイは並行し、修正後は同じ予約で再デプロイして PR HEAD とデプロイ SHA を揃える。予約正本はメインクローンの `.agents/state/sandbox-reservations.json`（[sandbox-pool.md](documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。候補は selectable な環境だけ（現状 sandbox2603）。空きが無ければデプロイせず報告する。「調査だけ」「PRまで」「デプロイ不要」「コミットして」などの限定依頼は優先する。仕様・方針の未決、D-15 を超えるスコープ変更、権限・費用の追加、マージ、本番、`tree/` へのコミットは人に残す。
 
 ## プロジェクト概要
 
