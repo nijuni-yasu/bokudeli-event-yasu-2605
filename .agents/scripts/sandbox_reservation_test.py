@@ -302,11 +302,28 @@ class DispatchRecoveryTest(unittest.TestCase):
             ledger["environments"]["sandbox2603"]["reservation"]["target_sha"] = "abc123"
             res._save_ledger(path, ledger)
             command = ["gh", "workflow", "run", "deploy_user.yml", "--repo", "nijuni-yasu/bokudeli-event-yasu-2603-2", "--ref", "doc/2398-pstack"]
-            with patch.object(res.subprocess, "run", side_effect=[CompletedProcess([], 0, "{}", ""), CompletedProcess([], 1)]) as api:
+            with patch.object(res.subprocess, "run", side_effect=[CompletedProcess([], 0, "{}", ""), CompletedProcess([], 1, "", "network error")]) as api:
                 result = res.run_reserved(path, env_id="sandbox2603", reservation_id="pstack-res-20261004-002", generation=1, command=command)
                 self.assertEqual(result["error"], "command_failed")
                 self.assertEqual(api.call_count, 2)
             self.assertEqual(len(res._load_ledger(path)["environments"]["sandbox2603"]["reservation"]["pending_dispatches"]), 1)
+
+    def test_explicit_required_input_rejection_rolls_back_own_pending(self) -> None:
+        from subprocess import CompletedProcess
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            ledger = sample_ledger()
+            reservation = ledger["environments"]["sandbox2603"]["reservation"]
+            reservation["target_sha"] = "abc123"
+            existing = {"workflow": "deploy_partner.yml", "since": "2026-10-04T00:00:00Z"}
+            reservation["pending_dispatches"] = [existing]
+            res._save_ledger(path, ledger)
+            error = "could not create workflow dispatch event: HTTP 422: Required input 'environment' not provided (https://api.github.com/repos/nijuni-yasu/bokudeli-event-yasu-2603-2/actions/workflows/123/dispatches)"
+            command = ["gh", "workflow", "run", "deploy_user.yml", "--repo", "nijuni-yasu/bokudeli-event-yasu-2603-2", "--ref", "doc/2398-pstack"]
+            with patch.object(res.subprocess, "run", side_effect=[CompletedProcess([], 0, "{}", ""), CompletedProcess([], 1, "", error)]):
+                result = res.run_reserved(path, env_id="sandbox2603", reservation_id=reservation["id"], generation=1, command=command)
+                self.assertEqual(result["error"], "command_failed")
+            self.assertEqual(res._load_ledger(path)["environments"]["sandbox2603"]["reservation"]["pending_dispatches"], [existing])
 
     def test_recovery_requires_confirmation_and_verified_absence(self) -> None:
         from subprocess import CompletedProcess

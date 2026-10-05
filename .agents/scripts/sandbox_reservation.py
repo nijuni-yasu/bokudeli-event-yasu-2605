@@ -236,7 +236,21 @@ def run_reserved(path: Path, *, env_id: str, reservation_id: str, generation: in
                 return _err("workflow_unavailable", "workflow を確認できないため未発火。pending は追加しない")
             reservation.setdefault("pending_dispatches", []).append({"workflow": command[3], "since": utc_now()})
             _save_ledger(path, ledger)
-        result = subprocess.run(command, check=False)
+        is_dispatch = len(command) >= 4 and Path(command[0]).name == "gh" and command[1:3] == ["workflow", "run"]
+        result = subprocess.run(command, check=False, capture_output=True, text=True) if is_dispatch else subprocess.run(command, check=False)
+        if is_dispatch:
+            if result.stdout:
+                print(result.stdout, end="", file=sys.stderr)
+            if result.stderr:
+                print(result.stderr, end="", file=sys.stderr)
+            # GitHub が必須入力不足として明示的に拒否した場合は未発火が確定する。
+            # その他の失敗（タイムアウト等）は受理された可能性があるので保持する。
+            if (result.returncode != 0 and isinstance(result.stderr, str)
+                    and "could not create workflow dispatch event: HTTP 422: Required input 'environment' not provided" in result.stderr
+                    and f"https://api.github.com/repos/{env['github_repo']}/actions/workflows/" in result.stderr
+                    and "/dispatches)" in result.stderr):
+                reservation["pending_dispatches"].pop()
+                _save_ledger(path, ledger)
         if result.returncode != 0:
             return _err("command_failed", "予約内のコマンドが失敗した", exit_code=result.returncode)
         return _ok({"env_id": env_id})

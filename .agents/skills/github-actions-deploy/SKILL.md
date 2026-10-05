@@ -149,7 +149,7 @@ python3 .agents/scripts/sandbox_reservation.py check \
   --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION"
 ```
 
-`gh workflow run` の前に必ず `record-deploy --sha <対象HEAD>` を行う（単体発火・再試行も同じ）。`run` は対象 SHA 未記録なら拒否し、発火前に pending 記録を保存する。Actions に run がまだ表示されない時間も、switch / release / reconcile は解放しない。全ての発火済み run（失敗・cancelled を含む）の終了を確認したら、各 ID を `record-run` に渡す。対象 SHA・ブランチ・workflow・発火時刻との一致をスクリプトで確認する。dispatch 前に workflow の存在を API で確認し、404・権限不足・通信失敗なら dispatch を試さず pending も追加しない。存在確認後の dispatch 失敗は、受理された可能性があるため pending を保持する。
+`gh workflow run` の前に必ず `record-deploy --sha <対象HEAD>` を行う（単体発火・再試行も同じ）。`run` は対象 SHA 未記録なら拒否し、発火前に pending 記録を保存する。Actions に run がまだ表示されない時間も、switch / release / reconcile は解放しない。全ての発火済み run（失敗・cancelled を含む）の終了を確認したら、各 ID を `record-run` に渡す。対象 SHA・ブランチ・workflow・発火時刻との一致をスクリプトで確認する。dispatch 前に workflow の存在を API で確認し、404・権限不足・通信失敗なら dispatch を試さず pending も追加しない。GitHub API が environment 必須入力の不足を HTTP 422 で明示的に拒否した場合だけ、その呼出しの pending を取り消す。その他の存在確認後の dispatch 失敗は、受理された可能性があるため pending を保持する。
 
 既存の失敗 pending を回復する場合は、人が当該 workflow・発火時刻の**未発火を明示的に確認したときだけ**次を実行する。エージェントが空一覧・経過時間・CLI の失敗だけを根拠に確認フラグを付けてはならない。スクリプトは API の全ページを検査し、該当 run（終了済み・別 SHA も含む）がある場合や API の確認ができない場合は pending を保持する。run が存在する場合は `record-run` で処理する。
 
