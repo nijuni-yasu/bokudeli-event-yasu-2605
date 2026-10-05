@@ -41,6 +41,7 @@
 | [x] | RC-34 | 4178019109 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | SHA が変わっても retry 回数が残る<br>target_sha が変わる record-deploy で retry を初期化する |
 | [x] | RC-35 | 5980936304 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📄 ドキュメントのみ | S | 個人ホーム絶対パスを<メインクローン>の説明とsandbox_reservation.py pathへ置換。 |
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
+| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
 
 ---
 
@@ -1265,6 +1266,7 @@ expires_at か取得後削除かは未決
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
+| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
 
 #### RC-36
 
@@ -1311,3 +1313,62 @@ expires_at か取得後削除かは未決
 ---
 
 対応: `request-test-login.mjs` のrun IDを必須にし、不足時はHTTP送信前に終了する。CLI回帰テストで不足・空・オプション誤入力の拒否と、正常時のrun ID引継ぎを確認。既存ADCと予約sandboxのみを使用する方針は維持。
+
+
+## 評価セッション（2026-10-05 14:08・shokujii-code-review）
+
+- **評価日時**: 2026-10-05 14:08 JST
+- **ブランチ名**: doc/2398-pstack
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2399
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **重複除外**: なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
+
+#### RC-37
+
+**識別子**: RC-37（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `.agents/scripts/sandbox_reservation.py:230-234`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++            reservation.setdefault("pending_dispatches", []).append({"workflow": command[3], "since": utc_now()})
++            _save_ledger(path, ledger)
++        result = subprocess.run(command, check=False)
++        if result.returncode != 0:
++            return _err("command_failed", "予約内のコマンドが失敗した", exit_code=result.returncode)
++```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `gh workflow run` の実行前に `pending_dispatches` を保存し、コマンド失敗時も記録を残します。スキルの標準フローでは未対応ワークフローの 404 でも他の発火を続けますが、その run は `record-run` で消費できません。以降 `require_idle()` が予約の切替・解放・再利用を拒み、環境が台帳上使えなくなります。確実に発火していない失敗を記録から除くか、発火有無が不明な場合も安全に解消できる回復手段を設けてください。
+
+**コメント要約**: `gh workflow run` が失敗しても発火前に保存した pending が残る。<br>
+run ID が存在しない失敗は `record-run` で pending を消費できない。<br>
+pending が残ると `require_idle()` が予約の release/switch/reconcile を拒み、台帳上の環境を再利用できない。<br>
+未発火を安全に確定して pending を解消できる回復経路を追加する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `require_idle()` は pending_dispatches の残存時に予約の解放等を拒否する一方、`run_reserved` は dispatch の非0終了時に pending を保持する。未対応 workflow の 404 は run ID がなく、正常終了した run を前提とする `record_run` では解消できないため、環境が恒久的に利用不能になり得る。
+
+---
