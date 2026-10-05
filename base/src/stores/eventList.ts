@@ -30,6 +30,11 @@ export type EventListStoreOptions = {
    * 別クエリ同士が衝突することがあるため、画面固有の一覧では明示する。
    */
   storeKey?: string
+  /**
+   * true のとき、一覧の各 event store は取得済み文書のままにし、onSnapshot を張らない。
+   * 参加者アバターを出さないトップ一覧向け。詳細を開いた画面が購読を始める。
+   */
+  deferEventSubscription?: boolean
 }
 
 export const useEventListStore = (
@@ -84,7 +89,10 @@ export const useEventListStore = (
         eventsSnapsthot.push(...querySnapshot.docs)
         eventStores.value = eventsSnapsthot.flatMap((doc) => {
           try {
-            return useEventStore(doc.data())
+            return useEventStore(
+              doc.data(),
+              options.deferEventSubscription === true ? { deferLiveSubscription: true } : {},
+            )
           } catch (err) {
             console.error(err)
             reportClientError(err, { documentPath: doc.ref.path, severity: 'warn' })

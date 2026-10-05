@@ -37,6 +37,12 @@ export type FirestoreListenRetryOptions = {
   /** 待ち時間は min(失敗回数, maxBackoffSteps) * baseDelayMs。リトライ可能な失敗は打ち切らない */
   maxBackoffSteps?: number
   baseDelayMs?: number
+  /**
+   * スナップショットもエラーも来ないとき、この時間で購読を外して張り直す。
+   * 初回は指定値、以降は失敗回数に応じて最大 maxBackoffSteps 倍まで伸ばす。
+   * 一度 markHealthy したあとは、変更が無いだけの購読を無応答とみなさない。
+   */
+  silenceTimeoutMs?: number
   onError?: (err: unknown) => void
   /** リトライしないエラー（権限不足など） */
   onGiveUp?: (err: unknown) => void
@@ -55,11 +61,15 @@ export const createFirestoreListenRetry = (
 ): FirestoreListenRetry => {
   const maxBackoffSteps = options.maxBackoffSteps ?? DEFAULT_MAX_BACKOFF_STEPS
   const baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS
+  const silenceTimeoutMs = options.silenceTimeoutMs
   let unsubscribe: Unsubscribe | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
+  let silenceTimer: ReturnType<typeof setTimeout> | null = null
   let failureCount = 0
+  let generation = 0
   let stopped = false
   let gaveUp = false
+  let silencing = false
 
   const clearTimer = () => {
     if (timer != null) {
@@ -68,11 +78,51 @@ export const createFirestoreListenRetry = (
     }
   }
 
+  const clearSilence = () => {
+    if (silenceTimer != null) {
+      clearTimeout(silenceTimer)
+      silenceTimer = null
+    }
+  }
+
+  const armSilence = () => {
+    if (silenceTimeoutMs == null) {
+      return
+    }
+    clearSilence()
+    const steps = Math.min(failureCount + 1, maxBackoffSteps)
+    silenceTimer = setTimeout(() => {
+      silenceTimer = null
+      restartAfterSilence()
+    }, silenceTimeoutMs * steps)
+  }
+
+  const restartAfterSilence = () => {
+    if (stopped || gaveUp || silencing) {
+      return
+    }
+    // 意図した解除が cancelled を返しても、エラー用の再試行と重ねない。
+    // 解除が非同期でエラーを返しても、世代が違うので新しい購読は外さない。
+    generation += 1
+    silencing = true
+    failureCount += 1
+    clearTimer()
+    const current = unsubscribe
+    unsubscribe = null
+    current?.()
+    silencing = false
+    if (stopped || gaveUp || timer != null || unsubscribe != null) {
+      return
+    }
+    begin()
+  }
+
   const begin = () => {
     if (stopped || gaveUp || unsubscribe != null || timer != null) {
       return
     }
     // onError が listen() の戻り値代入より先に同期実行されることがある
+    const attempt = ++generation
     let started: Unsubscribe | null = null
     let failed = false
     const releaseStarted = () => {
@@ -83,10 +133,11 @@ export const createFirestoreListenRetry = (
     }
     started = listen({
       onError: (err: unknown) => {
-        if (failed) {
+        if (attempt !== generation || silencing || failed) {
           return
         }
         failed = true
+        clearSilence()
         releaseStarted()
         try {
           options.onError?.(err)
@@ -120,6 +171,7 @@ export const createFirestoreListenRetry = (
       return
     }
     unsubscribe = started
+    armSilence()
   }
 
   return {
@@ -135,6 +187,7 @@ export const createFirestoreListenRetry = (
       gaveUp = false
       failureCount = 0
       clearTimer()
+      clearSilence()
       const current = unsubscribe
       unsubscribe = null
       current?.()
@@ -142,6 +195,7 @@ export const createFirestoreListenRetry = (
     markHealthy: () => {
       failureCount = 0
       gaveUp = false
+      clearSilence()
     },
   }
 }

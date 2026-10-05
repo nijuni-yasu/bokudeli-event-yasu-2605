@@ -1,3 +1,4 @@
+import { FirebaseError } from 'firebase/app'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
@@ -370,5 +371,52 @@ describe('useEventStore lazy members', () => {
     expect(userUnsubscribes.get('users/user-0')).not.toHaveBeenCalled()
     expect(userUnsubscribes.has('users/user-12')).toBe(true)
     expect(useUserStoreMock).not.toHaveBeenCalled()
+  })
+
+  it('deferLiveSubscription では ensureSubscribed まで購読しない', () => {
+    const store = useEventStore('event-defer', { deferLiveSubscription: true })
+    expect(getDocsMock).not.toHaveBeenCalled()
+    expect(onSnapshotMock).not.toHaveBeenCalled()
+    store.ensureSubscribed()
+    expect(getDocsMock).toHaveBeenCalled()
+  })
+
+  it('preview の user 購読が一時失敗したら張り直す', async () => {
+    vi.useFakeTimers()
+    const userListenCounts = new Map<string, number>()
+    onSnapshotMock.mockImplementation(
+      (ref: { path?: string }, onNext: (snapshot: unknown) => void, onError?: (err: unknown) => void) => {
+        const path = ref?.path ?? ''
+        if (path.startsWith('users/')) {
+          const count = (userListenCounts.get(path) ?? 0) + 1
+          userListenCounts.set(path, count)
+          if (count === 1) {
+            onError?.(new FirebaseError('unavailable', 'down'))
+          }
+          return vi.fn()
+        }
+        onNext({
+          ref: { path: mockEventRef.path },
+          exists: () => true,
+          data: () =>
+            ({
+              members: ['user-a'],
+            }) as BokudeliEvent,
+          docs: [],
+        })
+        return vi.fn()
+      },
+    )
+
+    const store = useEventStore('event-preview-retry')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(store.event?.members).toEqual(['user-a'])
+    expect(store.previewMembers).toHaveLength(1)
+    expect(userListenCounts.get('users/user-a')).toBe(1)
+
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(userListenCounts.get('users/user-a')).toBe(2)
+    vi.useRealTimers()
   })
 })

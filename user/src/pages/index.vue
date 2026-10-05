@@ -38,6 +38,7 @@ const popularEventListStore = useEventListStore(
     orderBy('event_num_members', 'desc'),
   ],
   numOfPopularColumns,
+  { deferEventSubscription: true },
 )
 
 const popularEvents = computed(
@@ -62,6 +63,7 @@ const upcomingEventListStore = useEventListStore(
     orderBy('event_start_datetime', 'asc'),
   ],
   numOfColumns.value,
+  { deferEventSubscription: true },
 )
 
 const upcomingEvents =
@@ -84,6 +86,7 @@ const pastEventListStore = useEventListStore(
     orderBy('event_start_datetime', 'desc'),
   ],
   numOfColumns.value,
+  { deferEventSubscription: true },
 )
 
 const pastEvents =
