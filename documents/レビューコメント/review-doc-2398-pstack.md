@@ -40,6 +40,7 @@
 | [x] | RC-33 | 4178019108 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📋 仕様追加 | M | 認証本体の24時間定数を共有しexpires_atを保存、期限切れ取得を拒否。新規OTP発行時に古い100件までをstore経由で削除。旧記録はcreated_atから期限を導出。TTL設定・追加IAM・費用変更なし。発行がない期間の物理削除は次回まで保留。 |
 | [x] | RC-34 | 4178019109 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | SHA が変わっても retry 回数が残る<br>target_sha が変わる record-deploy で retry を初期化する |
 | [x] | RC-35 | 5980936304 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📄 ドキュメントのみ | S | 個人ホーム絶対パスを<メインクローン>の説明とsandbox_reservation.py pathへ置換。 |
+| [ ] | RC-36 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略で発行した OTP は取得 CLI から取得できない<br>`request-test-login.mjs` が `--run-id` を任意としている<br>この実行経路ではOTPを取り出せずログイン検証が止まる<br>run IDを必須にし、不足時は明示エラーで拒否する |
 
 ---
 
@@ -1247,3 +1248,64 @@ expires_at か取得後削除かは未決
 検証: PR verify相当の全ステップ成功。予約ユニット15件、監視回帰3件、既存watchテスト8件成功。OTPスキーマ9件、outbox store4件、受け口境界8件成功（全体Vitestでも通過）。Firestore Emulatorで未認証outbox read/write拒否の対象テスト1件成功。セルフレビューは今回の差分を確認。既存のRC-24/26/27/34の未コミット修正も同じIssueの差分として検証済み。
 
 ローカル画面証拠: [カートのPlaywright MCPスナップショット](../AIエージェント/02_pstack/records/evidence/2026-10-05-local-cart.md)。本時点はコミット前（4046f41d5 + 今回差分）・接続先Functionsは既存sandboxの版。最新PR HEADのデプロイ成否・画面確認・公開OTP関数削除は後続の引渡しで確認し、未確認のままフェーズ1全体を完了としない。
+
+---
+
+## 評価セッション（2026-10-05 13:57・shokujii-code-review）
+
+- **評価日時**: 2026-10-05 13:57 JST
+- **ブランチ名**: doc/2398-pstack
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2399
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **重複除外**: なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-36 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略で発行した OTP は取得 CLI から取得できない<br>`request-test-login.mjs` が `--run-id` を任意としている<br>この実行経路ではOTPを取り出せずログイン検証が止まる<br>run IDを必須にし、不足時は明示エラーで拒否する |
+
+#### RC-36
+
+**識別子**: RC-36（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `scripts/pstack/request-test-login.mjs:8-9`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++const emailIdx = args.indexOf('--email')
++const runIdx = args.indexOf('--run-id')
++const email = emailIdx >= 0 ? args[emailIdx + 1] : undefined
++const runId = runIdx >= 0 ? args[runIdx + 1] : undefined
++
++if (email == null) {
++  console.error('usage: --email <addr> [--run-id <id>]')
++  process.exit(1)
++}
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `--run-id` を省略可能にしていますが、`fetch-test-pass-code.mjs` は必須としており、run ID なしで発行した sandbox OTP は取得できません。`request-test-login.mjs` の usage も省略を案内するため、記載どおりの実行では OTP 取得ができず検証が止まります。`--run-id` を必須化して入力不足時に終了するか、両 CLI を同じ run ID 規約に合わせてください。
+
+**コメント要約**: run ID省略で発行した OTP は取得 CLI から取得できない。`request-test-login.mjs` が `--run-id` を任意としており、この実行経路ではOTPを取り出せずログイン検証が止まる。run IDを必須にし、不足時は明示エラーで拒否する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: OTP発行側はrun IDを任意としている一方、取得CLIはrun IDを必須としているため、記載された任意引数の使い方では発行済みOTPを取得できず、pstackのログイン検証が完了できない。既存のrun ID必須方針に合わせ、発行前に入力不足を拒否するのが最小の修正となる。
+
+---
