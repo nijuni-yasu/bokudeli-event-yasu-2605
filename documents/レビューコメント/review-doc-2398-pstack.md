@@ -42,6 +42,8 @@
 | [x] | RC-35 | 5980936304 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📄 ドキュメントのみ | S | 個人ホーム絶対パスを<メインクローン>の説明とsandbox_reservation.py pathへ置換。 |
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
 | [x] | RC-37 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow を発火前に存在確認<br>未発火の人による確認と全ページ API 検査で回復<br>run がある場合・API 障害では pending を保持<br>回帰テストで拒否と対象記録だけの回復を確認 |
+| [ ] | RC-38 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | pending中もrecord-deployが対象SHAを更新できる<br>先行deploy runは最新SHAと不一致でrecord-run不能になる<br>pendingが残って予約の解放・再割当が止まる<br>pending単位のSHA照合またはSHA更新拒否が必要 |
+| [ ] | RC-39 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | Actions runのpathに`@refs/heads/<branch>`が含まれる<br>Path.nameがworkflow filenameと一致しない<br>record-runが有効なrunを拒否しpendingを消費できない<br>回復側と同様に@以降を除いて照合する
 
 ---
 
@@ -1374,3 +1376,101 @@ pending が残ると `require_idle()` が予約の release/switch/reconcile を�
 ---
 
 対応: workflow 存在確認に失敗した場合は dispatch 自体を実行せず pending を作らない。environment 必須入力不足の HTTP 422 拒否は未発火として当該 pending だけを取り消し、通信失敗等は保持する。既存の失敗記録には、人の未発火確認とページングした Actions API 検査の両方を必須とする recover-dispatch を追加。run の存在・API 障害・不正応答では回復を拒否する。回帰テストで確認。
+
+
+## 評価セッション（2026-10-05 14:21・shokujii-code-review）
+
+- **評価日時**: 2026-10-05 14:21 JST
+- **ブランチ名**: doc/2398-pstack
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2399
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 0
+- **重複除外**: なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [ ] | RC-38 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | pending中もrecord-deployが対象SHAを更新できる<br>先行deploy runは最新SHAと不一致でrecord-run不能になる<br>pendingが残って予約の解放・再割当が止まる<br>pending単位のSHA照合またはSHA更新拒否が必要 |
+| [ ] | RC-39 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | Actions runのpathに`@refs/heads/<branch>`が含まれる<br>Path.nameがworkflow filenameと一致しない<br>record-runが有効なrunを拒否しpendingを消費できない<br>回復側と同様に@以降を除いて照合する |
+
+#### RC-38
+
+**識別子**: RC-38（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `.agents/scripts/sandbox_reservation.py:529-532`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    if reservation.get("target_sha") != sha:
++        reservation["retry"] = {"count": 0, "workflows": []}
++    reservation["target_sha"] = sha
++    reservation["updated_at"] = utc_now()
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: `pending_dispatches` が残っている間も `record_deploy` が `target_sha` を上書きできます。その後、先行 dispatch の run は現在の SHA との不一致で `record_run` に拒否され、pending を消費できません。pending がある場合は SHA 変更を拒否するか、各 pending に対象 SHA を保存して run ごとに照合してください。
+
+**コメント要約**: pending_dispatches が残っていても record_deploy は target_sha を更新できる。<br>
+先行する Actions run の SHA は更新後の target_sha と一致せず record_run に拒否される。<br>
+pendingを解消できず予約の解放・再割当が停止する。<br>
+SHA変更前のpending解消を必須にするか、pendingごとにSHAを保存して照合する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: `record_run` は run の head_sha を予約の単一 `target_sha` と照合する一方、`record_deploy` は未処理の pending を確認せず target_sha を更新する。PR HEAD が変わったタイミングで旧 run が未完了なら、run完了後にも記録できず pending が予約解放を恒久的に阻害し得る。
+
+---
+
+#### RC-39
+
+**識別子**: RC-39（GitHub id: なし・エージェントレビュー）
+
+**レビュワー**: Cursor Agent（shokujii-code-review）
+
+**指摘箇所**: `.agents/scripts/sandbox_reservation.py:553`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++        index = next((i for i, item in enumerate(pending) if item["workflow"] == Path(run["path"]).name and run["created_at"] >= item["since"]), None)
+```
+
+**レビュワーのコメント（原文）**:
+
+🚨 **必須修正** [🔧微修正/S]: Actions workflow run の `path` は `.github/workflows/deploy_user.yml@refs/heads/<branch>` の形式になり得ます。この場合 `Path(run["path"]).name` は workflow filename ではなく `@refs/heads/...` を含む末尾名となり、pending に記録した `deploy_user.yml` と一致しません。正常に終了した run も `record_run` が拒否して pending を消費できないため、回復処理と同様に `@` 以降を除いてから workflow 名を照合してください。
+
+**コメント要約**: Actions runのpathはworkflow filenameに`@refs/heads/<branch>`を付けて返る場合がある。<br>
+Path.nameはworkflow名にならずpendingのworkflow値と一致しない。<br>
+有効な完了runがrecord_runで拒否され、pendingを消費できない。<br>
+回復処理と同様に`@`以降を除外して照合する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: 未着手
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 同じスクリプトの `recover_dispatch` は workflow run の `path` から `@` 以降を除いて workflow filename を比較しているが、`record_run` はその正規化をせず `Path(...).name` を比較している。回復テストにも `@refs/heads/...` を含む実際の形式がある一方、record_run のテスト fixture は suffix を含まず、この不一致を検出できない。
+
+---
