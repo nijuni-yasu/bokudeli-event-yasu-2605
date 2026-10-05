@@ -50,6 +50,12 @@ AIエージェント向けプロジェクトガイド。
 | ユニットテスト (Vitest)                | `/vitest`                            | テスト作成時、common/functions のロジックテスト時                                                    |
 | 実装前の設計インタビュー（要件明確化） | `/grill-me`                          | 実装前の設計フェーズ、要件が固まっていない時、設計の壁打ち時                                         |
 
+## pstack（会話単位）
+
+`/poteto-mode` は対象会話の先頭だけ使う。全チャットの Custom Mode 固定はしない。同梱 Playbook は編集しない。衝突時は本ファイルと [導入計画§6](documents/AIエージェント/02_pstack/01_pstack導入計画.md#6-既存ルールが優先される操作) と [適用経路](documents/AIエージェント/02_pstack/07_pstack適用経路.md) を優先する。バグ修正を頼まれたら [適用経路のバグ修正節](documents/AIエージェント/02_pstack/07_pstack適用経路.md#5-バグ修正) を、画面検証より先に読む。user のイベント→カート検証は [shokujii-user-event-cart-verify](.agents/skills/shokujii-user-event-cart-verify/SKILL.md) を Playbook より先に読む。コミット / PR / sandbox は既存 Skill。マージと本番操作は禁止のまま。
+
+**標準フローの実装依頼**（目的・対象・完了条件がある実装。調査・相談・計画だけの依頼ではない）では、スコープ内の Issue 作成、作業ブランチ、コミット、push、PR、Copilot/Codex レビュー対応、空いている sandbox の予約とデプロイまでを一括範囲とする。工程ごとに同じ許可を聞き直さない。実装前に既存 Issue を確認し、なければ `git-create-issue` で作成して Issue に対応する作業ブランチで始める。再開時は重複作成しない。入口は [`git-reflect-after-commit`](.agents/skills/git-reflect-after-commit/SKILL.md)。レビュー待ちとデプロイは並行し、修正後は同じ予約で再デプロイして PR HEAD とデプロイ SHA を揃える。予約正本はメインクローンの `.agents/state/sandbox-reservations.json`（[sandbox-pool.md](documents/AIエージェント/02_pstack/records/sandbox-pool.md)）。候補は selectable な環境だけ（現状 sandbox2603）。空きが無ければデプロイせず報告する。「調査だけ」「PRまで」「デプロイ不要」「コミットして」などの限定依頼は優先する。仕様・方針の未決、D-15 を超えるスコープ変更、権限・費用の追加、マージ、本番、`tree/` へのコミットは人に残す。
+
 ## プロジェクト概要
 
 **プロジェクト名**: Shokujii（食事でつながる）
@@ -133,6 +139,8 @@ npm -w <pkg> run format:check
 ```
 
 ## 作業前の確認事項
+
+標準フローの実装開始・再開時は、コード編集より先に `git-commit-workflow` 手順 0 の基点確認を行う。マージ検知時、push・デプロイ前、引き渡し直前にも fetch し直す。祖先判定は `git merge-base --is-ancestor origin/development HEAD`（0:取込済み、1:rebase必要、その他:停止）。調査・レビューだけの依頼では履歴を書き換えない。
 
 1. `documents/` 内の仕様書・各パッケージの `README.md` を読んでプロジェクトの文脈を理解する
 2. `common` / `base` にある再利用可能なコードを優先的に使用し、重複実装を避ける
@@ -237,7 +245,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 | `ui/` | UI 改善・見た目調整 | `ui/2093` |
 | `refactor/` | 挙動不変のリファクタ（Issue スコープが明確な場合） | `refactor/2200` |
 
-**リリース・同期**（[`03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) 参照。エージェントは通常の feature 系と同様 PR 更新用に push 可）:
+**リリース・同期**（[`03_branch_protection.md`](documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md) 参照。エージェントは通常の feature 系と同様 PR 更新用に push 可）:
 
 | プレフィックス | 用途 |
 | :-- | :-- |
@@ -265,7 +273,7 @@ PR verify（`pr-verify.yml`）と同じ verify:functions-deploy / build / lint /
 
 ### エージェント向け Git 操作の禁止（本番・リリース系）
 
-背景: [`documents/AIエージェント/03_branch_protection.md`](documents/AIエージェント/03_branch_protection.md) §5。
+背景: [`documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md`](documents/AIエージェント/01_Loop_Engineering/03_branch_protection.md) §5。
 
 **エージェントは次を実行してはならない**（人間のリリース作業専用）:
 

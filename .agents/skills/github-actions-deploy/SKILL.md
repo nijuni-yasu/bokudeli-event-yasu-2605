@@ -1,6 +1,6 @@
 ---
 name: github-actions-deploy
-description: sandbox / fork 向け。ローカル HEAD を branch.<branch>.sandboxRemote で決まった sandbox へ push してから、gh CLI で deploy_*.yml を workflow_dispatch 発火する。監視はバックグラウンド watch + wake 1 回（エージェントは gh run watch でブロックしない）。mode=report は sentinel / pending wake から結果報告のみ。sandbox 先は git-reflect-after-commit と同じ branch.<branch>.sandboxRemote で記憶。git-reflect-after-commit / github-sandbox-wip-deploy から委譲時は会話に sandbox と書かなくてよい。「sandbox にデプロイ」で sandboxRemote 設定済みなら現在ブランチで実行可。1a のリモート/ブランチ明示は sandbox 系 remote のみ。repo+ブランチの明示指定は上書き（発火のみ）。「push せず」「再デプロイだけ」で push 省略。本番 nijuniinc/bokudeli-event-new では push も発火も拒否。6 本一括（deploy_enterprise 含む）は一括発火後にバックグラウンド並列 watch がデフォルト。
+description: sandbox / fork 向け。台帳で予約してからローカル HEAD を sandbox へ push し、gh CLI で deploy_*.yml を workflow_dispatch 発火する。空きは pick が selectable 環境から選ぶ。監視はバックグラウンド watch + wake 1 回。mode=report は sentinel / pending wake から結果報告のみ。sandboxRemote は記憶であり予約の証明ではない。git-reflect-after-commit / github-sandbox-wip-deploy から委譲時は会話に sandbox と書かなくてよい。一時障害は同じ SHA・同じ予約で失敗工程を最大 2 回再発火。本番 nijuniinc/bokudeli-event-new では push も発火も拒否。
 ---
 
 # GitHub Actions デプロイ（push + 手動発火）
@@ -61,10 +61,10 @@ REMOTE=$(git config --get branch."$BRANCH".sandboxRemote)
 REF="$BRANCH"
 ```
 
-- **未設定の場合**: `git remote -v` から **`sandbox*` 候補のみ**提示してユーザーに選んでもらい、確認のうえ保存する（次回以降は自動）。
+- **未設定の場合**: 手順 2.5 の `pick` が selectable かつ空きの環境を選ぶ。成功したらその remote を保存する。空きが無ければデプロイせず報告する。人に候補一覧を出して選んでもらうのは、`pick` が失敗したあとの限定依頼だけ。
 
   ```bash
-  git config branch."$BRANCH".sandboxRemote <選択した remote>
+  git config branch."$BRANCH".sandboxRemote <pick した remote>
   ```
 
 - `git remote get-url "$REMOTE"` の URL から `OWNER/REPO` を取る。
@@ -78,20 +78,21 @@ REF="$BRANCH"
 ### 1d. 上記いずれも満たさない場合
 
 - **実行しない**
-- ユーザーに **`リモート名/ブランチ名`（例: `sandbox2510/feat/960-v2`）**、**owner/repo + ブランチ**、または sandbox remote の初回設定を求める
+- 1b の委譲や「sandbox にデプロイ」があるときは 1d に落とさず、remote 未設定でも手順 2.5 の `pick` へ進む
+- それ以外はユーザーに **`リモート名/ブランチ名`**、**owner/repo + ブランチ**、またはデプロイ依頼を求める
 
 `@{upstream}` は **補助情報**（指定したリモート/ブランチと一致するか確認する）に使ってよいが、**ユーザー発話に無い ref で勝手に決めて実行してはならない**（1b の委譲・`sandboxRemote` 設定済みの場合を除く）。
 
 ## トリガー例
 
 - `sandbox2510/feat/960-v2` にデプロイして
-- sandbox にデプロイして（**`branch.<branch>.sandboxRemote` 設定済み**）
+- sandbox にデプロイして（`sandboxRemote` 未設定なら `pick`）
 - `/git-reflect-after-commit` 実行時（**B: sandbox デプロイ**。会話に sandbox と書かなくてよい）
 - `/github-sandbox-wip-deploy` 実行時（同上）
 - `https://github.com/nijuni-yasu/bokudeli-event-yasu-2603` のブランチ `ai/1842` を再デプロイ（**push 省略・発火のみ**）
 - sandbox リポを workflow_dispatch で全部デプロイ（**リモート/ブランチまたは repo+ref が会話に含まれる場合**）
 
-**NG**: `sandboxRemote` 未設定かつ 1a/1c も無い「デプロイして」だけ → 指定または sandbox remote の初回設定を求める。
+**NG**: `pick` が空き無しで失敗した「デプロイして」だけ → 占有状況を報告して止める。本番リポは拒否。
 
 ## 手順
 
@@ -126,6 +127,63 @@ python3 .agents/scripts/github_actions_deploy_wake.py list \
 - `OWNER/REPO` が `nijuniinc/bokudeli-event-new` なら **中止**
 - 1a / 1b で REMOTE を使う場合、`git remote get-url "$REMOTE"` が本番 URL なら **中止**
 
+### 2.5 予約（push 前・必須）
+
+台帳の正本はメインクローンの JSON。worktree からはスクリプトが `git-common-dir` で解決する。`branch.<branch>.sandboxRemote` は記憶であり、予約の証明にしない。
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py path
+```
+
+1. 人が「この sandbox を別ブランチで使う」と明示したときだけ `switch`。旧 deploy run の停止・完了を確認するまで切り替えない。スクリプトも active run / API 検査失敗時には予約を保持して拒否する。リモート名を書いただけでは奪わない
+2. 明示先または記憶済み REMOTE / OWNER/REPO がある場合は、台帳で remote / github_repo に対応する環境 ID を解決し、その環境を `reserve --env "$ENV_ID"` する。他環境への自動フォールバックは禁止。未登録・non-selectable・他作業の占有中なら中止する。指定がない場合だけ `pick`（内部で `reconcile`）。空きが無ければ中止する。
+3. 予約結果の `remote` / `github_repo` / `gcloud_project` / `user_url` を REMOTE / OWNER/REPO / GCLOUD_PROJECT / 確認URL の唯一の入力とする。先に決めた宛先と一致しなければ副作用前に停止する
+4. 予約成功後、必要なら `git config branch."$BRANCH".sandboxRemote` に remote を記憶する
+5. `new_assignment` が true のときだけ fixture を戻す（手順 2.6）
+6. push の直前に `check`。失敗したら **push しない**。seed・push・dispatch は必ず `run -- ...` 経由で実行し、チェックから副作用の終了まで台帳ロックを保持する
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py pick \
+  --branch "$BRANCH" --issue "$ISSUE" --pr "$PR" --owner "$OWNER_LABEL"
+python3 .agents/scripts/sandbox_reservation.py check \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION"
+```
+
+`gh workflow run` の前に必ず `record-deploy --sha <対象HEAD>` を行う（単体発火・再試行も同じ）。`run` は対象 SHA 未記録なら拒否し、発火前に pending 記録を保存する。Actions に run がまだ表示されない時間も、switch / release / reconcile は解放しない。全ての発火済み run（失敗・cancelled を含む）の終了を確認したら、各 ID を `record-run` に渡す。対象 SHA・ブランチ・workflow・発火時刻との一致をスクリプトで確認する。dispatch 前に workflow の存在を API で確認し、404・権限不足・通信失敗なら dispatch を試さず pending も追加しない。GitHub API が environment 必須入力の不足を HTTP 422 で明示的に拒否した場合だけ、その呼出しの pending を取り消す。その他の存在確認後の dispatch 失敗は、受理された可能性があるため pending を保持する。
+
+既存の失敗 pending を回復する場合は、人が当該 workflow・発火時刻の**未発火を明示的に確認したときだけ**次を実行する。エージェントが空一覧・経過時間・CLI の失敗だけを根拠に確認フラグを付けてはならない。スクリプトは API の全ページを検査し、該当 run（終了済み・別 SHA も含む）がある場合や API の確認ができない場合は pending を保持する。run が存在する場合は `record-run` で処理する。
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py recover-dispatch \
+  --env <ENV> --reservation-id <ID> --generation <N> \
+  --workflow <WF> --since <pending に記録された時刻> --confirmed-not-started
+```
+
+未知の発火結果は予約保持のまま診断する。
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py record-run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --run-id "$RUN_ID"
+```
+
+mode=report の結果報告時も現行予約の ID・世代が一致する場合だけ同じ記録を行う。重複 run ID では pending を再消費しない。
+
+### 2.6 新規割当の fixture（該当時だけ）
+
+`pick` / `switch` の `seed` が true のときだけ、予約した環境の `GCLOUD_PROJECT` で seed する。同じブランチの再デプロイでは走らせない。プロジェクト全体は消さない。
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  env GCLOUD_PROJECT="$GCLOUD_PROJECT" node scripts/pstack/seed-pstack-fixture.mjs
+python3 .agents/scripts/sandbox_reservation.py record-fixture \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --result ok
+```
+
+失敗したら push せず、`--result` に失敗理由を残して報告する。
+
 ### 3. sandbox へ push（デフォルト）
 
 **次のいずれかに該当する場合は push を省略**し、手順 4 へ:
@@ -135,8 +193,12 @@ python3 .agents/scripts/github_actions_deploy_wake.py list \
 
 **それ以外は必ず push してから発火する**（リモートの古いコミットをデプロイしないため）。
 
+push 直前に手順 2.5 の `check` が成功していること。
+
 ```bash
-git push --force-with-lease "$REMOTE" HEAD:"$REF"
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  git push --force-with-lease "$REMOTE" HEAD:"$REF"
 ```
 
 - `-u`（`--set-upstream`）は付けない（追跡設定を変えないため）
@@ -176,19 +238,32 @@ git push --force-with-lease "$REMOTE" HEAD:"$REF"
 **1 本だけ発火する場合**
 
 ```bash
-gh workflow run deploy_user.yml --repo OWNER/REPO --ref REF -f environment=development
+python3 .agents/scripts/sandbox_reservation.py record-deploy \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --sha "$(git rev-parse HEAD)"
+SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+python3 .agents/scripts/sandbox_reservation.py run \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+  gh workflow run deploy_user.yml --repo OWNER/REPO --ref REF -f environment=development
 ```
 
 **6 本一括発火する場合（デフォルト・発火のみ・監視は手順 7）**
 
-一括発火の直前に **基準時刻 `SINCE` を 1 回だけ**控える。
+一括発火の直前に **基準時刻 `SINCE` を 1 回だけ**控え、手順 2.5 の `check` を繰り返す。失敗したら発火しない。対象 SHA を台帳に残す。
 
 ```bash
+python3 .agents/scripts/sandbox_reservation.py check \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION"
+python3 .agents/scripts/sandbox_reservation.py record-deploy \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --sha "$(git rev-parse HEAD)"
 SINCE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 for WF in deploy_user.yml deploy_partner.yml deploy_enterprise.yml \
           deploy_functions.yml deploy_firestore.yml deploy_storage.yml; do
-  gh workflow run "$WF" --repo OWNER/REPO --ref REF -f environment=development
+  python3 .agents/scripts/sandbox_reservation.py run \
+    --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" -- \
+    gh workflow run "$WF" --repo OWNER/REPO --ref REF -f environment=development
 done
 ```
 
@@ -197,6 +272,8 @@ done
 ### 7. バックグラウンド監視起動（Shell 要件・厳守）
 
 手順 6 の発火後、**エージェント内で `gh run watch` してはならない**。バックグラウンド watcher に委譲する。
+
+発火前に `TARGET_SHA=$(git rev-parse HEAD)` を固定し、台帳の target_sha と一致させる。watcher はこの SHA に一致する run のみを監視し、終了後の headSha / status / conclusion を results に保存・再照合する。不一致・取得不能は success にしない。
 
 発火前に **`DEPLOY_ID`**（UUID）と **`SINCE`**（手順 6 で控えた値）、発火した **`WORKFLOWS`**（カンマ区切り）を控える。
 
@@ -218,7 +295,8 @@ WORKFLOWS="deploy_user.yml,deploy_partner.yml,deploy_enterprise.yml,deploy_funct
   --ref "$REF" \
   --since "$SINCE" \
   --workflows "$WORKFLOWS" \
-  --deploy-id "$DEPLOY_ID"
+  --deploy-id "$DEPLOY_ID" \
+  --target-sha "$TARGET_SHA"
 ```
 
 - **`notify_on_output` を付けない起動は未完成**とみなし、手順 7 完了と報告してはならない
@@ -269,14 +347,30 @@ AGENT_LOOP_WAKE_deploy {"prompt":"/github-actions-deploy","mode":"report","deplo
 
 | 分類 | ログの手がかり | 典型的な原因 | 推奨アクション（提案のみ） |
 |------|----------------|--------------|----------------------------|
-| 一時的エラー | `HTTP Error: 503` / `500` / `429`、`service is currently unavailable` | Firebase / Google API 側の一時障害 | 再実行を提案 |
+| 一時的エラー | `HTTP Error: 503` / `500` / `429`、`service is currently unavailable` | Firebase / Google API 側の一時障害 | 同じ SHA・同じ予約で失敗工程だけ再発火（最大 2 回） |
 | Rules コンパイルエラー | `compilation errors`、`firestore.rules` / `storage.rules` | ルールの構文・参照ミス | 該当ルールの修正が必要 |
 | インデックス | `firestore.indexes.json` 関連の Error | indexes 定義の不整合 | indexes 定義の見直し |
 | 権限・認証 | `403`、`PERMISSION_DENIED`、`GOOGLE_APPLICATION_CREDENTIALS`、IAM 系 | サービスアカウント権限・Secrets 設定 | リポの Secrets / IAM 設定確認 |
 | API 未有効化 | `has not been used in project`、`API ... is disabled` | 必要 API が無効 | GCP で該当 API を有効化 |
 | ビルド失敗 | `tsc`、`npm run build`、Functions のビルドエラー、`npm -w enterprise run build` | アプリ側のビルド不良 | ソース修正（このスキルでは修正しない） |
 
-- **重要**: 解析までで止める。修正や自動再実行は行わない
+- **重要**: ビルド失敗・権限不足・Rules / indexes は解析して止める。**一時的エラーだけ**次の再試行を行う
+
+**一時障害の再試行（D-11）**
+
+1. 分類が一時的エラーである
+2. 同じ SHA・同じ予約。`check` が成功する
+3. 旧 run の終了を確認する
+4. 失敗した workflow だけ再発火する。成功済みは繰り返さない
+5. 追加は最大 2 回（初回を含め最大 3 回）。回数を台帳に残す
+
+```bash
+python3 .agents/scripts/sandbox_reservation.py record-retry \
+  --env "$ENV_ID" --reservation-id "$RES_ID" --generation "$GENERATION" \
+  --workflow "$WF" --count "$RETRY_COUNT"
+```
+
+上限に達したら未完了として報告する。予約は解放しない。報告時の成功は、台帳の `target_sha` と一致する run だけにする。古い SHA の成功を最新版の成功にしない。
 
 **報告完了後**に pending wake を consume する（中断時の復旧のため、報告前に consume しない）:
 
@@ -294,11 +388,13 @@ python3 .agents/scripts/github_actions_deploy_wake.py consume \
 | [`.agents/scripts/github_actions_deploy_state.py`](../../scripts/github_actions_deploy_state.py) | watcher PID 管理 |
 | [`.agents/scripts/github_actions_deploy_wake.py`](../../scripts/github_actions_deploy_wake.py) | 結果報告 pending wake |
 | [`.agents/scripts/github_actions_deploy_check.py`](../../scripts/github_actions_deploy_check.py) | RUN_ID 特定・results JSON 構築 |
+| [`.agents/scripts/sandbox_reservation.py`](../../scripts/sandbox_reservation.py) | 予約台帳の pick / check / reconcile / switch / release |
 
 開発用テスト:
 
 ```bash
 python3 .agents/hooks/test-github-actions-deploy-watch.py
+python3 .agents/scripts/sandbox_reservation_test.py
 bash -n .agents/scripts/github_actions_deploy_watch.sh
 ```
 
@@ -313,10 +409,10 @@ watcher ログと [`.agents/state/deploy-watch.json`](../../state/deploy-watch.j
 - このスキルは **ローカルの Cursor エージェントが `git` と `gh` を実行する**前提
 - **本番 `nijuniinc/bokudeli-event-new` は必ず拒否**（push も発火も）
 - **デフォルトは push → 発火**。push 省略はユーザー明示または 1c（発火のみ）のみ
-- **`branch.<branch>.sandboxRemote`** は `git-reflect-after-commit` と共有する。ブランチごとに sandbox 先を記憶する
+- **`branch.<branch>.sandboxRemote`** は割当先の記憶である。予約の証明は台帳の ID と世代
 - 6 本すべて発火すると Functions や Hosting（user / partner / enterprise）がまとめて動く。ユーザーが「user だけ」「enterprise だけ」と言った場合は絞る
 - 6 本一括は **一括発火 → バックグラウンド並列 watch → wake 1 回で結果報告** がデフォルト
-- デプロイ失敗時は **原因を解析するだけ**。修正・自動再実行はユーザーに委ねる
+- デプロイ失敗時は原因を解析する。一時的エラーだけ同じ SHA・同じ予約で失敗工程を最大 2 回再発火する
 
 ## 関連ドキュメント
 

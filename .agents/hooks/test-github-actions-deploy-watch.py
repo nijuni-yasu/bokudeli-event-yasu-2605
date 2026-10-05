@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -20,8 +21,8 @@ import github_actions_deploy_wake as deploy_wake  # noqa: E402
 
 def test_build_results_payload() -> None:
     runs = [
-        {"workflow": "deploy_user.yml", "run_id": 1, "url": "https://example/run/1", "success": True},
-        {"workflow": "deploy_partner.yml", "run_id": 2, "url": "https://example/run/2", "success": False},
+        {"workflow": "deploy_user.yml", "run_id": 1, "url": "https://example/run/1", "success": True, "headSha": "expected", "status": "completed", "conclusion": "success"},
+        {"workflow": "deploy_partner.yml", "run_id": 2, "url": "https://example/run/2", "success": False, "headSha": "expected", "status": "completed", "conclusion": "failure"},
     ]
     payload = deploy_chk.build_results_payload(
         deploy_id="dep-1",
@@ -29,6 +30,7 @@ def test_build_results_payload() -> None:
         repo="r",
         ref="feature/x",
         since="2026-01-01T00:00:00Z",
+        target_sha="expected",
         workflows=["deploy_user.yml", "deploy_partner.yml"],
         runs=runs,
     )
@@ -47,6 +49,7 @@ def test_build_results_partial() -> None:
         repo="r",
         ref="feature/x",
         since="2026-01-01T00:00:00Z",
+        target_sha="expected",
         workflows=["deploy_user.yml"],
         runs=runs,
     )
@@ -58,7 +61,7 @@ def test_discover_run_id_mock() -> None:
         return subprocess.CompletedProcess(
             args=[],
             returncode=0,
-            stdout=json.dumps([{"databaseId": 999}]),
+            stdout=json.dumps([{"databaseId": 1000, "headSha": "other"}, {"databaseId": 999, "headSha": "expected"}]),
             stderr="",
         )
 
@@ -73,6 +76,7 @@ def test_discover_run_id_mock() -> None:
             ref="main",
             since="2026-01-01T00:00:00Z",
             workflow="deploy_user.yml",
+            target_sha="expected",
             retries=1,
             sleep_sec=0,
         )
@@ -159,6 +163,9 @@ def test_write_results_cli() -> None:
             ),
             encoding="utf-8",
         )
+        fake_gh = Path(tmp) / "gh"
+        fake_gh.write_text('#!/usr/bin/env python3\nimport json\nprint(json.dumps({"headSha":"expected","status":"completed","conclusion":"success","url":"https://example/run/1"}))\n')
+        fake_gh.chmod(0o755)
         proc = subprocess.run(
             [
                 sys.executable,
@@ -176,16 +183,20 @@ def test_write_results_cli() -> None:
                 "main",
                 "--since",
                 "2026-01-01T00:00:00Z",
+                "--target-sha",
+                "expected",
                 "--runs-json",
                 str(runs_path),
             ],
             capture_output=True,
             text=True,
             check=False,
+            env={**os.environ, "PATH": f"{tmp}:{os.environ.get('PATH', '')}"},
         )
         assert proc.returncode == 0, proc.stderr
         payload = json.loads(out_path.read_text(encoding="utf-8"))
         assert payload["overall_status"] == "success"
+        assert payload["runs"][0]["headSha"] == "expected"
 
 
 def main() -> int:

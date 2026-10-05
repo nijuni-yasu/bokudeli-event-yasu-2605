@@ -43,7 +43,3 @@ defineProps<{
     </v-card>
   </component>
 </template>
-
-<style scoped lang="scss">
-@import './userProfilePanel.scss';
-</style>

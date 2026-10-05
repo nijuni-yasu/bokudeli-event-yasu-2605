@@ -7,9 +7,7 @@ import {
   Timestamp,
   Transaction,
 } from 'firebase-admin/firestore'
-import { PassCode } from '@shokujii/common/schemas/PassCode.js'
-
-const PASS_CODE_DURATION = 24 * 60 * 60 * 1000 // 1 day
+import { PASS_CODE_DURATION, PassCode } from '@shokujii/common/schemas/PassCode.js'
 
 export class ShokujiiPassCode extends PassCode {
   constructor(id: string | null, src: Partial<PassCode>) {

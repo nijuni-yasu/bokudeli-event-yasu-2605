@@ -139,8 +139,10 @@ python3 .agents/scripts/self_review_wake.py list \
    push 成功またはスキップ後に手順 10 以降へ進む。
 
 10. 手順 1 の確認結果に応じて、実行方法を判断する
-    - **新規作成**: PR が紐づいていない場合 → 本文を出力し、gh pr create 実行時は --base development を指定する。ユーザーに確認を取る
-    - **既存 PR の本文更新**: PR が紐づいている場合 → 本文を出力し、gh pr edit で本文を更新する場合はユーザーに確認を取る。本文をファイルに保存した場合は gh pr edit --body-file を使用する
+    - **新規作成**: PR が紐づいていない場合 → 本文を出力し、`gh pr create` 実行時は --base development を指定する
+    - **既存 PR の本文更新**: PR が紐づいている場合 → 本文を出力し、`gh pr edit` で本文を更新する。本文をファイルに保存した場合は `gh pr edit --body-file` を使用する
+    - **確認を省略する**: 標準フローの実装依頼、[`git-reflect-after-commit`](../git-reflect-after-commit/SKILL.md) からの委譲、「PRを作って」「PRつくって」などの実行依頼
+    - **確認して止める**: 「本文だけ」「PR本文を出して」など案だけの依頼
 
 11.（必須）手順 10 で `gh pr create` または `gh pr edit` が完了したら、ユーザーへの確認や同意を待たず、**即座に** **GitHub Copilot** と **Codex コネクタ**をレビュワーに追加する
 
@@ -301,7 +303,7 @@ closes #2252
 
 - 日本語で記述する
 - 推定できない箇所は空欄または「要確認」と記述し、手動で補完を促す
-- gh pr create および gh pr edit を実行する場合は、ユーザーに確認を取ってから実行する
+- gh pr create および gh pr edit は、標準フロー・reflect 委譲・「PRを作って」では確認せず実行する。本文案だけの依頼では確認して止める
 - 手順 10（gh pr create/edit）の前に手順 9 の origin push を省略しない（reflect から同期済みの場合を除く）
 - origin push の `--force-with-lease` は、ローカル書き換えと判定できた diverge、またはユーザー明示承認時のみ。リモート専用の独自コミットがある diverge と behind のみは禁止。保護 ref への push は禁止
 - 手順 10 を実行したときは**手順 11 と 12 を即座に実行する**（ユーザーへの確認不要。reviewer 追加と Codex 向け `gh pr comment` を省略しない）

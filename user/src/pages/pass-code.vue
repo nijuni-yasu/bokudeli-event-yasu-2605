@@ -35,6 +35,7 @@ import {
   runPassCodeMountAutoLinkageSetup,
   runPassCodePostOtpLinkPreCheck,
 } from '@/utils/passCodeAutoLinkage'
+import { verificationRunIdForRequest } from '@/utils/verificationRunId'
 
 const router = useRouter()
 const route = useRoute()
@@ -68,7 +69,7 @@ const linkProviderId = computed((): ProviderIdType | null => parsePassCodeLinkPr
 const isOpenLinkDialog = ref(linkProviderId.value != null)
 
 const switchRegisterOtpToLogin = async (): Promise<void> => {
-  await requestEmailLogin({ email })
+  await requestEmailLogin({ email, ...verificationRunIdForRequest(route) })
   mode.value = 'login'
   passCode.value = ''
   history.replaceState({ ...history.state, email, mode: 'login' }, '')
@@ -92,7 +93,7 @@ const runAutoLinkageOnMount = async () => {
   )
   isLoading.value = true
   try {
-    await requestEmailLogin({ email })
+    await requestEmailLogin({ email, ...verificationRunIdForRequest(route) })
   } catch (error) {
     console.warn('Error sending pass code on auto-linkage mount:', error)
     notification.show($t('passcode.send_code_failed'), 'error')
@@ -121,7 +122,7 @@ const reSendPassCode = async () => {
     } else if (mode.value === 'register') {
       await requestEmailRegistration({ email })
     } else {
-      await requestEmailLogin({ email })
+      await requestEmailLogin({ email, ...verificationRunIdForRequest(route) })
     }
   } catch (error) {
     if (mode.value === 'register' && isAlreadyRegisteredEmailError(error)) {

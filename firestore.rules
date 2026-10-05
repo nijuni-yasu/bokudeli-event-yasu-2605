@@ -452,6 +452,10 @@ service cloud.firestore {
             // pass_code は functions 内からのみアクセス可能
             allow read, write: if false
         }
+        match /verification_test_outbox/{document=**} {
+            // 検証用 OTP 受け口。Functions のみ読み書き
+            allow read, write: if false
+        }
         function isEnterpriseAdminMember(enterpriseId) {
             return isEnterpriseTenantFor(enterpriseId)
                 && exists(/databases/$(database)/documents/enterprises/$(enterpriseId)/members/$(request.auth.uid))

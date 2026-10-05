@@ -45,9 +45,9 @@ format 自動修正（手順 1）で生じた変更も、追跡済みであれ�
 **`github-actions-deploy` スキルの手順 0〜10** に委譲する。
 
 - 委譲時は `github-actions-deploy` の **1b** がトリガーとして成立する（会話に sandbox と書かなくてよい）
-- sandbox 先は `branch.<branch>.sandboxRemote` で解決・記憶（`git-reflect-after-commit` と同じ）。候補は **`sandbox*` のみ**
-- ユーザーが **`リモート名/ブランチ名` を明示**している場合は上書き指定として優先
-- push（手順 3）→ workflow_dispatch 発火 → **バックグラウンド watch** → wake 時結果報告までを委譲
+- sandbox 先は台帳の `pick` と `branch.<branch>.sandboxRemote`（記憶）。候補は selectable な `sandbox*` のみ（現状 sandbox2603）
+- ユーザーが **`リモート名/ブランチ名` を明示**している場合は上書き指定として優先。占有中を奪うには人が switch を指示する
+- 予約検査・新規割当時の seed・push・発火・一時障害の再試行 → **バックグラウンド watch** → wake 時結果報告までを委譲
 - 本スキルでは push 手順を **重複実施しない**
 
 ### 4. 結果の報告

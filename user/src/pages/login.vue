@@ -8,6 +8,7 @@ import { useValidators } from '@shokujii/base/composable/validators.js'
 import { getLastLoginProvider, setLastLoginProvider } from '@shokujii/base/utils/lastLoginProvider.js'
 import { signInByProviderService, type ProviderIdType } from '@shokujii/base/utils/providerService.js'
 import { getLinkRequestDialogParams, parseLoginQueryPids, runLoginPageMountAutoLinkage } from '@/utils/loginAutoLinkage'
+import { verificationRunIdForRequest } from '@/utils/verificationRunId'
 import GoogleIcon from '@shokujii/base/icons/google.vue'
 import FacebookIcon from '@shokujii/base/icons/facebook.vue'
 import XIcon from '@shokujii/base/icons/x'
@@ -48,10 +49,19 @@ const handleLogin = async (providerId: ProviderIdType | 'custom', emailInput?: s
       if (emailInput == null) {
         throw new Error('Email is required')
       }
+      const runFields = verificationRunIdForRequest(route)
       await requestEmailLogin({
         email: emailInput,
+        ...runFields,
       })
-      await router.push(getPassCode(emailInput, 'login'))
+      const passCode = getPassCode(emailInput, 'login')
+      await router.push({
+        ...passCode,
+        state: {
+          ...passCode.state,
+          ...(runFields.verification_run_id != null ? { verification_run_id: runFields.verification_run_id } : {}),
+        },
+      })
     } else {
       const credential = await signInByProviderService(providerId)
       // ここに来るのはポップアップ認証（デバッグ用）成功時のみ
