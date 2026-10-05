@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { TimestampSchema, NonEmptyStringSchema, EpochMillisSchema } from './firebase/index.js'
 
+export const PASS_CODE_DURATION = 24 * 60 * 60 * 1000 // 1 day
+
 const generatePassCode = (): string => {
   // 1～999999のランダムな整数を生成し、6桁にゼロ埋め
   return Math.floor(1 + Math.random() * 999999)

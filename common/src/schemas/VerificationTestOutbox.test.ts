@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { VerificationTestOutboxAppSchema, VerificationTestOutboxDbSchema } from './VerificationTestOutbox.js'
+import { PASS_CODE_DURATION } from './PassCode.js'
 import { Timestamp } from 'firebase-admin/firestore'
 
 const valid = {
@@ -14,6 +15,7 @@ describe('VerificationTestOutbox', () => {
   it('読取で Timestamp を millis にし、書込で Timestamp に戻す', () => {
     const app = VerificationTestOutboxAppSchema.parse(valid)
     expect(app.created_at).toBe(1770000000000)
+    expect(app.expires_at).toBe(1770000000000 + PASS_CODE_DURATION)
     expect(VerificationTestOutboxDbSchema.parse(app).created_at.toMillis()).toBe(1770000000000)
   })
 
@@ -22,9 +24,14 @@ describe('VerificationTestOutbox', () => {
     { pass_code: '' },
     { kind: 'unknown' },
     { created_at: undefined },
+    { expires_at: 'invalid' },
     { verification_run_id: 1 },
   ])('壊れた記録を既定値で補わず拒否する: %j', (override) => {
     expect(VerificationTestOutboxAppSchema.safeParse({ ...valid, ...override }).success).toBe(false)
+  })
+
+  it('保存時は有効期限を必須にする', () => {
+    expect(VerificationTestOutboxDbSchema.safeParse(valid).success).toBe(false)
   })
 
   it('既存の run ID なし記録を読み取れる', () => {
