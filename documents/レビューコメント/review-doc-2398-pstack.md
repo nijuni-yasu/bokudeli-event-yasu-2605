@@ -41,7 +41,7 @@
 | [x] | RC-34 | 4178019109 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | SHA が変わっても retry 回数が残る<br>target_sha が変わる record-deploy で retry を初期化する |
 | [x] | RC-35 | 5980936304 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📄 ドキュメントのみ | S | 個人ホーム絶対パスを<メインクローン>の説明とsandbox_reservation.py pathへ置換。 |
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
-| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
+| [x] | RC-37 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow を発火前に存在確認<br>未発火の人による確認と全ページ API 検査で回復<br>run がある場合・API 障害では pending を保持<br>回帰テストで拒否と対象記録だけの回復を確認 |
 
 ---
 
@@ -1266,7 +1266,7 @@ expires_at か取得後削除かは未決
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
-| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
+| [x] | RC-37 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow を発火前に存在確認<br>未発火の人による確認と全ページ API 検査で回復<br>run がある場合・API 障害では pending を保持<br>回帰テストで拒否と対象記録だけの回復を確認 |
 
 #### RC-36
 
@@ -1328,7 +1328,7 @@ expires_at か取得後削除かは未決
 
 | 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
 |:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-| [ ] | RC-37 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow dispatch失敗でもpendingが残る<br>存在しないworkflow等の失敗runはrecord-runで消費できない<br>予約のrelease/switch/reconcileが恒久的に拒否される<br>未発火を安全に確認してpendingを解消する回復経路が必要 |
+| [x] | RC-37 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow を発火前に存在確認<br>未発火の人による確認と全ページ API 検査で回復<br>run がある場合・API 障害では pending を保持<br>回帰テストで拒否と対象記録だけの回復を確認 |
 
 #### RC-37
 
@@ -1359,7 +1359,7 @@ pending が残ると `require_idle()` が予約の release/switch/reconcile を�
 
 **評価**: 🚨 必須修正
 
-**ステータス**: 未着手
+**ステータス**: ✅ 対応済み
 
 **PRスコープ**: 📌 スコープ内
 
@@ -1372,3 +1372,5 @@ pending が残ると `require_idle()` が予約の release/switch/reconcile を�
 **判断理由**: `require_idle()` は pending_dispatches の残存時に予約の解放等を拒否する一方、`run_reserved` は dispatch の非0終了時に pending を保持する。未対応 workflow の 404 は run ID がなく、正常終了した run を前提とする `record_run` では解消できないため、環境が恒久的に利用不能になり得る。
 
 ---
+
+対応: workflow 存在確認に失敗した場合は dispatch 自体を実行せず pending を作らない。存在確認後の dispatch 失敗は pending を保持する。既存の失敗記録には、人の未発火確認とページングした Actions API 検査の両方を必須とする recover-dispatch を追加。run の存在・API 障害・不正応答では回復を拒否する。回帰テストで確認。
