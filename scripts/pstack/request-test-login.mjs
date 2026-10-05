@@ -8,8 +8,8 @@ const runIdx = args.indexOf('--run-id')
 const email = emailIdx >= 0 ? args[emailIdx + 1] : undefined
 const runId = runIdx >= 0 ? args[runIdx + 1] : undefined
 
-if (email == null) {
-  console.error('usage: --email <addr> [--run-id <id>]')
+if (email == null || runId == null || runId === '' || runId.startsWith('--')) {
+  console.error('usage: --email <addr> --run-id <id>')
   process.exit(1)
 }
 
@@ -40,7 +40,7 @@ const res = await fetch(url, {
   body: JSON.stringify({
     data: {
       email,
-      ...(runId != null ? { verification_run_id: runId } : {}),
+      verification_run_id: runId,
     },
   }),
 })
