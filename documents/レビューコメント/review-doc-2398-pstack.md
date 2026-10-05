@@ -1373,4 +1373,4 @@ pending が残ると `require_idle()` が予約の release/switch/reconcile を�
 
 ---
 
-対応: workflow 存在確認に失敗した場合は dispatch 自体を実行せず pending を作らない。存在確認後の dispatch 失敗は pending を保持する。既存の失敗記録には、人の未発火確認とページングした Actions API 検査の両方を必須とする recover-dispatch を追加。run の存在・API 障害・不正応答では回復を拒否する。回帰テストで確認。
+対応: workflow 存在確認に失敗した場合は dispatch 自体を実行せず pending を作らない。environment 必須入力不足の HTTP 422 拒否は未発火として当該 pending だけを取り消し、通信失敗等は保持する。既存の失敗記録には、人の未発火確認とページングした Actions API 検査の両方を必須とする recover-dispatch を追加。run の存在・API 障害・不正応答では回復を拒否する。回帰テストで確認。
