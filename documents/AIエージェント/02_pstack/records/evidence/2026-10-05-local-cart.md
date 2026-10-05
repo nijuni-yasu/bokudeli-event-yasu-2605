@@ -1,0 +1,154 @@
+### Page
+- Page URL: http://localhost:5173/cart
+- Page Title: 食事でつながる「shokujii」
+- Console: 1 errors, 1 warnings
+### Snapshot
+```yaml
+- generic [ref=f12e11]:
+  - generic [ref=f12e12]:
+    - generic [ref=f12e14]:
+      - link [ref=f12e15] [cursor=pointer]:
+        - /url: /
+      - button "イベント開催" [ref=f12e17] [cursor=pointer]
+      - button "チャット" [ref=f12e25] [cursor=pointer]
+      - generic [ref=f12e31]:
+        - link "カート" [ref=f12e32] [cursor=pointer]:
+          - /url: /cart
+        - status "バッジ" [ref=f12e320]: "1"
+      - generic [ref=f12e37] [cursor=pointer]
+    - list [ref=f12e42]:
+      - listitem [ref=f12e43]:
+        - link "イベント参加" [ref=f12e44] [cursor=pointer]:
+          - /url: /
+      - listitem [ref=f12e49]:
+        - link "コミュニティ" [ref=f12e50] [cursor=pointer]:
+          - /url: /communitylist
+      - listitem [ref=f12e55]:
+        - link "マガジン" [ref=f12e56] [cursor=pointer]:
+          - /url: https://note.com/shokujii/m/mc65c92109f2b
+      - listitem [ref=f12e61]:
+        - link "#最新情報" [ref=f12e62] [cursor=pointer]:
+          - /url: https://x.com/search?q=%23shokujii&src=typed_query&f=live
+      - listitem [ref=f12e67]:
+        - link "shokujiiって？" [ref=f12e68] [cursor=pointer]:
+          - /url: https://about.shokujii.jp/
+  - main [ref=f12e73]:
+    - generic [ref=f12e321]:
+      - generic [ref=f12e322]:
+        - generic [ref=f12e323]: 🛒 カート 🛒
+        - generic [ref=f12e324]: 注文を完了してイベント参加をお申し込みください
+      - generic [ref=f12e326]:
+        - table [ref=f12e332]:
+          - rowgroup [ref=f12e333]:
+            - row [ref=f12e334]:
+              - cell "👥 主催者" [ref=f12e335]
+              - cell [ref=f12e336]:
+                - link "pstack検証コミュニティ" [ref=f12e337] [cursor=pointer]:
+                  - /url: /c/pstack-verify
+            - row [ref=f12e338]:
+              - cell "📋 イベント名" [ref=f12e339]
+              - cell [ref=f12e340]:
+                - link "pstackカート検証イベント" [ref=f12e341] [cursor=pointer]:
+                  - /url: /c/pstack-verify/e/pstack-event-cart-001
+            - row [ref=f12e342]:
+              - cell "📅 開催日時" [ref=f12e343]
+              - cell "2026/10/18(日) 22:02 〜 23:02" [ref=f12e344]
+            - row [ref=f12e345]:
+              - cell "📍 開催場所" [ref=f12e346]
+              - cell [ref=f12e347]:
+                - generic [ref=f12e348]:
+                  - text: 東京都千代田区 pstack fixture
+                  - link [ref=f12e349] [cursor=pointer]:
+                    - /url: https://www.google.co.jp/maps/search/%E6%9D%B1%E4%BA%AC%E9%83%BD%E5%8D%83%E4%BB%A3%E7%94%B0%E5%8C%BA%20pstack%20fixture
+            - row [ref=f12e353]:
+              - cell "👩‍🍳 食事の提供" [ref=f12e354]
+              - cell "pstack検証店舗" [ref=f12e355]
+            - row [ref=f12e356]:
+              - cell "💰 支払い方法" [ref=f12e357]
+              - cell "参加者 事前決済 💳" [ref=f12e358]
+            - row [ref=f12e360]:
+              - cell "⏳ 注文期限" [ref=f12e361]
+              - cell "2026/10/11(日) 22:02" [ref=f12e362]
+            - row [ref=f12e363]:
+              - cell "🔙 キャンセル" [ref=f12e364]
+              - cell [ref=f12e365]:
+                - generic [ref=f12e366]:
+                  - text: 注文期限までキャンセル可
+                  - button [ref=f12e367] [cursor=pointer]
+        - generic [ref=f12e372]: 【注文内容】
+        - table [ref=f12e378]:
+          - rowgroup [ref=f12e379]:
+            - row [ref=f12e380]:
+              - columnheader "メニュー" [ref=f12e381]
+              - columnheader "個数" [ref=f12e382]
+              - columnheader "メニュー金額" [ref=f12e383]
+          - rowgroup [ref=f12e384]:
+            - row [ref=f12e385]:
+              - cell "pstack検証弁当" [ref=f12e386]
+              - cell "1" [ref=f12e387]:
+                - generic [ref=f12e388]:
+                  - button [ref=f12e389] [cursor=pointer]
+                  - generic [ref=f12e394]: "1"
+                  - button [ref=f12e395] [cursor=pointer]
+              - cell "¥800" [ref=f12e400]
+        - generic [ref=f12e401]:
+          - generic [ref=f12e402]:
+            - generic [ref=f12e403]: 小計
+            - generic [ref=f12e404]: ¥
+            - generic [ref=f12e405]: "800"
+          - generic [ref=f12e406]:
+            - generic [ref=f12e407]:
+              - text: システム利用料
+              - button "システム利用料の説明を表示" [ref=f12e408] [cursor=pointer]
+            - generic [ref=f12e413]: ¥
+            - generic [ref=f12e414]: "110"
+          - generic [ref=f12e415]:
+            - generic [ref=f12e416]: 合計
+            - generic [ref=f12e417]: ¥
+            - generic [ref=f12e418]: "910"
+        - button "お支払いに進む" [ref=f12e421] [cursor=pointer]
+        - button "メニューを追加する" [ref=f12e425] [cursor=pointer]
+  - contentinfo [ref=f12e264]:
+    - contentinfo [ref=f12e266]:
+      - generic [ref=f12e267]:
+        - paragraph [ref=f12e268]: ＼最新情報はSNSをチェック／
+        - generic [ref=f12e269]:
+          - link [ref=f12e270] [cursor=pointer]:
+            - /url: https://x.com/shokujii_jp
+            - img "X" [ref=f12e271]
+          - link [ref=f12e272] [cursor=pointer]:
+            - /url: https://facebook.com/shokujii
+            - img "Facebook" [ref=f12e273]
+          - link [ref=f12e274] [cursor=pointer]:
+            - /url: https://instagram.com/shokujii_jp
+            - img "Instagram" [ref=f12e275]
+          - link [ref=f12e276] [cursor=pointer]:
+            - /url: https://note.com/shokujii/m/mc65c92109f2b
+            - img "note" [ref=f12e277]
+          - link [ref=f12e278] [cursor=pointer]:
+            - /url: https://lin.ee/0FEi1kbV/
+            - img "LINE" [ref=f12e279]
+      - generic [ref=f12e280]:
+        - link "shokujiiって？" [ref=f12e431] [cursor=pointer]:
+          - /url: https://shokujii.studio.site/
+        - link "飲食店パートナーになる" [ref=f12e432] [cursor=pointer]:
+          - /url: https://shokujii.studio.site/restaurant
+        - link "ヘルプ（使い方動画）" [ref=f12e433] [cursor=pointer]:
+          - /url: https://about.shokujii.jp/howto
+        - link "FAQ" [ref=f12e434] [cursor=pointer]:
+          - /url: https://nijuni.notion.site/shokujii-FAQ-9be74ae1230a41788f0714f302714989
+        - link "コミュニティガイド" [ref=f12e435] [cursor=pointer]:
+          - /url: https://bit.ly/3S3L8Sv
+        - link "利用規約" [ref=f12e436] [cursor=pointer]:
+          - /url: https://terms.shokujii.jp/user
+        - link "プライバシーポリシー" [ref=f12e437] [cursor=pointer]:
+          - /url: https://terms.shokujii.jp/privacy
+        - link "特定商取引法に基づく表記" [ref=f12e438] [cursor=pointer]:
+          - /url: https://terms.shokujii.jp/specified_commercial_transactions
+        - link "お問い合わせ" [ref=f12e439] [cursor=pointer]:
+          - /url: https://forms.gle/z9L88Dq7vDKwbvxMA
+        - link "運営会社" [ref=f12e440] [cursor=pointer]:
+          - /url: https://nijuni.jp/
+      - paragraph [ref=f12e287]: 令和２年度補正ものづくり補助金により作成
+      - paragraph [ref=f12e288]: © 2026 nijuni inc.
+```

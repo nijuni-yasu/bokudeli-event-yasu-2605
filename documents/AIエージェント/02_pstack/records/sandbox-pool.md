@@ -2,7 +2,9 @@
 
 予約の操作正本は Git に入れない次のファイル。worktree からは `git rev-parse --git-common-dir` の親を使う。
 
-`/Users/yasukawanaohiro/Github/bokudeli-event-new/.agents/state/sandbox-reservations.json`
+`<メインクローン>/.agents/state/sandbox-reservations.json`
+
+実パスは `python3 .agents/scripts/sandbox_reservation.py path` で取得する。worktree 内に別台帳を作らない。
 
 コマンドは [`.agents/scripts/sandbox_reservation.py`](../../../../.agents/scripts/sandbox_reservation.py)（`pick` / `reconcile` / `check` / `switch` / `release`）。このファイルは説明用の写しである。
 
