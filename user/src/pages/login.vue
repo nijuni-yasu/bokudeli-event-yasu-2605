@@ -49,11 +49,19 @@ const handleLogin = async (providerId: ProviderIdType | 'custom', emailInput?: s
       if (emailInput == null) {
         throw new Error('Email is required')
       }
+      const runFields = verificationRunIdForRequest(route)
       await requestEmailLogin({
         email: emailInput,
-        ...verificationRunIdForRequest(route),
+        ...runFields,
       })
-      await router.push(getPassCode(emailInput, 'login'))
+      const passCode = getPassCode(emailInput, 'login')
+      await router.push({
+        ...passCode,
+        state: {
+          ...passCode.state,
+          ...(runFields.verification_run_id != null ? { verification_run_id: runFields.verification_run_id } : {}),
+        },
+      })
     } else {
       const credential = await signInByProviderService(providerId)
       // ここに来るのはポップアップ認証（デバッグ用）成功時のみ
