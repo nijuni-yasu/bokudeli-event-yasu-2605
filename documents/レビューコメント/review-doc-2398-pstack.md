@@ -42,8 +42,11 @@
 | [x] | RC-35 | 5980936304 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🔒 セキュリティ | 📄 ドキュメントのみ | S | 個人ホーム絶対パスを<メインクローン>の説明とsandbox_reservation.py pathへ置換。 |
 | [x] | RC-36 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | run ID省略でOTP取得が止まる不整合を修正<br>発行CLIもrun IDを必須に統一<br>不足・空文字・次のオプションを値として渡した場合は送信前に終了<br>CLI回帰テストで外部送信なしの拒否とrun ID引継ぎを確認 |
 | [x] | RC-37 | なし | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | workflow を発火前に存在確認<br>未発火の人による確認と全ページ API 検査で回復<br>run がある場合・API 障害では pending を保持<br>回帰テストで拒否と対象記録だけの回復を確認 |
-| [ ] | RC-38 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | pending中もrecord-deployが対象SHAを更新できる<br>先行deploy runは最新SHAと不一致でrecord-run不能になる<br>pendingが残って予約の解放・再割当が止まる<br>pending単位のSHA照合またはSHA更新拒否が必要 |
-| [ ] | RC-39 | なし | 🚨 必須修正 | 未着手 | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | Actions runのpathに`@refs/heads/<branch>`が含まれる<br>Path.nameがworkflow filenameと一致しない<br>record-runが有効なrunを拒否しpendingを消費できない<br>回復側と同様に@以降を除いて照合する
+| [x] | RC-38 | 4180878579 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | pending中もrecord-deployが対象SHAを更新できる<br>先行deploy runは最新SHAと不一致でrecord-run不能になる<br>pendingが残って予約の解放・再割当が止まる<br>pendingがある間はSHA変更を拒否する |
+| [x] | RC-39 | 4181001820 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | Actions runのpathに`@refs/heads/<branch>`が含まれる<br>Path.nameがworkflow filenameと一致しない<br>record-runが有効なrunを拒否しpendingを消費できない<br>`@`以降を除いてworkflow名を照合する |
+| [x] | RC-40 | 4181001805 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | hotfix/syncブランチでもdevelopment未取込み判定で自動rebaseする<br>hotfixに未リリースdevelopment差分が混入しうる<br>本番向け履歴が汚染される<br>`hotfix/*`・`sync/*`では自動rebaseを適用しない |
+| [x] | RC-41 | 4180878595 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 検証用メールでrun ID省略時もoutboxにnull保存する<br>取得CLIはrun ID必須でOTPを取れない<br>成功応答と取得不能が両立する<br>record_skip_sendかつ検証用メールでは保存前に拒否する |
+| [x] | RC-42 | 5410185348 | 👌 修正不要 | — | — | — | ➖ 該当なし | — | 2026-10-05 05:06 の Copilot overview は目次<br>Open 5件は RC-36〜41 と RC-14 再掲<br>目次自体に未評価の修正要求はない |
 
 ---
 
@@ -1472,5 +1475,203 @@ Path.nameはworkflow名にならずpendingのworkflow値と一致しない。<br
 **想定工数**: S
 
 **判断理由**: 同じスクリプトの `recover_dispatch` は workflow run の `path` から `@` 以降を除いて workflow filename を比較しているが、`record_run` はその正規化をせず `Path(...).name` を比較している。回復テストにも `@refs/heads/...` を含む実際の形式がある一方、record_run のテスト fixture は suffix を含まず、この不一致を検出できない。
+
+---
+
+## 評価セッション（2026-10-05 17:17・review-comments-evaluate）
+
+- **評価日時**: 2026-10-05 17:17 JST
+- **ブランチ名**: doc/2398-pstack
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2399
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 12（レビュー依頼定型文 5988373672 / 5988475727 / 5988595970、Codex 接続案内 5410331151、対応完了返信 4180849160〜4180849821、エージェント作業メモ 5988525884 / 5988638907、その他既評価セッション以前の定型・空 review）
+- **重複除外**: 4180878560 → RC-37、差分なし（対応済み）。4180878579 / 4181001816 → RC-38、差分なし。4180878612 → RC-36、差分なし。4181001820 → RC-39、差分なし。overview 内 4177716198 → RC-14、差分なし
+- **手順 4a 自動修正**: RC-38・RC-39・RC-40・RC-41（🚨 4件）。予約ユニット 21 件、outbox 境界 9 件成功
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-38 | 4180878579 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | pending中もrecord-deployが対象SHAを更新できる<br>先行deploy runは最新SHAと不一致でrecord-run不能になる<br>pendingが残って予約の解放・再割当が止まる<br>pendingがある間はSHA変更を拒否する |
+| [x] | RC-39 | 4181001820 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | Actions runのpathに`@refs/heads/<branch>`が含まれる<br>Path.nameがworkflow filenameと一致しない<br>record-runが有効なrunを拒否しpendingを消費できない<br>`@`以降を除いてworkflow名を照合する |
+| [x] | RC-40 | 4181001805 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 📄 ドキュメントのみ | S | hotfix/syncブランチでもdevelopment未取込み判定で自動rebaseする<br>hotfixに未リリースdevelopment差分が混入しうる<br>本番向け履歴が汚染される<br>`hotfix/*`・`sync/*`では自動rebaseを適用しない |
+| [x] | RC-41 | 4180878595 | 🚨 必須修正 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 検証用メールでrun ID省略時もoutboxにnull保存する<br>取得CLIはrun ID必須でOTPを取れない<br>成功応答と取得不能が両立する<br>record_skip_sendかつ検証用メールでは保存前に拒否する |
+| [x] | RC-42 | 5410185348 | 👌 修正不要 | — | — | — | ➖ 該当なし | — | 2026-10-05 05:06 の Copilot overview は目次<br>Open 5件は RC-36〜41 と RC-14 再掲<br>目次自体に未評価の修正要求はない |
+
+**識別子**: RC-38（GitHub id: 4180878579）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `.agents/scripts/sandbox_reservation.py:545`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++    if reservation.get("target_sha") != sha:
++        reservation["retry"] = {"count": 0, "workflows": []}
++    reservation["target_sha"] = sha
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 前回 SHA の `pending_dispatches` が残ったまま `target_sha` を新しい HEAD に更新できるため、並行レビューで修正コミットが先に入ると、旧 run は `record_run` の SHA 照合に永久に通らなくなります。その結果 pending を消せず、予約の release/switch/reconcile が停止します。SHA 変更時は pending が空になるまで拒否するか、各 pending に対象 SHA を保持して run ごとに照合してください。
+
+**コメント要約**: pending が残っている間も record_deploy が target_sha を上書きできる。<br>先行 Actions run の head_sha が更新後の target_sha と一致せず record_run が拒否される。<br>pending を解消できず予約の解放・再割当が止まる。<br>pending がある間は SHA 変更を拒否する（同一 SHA の再記録は許可）。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Codex 4181001816 と同一。`record_run` は単一 `target_sha` 照合のため、pending 中の SHA 上書きは実害がある。pending 非空かつ SHA 変更時は `pending_blocks_sha` で拒否する最小修正を採用。
+
+---
+
+**識別子**: RC-39（GitHub id: 4181001820）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `.agents/scripts/sandbox_reservation.py:194`
+
+**該当コード（レビュー時点の diff）**: （インライン指摘。`record_run` の workflow 照合行）
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Actions の path から ref を除いて判定する**
+
+[GitHub REST API の応答例](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10)では `path` は `.github/workflows/build.yml@main` の形式で返るため、この形式に標準の `doc/...` のような ref が付くと `Path(...).name` は workflow 名ではなく ref の末尾になります。その結果、ここでは実行中の deploy run を見落として使用中の sandbox を切替・解放でき、同じ未正規化値を比較する `record_run` でも完了 run が pending と一致せず予約を解放できません。`@` より前の workflow path を取り出してから basename を比較してください。
+
+**コメント要約**: Actions run の path に `@refs/heads/<branch>` が付く場合がある。<br>`Path(...).name` が workflow ファイル名と一致しない。<br>完了 run でも record_run が pending と一致せず解放できない。<br>`recover_dispatch` と同様に `@` より前を basename 化して照合する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: Copilot 4180878579 と同趣旨。`_workflow_basename_from_actions_path` を共通化し `record_run` と `recover_dispatch` で使用。`@refs/heads/...` 付き path の回帰テストを追加。
+
+---
+
+**識別子**: RC-40（GitHub id: 4181001805）
+
+**レビュワー**: Codex
+
+**指摘箇所**: `.agents/skills/git-commit-workflow/SKILL.md:32`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++   - `git merge-base --is-ancestor origin/development HEAD` が 1（未取り込み）なら rebase する。0 は取込済み、その他の終了コードは検査失敗として停止する
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  hotfix を development へ rebase しない**
+
+`hotfix/*` は `origin/main` を基点にするため、通常は `origin/development` が祖先ではなく、この条件でコミット依頼のたびに development 上へ自動 rebase されます。そのまま hotfix を取り込むと未リリースの development 差分まで本番向け履歴に混入するため、`hotfix/*`・`sync/*` などでは用途に応じた基点を選ぶか、この rebase を適用対象外にしてください。
+
+**コメント要約**: git-commit-workflow が hotfix でも development 未取込みなら自動 rebase する。<br>hotfix は main 基点のため development 差分が履歴に混入しうる。<br>本番向け hotfix の意図と矛盾する。<br>`hotfix/*`・`sync/*` では自動 rebase をスキップする旨を手順 0 に明記する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 📏 規約
+
+**変更種別**: 📄 ドキュメントのみ
+
+**想定工数**: S
+
+**判断理由**: AGENTS.md の hotfix / sync 運用と整合。feat/fix 等の通常作業ブランチのみ development 取込 rebase を継続。
+
+---
+
+**識別子**: RC-41（GitHub id: 4180878595）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `functions/default/src/utils/verificationTestOutbox.ts:45`
+
+**該当コード（レビュー時点の diff）**:
+
+```diff
++  if (mode === 'record_skip_send' && isTestEmail) {
++    await saveVerificationTestOutboxRecord({
++      email: params.email.trim().toLowerCase(),
++      pass_code: params.passCode,
++      verification_run_id: params.verificationRunId,
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 検証用メールで run ID が省略された場合も新規 outbox レコードを `null` で保存しています。取得 CLI は `--run-id` 必須でその ID を条件に検索するため、このリクエストは成功応答になる一方で OTP を取得できません。また、PR の「新規保存では run ID 必須、null は旧記録の読み取り互換のみ」という契約にも反します。記録モードかつ検証用メールでは空の run ID を保存前に拒否し、DbSchema/保存入力は非 nullable、AppSchema の旧記録読み取りだけ nullable にしてください。
+
+**コメント要約**: Callable 経路で run ID 省略時に outboxへ null 保存する。<br>取得 CLI は run ID 必須のため OTP を取り出せない。<br>RC-36 の CLI 修正だけでは UI ログイン経路が残る。<br>record_skip_send かつ検証用メールでは空 run ID を保存前に拒否する。
+
+**評価**: 🚨 必須修正
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: RC-36 は `request-test-login.mjs` 限定。AppSchema の旧記録 null 互換は維持し、新規保存入力のみ非空を強制。DbSchema の nullable は読取互換のため変更最小。
+
+---
+
+**識別子**: RC-42（GitHub id: 5410185348）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `PR レビュー本文（Copilot review overview）`
+
+**該当コード（レビュー時点の diff）**: （インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+## Copilot review overview
+
+### 🟡 Changes recommended
+
+検証用OTPのrun ID必須化とsandbox予約のpending管理に、取得不能・予約解放不能を招く未解決不具合があります。
+
+（Open 5 件の `#discussion_r...` リンク一覧。本文は PR review id 5410185348）
+
+**コメント要約**: 2026-10-05 05:06 の overview は Open 5 件の目次。<br>各リンクは RC-36〜41 および解消済み RC-14 の再掲。<br>目次自体に独立した修正要求はない。<br>実体は本セッションで RC-38〜41 として評価・対応済み。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: ➖ 該当なし
+
+**想定工数**: —
+
+**判断理由**: RC-23 と同様。リンク先はすべて既存 RC または本セッション新規 RC に割当済み。
 
 ---
