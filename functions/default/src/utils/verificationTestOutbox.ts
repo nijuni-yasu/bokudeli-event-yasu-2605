@@ -39,10 +39,14 @@ export const deliverUserPassCodeForLogin = async (params: {
   const isTestEmail = isVerificationTestEmail(params.email)
 
   if (mode === 'record_skip_send' && isTestEmail) {
+    const runId = params.verificationRunId?.trim()
+    if (runId == null || runId === '') {
+      throw new Error('verification run id is required for verification test email in record_skip_send mode')
+    }
     await saveVerificationTestOutboxRecord({
       email: params.email.trim().toLowerCase(),
       pass_code: params.passCode,
-      verification_run_id: params.verificationRunId,
+      verification_run_id: runId,
     })
     return
   }

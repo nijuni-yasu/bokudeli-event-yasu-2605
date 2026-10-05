@@ -44,6 +44,21 @@ describe('verificationTestOutbox', () => {
     expect(send).not.toHaveBeenCalled()
   })
 
+  it('record_skip_send かつテスト宛先で run ID が無いときは保存しない', async () => {
+    modeValue.current = 'record_skip_send'
+    const send = vi.fn()
+    await expect(
+      deliverUserPassCodeForLogin({
+        email: 'pstack@verify.shokujii.test',
+        passCode: '123456',
+        verificationRunId: null,
+        sendViaSendGrid: send,
+      }),
+    ).rejects.toThrow(/verification run id is required/)
+    expect(saveVerificationTestOutboxRecord).not.toHaveBeenCalled()
+    expect(send).not.toHaveBeenCalled()
+  })
+
   it('off のときは SendGrid を呼ぶ', async () => {
     const send = vi.fn().mockResolvedValue(undefined)
     await deliverUserPassCodeForLogin({

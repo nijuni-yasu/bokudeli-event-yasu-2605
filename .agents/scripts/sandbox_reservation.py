@@ -28,6 +28,11 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def _workflow_basename_from_actions_path(path: str) -> str:
+    """Actions run の path は `.github/workflows/foo.yml@refs/heads/...` 形式になり得る。"""
+    return Path(path.split("@", 1)[0]).name
+
+
 def resolve_main_clone_root(cwd: Path | None = None) -> Path:
     work = cwd or Path.cwd()
     result = subprocess.run(
@@ -540,6 +545,12 @@ def record_deploy(
     if not checked["ok"]:
         return checked
     reservation = _env(ledger, env_id)["reservation"]
+    pending = reservation.get("pending_dispatches") or []
+    if pending and reservation.get("target_sha") != sha:
+        return _err(
+            "pending_blocks_sha",
+            "pending が残る間は target_sha を変更できない。run 完了または recover-dispatch で解消する",
+        )
     if reservation.get("target_sha") != sha:
         reservation["retry"] = {"count": 0, "workflows": []}
     reservation["target_sha"] = sha
@@ -564,7 +575,11 @@ def record_run(ledger: dict[str, Any], *, env_id: str, reservation_id: str, gene
         if run["status"] != "completed" or run["head_sha"] != reservation.get("target_sha") or run["head_branch"] != reservation["branch"]:
             return _err("run_mismatch", "対象 SHA・ブランチの終了済み run ではない")
         pending = reservation.get("pending_dispatches", [])
-        index = next((i for i, item in enumerate(pending) if item["workflow"] == Path(run["path"]).name and run["created_at"] >= item["since"]), None)
+        workflow_name = _workflow_basename_from_actions_path(run["path"])
+        index = next(
+            (i for i, item in enumerate(pending) if item["workflow"] == workflow_name and run["created_at"] >= item["since"]),
+            None,
+        )
     except (json.JSONDecodeError, KeyError, TypeError):
         return _err("run_unavailable", "run 応答を検証できない")
     if index is None:
@@ -608,7 +623,7 @@ def recover_dispatch(
             if not isinstance(runs, list):
                 raise ValueError("runs missing")
             # SHA を限定しない。終了済み run も record-run で処理する。
-            if any(Path(run["path"].split("@", 1)[0]).name == workflow for run in runs):
+            if any(_workflow_basename_from_actions_path(run["path"]) == workflow for run in runs):
                 return _err("run_exists", "該当 run があるため record-run で終了確認する")
     except (json.JSONDecodeError, KeyError, TypeError, AttributeError, ValueError):
         return _err("runs_unavailable", "Actions 応答を検証できない。予約は保持する")

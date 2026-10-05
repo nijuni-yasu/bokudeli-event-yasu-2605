@@ -116,6 +116,49 @@ class SandboxReservationTest(unittest.TestCase):
                     self.assertEqual(result["error"], "destination_mismatch")
                 run.assert_not_called()
 
+    def test_record_run_matches_workflow_path_with_ref_suffix(self) -> None:
+        ledger = sample_ledger()
+        reservation = ledger["environments"]["sandbox2603"]["reservation"]
+        reservation["target_sha"] = "abc123"
+        reservation["pending_dispatches"] = [{"workflow": "deploy_user.yml", "since": "2026-10-04T00:00:00Z"}]
+        run = {
+            "status": "completed",
+            "head_sha": "abc123",
+            "head_branch": "doc/2398-pstack",
+            "path": ".github/workflows/deploy_user.yml@refs/heads/doc/2398-pstack",
+            "created_at": "2026-10-04T00:00:01Z",
+        }
+        from subprocess import CompletedProcess
+
+        with patch.object(res.subprocess, "run") as api:
+            api.return_value = CompletedProcess([], 0, json.dumps(run), "")
+            self.assertTrue(
+                res.record_run(
+                    ledger,
+                    env_id="sandbox2603",
+                    reservation_id=reservation["id"],
+                    generation=1,
+                    run_id=123,
+                )["ok"],
+            )
+            self.assertEqual(reservation["pending_dispatches"], [])
+
+    def test_record_deploy_rejects_sha_change_while_pending(self) -> None:
+        ledger = sample_ledger()
+        reservation = ledger["environments"]["sandbox2603"]["reservation"]
+        reservation["target_sha"] = "abc123"
+        reservation["pending_dispatches"] = [{"workflow": "deploy_user.yml", "since": "2026-10-04T00:00:00Z"}]
+        blocked = res.record_deploy(
+            ledger,
+            env_id="sandbox2603",
+            reservation_id=reservation["id"],
+            generation=1,
+            sha="def456",
+        )
+        self.assertFalse(blocked["ok"])
+        self.assertEqual(blocked["error"], "pending_blocks_sha")
+        self.assertEqual(reservation["target_sha"], "abc123")
+
     def test_dispatch_is_pending_until_matching_run_completes(self) -> None:
         ledger = sample_ledger()
         reservation = ledger["environments"]["sandbox2603"]["reservation"]

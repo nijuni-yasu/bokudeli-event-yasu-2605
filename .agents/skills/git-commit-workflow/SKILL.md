@@ -29,7 +29,8 @@ description: 未コミット変更を分析し fixup / squash / 分割 / 新規 
    - `git fetch origin development` する
    - `origin/development` の SHA と確認時刻を控える
    - `git worktree list` で同じブランチが別 worktree にあれば止める
-   - `git merge-base --is-ancestor origin/development HEAD` が 1（未取り込み）なら rebase する。0 は取込済み、その他の終了コードは検査失敗として停止する
+   - 現在ブランチが `hotfix/*` または `sync/*` のときは、`origin/development` への自動 rebase は行わない（hotfix は `origin/main` 基点、sync は同期用途のため development 差分を混入させない）
+   - 上記以外で `git merge-base --is-ancestor origin/development HEAD` が 1（未取り込み）なら rebase する。0 は取込済み、その他の終了コードは検査失敗として停止する
    - 未コミット差分があるときは `git stash push -u` で退避する。`--all` は使わず、gitignored の `.env` は含めない。rebase 後に戻す。競合したら意図を読んで解消し、仕様判断が必要なら止めて stash は残す
    - 複数 Issue のコミットは rebase で 1 つにまとめない
    - 未知の remote 専用コミットがある diverge では無条件 force しない（[`git-reflect-after-commit`](../git-reflect-after-commit/SKILL.md) の既存判定）
