@@ -279,6 +279,65 @@ class SandboxReservationTest(unittest.TestCase):
 
 
 
+class DispatchRecoveryTest(unittest.TestCase):
+    def test_preflight_failure_does_not_dispatch_or_add_pending(self) -> None:
+        from subprocess import CompletedProcess
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            ledger = sample_ledger()
+            ledger["environments"]["sandbox2603"]["reservation"]["target_sha"] = "abc123"
+            res._save_ledger(path, ledger)
+            command = ["gh", "workflow", "run", "missing.yml", "--repo", "nijuni-yasu/bokudeli-event-yasu-2603-2", "--ref", "doc/2398-pstack"]
+            with patch.object(res.subprocess, "run", return_value=CompletedProcess([], 1, "", "404")) as api:
+                result = res.run_reserved(path, env_id="sandbox2603", reservation_id="pstack-res-20261004-002", generation=1, command=command)
+                self.assertEqual(result["error"], "workflow_unavailable")
+                api.assert_called_once()
+            self.assertFalse(res._load_ledger(path)["environments"]["sandbox2603"]["reservation"].get("pending_dispatches"))
+
+    def test_ambiguous_dispatch_failure_keeps_pending(self) -> None:
+        from subprocess import CompletedProcess
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "ledger.json"
+            ledger = sample_ledger()
+            ledger["environments"]["sandbox2603"]["reservation"]["target_sha"] = "abc123"
+            res._save_ledger(path, ledger)
+            command = ["gh", "workflow", "run", "deploy_user.yml", "--repo", "nijuni-yasu/bokudeli-event-yasu-2603-2", "--ref", "doc/2398-pstack"]
+            with patch.object(res.subprocess, "run", side_effect=[CompletedProcess([], 0, "{}", ""), CompletedProcess([], 1)]) as api:
+                result = res.run_reserved(path, env_id="sandbox2603", reservation_id="pstack-res-20261004-002", generation=1, command=command)
+                self.assertEqual(result["error"], "command_failed")
+                self.assertEqual(api.call_count, 2)
+            self.assertEqual(len(res._load_ledger(path)["environments"]["sandbox2603"]["reservation"]["pending_dispatches"]), 1)
+
+    def test_recovery_requires_confirmation_and_verified_absence(self) -> None:
+        from subprocess import CompletedProcess
+        cases = [
+            (False, CompletedProcess([], 0, '[{"workflow_runs":[]}]'), "confirmation_required"),
+            (True, CompletedProcess([], 1, ""), "runs_unavailable"),
+            (True, CompletedProcess([], 0, '[]'), "runs_unavailable"),
+            (True, CompletedProcess([], 0, '[{"workflow_runs":null}]'), "runs_unavailable"),
+            (True, CompletedProcess([], 0, '[{"workflow_runs":[]},{"workflow_runs":[{"path":".github/workflows/deploy_user.yml@refs/heads/doc/2398-pstack","status":"completed","head_sha":"other"}]}]'), "run_exists"),
+            (True, CompletedProcess([], 0, '[{"workflow_runs":[]}]'), None),
+        ]
+        for confirmed, response, error in cases:
+            with self.subTest(error=error, confirmed=confirmed):
+                ledger = sample_ledger()
+                reservation = ledger["environments"]["sandbox2603"]["reservation"]
+                reservation["pending_dispatches"] = [
+                    {"workflow": "deploy_user.yml", "since": "2026-10-04T00:00:00Z"},
+                    {"workflow": "deploy_partner.yml", "since": "2026-10-04T00:00:00Z"},
+                ]
+                with patch.object(res.subprocess, "run", return_value=response) as api:
+                    result = res.recover_dispatch(ledger, env_id="sandbox2603", reservation_id=reservation["id"], generation=1,
+                        workflow="deploy_user.yml", since="2026-10-04T00:00:00Z", confirmed_not_started=confirmed)
+                    self.assertEqual(result.get("error"), error)
+                    if not confirmed:
+                        api.assert_not_called()
+                    else:
+                        self.assertIn("--paginate", api.call_args.args[0])
+                self.assertEqual(len(reservation["pending_dispatches"]), 2 if error else 1)
+                self.assertEqual(reservation["pending_dispatches"][-1]["workflow"], "deploy_partner.yml")
+
+
 class IdleCheckTest(unittest.TestCase):
     def test_pending_dispatch_blocks_before_actions_registration(self) -> None:
         env = sample_ledger()["environments"]["sandbox2603"]

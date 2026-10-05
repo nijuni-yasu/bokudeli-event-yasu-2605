@@ -227,6 +227,13 @@ def run_reserved(path: Path, *, env_id: str, reservation_id: str, generation: in
         if len(command) >= 4 and Path(command[0]).name == "gh" and command[1:3] == ["workflow", "run"]:
             if not reservation.get("target_sha"):
                 return _err("no_target_sha", "dispatch 前に record-deploy で対象 SHA を記録する")
+            # workflow が無い/API が不通なら、副作用のある dispatch 自体を試さない。
+            available = subprocess.run(
+                ["gh", "api", f"repos/{env['github_repo']}/actions/workflows/{command[3]}"],
+                capture_output=True, text=True, check=False,
+            )
+            if available.returncode != 0:
+                return _err("workflow_unavailable", "workflow を確認できないため未発火。pending は追加しない")
             reservation.setdefault("pending_dispatches", []).append({"workflow": command[3], "since": utc_now()})
             _save_ledger(path, ledger)
         result = subprocess.run(command, check=False)
@@ -553,6 +560,49 @@ def record_run(ledger: dict[str, Any], *, env_id: str, reservation_id: str, gene
     return _ok({"env_id": env_id, "run_id": run_id})
 
 
+
+def recover_dispatch(
+    ledger: dict[str, Any], *, env_id: str, reservation_id: str, generation: int,
+    workflow: str, since: str, confirmed_not_started: bool,
+) -> dict[str, Any]:
+    """人が未発火を確認した記録だけを回復する。API の空一覧だけでは解放しない。"""
+    checked = check(ledger, env_id=env_id, reservation_id=reservation_id, generation=generation)
+    if not checked["ok"]:
+        return checked
+    if not confirmed_not_started:
+        return _err("confirmation_required", "未発火の人による確認が必要。予約は保持する")
+    env = _env(ledger, env_id)
+    reservation = env["reservation"]
+    pending = reservation.get("pending_dispatches", [])
+    matches = [i for i, item in enumerate(pending) if item["workflow"] == workflow and item["since"] == since]
+    if len(matches) != 1:
+        return _err("dispatch_mismatch", "回復対象を一意に特定できない")
+    result = subprocess.run(
+        ["gh", "api", "--paginate", "--slurp", "--method", "GET",
+         f"repos/{env['github_repo']}/actions/runs", "-f", f"branch={reservation['branch']}",
+         "-f", "event=workflow_dispatch", "-f", f"created=>={since}", "-f", "per_page=100"],
+        capture_output=True, text=True, check=False,
+    )
+    if result.returncode != 0:
+        return _err("runs_unavailable", "発火有無を確認できない。予約は保持する")
+    try:
+        pages = json.loads(result.stdout)
+        if not isinstance(pages, list) or not pages:
+            raise ValueError("pages missing")
+        for page in pages:
+            runs = page["workflow_runs"]
+            if not isinstance(runs, list):
+                raise ValueError("runs missing")
+            # SHA を限定しない。終了済み run も record-run で処理する。
+            if any(Path(run["path"].split("@", 1)[0]).name == workflow for run in runs):
+                return _err("run_exists", "該当 run があるため record-run で終了確認する")
+    except (json.JSONDecodeError, KeyError, TypeError, AttributeError, ValueError):
+        return _err("runs_unavailable", "Actions 応答を検証できない。予約は保持する")
+    pending.pop(matches[0])
+    reservation["updated_at"] = utc_now()
+    return _ok({"env_id": env_id, "workflow": workflow, "since": since})
+
+
 def record_fixture(
     ledger: dict[str, Any],
     *,
@@ -669,6 +719,14 @@ def main() -> int:
     run_record_p.add_argument("--reservation-id", required=True)
     run_record_p.add_argument("--generation", type=int, required=True)
     run_record_p.add_argument("--run-id", type=int, required=True)
+
+    recovery_p = sub.add_parser("recover-dispatch", help="Recover a dispatch only after human confirmation of no start")
+    recovery_p.add_argument("--env", required=True)
+    recovery_p.add_argument("--reservation-id", required=True)
+    recovery_p.add_argument("--generation", type=int, required=True)
+    recovery_p.add_argument("--workflow", required=True)
+    recovery_p.add_argument("--since", required=True)
+    recovery_p.add_argument("--confirmed-not-started", action="store_true")
 
     fixture_p = sub.add_parser("record-fixture", help="Store fixture restore result")
     fixture_p.add_argument("--env", required=True)
@@ -791,6 +849,11 @@ def main() -> int:
     if args.command == "record-run":
         return _print(update_ledger(ledger_path, lambda ledger: record_run(ledger, env_id=args.env,
             reservation_id=args.reservation_id, generation=args.generation, run_id=args.run_id)))
+
+    if args.command == "recover-dispatch":
+        return _print(update_ledger(ledger_path, lambda ledger: recover_dispatch(
+            ledger, env_id=args.env, reservation_id=args.reservation_id, generation=args.generation,
+            workflow=args.workflow, since=args.since, confirmed_not_started=args.confirmed_not_started)))
 
     if args.command == "record-fixture":
         return _print(
