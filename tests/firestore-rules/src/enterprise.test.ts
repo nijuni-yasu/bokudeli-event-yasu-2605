@@ -327,7 +327,11 @@ describe('enterprise firestore rules', () => {
     await assertFails(
       member.firestore().collection('verification_test_outbox').doc('run-1').set({ pass_code: '999999' }),
     )
-    await assertFails(testEnv.unauthenticatedContext().firestore().collection('verification_test_outbox').doc('run-1').get())
+    const unauthenticated = testEnv.unauthenticatedContext()
+    await assertFails(unauthenticated.firestore().collection('verification_test_outbox').doc('run-1').get())
+    await assertFails(
+      unauthenticated.firestore().collection('verification_test_outbox').doc('run-1').set({ pass_code: '999999' }),
+    )
   })
 
   it('PF 既存データ（enterprise_id なし）の events read は許可', async () => {
