@@ -5,6 +5,7 @@ import {
   Timestamp,
   type DocumentData,
 } from 'firebase-admin/firestore'
+import { PASS_CODE_DURATION } from '@shokujii/common/schemas/PassCode.js'
 import {
   VerificationTestOutboxDbSchema,
   VerificationTestOutboxAppSchema,
@@ -19,6 +20,7 @@ const converter: FirestoreDataConverter<VerificationTestOutboxRecord> = {
       kind: record.kind,
       verification_run_id: record.verification_run_id,
       created_at: record.created_at,
+      expires_at: record.expires_at,
     })
   },
   fromFirestore(snapshot: QueryDocumentSnapshot): VerificationTestOutboxRecord {
@@ -36,6 +38,8 @@ export const saveVerificationTestOutboxRecord = async (input: {
   pass_code: string
   verification_run_id: string | null
 }): Promise<void> => {
+  await deleteExpiredVerificationTestOutboxRecords()
+  const createdAt = Timestamp.now().toMillis()
   const ref = collection().doc()
   await ref.set({
     id: ref.id,
@@ -43,8 +47,22 @@ export const saveVerificationTestOutboxRecord = async (input: {
     pass_code: input.pass_code,
     kind: 'user_pass_code',
     verification_run_id: input.verification_run_id,
-    created_at: Timestamp.now().toMillis(),
+    created_at: createdAt,
+    expires_at: createdAt + PASS_CODE_DURATION,
   })
+}
+
+/** 検証時に古い OTP を片付ける。既存の expires_at 未保存記録も対象にする。 */
+export const deleteExpiredVerificationTestOutboxRecords = async (): Promise<number> => {
+  const expired = await collection()
+    .where('created_at', '<=', Timestamp.fromMillis(Timestamp.now().toMillis() - PASS_CODE_DURATION))
+    .limit(100)
+    .get()
+  if (expired.empty) return 0
+  const batch = getFirestore().batch()
+  for (const doc of expired.docs) batch.delete(doc.ref)
+  await batch.commit()
+  return expired.size
 }
 
 export const getLatestVerificationTestPassCode = async (
@@ -61,5 +79,5 @@ export const getLatestVerificationTestPassCode = async (
   }
   const snapshot = await query.get()
   const doc = snapshot.docs[0]?.data()
-  return doc?.pass_code
+  return doc != null && doc.expires_at > Timestamp.now().toMillis() ? doc.pass_code : undefined
 }
