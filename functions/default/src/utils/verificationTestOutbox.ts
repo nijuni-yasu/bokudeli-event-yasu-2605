@@ -1,10 +1,5 @@
-import { defineString } from 'firebase-functions/params'
 import type { VerificationTestOutboxMode } from '@shokujii/common/apis/verificationTest.js'
 import { saveVerificationTestOutboxRecord } from '../stores/verificationTestOutbox.js'
-
-const VERIFICATION_TEST_OUTBOX_MODE = defineString('VERIFICATION_TEST_OUTBOX_MODE', {
-  default: 'off',
-})
 
 /** 通常検証用。本番では off のまま。 */
 const ALLOWED_EMAIL_SUFFIX = '@verify.shokujii.test'
@@ -16,8 +11,10 @@ const VERIFICATION_PROJECTS = new Set([
   'bokudeli-event-yasu-2608',
 ])
 
+// defineString の default は非対話の firebase deploy では使われない。
+// .env（CI の FUNCTIONS_ENV）にキーが無いとデプロイが失敗するため、process.env を読む。
 export const getVerificationTestOutboxMode = (): VerificationTestOutboxMode => {
-  const raw = VERIFICATION_TEST_OUTBOX_MODE.value()
+  const raw = process.env.VERIFICATION_TEST_OUTBOX_MODE
   if (raw === 'record_skip_send' && VERIFICATION_PROJECTS.has(process.env.GCLOUD_PROJECT ?? '')) {
     return 'record_skip_send'
   }

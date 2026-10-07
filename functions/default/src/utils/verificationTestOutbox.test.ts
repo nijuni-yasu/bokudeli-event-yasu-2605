@@ -1,12 +1,5 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-
-const modeValue = vi.hoisted(() => ({ current: 'off' as string }))
-
-vi.mock('firebase-functions/params', () => ({
-  defineString: () => ({
-    value: () => modeValue.current,
-  }),
-}))
 
 vi.mock('../stores/verificationTestOutbox.js', () => ({
   saveVerificationTestOutboxRecord: vi.fn(),
@@ -19,11 +12,31 @@ import {
 } from './verificationTestOutbox.js'
 import { saveVerificationTestOutboxRecord } from '../stores/verificationTestOutbox.js'
 
+const setMode = (mode: string | undefined) => {
+  if (mode === undefined) {
+    delete process.env.VERIFICATION_TEST_OUTBOX_MODE
+    return
+  }
+  vi.stubEnv('VERIFICATION_TEST_OUTBOX_MODE', mode)
+}
+
 describe('verificationTestOutbox', () => {
   beforeEach(() => {
     vi.stubEnv('GCLOUD_PROJECT', 'bokudeli-event-yasu-2603')
-    modeValue.current = 'off'
+    setMode('off')
     vi.mocked(saveVerificationTestOutboxRecord).mockReset()
+  })
+
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('Firebase params として宣言しない', () => {
+    const source = readFileSync(new URL('./verificationTestOutbox.ts', import.meta.url), 'utf8')
+    expect(source).not.toMatch(/defineString\s*\(/)
+  })
+
+  it('未設定は off', () => {
+    setMode(undefined)
+    expect(getVerificationTestOutboxMode()).toBe('off')
   })
 
   it('isVerificationTestEmail は verify.shokujii.test のみ true', () => {
@@ -32,7 +45,7 @@ describe('verificationTestOutbox', () => {
   })
 
   it('record_skip_send かつテスト宛先では SendGrid を呼ばず受け口に保存する', async () => {
-    modeValue.current = 'record_skip_send'
+    setMode('record_skip_send')
     const send = vi.fn()
     await deliverUserPassCodeForLogin({
       email: 'pstack@verify.shokujii.test',
@@ -45,7 +58,7 @@ describe('verificationTestOutbox', () => {
   })
 
   it('record_skip_send かつテスト宛先で run ID が無いときは保存しない', async () => {
-    modeValue.current = 'record_skip_send'
+    setMode('record_skip_send')
     const send = vi.fn()
     await expect(
       deliverUserPassCodeForLogin({
@@ -71,19 +84,17 @@ describe('verificationTestOutbox', () => {
     expect(saveVerificationTestOutboxRecord).not.toHaveBeenCalled()
   })
 
-  afterEach(() => vi.unstubAllEnvs())
-
   it.each(['bokudeli-event-new', 'unknown', 'bokudeli-event-yasu-9999', ''])(
     '未許可プロジェクト %s は有効設定でも off',
     (project) => {
       vi.stubEnv('GCLOUD_PROJECT', project)
-      modeValue.current = 'record_skip_send'
+      setMode('record_skip_send')
       expect(getVerificationTestOutboxMode()).toBe('off')
     },
   )
 
   it('通常宛先にはテスト環境でも通常配送する', async () => {
-    modeValue.current = 'record_skip_send'
+    setMode('record_skip_send')
     const send = vi.fn()
     await deliverUserPassCodeForLogin({
       email: 'user@example.com',
