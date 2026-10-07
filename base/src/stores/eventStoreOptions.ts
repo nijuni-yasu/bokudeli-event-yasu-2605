@@ -10,6 +10,11 @@ export type EventStoreOptions = {
   skipOrdersEnterpriseFilter?: boolean
   /** 下書き保存前の event 補正（enterprise subsidy スナップショット等） */
   draftPreparer?: EventDraftPreparer
+  /**
+   * true のとき、store 生成時には Firestore 購読を始めない。
+   * 一覧が取得済みの event を渡すときに使う。詳細を開いた側が ensureSubscribed する。
+   */
+  deferLiveSubscription?: boolean
 }
 
 export const buildEventStoreOptions = (enterpriseId: string | null | undefined): EventStoreOptions => {

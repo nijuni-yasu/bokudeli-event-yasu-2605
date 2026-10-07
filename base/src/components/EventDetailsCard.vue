@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCommunityPath, getLogin } from '@/router/utils'
 import { getEventUrl } from '@shokujii/common/utils/urls.js'
@@ -98,48 +98,21 @@ const twitterHashTagSearchUrl = computed(() => {
 // TODO コンポーネントを分割する
 const eventStore = useAppEventStore(props.event)
 
-/** メニュー購読より後に、人数が多いときの users 購読を始める。メニューが来ないときも待ち続けない */
-const MEMBER_PREVIEW_FALLBACK_MS = 2000
+/** メニュー購読より後に、人数が多いときの users 購読を始める。メニューが来ないうちは人数分の購読を足さない */
 const allowMemberListeners = ref(false)
-let memberPreviewFallbackTimer: ReturnType<typeof setTimeout> | undefined
-
-const clearMemberPreviewFallback = () => {
-  if (memberPreviewFallbackTimer != null) {
-    clearTimeout(memberPreviewFallbackTimer)
-    memberPreviewFallbackTimer = undefined
-  }
-}
 
 const participantCount = computed(() => props.event.members.length)
-
-const enableMemberListeners = () => {
-  allowMemberListeners.value = true
-  clearMemberPreviewFallback()
-}
 
 watch(
   [() => eventStore.menus, participantCount],
   ([menus, count]) => {
-    // 少人数は従来どおりすぐ購読する。多人数はメニュー購読のあと（または待っても来ないとき）に限る
+    // 少人数は従来どおりすぐ購読する。多人数はメニューが届いてからに限る
     if (menus != null || count <= EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
-      enableMemberListeners()
+      allowMemberListeners.value = true
     }
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  if (allowMemberListeners.value) {
-    return
-  }
-  memberPreviewFallbackTimer = setTimeout(() => {
-    enableMemberListeners()
-  }, MEMBER_PREVIEW_FALLBACK_MS)
-})
-
-onUnmounted(() => {
-  clearMemberPreviewFallback()
-})
 
 const members = computed(() => {
   if (!allowMemberListeners.value) {

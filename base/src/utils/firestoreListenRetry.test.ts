@@ -73,4 +73,50 @@ describe('createFirestoreListenRetry', () => {
 
     expect(listen).toHaveBeenCalledTimes(1)
   })
+
+  it('スナップショットが来ない購読は無応答の待ち時間後に張り直す', () => {
+    vi.useFakeTimers()
+    const unsubscribe = vi.fn()
+    const listen = vi.fn(() => unsubscribe)
+
+    const retry = createFirestoreListenRetry(listen, { silenceTimeoutMs: 8000, baseDelayMs: 1000 })
+    retry.ensure()
+    expect(listen).toHaveBeenCalledTimes(1)
+
+    vi.advanceTimersByTime(7999)
+    expect(listen).toHaveBeenCalledTimes(1)
+    expect(unsubscribe).not.toHaveBeenCalled()
+
+    vi.advanceTimersByTime(1)
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
+    expect(listen).toHaveBeenCalledTimes(2)
+  })
+
+  it('無応答で張り直したあとの古いエラーは新しい購読を外さない', () => {
+    vi.useFakeTimers()
+    const handlers: Array<{ onError: (err: unknown) => void }> = []
+    const listen = vi.fn((handlersForListen: { onError: (err: unknown) => void }) => {
+      handlers.push(handlersForListen)
+      return vi.fn()
+    })
+
+    const retry = createFirestoreListenRetry(listen, { silenceTimeoutMs: 8000, baseDelayMs: 1000 })
+    retry.ensure()
+    vi.advanceTimersByTime(8000)
+    expect(listen).toHaveBeenCalledTimes(2)
+
+    handlers[0]?.onError(new FirebaseError('cancelled', 'cancelled'))
+    vi.advanceTimersByTime(10_000)
+    expect(listen).toHaveBeenCalledTimes(2)
+  })
+
+  it('スナップショットを受け取ったら無応答では張り直さない', () => {
+    vi.useFakeTimers()
+    const listen = vi.fn(() => vi.fn())
+    const retry = createFirestoreListenRetry(listen, { silenceTimeoutMs: 8000, baseDelayMs: 1000 })
+    retry.ensure()
+    retry.markHealthy()
+    vi.advanceTimersByTime(40_000)
+    expect(listen).toHaveBeenCalledTimes(1)
+  })
 })

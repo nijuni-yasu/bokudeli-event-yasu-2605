@@ -57,6 +57,9 @@ const TINYMCE_MAX_IMAGE_SIZE = 600
 /** イベント詳細で同時に users/{uid} を購読する人数。全員分張るとメニュー・バナー購読が失敗しやすい。 */
 export const EVENT_DETAIL_MEMBER_PREVIEW_LIMIT = 12
 
+/** メニューの onSnapshot がスナップショットもエラーも返さないとき、この時間で張り直す。 */
+const MENU_LISTEN_SILENCE_MS = 8000
+
 /** 詳細カードの並びと同じ。注文 updated_at の最大。注文が無い参加者は 0。 */
 export const latestOrderUpdatedAt = (orders: readonly { updated_at: number }[]): number => {
   return orders.reduce((max, order) => Math.max(max, order.updated_at), 0)
@@ -370,7 +373,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     }
 
     /** プレビュー専用。useUserStore は共有なので外すと他画面の購読も切れる */
-    const previewUserUnsubscribes = new Map<string, Unsubscribe>()
+    const previewUserListeners = new Map<string, FirestoreListenRetry>()
     const previewUsers = ref(new Map<string, User | null>())
 
     const replacePreviewUsers = (mutate: (draft: Map<string, User | null>) => void): void => {
@@ -380,8 +383,8 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     }
 
     const stopPreviewUserListener = (memberId: string): void => {
-      previewUserUnsubscribes.get(memberId)?.()
-      previewUserUnsubscribes.delete(memberId)
+      previewUserListeners.get(memberId)?.stop()
+      previewUserListeners.delete(memberId)
       replacePreviewUsers((draft) => {
         draft.delete(memberId)
       })
@@ -389,39 +392,54 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
 
     const syncPreviewUserListeners = (memberIds: readonly string[]): void => {
       const keep = new Set(memberIds)
-      for (const memberId of [...previewUserUnsubscribes.keys()]) {
+      for (const memberId of [...previewUserListeners.keys()]) {
         if (!keep.has(memberId)) {
           stopPreviewUserListener(memberId)
         }
       }
       for (const memberId of memberIds) {
-        if (previewUserUnsubscribes.has(memberId)) {
+        if (previewUserListeners.has(memberId)) {
           continue
         }
-        const unsubscribe = onSnapshot(
-          getUserRef(memberId),
-          (snapshot) => {
-            try {
-              replacePreviewUsers((draft) => {
-                draft.set(memberId, snapshot.data() ?? new User(memberId, {}))
-              })
-            } catch (err) {
-              console.error(err)
+        const holder: { current: FirestoreListenRetry | null } = { current: null }
+        let reportedPreviewUserError = false
+        const listen = createFirestoreListenRetry(
+          ({ onError }) =>
+            onSnapshot(
+              getUserRef(memberId),
+              (snapshot) => {
+                holder.current?.markHealthy()
+                reportedPreviewUserError = false
+                try {
+                  replacePreviewUsers((draft) => {
+                    draft.set(memberId, snapshot.data() ?? new User(memberId, {}))
+                  })
+                } catch (err) {
+                  console.error(err)
+                  reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
+                }
+              },
+              onError,
+            ),
+          {
+            onError: (err) => {
+              console.error('preview user snapshot error', err)
+              if (reportedPreviewUserError) {
+                return
+              }
+              reportedPreviewUserError = true
               reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
-            }
-          },
-          (err) => {
-            console.error('preview user snapshot error', err)
-            reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
-            previewUserUnsubscribes.delete(memberId)
+            },
           },
         )
-        previewUserUnsubscribes.set(memberId, unsubscribe)
+        holder.current = listen
+        previewUserListeners.set(memberId, listen)
+        listen.ensure()
       }
     }
 
     const stopPreviewUserListeners = (): void => {
-      for (const memberId of [...previewUserUnsubscribes.keys()]) {
+      for (const memberId of [...previewUserListeners.keys()]) {
         stopPreviewUserListener(memberId)
       }
     }
@@ -633,6 +651,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
                 _menus.value = []
               }
             },
+            silenceTimeoutMs: MENU_LISTEN_SILENCE_MS,
           },
         )
       }
@@ -750,8 +769,14 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     let retry = 0
     let subscribeSession = 0
     let subscribeRetryTimer: ReturnType<typeof setTimeout> | null = null
+    /** getDocs で event ref を解決している間は、同じ store への再入で二重に購読を始めない */
+    let resolvingEventRef = false
 
     const subscribe = () => {
+      if (resolvingEventRef || unsubscribeEvent != null) {
+        return
+      }
+      resolvingEventRef = true
       const session = subscribeSession
       const eventConstraints = [where('event_id', '==', eventId)]
       if ('eventsEnterpriseId' in mergedOptions) {
@@ -763,6 +788,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           if (session !== subscribeSession) {
             return
           }
+          resolvingEventRef = false
           const eventRef = querySnapshot.docs[0]?.ref?.withConverter(eventConverter)
           if (eventRef == null) {
             if (retry++ < 16) {
@@ -793,6 +819,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           if (session !== subscribeSession) {
             return
           }
+          resolvingEventRef = false
           console.error('event subscribe getDocs error', err)
           reportClientError(err, { documentPath: `events/${eventId}`, severity: 'warn' })
         })
@@ -800,6 +827,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
 
     const unsubscribe = () => {
       subscribeSession += 1
+      resolvingEventRef = false
       if (subscribeRetryTimer != null) {
         clearTimeout(subscribeRetryTimer)
         subscribeRetryTimer = null
@@ -829,14 +857,15 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       subscribe()
     }
 
-    if (_eventRef.value == null) {
-      subscribe()
-    } else {
-      const eventRef = toRaw(_eventRef.value)
-      subscribeEvent(eventRef)
-      if (menusRequested) {
-        subscribeMenus(eventRef)
+    /**
+     * 一覧が取得した文書を、購読していない store に反映する。
+     * ライブ購読中はスナップショットを正とし、取得結果では上書きしない。
+     */
+    const applyListedEvent = (listed: BokudeliEvent): void => {
+      if (unsubscribeEvent != null) {
+        return
       }
+      event.value = listed
     }
 
     return {
@@ -862,11 +891,20 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       subscribe,
       unsubscribe,
       ensureSubscribed,
+      applyListedEvent,
       $reset: () => {
         unsubscribe()
         subscribe()
       },
     }
   })
-  return store()
+  const instance = store()
+  // setup は store 初回生成時だけ走る。遅延で先に作られた store でも、通常呼び出しではここで購読を始める。
+  if (target instanceof BokudeliEvent) {
+    instance.applyListedEvent(target)
+  }
+  if (mergedOptions.deferLiveSubscription !== true) {
+    instance.ensureSubscribed()
+  }
+  return instance
 }
