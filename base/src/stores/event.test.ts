@@ -1,7 +1,6 @@
 import { FirebaseError } from 'firebase/app'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import type { BokudeliEvent } from '@shokujii/base/stores/event.js'
 
 const getDocMock = vi.hoisted(() => vi.fn())
 const getDocsMock = vi.hoisted(() => vi.fn())
@@ -85,6 +84,7 @@ vi.mock('@shokujii/base/stores/user.js', () => ({
 }))
 
 import {
+  BokudeliEvent,
   fetchEventInCommunityDocument,
   EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
   latestOrderUpdatedAt,
@@ -418,5 +418,47 @@ describe('useEventStore lazy members', () => {
     await vi.advanceTimersByTimeAsync(1000)
     expect(userListenCounts.get('users/user-a')).toBe(2)
     vi.useRealTimers()
+  })
+
+  it('遅延で作った store を通常呼び出しすると購読を始める', () => {
+    const deferred = useEventStore('event-shared', { deferLiveSubscription: true })
+    expect(getDocsMock).not.toHaveBeenCalled()
+    const live = useEventStore('event-shared')
+    expect(live).toBe(deferred)
+    expect(getDocsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('購読していない store には一覧の取得結果を反映する', () => {
+    const stale = Object.assign(Object.create(BokudeliEvent.prototype), {
+      id: 'event-hydrate',
+      event_name: '旧',
+    }) as BokudeliEvent
+    const store = useEventStore(stale, { deferLiveSubscription: true })
+    expect(onSnapshotMock).not.toHaveBeenCalled()
+    expect(store.event?.event_name).toBe('旧')
+
+    const fresh = Object.assign(Object.create(BokudeliEvent.prototype), {
+      id: 'event-hydrate',
+      event_name: '新',
+    }) as BokudeliEvent
+    const again = useEventStore(fresh, { deferLiveSubscription: true })
+    expect(again).toBe(store)
+    expect(store.event?.event_name).toBe('新')
+    expect(onSnapshotMock).not.toHaveBeenCalled()
+  })
+
+  it('ライブ購読中の store は一覧の取得結果で上書きしない', async () => {
+    const store = useEventStore('event-live')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(store.event?.members).toEqual(['user-a', 'user-b'])
+
+    const listed = Object.assign(Object.create(BokudeliEvent.prototype), {
+      id: 'event-live',
+      event_name: '一覧',
+      members: ['other'],
+    }) as BokudeliEvent
+    useEventStore(listed, { deferLiveSubscription: true })
+    expect(store.event?.members).toEqual(['user-a', 'user-b'])
   })
 })

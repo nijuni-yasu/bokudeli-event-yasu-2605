@@ -769,8 +769,14 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
     let retry = 0
     let subscribeSession = 0
     let subscribeRetryTimer: ReturnType<typeof setTimeout> | null = null
+    /** getDocs で event ref を解決している間は、同じ store への再入で二重に購読を始めない */
+    let resolvingEventRef = false
 
     const subscribe = () => {
+      if (resolvingEventRef || unsubscribeEvent != null) {
+        return
+      }
+      resolvingEventRef = true
       const session = subscribeSession
       const eventConstraints = [where('event_id', '==', eventId)]
       if ('eventsEnterpriseId' in mergedOptions) {
@@ -782,6 +788,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           if (session !== subscribeSession) {
             return
           }
+          resolvingEventRef = false
           const eventRef = querySnapshot.docs[0]?.ref?.withConverter(eventConverter)
           if (eventRef == null) {
             if (retry++ < 16) {
@@ -812,6 +819,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
           if (session !== subscribeSession) {
             return
           }
+          resolvingEventRef = false
           console.error('event subscribe getDocs error', err)
           reportClientError(err, { documentPath: `events/${eventId}`, severity: 'warn' })
         })
@@ -819,6 +827,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
 
     const unsubscribe = () => {
       subscribeSession += 1
+      resolvingEventRef = false
       if (subscribeRetryTimer != null) {
         clearTimeout(subscribeRetryTimer)
         subscribeRetryTimer = null
@@ -848,17 +857,15 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       subscribe()
     }
 
-    // 一覧は取得済みの event を持つだけにする。詳細画面の ensureSubscribed で購読を始める。
-    if (mergedOptions.deferLiveSubscription !== true) {
-      if (_eventRef.value == null) {
-        subscribe()
-      } else {
-        const eventRef = toRaw(_eventRef.value)
-        subscribeEvent(eventRef)
-        if (menusRequested) {
-          subscribeMenus(eventRef)
-        }
+    /**
+     * 一覧が取得した文書を、購読していない store に反映する。
+     * ライブ購読中はスナップショットを正とし、取得結果では上書きしない。
+     */
+    const applyListedEvent = (listed: BokudeliEvent): void => {
+      if (unsubscribeEvent != null) {
+        return
       }
+      event.value = listed
     }
 
     return {
@@ -884,11 +891,20 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       subscribe,
       unsubscribe,
       ensureSubscribed,
+      applyListedEvent,
       $reset: () => {
         unsubscribe()
         subscribe()
       },
     }
   })
-  return store()
+  const instance = store()
+  // setup は store 初回生成時だけ走る。遅延で先に作られた store でも、通常呼び出しではここで購読を始める。
+  if (target instanceof BokudeliEvent) {
+    instance.applyListedEvent(target)
+  }
+  if (mergedOptions.deferLiveSubscription !== true) {
+    instance.ensureSubscribed()
+  }
+  return instance
 }
