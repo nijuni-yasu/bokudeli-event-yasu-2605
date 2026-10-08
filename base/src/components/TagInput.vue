@@ -13,7 +13,14 @@ import {
   PROFILE_TAG_PAGE_SIZE,
 } from '@shokujii/base/utils/profileTagOptions.js'
 
-const props = withDefaults(defineProps<{ loading?: boolean }>(), { loading: false })
+const props = withDefaults(
+  defineProps<{
+    loading?: boolean
+    /** 選択中タグの Teleport 先。未指定のときは本文末尾に出す */
+    selectedHost?: string
+  }>(),
+  { loading: false },
+)
 const tags = defineModel<string[]>({ required: true })
 
 const { t: $t } = useI18n()
@@ -263,26 +270,33 @@ const onEnter = (event: KeyboardEvent): void => {
       {{ $t('user_tags.show_more') }}
     </v-btn>
 
-    <section v-if="tags.length > 0" class="tag-input__selected" :aria-label="$t('user_tags.current_tags_heading')">
-      <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
-      <div class="tag-input__options">
-        <v-btn
-          v-for="tag in tags"
-          :key="tag"
-          class="tag-input__remove"
-          variant="flat"
-          color="primary"
-          rounded="pill"
-          :append-icon="mdiClose"
-          :aria-label="$t('user_tags.remove_tag', { tag })"
-          :aria-disabled="loading"
-          :disabled="loading"
-          @click="removeTag(tag, true)"
-        >
-          {{ tag }}
-        </v-btn>
-      </div>
-    </section>
+    <Teleport :to="selectedHost" :disabled="selectedHost == null">
+      <section
+        v-if="tags.length > 0"
+        class="tag-input__selected"
+        :class="{ 'tag-input__selected--pinned': selectedHost != null }"
+        :aria-label="$t('user_tags.current_tags_heading')"
+      >
+        <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
+        <div class="tag-input__options tag-input__selected-list">
+          <v-btn
+            v-for="tag in tags"
+            :key="tag"
+            class="tag-input__remove"
+            variant="flat"
+            color="primary"
+            rounded="pill"
+            :append-icon="mdiClose"
+            :aria-label="$t('user_tags.remove_tag', { tag })"
+            :aria-disabled="loading"
+            :disabled="loading"
+            @click="removeTag(tag, true)"
+          >
+            {{ tag }}
+          </v-btn>
+        </div>
+      </section>
+    </Teleport>
   </div>
 </template>
 
@@ -337,8 +351,8 @@ const onEnter = (event: KeyboardEvent): void => {
   height: auto;
   min-width: 0;
   max-width: 100%;
-  min-height: 44px;
-  padding-block: 10px;
+  min-height: 36px;
+  padding-block: 6px;
   letter-spacing: normal;
   text-transform: none;
 
@@ -358,5 +372,16 @@ const onEnter = (event: KeyboardEvent): void => {
   margin-top: 24px;
   padding-top: 16px;
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.tag-input__selected--pinned {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.tag-input__selected-list {
+  max-height: 140px;
+  overflow-y: auto;
 }
 </style>

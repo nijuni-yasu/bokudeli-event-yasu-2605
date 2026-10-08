@@ -10,6 +10,7 @@ import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import { normalizeTagList } from '@shokujii/common/utils/normalizeTag.js'
 
 const model = defineModel<boolean>({ required: true })
+const selectedHostId = `tag-settings-selected-${Math.random().toString(36).slice(2)}`
 const { t: $t } = useI18n()
 const { smAndDown } = useDisplay()
 const currentUserStore = useCurrentUserStore()
@@ -130,12 +131,27 @@ const saveTags = async (): Promise<void> => {
         />
       </header>
 
+      <!-- Teleport 先は TagInput より前に置く。見た目の位置はフッター直前（order） -->
+      <div
+        :id="selectedHostId"
+        class="tag-settings-dialog__selected-host"
+        :class="{ 'tag-settings-dialog__selected-host--filled': tags.length > 0 }"
+      />
+
       <v-card-text class="tag-settings-dialog__body">
         <v-progress-linear v-if="model && !tagsReady" indeterminate color="primary" />
-        <TagInput v-if="model && tagsReady" v-model="tags" :loading="isUpdating" />
+        <TagInput
+          v-if="model && tagsReady"
+          v-model="tags"
+          :loading="isUpdating"
+          :selected-host="`#${selectedHostId}`"
+        />
       </v-card-text>
 
-      <v-card-actions class="tag-settings-dialog__footer">
+      <v-card-actions
+        class="tag-settings-dialog__footer"
+        :class="{ 'tag-settings-dialog__footer--with-selected': tags.length > 0 }"
+      >
         <div class="tag-settings-dialog__summary text-caption">
           <span v-if="tagsReady">{{ $t('user_tags.section_count', { count: tags.length }) }}</span>
           <span v-if="isUpdating" class="text-medium-emphasis" role="status">
@@ -168,7 +184,23 @@ const saveTags = async (): Promise<void> => {
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
+  order: 1;
   padding: 28px 28px 12px;
+}
+
+.tag-settings-dialog__selected-host {
+  order: 3;
+  flex-shrink: 0;
+  padding: 16px 28px 0;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.tag-settings-dialog__selected-host:not(.tag-settings-dialog__selected-host--filled) {
+  display: none;
+}
+
+.tag-settings-dialog__footer.tag-settings-dialog__footer--with-selected.v-card-actions {
+  border-top: none;
 }
 
 .tag-settings-dialog__title {
@@ -185,6 +217,8 @@ const saveTags = async (): Promise<void> => {
 // outlined のラベルは枠の上にはみ出すので、同じかそれ以上の詳細度で上余白を取る。
 .v-dialog > .v-overlay__content > .v-card > .tag-settings-dialog__body.v-card-text {
   // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える
+  order: 2;
+  min-height: 0;
   padding-top: 8px;
 }
 
@@ -193,6 +227,7 @@ const saveTags = async (): Promise<void> => {
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
+  order: 4;
   padding: 16px 28px max(24px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 
@@ -231,6 +266,10 @@ const saveTags = async (): Promise<void> => {
   }
 
   .tag-settings-dialog__body.v-card-text {
+    padding-inline: 20px;
+  }
+
+  .tag-settings-dialog__selected-host {
     padding-inline: 20px;
   }
 
