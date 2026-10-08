@@ -81,6 +81,7 @@ describe('collectEventBasicInfoValidationMessages', () => {
         event_start_datetime: 2_000,
       },
       nowMillis: 2_000,
+      rejectPastStartDatetime: true,
       requiredValidator: alwaysValid,
       postalCodeValidator: alwaysValid,
       urlValidator: alwaysValid,
