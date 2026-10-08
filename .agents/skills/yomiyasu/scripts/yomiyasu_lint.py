@@ -596,7 +596,7 @@ FILLER_PATTERNS = [
     (r"^避けたいのは、?", "前置フィラー「避けたいのは」"),
     (r"いかがでした(でしょうか|か)?[？?。]?$", "定型クロージング「いかがでしたでしょうか」"),
     (r"ぜひ(参考|試し|活用)(に)?して(みて)?ください[！!。]?", "定型クロージング「ぜひ〜してみてください」"),
-    (r"〜に他なりません", "過剰な自己ラベリング「〜に他なりません」"),
+    (r"に他なりません", "過剰な自己ラベリング「〜に他なりません」"),
 ]
 
 # ネガティブパラレリズム（AではなくB）
@@ -697,7 +697,11 @@ def _sentence_end_findings(sentences, source_sentences=None, paragraph_groups=No
         else:
             clean = s[:end]
         end_type = "その他"
-        if clean.endswith("です"):
+        if clean.endswith("ませんでした"):
+            end_type = "ませんでした"
+        elif clean.endswith("ません"):
+            end_type = "ません"
+        elif clean.endswith("です"):
             end_type = "です"
         elif clean.endswith("ます"):
             end_type = "ます"
@@ -801,7 +805,7 @@ def _metrics_from_analysis(analysis):
     total_lines = len(plain_rows)
     list_lines = 0
     for row, _ in plain_rows:
-        if re.match(r"^\s*([-*+]|\d+\.)\s+", row["raw"]):
+        if re.match(r"^\s*([-*+]|\d{1,9}[.)])(?:[ \t]+|$)", row["raw"]):
             if not re.search(r"[-*+]\s+\[.*?\]\(https?://", row["raw"]):
                 list_lines += 1
     plain_content = "\n".join(visible for _, visible in plain_rows)
