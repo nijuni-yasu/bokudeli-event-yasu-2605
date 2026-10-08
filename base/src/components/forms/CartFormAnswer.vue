@@ -26,6 +26,7 @@ import type {
 } from '@shokujii/base/types/profilePathResolvers.js'
 import {
   compactFormAnswerInput,
+  hasUnansweredRequiredField,
   type FormAnswerInput,
   type FormValidationIssue,
 } from '@shokujii/common/utils/validateFormAnswers.js'
@@ -74,6 +75,7 @@ const cartItem = computed(() =>
   ),
 )
 const fields = computed<FormField[]>(() => form.value?.fields ?? [])
+const hasUnansweredRequired = computed(() => hasUnansweredRequiredField(fields.value, answers.value))
 const formName = computed(() => form.value?.name ?? '')
 const formDescription = computed(() => form.value?.description ?? '')
 const showFormIntro = computed(
@@ -340,7 +342,7 @@ const confirmOrderNow = async () => {
             elevation="5"
             width="85%"
             :loading="saving"
-            :disabled="openConfirmOrder"
+            :disabled="openConfirmOrder || hasUnansweredRequired"
             @click="onPrimary"
           >
             {{

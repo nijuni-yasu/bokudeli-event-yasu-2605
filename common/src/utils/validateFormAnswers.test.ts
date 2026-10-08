@@ -5,6 +5,7 @@ import {
   answersToInputs,
   compactFormAnswerInput,
   formatFormAnswerDisplay,
+  hasUnansweredRequiredField,
   validateFormAnswers,
 } from './validateFormAnswers.js'
 
@@ -30,6 +31,29 @@ const choiceField = (): FormField => ({
     { option_id: 'o_guest', label: 'ゲスト', hidden_for_new: false },
     { option_id: 'o_old', label: '旧選択肢', hidden_for_new: true },
   ],
+})
+
+describe('hasUnansweredRequiredField', () => {
+  it('必須が未入力のときだけ true を返す', () => {
+    const fields = [textField(), textField({ field_id: 'f_note', label: 'メモ', required: false })]
+    expect(hasUnansweredRequiredField(fields, [])).toBe(true)
+    expect(hasUnansweredRequiredField(fields, [{ field_id: 'f_name', text_value: '   ' }])).toBe(true)
+    expect(hasUnansweredRequiredField(fields, [{ field_id: 'f_name', text_value: '山田' }])).toBe(false)
+    expect(hasUnansweredRequiredField([choiceField()], [])).toBe(true)
+    expect(hasUnansweredRequiredField([choiceField()], [{ field_id: 'f_role', option_id: 'o_host' }])).toBe(false)
+    const checkbox: FormField = {
+      field_id: 'f_check',
+      type: 'checkbox',
+      label: '確認',
+      description: '',
+      required: true,
+      hidden_for_new: false,
+      options: [{ option_id: 'o_yes', label: 'はい', hidden_for_new: false }],
+    }
+    expect(hasUnansweredRequiredField([checkbox], [])).toBe(true)
+    expect(hasUnansweredRequiredField([checkbox], [{ field_id: 'f_check', option_ids: ['o_yes'] }])).toBe(false)
+    expect(hasUnansweredRequiredField([textField({ hidden_for_new: true, required: true })], [])).toBe(false)
+  })
 })
 
 describe('validateFormAnswers', () => {
