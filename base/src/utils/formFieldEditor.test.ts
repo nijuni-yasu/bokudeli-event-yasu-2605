@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deleteApp, initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 import { CreateCommunityFormRequestSchema, type FormFieldInput } from '@shokujii/common/apis/form.js'
-import { changeFormFieldType, createChoiceOptions, formatDefaultFormName, nextDefaultOptionNumber } from './formFieldEditor.js'
+import {
+  changeFormFieldType,
+  createChoiceOptions,
+  formatDefaultFormName,
+  nextDefaultOptionNumber,
+} from './formFieldEditor.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
