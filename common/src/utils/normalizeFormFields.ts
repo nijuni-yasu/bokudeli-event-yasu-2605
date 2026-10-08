@@ -129,5 +129,9 @@ export function normalizeFormFields(inputs: FormFieldInput[], existing?: FormFie
     fields.push(parsed.data)
   }
 
+  if (fields.length === 0) {
+    return { ok: false, message: '設問を1件以上追加してください' }
+  }
+
   return { ok: true, fields }
 }

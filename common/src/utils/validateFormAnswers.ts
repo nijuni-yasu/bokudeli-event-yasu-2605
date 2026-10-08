@@ -199,6 +199,31 @@ export function validateFormAnswers(params: {
   return { ok: true, answers: snapshots }
 }
 
+export function hasUnansweredRequiredField(fields: FormField[], answers: FormAnswerInput[]): boolean {
+  for (const field of visibleFields(fields)) {
+    if (!field.required) {
+      continue
+    }
+    const answer = findAnswer(answers, field.field_id)
+    if (field.type === 'checkbox') {
+      if ((answer?.option_ids ?? []).length === 0) {
+        return true
+      }
+      continue
+    }
+    if (field.type === 'radio' || field.type === 'select') {
+      if (isBlank(answer?.option_id)) {
+        return true
+      }
+      continue
+    }
+    if (isBlank(answer?.text_value)) {
+      return true
+    }
+  }
+  return false
+}
+
 export function formatFormAnswerDisplay(answer: FormAnswerSnapshot): string {
   if (answer.field_type === 'checkbox') {
     return (answer.option_labels ?? []).map((option) => option.label).join('、')

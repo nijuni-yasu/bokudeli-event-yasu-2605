@@ -4,7 +4,7 @@ import { VueDraggableNext as draggable } from 'vue-draggable-next'
 import { FORM_FIELD_LIMITS, FORM_FIELD_TYPE_VALUES, isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
 import type { FormFieldType } from '@shokujii/common/schemas/formFields.js'
-import { changeFormFieldType } from '@shokujii/base/utils/formFieldEditor.js'
+import { changeFormFieldType, nextDefaultOptionNumber } from '@shokujii/base/utils/formFieldEditor.js'
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -68,13 +68,16 @@ const updateField = (index: number, patch: Partial<FormFieldInput>): void => {
   )
 }
 
+const defaultChoiceOptionLabels = (): string[] =>
+  [1, 2, 3].map((number) => $t('manage.forms.default_option_label', { number }))
+
 const addField = (): void => {
   if (props.disabled || editableFields.value.length >= FORM_FIELD_LIMITS.maxFields) return
   emit('update:modelValue', [
     ...editableFields.value,
     {
       type: 'text',
-      label: '',
+      label: $t('manage.forms.default_field_label'),
       description: '',
       required: false,
       hidden_for_new: false,
@@ -101,7 +104,14 @@ const removeField = (): void => {
 const addOption = (index: number): void => {
   const options = [...(editableFields.value[index].options ?? [])]
   if (options.length >= FORM_FIELD_LIMITS.maxOptions) return
-  options.push({ label: '', hidden_for_new: false })
+  const number = nextDefaultOptionNumber(
+    options.map((option) => option.label),
+    (value) => $t('manage.forms.default_option_label', { number: value }),
+  )
+  options.push({
+    label: $t('manage.forms.default_option_label', { number }),
+    hidden_for_new: false,
+  })
   updateField(index, { options })
 }
 
@@ -142,7 +152,9 @@ const onTypeChange = (index: number, type: unknown): void => {
   if (!isFormFieldType(type)) return
   emit(
     'update:modelValue',
-    editableFields.value.map((field, fieldIndex) => (fieldIndex === index ? changeFormFieldType(field, type) : field)),
+    editableFields.value.map((field, fieldIndex) =>
+      fieldIndex === index ? changeFormFieldType(field, type, defaultChoiceOptionLabels()) : field,
+    ),
   )
 }
 </script>
@@ -161,11 +173,17 @@ const onTypeChange = (index: number, type: unknown): void => {
         <p class="text-body-2 text-medium-emphasis mt-1 mb-0">{{ $t('manage.forms.deleted_field_answers_hint') }}</p>
       </div>
     </div>
-    <v-card v-if="editableFields.length === 0" variant="outlined" class="text-center pa-8 mb-4">
+    <button
+      v-if="editableFields.length === 0"
+      type="button"
+      class="form-field-empty"
+      :disabled="disabled"
+      @click="addField"
+    >
       <v-icon :icon="mdiTextBoxPlusOutline" size="36" color="primary" class="mb-3" />
-      <h3 class="text-subtitle-1 mb-1">{{ $t('manage.forms.fields_empty') }}</h3>
-      <p class="text-body-2 text-medium-emphasis mb-0">{{ $t('manage.forms.fields_empty_hint') }}</p>
-    </v-card>
+      <span class="text-subtitle-1 d-block mb-1">{{ $t('manage.forms.fields_empty') }}</span>
+      <span class="text-body-2 text-medium-emphasis d-block">{{ $t('manage.forms.fields_empty_hint') }}</span>
+    </button>
     <draggable
       :model-value="editableFields"
       item-key="field_id"
@@ -331,7 +349,7 @@ const onTypeChange = (index: number, type: unknown): void => {
         </div>
       </v-card>
     </draggable>
-    <div class="d-flex justify-center">
+    <div v-if="editableFields.length > 0" class="d-flex justify-center">
       <v-btn
         :prepend-icon="mdiPlus"
         :disabled="disabled || editableFields.length >= FORM_FIELD_LIMITS.maxFields"
@@ -384,6 +402,30 @@ const onTypeChange = (index: number, type: unknown): void => {
 
 .form-field-ghost {
   opacity: 0.5;
+}
+
+.form-field-empty {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 2rem;
+  border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background: rgb(var(--v-theme-surface));
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.form-field-empty:hover:not(:disabled),
+.form-field-empty:focus-visible:not(:disabled) {
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.form-field-empty:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .form-field-add {

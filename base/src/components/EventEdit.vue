@@ -11,6 +11,7 @@ import { reasonCodesToMessages } from '@shokujii/base/utils/reservationRequestMe
 import {
   collectEventBasicInfoValidationMessages,
   collectEventDetailValidationMessages,
+  isEventStartDatetimeInPast,
 } from '@shokujii/base/utils/eventEditValidationMessages'
 import EventBasicInfoCard from '@shokujii/base/components/eventcreate/EventBasicInfoCard.vue'
 import EventShop from '@shokujii/base/components/eventcreate/EventShop.vue'
@@ -307,6 +308,19 @@ const currentUserStore = useCurrentUserStore()
  * 送信時は submitReservation が押下時刻ベースで再判定するため UI と乖離しても安全側に倒れる。
  */
 const minEventStartDate = computed<string>(() => getReservationLeadTimeMinDateString(Date.now()))
+
+/** 下書きの開始日時が過去のあいだは step=1 の「進む」を押せない */
+const isDraftEventStartInPast = computed(() => {
+  const ev = event.value
+  if (ev == null || ev.event_status.value !== 'in_draft') {
+    return false
+  }
+  return isEventStartDatetimeInPast(ev.event_start_datetime, Date.now())
+})
+
+const draftEventStartPastMessages = computed(() =>
+  isDraftEventStartInPast.value ? [$t('reservation_request_reason.event_start_past')] : [],
+)
 
 /** 予約申請ボタンの追加無効化条件: 必要なデータが未取得なら集約バリデーションを呼ばない */
 const isReserveDataMissing = computed(() => {
@@ -1053,6 +1067,8 @@ const handleStep1Next = async () => {
       postalCodeValidator,
       urlValidator,
       t: $t,
+      rejectPastStartDatetime: ev.event_status.value === 'in_draft',
+      nowMillis: Date.now(),
     })
     if (messages.length > 0) {
       step1ValidationDialog.messages = messages
@@ -1178,7 +1194,11 @@ const stepperItems = computed(() => [
         <v-form ref="step1FormRef" v-model="isValid1">
           <v-row class="justify-center">
             <v-col cols="12" sm="12" md="9">
-              <event-basic-info-card v-model="event" :min-start-date="minEventStartDate" />
+              <event-basic-info-card
+                v-model="event"
+                :min-start-date="minEventStartDate"
+                :start-date-error-messages="draftEventStartPastMessages"
+              />
               <event-edit-step-nav :visible="stepper === 1">
                 <v-btn
                   color="primary"
@@ -1186,7 +1206,7 @@ const stepperItems = computed(() => [
                   rounded="xl"
                   min-width="168"
                   :append-icon="mdiChevronRight"
-                  :disabled="isProcessing"
+                  :disabled="isProcessing || isDraftEventStartInPast"
                   @click="handleStep1Next"
                 >
                   {{ $t('event_edit.next') }}

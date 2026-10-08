@@ -420,12 +420,12 @@ export default {
     community_form: 'フォーム',
     community_form_hint:
       '事前アンケートとして使うコミュニティのフォームを1つ選べます。設問の編集はコミュニティの{forms}から行います。',
-    community_forms_link: 'フォーム作成',
+    community_forms_link: 'フォーム',
     community_form_set: 'フォームを設定する',
     community_form_none: 'フォームを設定しない',
     community_form_select_label: '設定するフォーム',
     community_form_select_required: 'フォームを選んでください',
-    community_form_empty: '設定できるフォームがありません。コミュニティのフォーム作成で作成してください。',
+    community_form_empty: '設定できるフォームがありません。コミュニティ管理画面でフォームを作成してください。',
     community_form_canceled: '中止したイベントのフォームは変更できません。',
     community_form_not_editable: 'この状態のイベントではフォームを変更できません。',
     form_save_failed: 'フォームの設定に失敗しました。',
@@ -1174,7 +1174,7 @@ export default {
         slackSetting: 'Slack連携',
         album: 'アルバム',
         settings: 'コミュニティ設定',
-        forms: 'フォーム作成',
+        forms: 'フォーム',
       },
       public_page: 'コミュニティページ',
       album: {
@@ -1217,6 +1217,9 @@ export default {
       description_privacy_hint:
         '個人情報を取得する場合は、プライバシーポリシーへの同意を促し、そのリンクをこの説明に貼り付けてください。',
       fields: '設問',
+      default_name: '{communityName}のフォーム',
+      default_field_label: '質問',
+      default_option_label: '選択肢 {number}',
       add_field: '設問を追加',
       field_label: '設問文',
       field_description: '補足',
@@ -1287,6 +1290,7 @@ export default {
         required: '入力してください',
         summary: '入力内容を確認してください。修正が必要な項目にエラーを表示しています。',
         options_required: '選択肢を1件以上追加してください',
+        fields_required: '設問を1件以上追加してください',
       },
       types: {
         text: '短文',

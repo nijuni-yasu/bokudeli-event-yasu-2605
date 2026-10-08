@@ -24,9 +24,12 @@ const props = withDefaults(
   defineProps<{
     /** 開催開始日時の選択下限（yyyy-MM-dd 形式、JST）。未指定なら下限なし */
     minStartDate?: string
+    /** 開始日フィールドに出すエラー。下書きの過去日時など、親が判定した文言 */
+    startDateErrorMessages?: string[]
   }>(),
   {
     minStartDate: undefined,
+    startDateErrorMessages: () => [],
   },
 )
 
@@ -232,6 +235,9 @@ const textFieldVariant = computed(() => {
             :clearable="false"
             :allowed-dates="allowedStartDates"
           />
+          <p v-for="message in startDateErrorMessages" :key="message" class="text-caption text-error px-4" role="alert">
+            {{ message }}
+          </p>
         </v-col>
         <v-col cols="6" sm="6" md="3">
           <v-select

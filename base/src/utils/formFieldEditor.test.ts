@@ -2,10 +2,43 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deleteApp, initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 import { CreateCommunityFormRequestSchema, type FormFieldInput } from '@shokujii/common/apis/form.js'
-import { changeFormFieldType } from './formFieldEditor.js'
+import {
+  changeFormFieldType,
+  createChoiceOptions,
+  formatDefaultFormName,
+  nextDefaultOptionNumber,
+} from './formFieldEditor.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('formatDefaultFormName', () => {
+  const format = (communityName: string) => `${communityName}のフォーム`
+
+  it('コミュニティ名をタイトルにする', () => {
+    expect(formatDefaultFormName('  交流会  ', format, 100)).toBe('交流会のフォーム')
+  })
+
+  it('コミュニティ名が空のときはタイトルを作らない', () => {
+    expect(formatDefaultFormName('   ', format, 100)).toBe('')
+  })
+
+  it('フォーム名の上限を超えるときは接尾辞を残してコミュニティ名だけ切り詰める', () => {
+    const name = formatDefaultFormName('あ'.repeat(100), format, 100)
+    expect(name).toHaveLength(100)
+    expect(name.endsWith('のフォーム')).toBe(true)
+  })
+})
+
+describe('nextDefaultOptionNumber', () => {
+  const format = (number: number) => `選択肢 ${number}`
+
+  it('既存ラベルと重ならない番号を返す', () => {
+    expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 3'], format)).toBe(2)
+    expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 2', '選択肢 3'], format)).toBe(4)
+    expect(nextDefaultOptionNumber(['選択肢 1 '], format)).toBe(2)
+  })
 })
 
 describe('changeFormFieldType', () => {
@@ -35,10 +68,22 @@ describe('changeFormFieldType', () => {
     expect(changeFormFieldType(field, 'radio')).toBe(field)
   })
 
-  it('選択式へ変更すると旧IDを再利用せず、新しい選択肢を用意する', () => {
-    const changed = changeFormFieldType(field, 'checkbox')
-    expect(changed).not.toHaveProperty('field_id')
-    expect(changed.options).toEqual([{ label: '', hidden_for_new: false }])
+  it('選択式へ変更すると旧IDを再利用せず、初期の選択肢を用意する', () => {
+    const labels = ['選択肢 1', '選択肢 2', '選択肢 3']
+    const textField: FormFieldInput = {
+      field_id: field.field_id,
+      type: 'text',
+      label: field.label,
+      description: field.description,
+      required: field.required,
+    }
+    const choiceTypes: FormFieldInput['type'][] = ['radio', 'checkbox', 'select']
+    for (const type of choiceTypes) {
+      const changed = changeFormFieldType(textField, type, labels)
+      expect(changed).not.toHaveProperty('field_id')
+      expect(changed.options).toEqual(createChoiceOptions(labels))
+      expect(changed.label).toBe(field.label)
+    }
   })
 
   it('種類変更後も実際のFirebase Callableのシリアライズを通して作成APIの検証に通る', async () => {
