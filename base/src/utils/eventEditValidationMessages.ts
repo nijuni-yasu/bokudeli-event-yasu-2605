@@ -11,6 +11,7 @@ export type EventBasicInfoValidationFields = {
   event_address_base: string
   event_address_detail: string
   event_place_url: string
+  event_start_datetime?: number | null
 }
 
 export type CollectEventBasicInfoValidationMessagesInput = {
@@ -19,6 +20,17 @@ export type CollectEventBasicInfoValidationMessagesInput = {
   postalCodeValidator: FieldValidator
   urlValidator: FieldValidator
   t: TranslateFn
+  /** 下書きの「進む」だけ過去の開始日時を弾く。未指定なら日時は見ない */
+  rejectPastStartDatetime?: boolean
+  nowMillis?: number
+}
+
+/** 予約申請の EVENT_START_PAST と同じ。開始日時が基準時刻より前なら true */
+export function isEventStartDatetimeInPast(eventStartMillis: number | null | undefined, nowMillis: number): boolean {
+  if (eventStartMillis == null || !Number.isFinite(eventStartMillis)) {
+    return false
+  }
+  return eventStartMillis < nowMillis
 }
 
 /**
@@ -27,6 +39,13 @@ export type CollectEventBasicInfoValidationMessagesInput = {
 export function collectEventBasicInfoValidationMessages(input: CollectEventBasicInfoValidationMessagesInput): string[] {
   const { event, requiredValidator, postalCodeValidator, urlValidator, t } = input
   const messages: string[] = []
+
+  if (
+    input.rejectPastStartDatetime === true &&
+    isEventStartDatetimeInPast(event.event_start_datetime, input.nowMillis ?? Date.now())
+  ) {
+    messages.push(t('reservation_request_reason.event_start_past'))
+  }
 
   if (requiredValidator(event.event_postalcode) !== true) {
     messages.push(t('event_edit.step1_validation.postalcode_missing'))

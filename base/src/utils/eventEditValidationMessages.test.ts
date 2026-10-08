@@ -50,6 +50,64 @@ describe('collectEventBasicInfoValidationMessages', () => {
       'event_edit.step1_validation.place_url_invalid',
     ])
   })
+
+  it('開始日時が現在より前なら進むを止めるメッセージを返す', () => {
+    const messages = collectEventBasicInfoValidationMessages({
+      event: {
+        event_postalcode: '1010032',
+        event_address_base: '東京都千代田区岩本町',
+        event_address_detail: '33',
+        event_place_url: '',
+        event_start_datetime: 1_000,
+      },
+      nowMillis: 2_000,
+      rejectPastStartDatetime: true,
+      requiredValidator: alwaysValid,
+      postalCodeValidator: alwaysValid,
+      urlValidator: alwaysValid,
+      t,
+    })
+
+    expect(messages).toEqual(['reservation_request_reason.event_start_past'])
+  })
+
+  it('開始日時が現在以降なら日時のメッセージを返さない', () => {
+    const messages = collectEventBasicInfoValidationMessages({
+      event: {
+        event_postalcode: '1010032',
+        event_address_base: '東京都千代田区岩本町',
+        event_address_detail: '33',
+        event_place_url: '',
+        event_start_datetime: 2_000,
+      },
+      nowMillis: 2_000,
+      requiredValidator: alwaysValid,
+      postalCodeValidator: alwaysValid,
+      urlValidator: alwaysValid,
+      t,
+    })
+
+    expect(messages).toEqual([])
+  })
+
+  it('rejectPastStartDatetime が無いときは過去の開始日時でも日時メッセージを返さない', () => {
+    const messages = collectEventBasicInfoValidationMessages({
+      event: {
+        event_postalcode: '1010032',
+        event_address_base: '東京都千代田区岩本町',
+        event_address_detail: '33',
+        event_place_url: '',
+        event_start_datetime: 1_000,
+      },
+      nowMillis: 2_000,
+      requiredValidator: alwaysValid,
+      postalCodeValidator: alwaysValid,
+      urlValidator: alwaysValid,
+      t,
+    })
+
+    expect(messages).toEqual([])
+  })
 })
 
 describe('collectEventDetailValidationMessages', () => {
