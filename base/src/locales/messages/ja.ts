@@ -107,7 +107,7 @@ export default {
     open_group_chat: 'チャット',
     participants_profile_hidden: '※参加者プロフィールは非表示です',
     tag_toggle_login_required: 'ログインが必要です',
-    tag_toggle_added: '「{0}」のタグを取り入れました',
+    tag_toggle_added: '「{0}」のタグを追加しました',
     tag_toggle_removed: '「{0}」のタグを外しました',
     tag_toggle_failed: '更新に失敗しました',
     order_count: '（{0}個）',
@@ -541,7 +541,7 @@ export default {
     members_page_hidden_no_participants: '参加者がいないため、参加者一覧は表示されません',
     members_visible: '参加者一覧の表示',
     members_visible_field_help:
-      'イベントページの参加人数や一覧を表示するかを設定できます。公開直後は参加者が少ない場合が多く、そのまま表示すると「人が集まっていない」印象を与え、新規の参加意欲を下げる場合があります。設定した人数に達するまで参加者一覧は表示されず、人数が少ないうちは非表示にし、集まり始めてから表示することで、参加しやすい雰囲気を保てます。',
+      'イベントページの参加人数と参加者一覧を、出すかどうかを設定できます。公開した直後は参加者が少ないことが多く、そのまま出すと「人が集まっていない」印象になり、新しい人の参加意欲が下がることがあります。設定した人数に達するまでは一覧を出さず、集まり始めてから出すことで、参加しやすい雰囲気を保てます。',
     members_visible_always: '常に参加者一覧を表示する',
     members_visible_threshold: '指定人数に達してから、参加者一覧を表示する',
     members_visible_threshold_count_label: '参加者を表示しはじめる人数',
@@ -1215,7 +1215,7 @@ export default {
       archived: 'アーカイブ済み',
       description: '説明',
       description_privacy_hint:
-        '個人情報を取得する場合は、プライバシーポリシーの同意を促してください。リンクを貼り付けてください。',
+        '個人情報を取得する場合は、プライバシーポリシーへの同意を促し、そのリンクをこの説明に貼り付けてください。',
       fields: '設問',
       add_field: '設問を追加',
       field_label: '設問文',
