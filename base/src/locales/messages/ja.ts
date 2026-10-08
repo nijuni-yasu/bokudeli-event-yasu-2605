@@ -1215,7 +1215,7 @@ export default {
       archived: 'アーカイブ済み',
       description: '説明',
       description_privacy_hint:
-        '個人情報を取得する場合は、プライバシーポリシーへの同意を促し、同意文のリンクをこの説明に貼り付けてください。',
+        '個人情報を取得する場合は、プライバシーポリシーへの同意を促し、そのリンクをこの説明に貼り付けてください。',
       fields: '設問',
       add_field: '設問を追加',
       field_label: '設問文',
