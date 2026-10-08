@@ -162,7 +162,7 @@ export const formatChatGreetingMenuPhrase = (orders: readonly ChatGreetingOrderL
 
 type ChatGreetingTranslate = (key: string, values?: Record<string, string>) => string
 
-/** 確定注文から挨拶の注文文を組み立てる。「食事は持参」のみのときは空（2行目を付けない） */
+/** 確定注文から挨拶の注文文を組み立てる。「食事は持参する」のみのときは空（2行目を付けない） */
 export const resolveChatGreetingOrderSentence = (
   orders: readonly ChatGreetingOrderLine[] | null,
   translate: ChatGreetingTranslate,
