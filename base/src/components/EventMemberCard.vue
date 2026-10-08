@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { buildFacebookUrl, buildInstagramUrl, buildTwitterUrl } from '@shokujii/base/utils/buildSnsLinks'
@@ -12,10 +12,7 @@ import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
 import { resolveMemberDisplayName } from '@shokujii/base/utils/displayMemberName.js'
 import { orderTagsWithHighlightFirst } from '@shokujii/base/utils/tagDisplayOrder.js'
-import { visibleCountWithinLines } from '@shokujii/base/utils/visibleCountWithinLines.js'
 import { mdiAlphaXCircle, mdiFacebook, mdiInstagram, mdiWeb } from '@mdi/js'
-
-const TAG_LINE_LIMIT = 2
 
 const props = withDefaults(
   defineProps<{
@@ -70,104 +67,10 @@ const hasSnsLinks = computed(
 const cardStyle = computed(() => ({
   animationDelay: `${Math.min(props.index, 11) * 45}ms`,
 }))
-
-const cardRoot = ref<HTMLElement | null>(null)
-const tagsRoot = ref<HTMLElement | null>(null)
-const measuring = ref(true)
-const visibleLimit = ref(0)
-const expanded = ref(false)
-
-const shownTags = computed(() => {
-  if (expanded.value || measuring.value) {
-    return orderedUserTags.value
-  }
-  return orderedUserTags.value.slice(0, visibleLimit.value)
-})
-
-const hiddenTagCount = computed(() => {
-  if (expanded.value || measuring.value) {
-    return 0
-  }
-  return Math.max(0, orderedUserTags.value.length - visibleLimit.value)
-})
-
-const showTagToggle = computed(() => expanded.value || hiddenTagCount.value > 0)
-
-let measureGeneration = 0
-let resizeObserver: ResizeObserver | null = null
-let lastWidth = -1
-
-async function measureTags() {
-  if (expanded.value) {
-    return
-  }
-  const generation = ++measureGeneration
-  measuring.value = true
-  try {
-    await nextTick()
-    if (generation !== measureGeneration) {
-      return
-    }
-    const root = tagsRoot.value
-    if (root == null || root.clientWidth === 0) {
-      visibleLimit.value = orderedUserTags.value.length
-      return
-    }
-    const chips = [...root.querySelectorAll<HTMLElement>('[data-member-tag]')]
-    visibleLimit.value = visibleCountWithinLines(
-      chips.map((chip) => chip.offsetTop),
-      TAG_LINE_LIMIT,
-    )
-  } finally {
-    if (generation === measureGeneration) {
-      measuring.value = false
-    }
-  }
-}
-
-function toggleTags() {
-  expanded.value = !expanded.value
-  if (!expanded.value) {
-    void measureTags()
-  }
-}
-
-watch(
-  () => orderedUserTags.value.join('\0'),
-  () => {
-    expanded.value = false
-    void measureTags()
-  },
-)
-
-onMounted(async () => {
-  await nextTick()
-  const card = cardRoot.value
-  if (card == null) {
-    measuring.value = false
-    return
-  }
-  lastWidth = card.clientWidth
-  await measureTags()
-  resizeObserver = new ResizeObserver((entries) => {
-    const width = entries[0]?.contentRect.width ?? 0
-    if (Math.abs(width - lastWidth) < 1) {
-      return
-    }
-    lastWidth = width
-    void measureTags()
-  })
-  resizeObserver.observe(card)
-})
-
-onUnmounted(() => {
-  resizeObserver?.disconnect()
-})
 </script>
 
 <template>
   <article
-    ref="cardRoot"
     class="event-member-card"
     :class="{
       'event-member-card--compact': compact,
@@ -192,8 +95,8 @@ onUnmounted(() => {
     </router-link>
 
     <div v-if="showMemberTags" class="event-member-card__tags">
-      <div ref="tagsRoot" class="event-member-card__tag-list">
-        <span v-for="tag in shownTags" :key="tag" data-member-tag class="event-member-card__tag">
+      <div class="event-member-card__tag-list">
+        <span v-for="tag in orderedUserTags" :key="tag" class="event-member-card__tag">
           <TagBadge
             :tag="tag"
             compact
@@ -203,18 +106,6 @@ onUnmounted(() => {
           />
         </span>
       </div>
-      <button
-        v-if="showTagToggle"
-        type="button"
-        class="event-member-card__more-tags"
-        :aria-expanded="expanded"
-        :aria-label="
-          expanded ? t('event_members.collapse_tags_aria') : t('event_members.more_tags_aria', [hiddenTagCount])
-        "
-        @click="toggleTags"
-      >
-        {{ expanded ? t('event_members.collapse_tags') : t('event_members.more_tags', [hiddenTagCount]) }}
-      </button>
       <TagAddChip v-if="isCurrentUser" compact />
     </div>
 
@@ -390,23 +281,6 @@ onUnmounted(() => {
 .event-member-card__tag {
   display: inline-flex;
   max-width: 100%;
-}
-
-.event-member-card__more-tags {
-  margin: 2px 0 0;
-  padding: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1.4;
-  color: rgb(var(--v-theme-primary));
-  cursor: pointer;
-  background: transparent;
-  border: 0;
-
-  &:focus-visible {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 2px;
-  }
 }
 
 .event-member-card__sns {

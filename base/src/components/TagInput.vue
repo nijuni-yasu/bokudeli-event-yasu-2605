@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { VTextField } from 'vuetify/components'
-import { mdiArrowLeft, mdiCheck, mdiClose, mdiMagnify, mdiPlus } from '@mdi/js'
+import { mdiArrowLeft, mdiCheck, mdiMagnify, mdiPlus } from '@mdi/js'
 import { TAG_GENRES } from '@shokujii/common/constants/tags.js'
 import { USER_TAG_MAX_COUNT, USER_TAG_MAX_LENGTH } from '@shokujii/common/constants/userTags.js'
 import { normalizeTag, tagCodePointLength } from '@shokujii/common/utils/normalizeTag.js'
@@ -101,12 +101,6 @@ const addTag = (raw: string, clearQuery: boolean): void => {
     query.value = ''
     queryField.value?.focus()
   }
-}
-
-const removeTag = (tag: string, restoreFocus: boolean): void => {
-  if (props.loading) return
-  tags.value = tags.value.filter((item) => item !== tag)
-  if (restoreFocus) queryField.value?.focus()
 }
 
 const toggleTag = (tag: string): void => {
@@ -262,27 +256,6 @@ const onEnter = (event: KeyboardEvent): void => {
     >
       {{ $t('user_tags.show_more') }}
     </v-btn>
-
-    <section v-if="tags.length > 0" class="tag-input__selected" :aria-label="$t('user_tags.current_tags_heading')">
-      <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
-      <div class="tag-input__options">
-        <v-btn
-          v-for="tag in tags"
-          :key="tag"
-          class="tag-input__remove"
-          variant="flat"
-          color="primary"
-          rounded="pill"
-          :append-icon="mdiClose"
-          :aria-label="$t('user_tags.remove_tag', { tag })"
-          :aria-disabled="loading"
-          :disabled="loading"
-          @click="removeTag(tag, true)"
-        >
-          {{ tag }}
-        </v-btn>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -309,6 +282,13 @@ const onEnter = (event: KeyboardEvent): void => {
 }
 
 .tag-input__genres {
+  // ダイアログ本文の高さアニメーションが 0px のまま残ると、カテゴリが開かない
+  :deep(.v-expansion-panel--active .v-expansion-panel-text) {
+    height: auto !important;
+    overflow: visible !important;
+    backface-visibility: visible;
+  }
+
   :deep(.v-expansion-panel) {
     border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   }
@@ -332,13 +312,12 @@ const onEnter = (event: KeyboardEvent): void => {
 }
 
 .tag-input__option,
-.tag-input__remove,
 .tag-input__create {
   height: auto;
   min-width: 0;
   max-width: 100%;
-  min-height: 44px;
-  padding-block: 10px;
+  min-height: 36px;
+  padding-block: 6px;
   letter-spacing: normal;
   text-transform: none;
 
@@ -352,11 +331,5 @@ const onEnter = (event: KeyboardEvent): void => {
   &[aria-disabled='true'] {
     cursor: default;
   }
-}
-
-.tag-input__selected {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>

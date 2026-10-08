@@ -9,7 +9,7 @@ export const EventItemTypeSchema = z.enum(EVENT_ITEM_TYPE_VALUES).default('partn
 export const NO_ORDER_PARTICIPATION_MENU_ID = 'no_order_participation'
 
 /** 予約 EventMenu の表示名（Firestore 永続・参加者向け UI） */
-export const NO_ORDER_PARTICIPATION_MENU_NAME = '食事は持参'
+export const NO_ORDER_PARTICIPATION_MENU_NAME = '食事は持参する'
 
 /** 予約 EventMenu の説明文（Firestore 永続・参加者向け UI） */
 export const NO_ORDER_PARTICIPATION_MENU_DESCRIPTION =

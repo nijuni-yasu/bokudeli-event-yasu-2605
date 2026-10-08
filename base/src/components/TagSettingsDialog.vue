@@ -68,6 +68,11 @@ watch(
   { immediate: true },
 )
 
+const removeSelectedTag = (tag: string): void => {
+  if (isUpdating.value) return
+  tags.value = tags.value.filter((item) => item !== tag)
+}
+
 const saveTags = async (): Promise<void> => {
   if (isUpdating.value || !tagsReady.value || !hasTagChanges.value) return
   isUpdating.value = true
@@ -142,6 +147,29 @@ const saveTags = async (): Promise<void> => {
             {{ $t('user_tags.save_status_saving') }}
           </span>
         </div>
+        <section
+          v-if="tags.length > 0"
+          class="tag-settings-dialog__selected"
+          :aria-label="$t('user_tags.current_tags_heading')"
+        >
+          <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
+          <div class="tag-settings-dialog__selected-list">
+            <v-btn
+              v-for="tag in tags"
+              :key="tag"
+              class="tag-settings-dialog__remove"
+              variant="flat"
+              color="primary"
+              rounded="pill"
+              :append-icon="mdiClose"
+              :aria-label="$t('user_tags.remove_tag', { tag })"
+              :disabled="isUpdating"
+              @click="removeSelectedTag(tag)"
+            >
+              {{ tag }}
+            </v-btn>
+          </div>
+        </section>
         <div v-if="errorMessage !== ''" class="tag-settings-dialog__error">
           <p class="text-caption text-error" role="alert">{{ errorMessage }}</p>
         </div>
@@ -167,6 +195,7 @@ const saveTags = async (): Promise<void> => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  flex-shrink: 0;
   gap: 8px;
   padding: 28px 28px 12px;
 }
@@ -184,7 +213,12 @@ const saveTags = async (): Promise<void> => {
 // Materio はダイアログ本文の上パディングを 0 にしており、コンポーネント側の指定より詳細度が高い。
 // outlined のラベルは枠の上にはみ出すので、同じかそれ以上の詳細度で上余白を取る。
 .v-dialog > .v-overlay__content > .v-card > .tag-settings-dialog__body.v-card-text {
-  // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える
+  // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える。
+  // backface-visibility: hidden のままだと、カテゴリを開いた高さが 0 になる。
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  backface-visibility: visible;
   padding-top: 8px;
 }
 
@@ -192,12 +226,39 @@ const saveTags = async (): Promise<void> => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  flex-shrink: 0;
   gap: 12px;
   padding: 16px 28px max(24px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 
   > .v-btn {
     margin-inline: 0;
+  }
+}
+
+.tag-settings-dialog__selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.tag-settings-dialog__remove {
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  margin-inline: 0;
+  padding-block: 6px;
+  letter-spacing: normal;
+  text-transform: none;
+
+  :deep(.v-btn__content) {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: start;
   }
 }
 
