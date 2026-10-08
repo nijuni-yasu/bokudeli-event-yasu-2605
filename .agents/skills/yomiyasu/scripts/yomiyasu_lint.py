@@ -805,7 +805,7 @@ def _metrics_from_analysis(analysis):
     total_lines = len(plain_rows)
     list_lines = 0
     for row, _ in plain_rows:
-        if re.match(r"^\s*([-*+]|\d{1,9}[.)])\s+", row["raw"]):
+        if re.match(r"^\s*([-*+]|\d{1,9}[.)])(?:[ \t]+|$)", row["raw"]):
             if not re.search(r"[-*+]\s+\[.*?\]\(https?://", row["raw"]):
                 list_lines += 1
     plain_content = "\n".join(visible for _, visible in plain_rows)
