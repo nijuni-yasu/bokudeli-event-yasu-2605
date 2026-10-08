@@ -19,7 +19,7 @@ _ATTRIBUTE_NAME = re.compile(r'[A-Za-z_:][A-Za-z0-9_.:-]*')
 _AUTOLINK = re.compile(r'<(?:[A-Za-z][A-Za-z0-9+.-]{1,31}:[^<>\x00-\x20]*|'
                        r'[A-Za-z0-9.!#$%&\'*+/=?^_`{|}~-]+@[A-Za-z0-9]'
                        r'(?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
-                       r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*>)')
+                       r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*)>')
 _CONTAINER_MARKER = re.compile(r'(?:[-+*]|\d{1,9}[.)])(?:[ \t]+|$)')
 _BARE_URL = re.compile(r'(?:https?://|www\.)[^\s<>]+')
 _REFERENCE_LABEL = re.compile(r'^ {0,3}\[((?:\\.|[^\[\]\\]){1,999})\]:[ \t]*')
