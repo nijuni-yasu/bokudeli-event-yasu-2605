@@ -344,7 +344,7 @@ Useful? React with 👍 / 👎.
 
 ```
 ### 🟡 Changes recommended
-長いコミュニティ名では指定されたフォーム名の接尾辞が欠落します。
+時刻経過でボタン状態が更新されず、長いコミュニティ名では指定されたフォーム名の接尾辞が欠落します。
 リンク: #discussion_r4215661884 #discussion_r4214885266
 ```
 
@@ -356,7 +356,18 @@ Useful? React with 👍 / 👎.
 
 時刻経過でボタン状態が更新されず、長いコミュニティ名では指定されたフォーム名の接尾辞が欠落します。
 
-リンク先は `#discussion_r4215661884`（新規）と `#discussion_r4214885266`（既存）。HTML の画像とアンケート案内は省略した。
+<details open>
+<summary><strong>2 open findings</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [長いコミュニティ名でフォームの接尾辞が切り詰められる](#discussion_r4215661884) · New
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Date.now() が非リアクティブで開始日時判定が更新されない](#discussion_r4214885266)
+</details>
+
+🧠 **Review effort:** Balanced
+
+---
+
+Give feedback about Copilot approvals in [this survey](https://survey.alchemer.com/s3/9011660/CCR-Public-Preview-Autoapprove-feedback-survey) to enter a drawing for a $150 gift card.
 
 **コメント要約**: Copilot overview は指摘の目次
 新しいリンク先は `#discussion_r4215661884`、既存は `#discussion_r4214885266`
