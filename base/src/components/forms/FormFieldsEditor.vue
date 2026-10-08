@@ -4,7 +4,7 @@ import { VueDraggableNext as draggable } from 'vue-draggable-next'
 import { FORM_FIELD_LIMITS, FORM_FIELD_TYPE_VALUES, isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
 import type { FormFieldType } from '@shokujii/common/schemas/formFields.js'
-import { changeFormFieldType } from '@shokujii/base/utils/formFieldEditor.js'
+import { changeFormFieldType, nextDefaultOptionNumber } from '@shokujii/base/utils/formFieldEditor.js'
 import {
   mdiArrowDown,
   mdiArrowUp,
@@ -104,8 +104,12 @@ const removeField = (): void => {
 const addOption = (index: number): void => {
   const options = [...(editableFields.value[index].options ?? [])]
   if (options.length >= FORM_FIELD_LIMITS.maxOptions) return
+  const number = nextDefaultOptionNumber(
+    options.map((option) => option.label),
+    (value) => $t('manage.forms.default_option_label', { number: value }),
+  )
   options.push({
-    label: $t('manage.forms.default_option_label', { number: options.length + 1 }),
+    label: $t('manage.forms.default_option_label', { number }),
     hidden_for_new: false,
   })
   updateField(index, { options })

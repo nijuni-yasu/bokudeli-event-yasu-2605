@@ -41,11 +41,15 @@ const communityStore = computed(() => createCommunityStore(communityAccount.valu
 const communityId = computed(() => communityStore.value.community?.community_id ?? '')
 
 const name = ref('')
+const appliedDefaultName = ref('')
 
 watch(
   () => communityStore.value.community?.community_name ?? '',
   (communityName) => {
-    if (props.formId != null || name.value !== '') {
+    if (props.formId != null) {
+      return
+    }
+    if (name.value !== '' && name.value !== appliedDefaultName.value) {
       return
     }
     const next = formatDefaultFormName(
@@ -57,6 +61,7 @@ watch(
       return
     }
     name.value = next
+    appliedDefaultName.value = next
   },
   { immediate: true },
 )

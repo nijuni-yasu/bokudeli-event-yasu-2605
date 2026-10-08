@@ -9,6 +9,10 @@
 | [ ] | RC-3 | 4214883108 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | Codex も同じ非リアクティブな `Date.now()` を指摘している<br>`EventEdit.vue:318` の `isDraftEventStartInPast`<br>画面滞在中に開始時刻を過ぎるとボタン無効化が遅れる<br>時計のリアクティブ化か開始時刻での再評価の二択で、未着手 |
 | [ ] | RC-4 | 4214885266 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | 👤 UX, 🐛 実害 | 🔧 微修正 | S | Copilot は同じ時刻経過の再計算漏れを [must] で指摘している<br>`EventEdit.vue:318`。押下時検証ではステップは進まない<br>開いた時点で未来だった開始日時が滞在中に過去になると見た目が遅れる<br>定期更新する現在時刻を渡す案。表示の更新間隔は UX 判断のため未着手 |
 | [x] | RC-5 | 4214885330 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 📏 規約 | 🔧 微修正 | S | 等値境界のテストが `rejectPastStartDatetime` 無しで通っていた<br>`eventEditValidationMessages.test.ts` の「現在以降」ケース<br>比較が `<=` に変わっても検知できない<br>フラグを有効にして、開始日時が現在と同じときはメッセージ無しを検証する |
+| [x] | RC-6 | 5452539661 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview は指摘の目次<br>新しいリンク先は `#discussion_r4215661884`、既存は `#discussion_r4214885266`<br>実体は RC-4 と RC-9 で評価する<br>目次自体に追加の修正要求はない |
+| [x] | RC-7 | 4215671308 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 選択肢 2 を削除して追加すると「選択肢 3」が重複する<br>`addOption` が配列長 + 1 を番号にしていた<br>同じラベルの選択肢が保存できる<br>既存ラベルと重ならない番号を初期値にする |
+| [x] | RC-8 | 4215671313 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | コミュニティを切り替えると自動生成したフォーム名が前の名前のまま残る<br>`name` が空でないと初期値の更新を止めていた<br>保存先だけ新しいコミュニティになる<br>自動生成のままなら新しいコミュニティ名へ更新する |
+| [x] | RC-9 | 4215661884 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 長いコミュニティ名では「のフォーム」まで切り捨てられる<br>`formatDefaultFormName` が整形後の文字列全体を slice していた<br>上限 100 文字の名前で接尾辞が消える<br>接尾辞の長さを残してコミュニティ名だけ切り詰める |
 
 ---
 
@@ -303,5 +307,223 @@ Useful? React with 👍 / 👎.
 **想定工数**: S
 
 **判断理由**: 指摘どおり、フラグ無しでは比較式を見ていない。`rejectPastStartDatetime: true` を付け、`event_start_datetime === nowMillis` でメッセージが空であることを検証するよう直した。`<=` に変わるとこのテストが落ちる。
+
+---
+
+## 評価セッション（2026-10-08 15:40・review-comments-evaluate）
+
+- **評価日時**: 2026-10-08 15:40 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `fix/2405`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2406
+- **since**: 2026-10-08T06:29:15Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（6053870895 レビュー依頼定型文、5452552320 Codex の suggestions 定型と接続案内のみ）
+- **重複除外**: 4215671299 → RC-3 および RC-4、差分なし。6053984728 → RC-4・RC-7・RC-8・RC-9 の再掲、差分なし
+- **手順 4a 自動修正**: RC-7・RC-8・RC-9（🚨 0件 / 🟡 3件）。RC-1・RC-3・RC-4 は 👤 UX と方針が複数のため自動修正しない
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-6 | 5452539661 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview は指摘の目次<br>新しいリンク先は `#discussion_r4215661884`、既存は `#discussion_r4214885266`<br>実体は RC-4 と RC-9 で評価する<br>目次自体に追加の修正要求はない |
+| [x] | RC-7 | 4215671308 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 選択肢 2 を削除して追加すると「選択肢 3」が重複する<br>`addOption` が配列長 + 1 を番号にしていた<br>同じラベルの選択肢が保存できる<br>既存ラベルと重ならない番号を初期値にする |
+| [x] | RC-8 | 4215671313 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | コミュニティを切り替えると自動生成したフォーム名が前の名前のまま残る<br>`name` が空でないと初期値の更新を止めていた<br>保存先だけ新しいコミュニティになる<br>自動生成のままなら新しいコミュニティ名へ更新する |
+| [x] | RC-9 | 4215661884 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 長いコミュニティ名では「のフォーム」まで切り捨てられる<br>`formatDefaultFormName` が整形後の文字列全体を slice していた<br>上限 100 文字の名前で接尾辞が消える<br>接尾辞の長さを残してコミュニティ名だけ切り詰める |
+
+---
+
+**識別子**: RC-6（GitHub id: 5452539661）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: PR review overview
+
+**該当コード**:
+
+```
+### 🟡 Changes recommended
+長いコミュニティ名では指定されたフォーム名の接尾辞が欠落します。
+リンク: #discussion_r4215661884 #discussion_r4214885266
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+### 🟡 Changes recommended
+
+時刻経過でボタン状態が更新されず、長いコミュニティ名では指定されたフォーム名の接尾辞が欠落します。
+
+リンク先は `#discussion_r4215661884`（新規）と `#discussion_r4214885266`（既存）。HTML の画像とアンケート案内は省略した。
+
+**コメント要約**: Copilot overview は指摘の目次
+新しいリンク先は `#discussion_r4215661884`、既存は `#discussion_r4214885266`
+実体は RC-4 と RC-9 で評価する
+目次自体に追加の修正要求はない
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 目次であり、リンク先のインラインは RC-4 と RC-9 で評価する。目次自体に別の修正要求はない。
+
+---
+
+**識別子**: RC-7（GitHub id: 4215671308）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/forms/FormFieldsEditor.vue:109`
+
+**該当コード**:
+
+```
+@@ -101,7 +104,10 @@ const removeField = (): void => {
+ const addOption = (index: number): void => {
+   const options = [...(editableFields.value[index].options ?? [])]
+   if (options.length >= FORM_FIELD_LIMITS.maxOptions) return
+-  options.push({ label: '', hidden_for_new: false })
++  options.push({
++    label: $t('manage.forms.default_option_label', { number: options.length + 1 }),
++    hidden_for_new: false,
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  削除後に追加する選択肢の初期ラベルを重複させない**
+
+初期状態の「選択肢 1〜3」から中央の「選択肢 2」を削除して追加ボタンを押すと、現在の配列長は 2 なので再び「選択肢 3」が追加され、同じラベルが2件になります。選択肢ラベルの重複は保存時にも拒否されないため、そのまま参加者に区別不能な選択肢を表示できてしまいます。既存ラベルと衝突しない番号を選ぶなど、削除後も一意になる初期値を生成してください。
+
+**コメント要約**: 選択肢 2 を削除して追加すると「選択肢 3」が重複する
+`addOption` が配列長 + 1 を番号にしていた
+同じラベルの選択肢が保存できる
+既存ラベルと重ならない番号を初期値にする
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 配列長ではなく、既存ラベルに無い「選択肢 N」を選ぶ。`nextDefaultOptionNumber` で「選択肢 1」「選択肢 3」の次は 2、「選択肢 1」「選択肢 2」「選択肢 3」の次は 4 になることをテストした。
+
+---
+
+**識別子**: RC-8（GitHub id: 4215671313）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/components/manage/community/CommunityFormEditor.vue:49`
+
+**該当コード**:
+
+```
+@@ -40,6 +41,25 @@ const communityStore = computed(() => createCommunityStore(communityAccount.valu
+ const communityId = computed(() => communityStore.value.community?.community_id ?? '')
+
+ const name = ref('')
++
++watch(
++  () => communityStore.value.community?.community_name ?? '',
++  (communityName) => {
++    if (props.formId != null || name.value !== '') {
++      return
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  コミュニティ切替時に自動生成したフォーム名を更新する**
+
+同じ `/manage/community/:communityAccount/form/new` ルート上でコミュニティ A から B へ直接遷移すると Vue Router はコンポーネントを再利用するため、B の `community_name` を受け取っても、A 用に設定済みの `name.value` が空でないことでここから早期 return します。その後の保存先 `communityId` は B に切り替わる一方、フォーム名は「Aのフォーム」のままになり、別コミュニティ名を含むフォームが作成されます。手入力済みの名前は維持しつつ、自動生成値のままなら `communityAccount` の変更時に新しいコミュニティ名へ更新してください。
+
+**コメント要約**: コミュニティを切り替えると自動生成したフォーム名が前の名前のまま残る
+`name` が空でないと初期値の更新を止めていた
+保存先だけ新しいコミュニティになる
+自動生成のままなら新しいコミュニティ名へ更新する
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 最後に自動生成した文字列を覚えておき、フォーム名がそれと一致するあいだはコミュニティ名の更新に追従する。手入力で一致しなくなった名前は上書きしない。既存フォーム（`formId` あり）は対象外。
+
+---
+
+**識別子**: RC-9（GitHub id: 4215661884）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: `base/src/utils/formFieldEditor.ts:17`
+
+**該当コード**:
+
+```
+@@ -1,7 +1,31 @@
+ import type { FormFieldInput } from '@shokujii/common/apis/form.js'
+ import { isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
+
+-export function changeFormFieldType(field: FormFieldInput, type: FormFieldInput['type']): FormFieldInput {
++export function formatDefaultFormName(
++  communityName: string,
++  format: (communityName: string) => string,
++  maxLength: number,
++): string {
++  const trimmed = communityName.trim()
++  if (trimmed === '') {
++    return ''
++  }
++  const name = format(trimmed)
++  if (name.length <= maxLength) {
++    return name
++  }
++  return name.slice(0, maxLength)
+```
+
+**レビュワーのコメント（原文）**:
+
+[must] 上限超過時に整形後の文字列全体を `slice` すると、例えば100文字のコミュニティ名では接尾辞「のフォーム」がすべて消え、Issue #2410 の初期値「{コミュニティ名}のフォーム」を満たしません。固定文言分の長さを予約してコミュニティ名部分だけを切り詰め、長さテストでも接尾辞が残ることを検証してください。
+
+**コメント要約**: 長いコミュニティ名では「のフォーム」まで切り捨てられる
+`formatDefaultFormName` が整形後の文字列全体を slice していた
+上限 100 文字の名前で接尾辞が消える
+接尾辞の長さを残してコミュニティ名だけ切り詰める
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 整形結果がコミュニティ名で始まるときは、末尾の接尾辞を残して名前側だけを上限まで切る。100 文字の名前でも結果が「のフォーム」で終わることをテストした。
 
 ---

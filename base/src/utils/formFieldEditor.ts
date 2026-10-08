@@ -14,7 +14,23 @@ export function formatDefaultFormName(
   if (name.length <= maxLength) {
     return name
   }
-  return name.slice(0, maxLength)
+  if (!name.startsWith(trimmed)) {
+    return name.slice(0, maxLength)
+  }
+  const suffix = name.slice(trimmed.length)
+  if (suffix.length >= maxLength) {
+    return suffix.slice(0, maxLength)
+  }
+  return `${trimmed.slice(0, maxLength - suffix.length)}${suffix}`
+}
+
+export function nextDefaultOptionNumber(existingLabels: readonly string[], format: (number: number) => string): number {
+  const used = new Set(existingLabels)
+  let number = 1
+  while (used.has(format(number))) {
+    number += 1
+  }
+  return number
 }
 
 export function createChoiceOptions(labels: readonly string[]): { label: string; hidden_for_new: false }[] {

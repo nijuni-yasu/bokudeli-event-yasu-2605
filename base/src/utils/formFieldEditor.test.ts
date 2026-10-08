@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deleteApp, initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 import { CreateCommunityFormRequestSchema, type FormFieldInput } from '@shokujii/common/apis/form.js'
-import { changeFormFieldType, createChoiceOptions, formatDefaultFormName } from './formFieldEditor.js'
+import { changeFormFieldType, createChoiceOptions, formatDefaultFormName, nextDefaultOptionNumber } from './formFieldEditor.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -19,10 +19,19 @@ describe('formatDefaultFormName', () => {
     expect(formatDefaultFormName('   ', format, 100)).toBe('')
   })
 
-  it('フォーム名の上限を超えるときは切り詰める', () => {
+  it('フォーム名の上限を超えるときは接尾辞を残してコミュニティ名だけ切り詰める', () => {
     const name = formatDefaultFormName('あ'.repeat(100), format, 100)
     expect(name).toHaveLength(100)
-    expect(name.startsWith('あ')).toBe(true)
+    expect(name.endsWith('のフォーム')).toBe(true)
+  })
+})
+
+describe('nextDefaultOptionNumber', () => {
+  const format = (number: number) => `選択肢 ${number}`
+
+  it('既存ラベルと重ならない番号を返す', () => {
+    expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 3'], format)).toBe(2)
+    expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 2', '選択肢 3'], format)).toBe(4)
   })
 })
 
