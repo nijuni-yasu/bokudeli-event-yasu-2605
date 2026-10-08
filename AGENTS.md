@@ -29,6 +29,7 @@ AIエージェント向けプロジェクトガイド。
 | sandbox WIP デプロイ                                                            | `/github-sandbox-wip-deploy` |
 | コミット後の反映（PR + sandbox）                                                | `/git-reflect-after-commit`  |
 | GCP Cloud Logging ERROR 取得・解析（gcloud / JSON 添付）                        | `/gcp-logging-error-analysis` |
+| 日本語の推敲（UI文言・仕様・PR説明。意味と条件は変えない）                     | `/yomiyasu`                   |
 
 ## 推奨スキル（技術スタック別）
 
@@ -118,6 +119,7 @@ Slack / LINE bot および旧 legacy Functions は `functions/default` に統合
 - **`src/locales/messages/en.ts` 等の英語 locale ファイルは作らない**（製品として多言語対応を始める明示指示がある場合を除く）。
 - i18n 基盤（`vue-i18n`）は日本語用の `$t` 集約のために使う。`base/src/plugins/i18n/index.ts` は `locale` / `fallbackLocale` とも **`ja`**。各アプリの `themeConfig` の `langConfig` も日本語のみとする。
 - 日付・時刻の表示は `common/src/utils/datetime.ts` の `convertToXxx` を使う（`vue-i18n` の `datetimeFormats` / `$d` は新規追加しない）。
+- ユーザー向け日本語を新しく書くとき、または読みにくさを直すときは `/yomiyasu` に従う。料金・返金・画面の項目名など、仕様で文面が決まっているものは動かさない。
 
 ### Materio テンプレート（`base/materio/`）
 
