@@ -328,7 +328,7 @@ export default {
         slackSetting: 'Slack連携',
         album: 'アルバム',
         settings: 'コミュニティ設定',
-        forms: 'フォーム作成',
+        forms: 'フォーム',
       },
       album: {
         page_title: 'アルバムを設定しよう🎨',

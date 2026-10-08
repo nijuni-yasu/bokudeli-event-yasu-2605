@@ -420,7 +420,7 @@ export default {
     community_form: 'フォーム',
     community_form_hint:
       '事前アンケートとして使うコミュニティのフォームを1つ選べます。設問の編集はコミュニティの{forms}から行います。',
-    community_forms_link: 'フォーム作成',
+    community_forms_link: 'フォーム',
     community_form_set: 'フォームを設定する',
     community_form_none: 'フォームを設定しない',
     community_form_select_label: '設定するフォーム',
@@ -1174,7 +1174,7 @@ export default {
         slackSetting: 'Slack連携',
         album: 'アルバム',
         settings: 'コミュニティ設定',
-        forms: 'フォーム作成',
+        forms: 'フォーム',
       },
       public_page: 'コミュニティページ',
       album: {
