@@ -37,6 +37,7 @@ describe('nextDefaultOptionNumber', () => {
   it('既存ラベルと重ならない番号を返す', () => {
     expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 3'], format)).toBe(2)
     expect(nextDefaultOptionNumber(['選択肢 1', '選択肢 2', '選択肢 3'], format)).toBe(4)
+    expect(nextDefaultOptionNumber(['選択肢 1 '], format)).toBe(2)
   })
 })
 

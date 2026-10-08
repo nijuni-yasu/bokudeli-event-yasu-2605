@@ -25,9 +25,9 @@ export function formatDefaultFormName(
 }
 
 export function nextDefaultOptionNumber(existingLabels: readonly string[], format: (number: number) => string): number {
-  const used = new Set(existingLabels)
+  const used = new Set(existingLabels.map((label) => label.trim()))
   let number = 1
-  while (used.has(format(number))) {
+  while (used.has(format(number).trim())) {
     number += 1
   }
   return number

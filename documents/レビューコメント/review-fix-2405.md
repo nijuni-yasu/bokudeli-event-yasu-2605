@@ -13,6 +13,8 @@
 | [x] | RC-7 | 4215671308 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 選択肢 2 を削除して追加すると「選択肢 3」が重複する<br>`addOption` が配列長 + 1 を番号にしていた<br>同じラベルの選択肢が保存できる<br>既存ラベルと重ならない番号を初期値にする |
 | [x] | RC-8 | 4215671313 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | コミュニティを切り替えると自動生成したフォーム名が前の名前のまま残る<br>`name` が空でないと初期値の更新を止めていた<br>保存先だけ新しいコミュニティになる<br>自動生成のままなら新しいコミュニティ名へ更新する |
 | [x] | RC-9 | 4215661884 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 長いコミュニティ名では「のフォーム」まで切り捨てられる<br>`formatDefaultFormName` が整形後の文字列全体を slice していた<br>上限 100 文字の名前で接尾辞が消える<br>接尾辞の長さを残してコミュニティ名だけ切り詰める |
+| [x] | RC-10 | 5453078083 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview は指摘の目次<br>リンク先は既存の `#discussion_r4214885266`<br>実体は RC-4 で評価する<br>目次自体に追加の修正要求はない |
+| [x] | RC-11 | 4216121790 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 末尾空白のある「選択肢 1 」があると次の初期値が「選択肢 1」になる<br>`nextDefaultOptionNumber` がラベルを trim せず比較していた<br>保存時の trim で同名の選択肢が残る<br>比較前に保存と同じ空白除去をする |
 
 ---
 
@@ -536,5 +538,128 @@ Give feedback about Copilot approvals in [this survey](https://survey.alchemer.c
 **想定工数**: S
 
 **判断理由**: 整形結果がコミュニティ名で始まるときは、末尾の接尾辞を残して名前側だけを上限まで切る。100 文字の名前でも結果が「のフォーム」で終わることをテストした。
+
+---
+
+## 評価セッション（2026-10-08 16:27・review-comments-evaluate）
+
+- **評価日時**: 2026-10-08 16:27 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `fix/2405`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2406
+- **since**: 2026-10-08T07:15:25Z
+- **partial**: false
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 4（6054681798 と 6054836157 はレビュー依頼定型文、6054684069 は Copilot の処理エラー、5453114163 は Codex の定型案内のみ）
+- **重複除外**: 6054812418 → RC-3・RC-4、差分なし。6054884714 → RC-11、差分なし
+- **手順 4a 自動修正**: RC-11（🚨 0件 / 🟡 1件）。RC-1・RC-3・RC-4 は 👤 UX と方針が複数のため自動修正しない
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-10 | 5453078083 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | Copilot overview は指摘の目次<br>リンク先は既存の `#discussion_r4214885266`<br>実体は RC-4 で評価する<br>目次自体に追加の修正要求はない |
+| [x] | RC-11 | 4216121790 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | 🐛 実害 | 🔧 微修正 | S | 末尾空白のある「選択肢 1 」があると次の初期値が「選択肢 1」になる<br>`nextDefaultOptionNumber` がラベルを trim せず比較していた<br>保存時の trim で同名の選択肢が残る<br>比較前に保存と同じ空白除去をする |
+
+---
+
+**識別子**: RC-10（GitHub id: 5453078083）
+
+**レビュワー**: copilot-pull-request-reviewer[bot]
+
+**指摘箇所**: PR review overview
+
+**該当コード**:
+
+```
+### 🔵 Needs a closer look
+時刻経過だけでは過去判定が再評価されず、「進む」が有効なまま残ります。
+リンク: #discussion_r4214885266
+```
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+### 🔵 Needs a closer look
+
+時刻経過だけでは過去判定が再評価されず、「進む」が有効なまま残ります。
+
+<details open>
+<summary><strong>1 open finding</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [Date.now() が非リアクティブで開始日時判定が更新されない](#discussion_r4214885266)
+</details>
+
+<details>
+<summary><strong>1 resolved since last review</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [長いコミュニティ名でフォームの接尾辞が切り詰められる](#discussion_r4215661884)
+</details>
+
+🧠 **Review effort:** Balanced
+
+---
+
+Give feedback about Copilot approvals in [this survey](https://survey.alchemer.com/s3/9011660/CCR-Public-Preview-Autoapprove-feedback-survey) to enter a drawing for a $150 gift card.
+
+**コメント要約**: Copilot overview は指摘の目次
+リンク先は既存の `#discussion_r4214885266`
+実体は RC-4 で評価する
+目次自体に追加の修正要求はない
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: 目次であり、リンク先は既存の RC-4。目次自体に別の修正要求はない。
+
+---
+
+**識別子**: RC-11（GitHub id: 4216121790）
+
+**レビュワー**: chatgpt-codex-connector[bot]
+
+**指摘箇所**: `base/src/utils/formFieldEditor.ts:28`
+
+**該当コード**:
+
+```
++export function nextDefaultOptionNumber(existingLabels: readonly string[], format: (number: number) => string): number {
++  const used = new Set(existingLabels)
+```
+
+**レビュワーのコメント（原文）**:
+
+**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  保存時と同じ正規化をして選択肢番号を比較する**
+
+前回の重複指摘後の現在の実装でも、既存ラベルを未正規化のまま `Set` に入れている点が新たに確認できます。利用者が「選択肢 1 」のように末尾空白を残してから選択肢を追加すると、この関数は 1 を未使用と判断して「選択肢 1」を追加しますが、`normalizeFormFields.ts` は保存時に両方のラベルを `trim()` するため、参加者から区別できない同名選択肢が保存されます。比較前に保存処理と同じ空白の正規化を適用してください。
+
+**コメント要約**: 末尾空白のある「選択肢 1 」があると次の初期値が「選択肢 1」になる
+`nextDefaultOptionNumber` がラベルを trim せず比較していた
+保存時の trim で同名の選択肢が残る
+比較前に保存と同じ空白除去をする
+
+**評価**: 🟡 修正提案
+
+**ステータス**: ✅ 対応済み
+
+**PRスコープ**: 📌 スコープ内
+
+**ラベル**: 🐛 実害
+
+**変更種別**: 🔧 微修正
+
+**想定工数**: S
+
+**判断理由**: 既存ラベルと比較候補の両方を `trim` してから番号を決める。末尾空白の「選択肢 1 」があるときは 2 を返すことをテストした。
 
 ---
