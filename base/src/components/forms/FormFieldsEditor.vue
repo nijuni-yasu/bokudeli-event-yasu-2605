@@ -68,13 +68,16 @@ const updateField = (index: number, patch: Partial<FormFieldInput>): void => {
   )
 }
 
+const defaultChoiceOptionLabels = (): string[] =>
+  [1, 2, 3].map((number) => $t('manage.forms.default_option_label', { number }))
+
 const addField = (): void => {
   if (props.disabled || editableFields.value.length >= FORM_FIELD_LIMITS.maxFields) return
   emit('update:modelValue', [
     ...editableFields.value,
     {
       type: 'text',
-      label: '',
+      label: $t('manage.forms.default_field_label'),
       description: '',
       required: false,
       hidden_for_new: false,
@@ -101,7 +104,10 @@ const removeField = (): void => {
 const addOption = (index: number): void => {
   const options = [...(editableFields.value[index].options ?? [])]
   if (options.length >= FORM_FIELD_LIMITS.maxOptions) return
-  options.push({ label: '', hidden_for_new: false })
+  options.push({
+    label: $t('manage.forms.default_option_label', { number: options.length + 1 }),
+    hidden_for_new: false,
+  })
   updateField(index, { options })
 }
 
@@ -142,7 +148,9 @@ const onTypeChange = (index: number, type: unknown): void => {
   if (!isFormFieldType(type)) return
   emit(
     'update:modelValue',
-    editableFields.value.map((field, fieldIndex) => (fieldIndex === index ? changeFormFieldType(field, type) : field)),
+    editableFields.value.map((field, fieldIndex) =>
+      fieldIndex === index ? changeFormFieldType(field, type, defaultChoiceOptionLabels()) : field,
+    ),
   )
 }
 </script>

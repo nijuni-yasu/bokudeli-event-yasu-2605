@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deleteApp, initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 import { CreateCommunityFormRequestSchema, type FormFieldInput } from '@shokujii/common/apis/form.js'
-import { changeFormFieldType } from './formFieldEditor.js'
+import { changeFormFieldType, createChoiceOptions } from './formFieldEditor.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -35,10 +35,22 @@ describe('changeFormFieldType', () => {
     expect(changeFormFieldType(field, 'radio')).toBe(field)
   })
 
-  it('選択式へ変更すると旧IDを再利用せず、新しい選択肢を用意する', () => {
-    const changed = changeFormFieldType(field, 'checkbox')
-    expect(changed).not.toHaveProperty('field_id')
-    expect(changed.options).toEqual([{ label: '', hidden_for_new: false }])
+  it('選択式へ変更すると旧IDを再利用せず、初期の選択肢を用意する', () => {
+    const labels = ['選択肢 1', '選択肢 2', '選択肢 3']
+    const textField: FormFieldInput = {
+      field_id: field.field_id,
+      type: 'text',
+      label: field.label,
+      description: field.description,
+      required: field.required,
+    }
+    const choiceTypes: FormFieldInput['type'][] = ['radio', 'checkbox', 'select']
+    for (const type of choiceTypes) {
+      const changed = changeFormFieldType(textField, type, labels)
+      expect(changed).not.toHaveProperty('field_id')
+      expect(changed.options).toEqual(createChoiceOptions(labels))
+      expect(changed.label).toBe(field.label)
+    }
   })
 
   it('種類変更後も実際のFirebase Callableのシリアライズを通して作成APIの検証に通る', async () => {

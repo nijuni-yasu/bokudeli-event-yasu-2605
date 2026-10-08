@@ -39,7 +39,7 @@ const createCommunityStore = useCreateAppCommunityStore()
 const communityStore = computed(() => createCommunityStore(communityAccount.value))
 const communityId = computed(() => communityStore.value.community?.community_id ?? '')
 
-const name = ref('')
+const name = ref(props.formId == null ? $t('manage.forms.default_name') : '')
 const description = ref('')
 const fields = ref<FormFieldInput[]>([])
 const saving = ref(false)

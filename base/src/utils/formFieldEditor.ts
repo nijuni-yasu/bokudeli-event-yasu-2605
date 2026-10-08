@@ -1,7 +1,15 @@
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
 import { isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
 
-export function changeFormFieldType(field: FormFieldInput, type: FormFieldInput['type']): FormFieldInput {
+export function createChoiceOptions(labels: readonly string[]): { label: string; hidden_for_new: false }[] {
+  return labels.map((label) => ({ label, hidden_for_new: false }))
+}
+
+export function changeFormFieldType(
+  field: FormFieldInput,
+  type: FormFieldInput['type'],
+  choiceOptionLabels: readonly string[] = [],
+): FormFieldInput {
   if (field.type === type) {
     return field
   }
@@ -13,6 +21,6 @@ export function changeFormFieldType(field: FormFieldInput, type: FormFieldInput[
     description: field.description ?? '',
     required: field.required,
     hidden_for_new: false,
-    ...(isChoiceFieldType(type) ? { options: [{ label: '', hidden_for_new: false }] } : {}),
+    ...(isChoiceFieldType(type) ? { options: createChoiceOptions(choiceOptionLabels) } : {}),
   }
 }
