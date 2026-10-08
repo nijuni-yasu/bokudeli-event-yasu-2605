@@ -81,6 +81,7 @@ const ready = computed(
   () =>
     communityId.value !== '' && (props.formId == null || hydratedFormId.value === props.formId) && !loadFailed.value,
 )
+const visibleFieldCount = computed(() => fields.value.filter((field) => field.hidden_for_new !== true).length)
 const requiredRule = (value: string): boolean | string => value.trim() !== '' || $t('manage.forms.validation.required')
 
 const previewFields = computed<FormField[]>(() => {
@@ -230,7 +231,7 @@ const save = async () => {
   saving.value = true
   try {
     const validation = await formRef.value?.validate()
-    validationFailed.value = validation?.valid !== true
+    validationFailed.value = validation?.valid !== true || visibleFieldCount.value === 0
     if (validationFailed.value) return
     if (props.formId == null) {
       await createCommunityForm({
@@ -321,7 +322,10 @@ const openPreview = (): void => {
                 <FormFieldsEditor v-model="fields" :disabled="saving" />
               </v-col>
             </v-row>
-            <v-alert v-if="validationFailed" type="error" variant="tonal" class="my-6">{{
+            <v-alert v-if="visibleFieldCount === 0" type="warning" variant="tonal" class="my-6">{{
+              $t('manage.forms.validation.fields_required')
+            }}</v-alert>
+            <v-alert v-else-if="validationFailed" type="error" variant="tonal" class="my-6">{{
               $t('manage.forms.validation.summary')
             }}</v-alert>
             <v-row>
@@ -329,9 +333,13 @@ const openPreview = (): void => {
                 <v-btn :prepend-icon="mdiEyeOutline" variant="outlined" :disabled="saving" @click="openPreview">{{
                   $t('manage.forms.preview')
                 }}</v-btn>
-                <v-btn :prepend-icon="mdiContentSaveOutline" type="submit" :loading="saving" :disabled="!ready">{{
-                  $t('manage.forms.save')
-                }}</v-btn>
+                <v-btn
+                  :prepend-icon="mdiContentSaveOutline"
+                  type="submit"
+                  :loading="saving"
+                  :disabled="!ready || visibleFieldCount === 0"
+                  >{{ $t('manage.forms.save') }}</v-btn
+                >
               </v-col>
             </v-row>
           </v-card>

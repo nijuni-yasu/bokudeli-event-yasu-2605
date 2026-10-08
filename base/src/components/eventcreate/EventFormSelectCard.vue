@@ -48,11 +48,23 @@ watch(selectedFormId, (formId, previousFormId) => {
 
 const controlsDisabled = computed(() => props.disabled || props.canceled || props.notEditable)
 
+const selectableForms = computed(() => props.items.filter((form) => form.field_count > 0))
+
+const selectItems = computed(() => {
+  const selected = props.items.find((form) => form.form_id === selectedFormId.value)
+  const forms =
+    selected != null && selected.field_count <= 0 ? [...selectableForms.value, selected] : selectableForms.value
+  return forms.map((form) => ({
+    ...form,
+    props: { disabled: form.field_count <= 0 },
+  }))
+})
+
 const formSelectionRule = (value: unknown): true | string => {
   if (typeof value === 'string' && value !== '') {
     return true
   }
-  if (props.items.length === 0) {
+  if (selectableForms.value.length === 0) {
     return $t('event_edit.community_form_empty')
   }
   return $t('event_edit.community_form_select_required')
@@ -111,9 +123,9 @@ const onAttachFormChange = (value: unknown) => {
             <v-radio :label="$t('event_edit.community_form_none')" :value="false" />
           </v-radio-group>
           <v-select
-            v-if="attachForm && items.length > 0"
+            v-if="attachForm && selectItems.length > 0"
             v-model="selectedFormId"
-            :items="items"
+            :items="selectItems"
             item-title="name"
             item-value="form_id"
             :label="$t('event_edit.community_form_select_label')"

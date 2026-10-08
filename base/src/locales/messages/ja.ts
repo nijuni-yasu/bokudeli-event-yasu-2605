@@ -1290,6 +1290,7 @@ export default {
         required: '入力してください',
         summary: '入力内容を確認してください。修正が必要な項目にエラーを表示しています。',
         options_required: '選択肢を1件以上追加してください',
+        fields_required: '設問を1件以上追加してください',
       },
       types: {
         text: '短文',

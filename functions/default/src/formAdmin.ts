@@ -179,6 +179,9 @@ export const duplicateCommunityForm = onCall(async (request): Promise<DuplicateC
   if (existing == null) {
     throw new HttpsError('not-found', 'フォームが見つかりません')
   }
+  if (omitHiddenFormFields(existing.fields).length === 0) {
+    throw new HttpsError('failed-precondition', '設問のないフォームは複製できません')
+  }
   const duplicated = new CommunityForm('', {
     community_id,
     name: duplicateFormName(existing.name),
@@ -245,6 +248,9 @@ export const setEventFormFromCommunity = onCall(async (request): Promise<SetEven
     const form = await getCommunityForm(community_id, form_id, transaction)
     if (form == null || form.archived) {
       throw new HttpsError('not-found', 'フォームが見つかりません')
+    }
+    if (omitHiddenFormFields(form.fields).length === 0) {
+      throw new HttpsError('failed-precondition', '設問のないフォームはイベントに設定できません')
     }
     const existing = await getEventFormConfig(community_id, event_id, transaction)
     const config = new EventFormConfig('current', {

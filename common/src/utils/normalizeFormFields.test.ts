@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { normalizeFormFields } from './normalizeFormFields.js'
 
 describe('normalizeFormFields', () => {
+  it('設問が0件のときは拒否する', () => {
+    const result = normalizeFormFields([])
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.message).toBe('設問を1件以上追加してください')
+    }
+  })
+
   it('空白だけの設問名を拒否する', () => {
     const result = normalizeFormFields([
       {
