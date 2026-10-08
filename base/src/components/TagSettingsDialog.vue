@@ -10,7 +10,6 @@ import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 import { normalizeTagList } from '@shokujii/common/utils/normalizeTag.js'
 
 const model = defineModel<boolean>({ required: true })
-const selectedHostId = `tag-settings-selected-${Math.random().toString(36).slice(2)}`
 const { t: $t } = useI18n()
 const { smAndDown } = useDisplay()
 const currentUserStore = useCurrentUserStore()
@@ -68,6 +67,11 @@ watch(
   },
   { immediate: true },
 )
+
+const removeSelectedTag = (tag: string): void => {
+  if (isUpdating.value) return
+  tags.value = tags.value.filter((item) => item !== tag)
+}
 
 const saveTags = async (): Promise<void> => {
   if (isUpdating.value || !tagsReady.value || !hasTagChanges.value) return
@@ -131,33 +135,41 @@ const saveTags = async (): Promise<void> => {
         />
       </header>
 
-      <!-- Teleport 先は TagInput より前に置く。見た目の位置はフッター直前（order） -->
-      <div
-        :id="selectedHostId"
-        class="tag-settings-dialog__selected-host"
-        :class="{ 'tag-settings-dialog__selected-host--filled': tags.length > 0 }"
-      />
-
       <v-card-text class="tag-settings-dialog__body">
         <v-progress-linear v-if="model && !tagsReady" indeterminate color="primary" />
-        <TagInput
-          v-if="model && tagsReady"
-          v-model="tags"
-          :loading="isUpdating"
-          :selected-host="`#${selectedHostId}`"
-        />
+        <TagInput v-if="model && tagsReady" v-model="tags" :loading="isUpdating" />
       </v-card-text>
 
-      <v-card-actions
-        class="tag-settings-dialog__footer"
-        :class="{ 'tag-settings-dialog__footer--with-selected': tags.length > 0 }"
-      >
+      <v-card-actions class="tag-settings-dialog__footer">
         <div class="tag-settings-dialog__summary text-caption">
           <span v-if="tagsReady">{{ $t('user_tags.section_count', { count: tags.length }) }}</span>
           <span v-if="isUpdating" class="text-medium-emphasis" role="status">
             {{ $t('user_tags.save_status_saving') }}
           </span>
         </div>
+        <section
+          v-if="tags.length > 0"
+          class="tag-settings-dialog__selected"
+          :aria-label="$t('user_tags.current_tags_heading')"
+        >
+          <p class="text-caption text-medium-emphasis mb-2">{{ $t('user_tags.current_tags_heading') }}</p>
+          <div class="tag-settings-dialog__selected-list">
+            <v-btn
+              v-for="tag in tags"
+              :key="tag"
+              class="tag-settings-dialog__remove"
+              variant="flat"
+              color="primary"
+              rounded="pill"
+              :append-icon="mdiClose"
+              :aria-label="$t('user_tags.remove_tag', { tag })"
+              :disabled="isUpdating"
+              @click="removeSelectedTag(tag)"
+            >
+              {{ tag }}
+            </v-btn>
+          </div>
+        </section>
         <div v-if="errorMessage !== ''" class="tag-settings-dialog__error">
           <p class="text-caption text-error" role="alert">{{ errorMessage }}</p>
         </div>
@@ -183,24 +195,9 @@ const saveTags = async (): Promise<void> => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 8px;
-  order: 1;
-  padding: 28px 28px 12px;
-}
-
-.tag-settings-dialog__selected-host {
-  order: 3;
   flex-shrink: 0;
-  padding: 16px 28px 0;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.tag-settings-dialog__selected-host:not(.tag-settings-dialog__selected-host--filled) {
-  display: none;
-}
-
-.tag-settings-dialog__footer.tag-settings-dialog__footer--with-selected.v-card-actions {
-  border-top: none;
+  gap: 8px;
+  padding: 28px 28px 12px;
 }
 
 .tag-settings-dialog__title {
@@ -216,9 +213,12 @@ const saveTags = async (): Promise<void> => {
 // Materio はダイアログ本文の上パディングを 0 にしており、コンポーネント側の指定より詳細度が高い。
 // outlined のラベルは枠の上にはみ出すので、同じかそれ以上の詳細度で上余白を取る。
 .v-dialog > .v-overlay__content > .v-card > .tag-settings-dialog__body.v-card-text {
-  // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える
-  order: 2;
+  // ラベルのはみ出し分だけ確保し、検索欄上の余白を抑える。
+  // backface-visibility: hidden のままだと、カテゴリを開いた高さが 0 になる。
+  flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
+  backface-visibility: visible;
   padding-top: 8px;
 }
 
@@ -226,13 +226,39 @@ const saveTags = async (): Promise<void> => {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  flex-shrink: 0;
   gap: 12px;
-  order: 4;
   padding: 16px 28px max(24px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 
   > .v-btn {
     margin-inline: 0;
+  }
+}
+
+.tag-settings-dialog__selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.tag-settings-dialog__remove {
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 36px;
+  margin-inline: 0;
+  padding-block: 6px;
+  letter-spacing: normal;
+  text-transform: none;
+
+  :deep(.v-btn__content) {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: start;
   }
 }
 
@@ -266,10 +292,6 @@ const saveTags = async (): Promise<void> => {
   }
 
   .tag-settings-dialog__body.v-card-text {
-    padding-inline: 20px;
-  }
-
-  .tag-settings-dialog__selected-host {
     padding-inline: 20px;
   }
 
