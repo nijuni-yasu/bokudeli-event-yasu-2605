@@ -2,10 +2,28 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { deleteApp, initializeApp } from 'firebase/app'
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions'
 import { CreateCommunityFormRequestSchema, type FormFieldInput } from '@shokujii/common/apis/form.js'
-import { changeFormFieldType, createChoiceOptions } from './formFieldEditor.js'
+import { changeFormFieldType, createChoiceOptions, formatDefaultFormName } from './formFieldEditor.js'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+})
+
+describe('formatDefaultFormName', () => {
+  const format = (communityName: string) => `${communityName}のフォーム`
+
+  it('コミュニティ名をタイトルにする', () => {
+    expect(formatDefaultFormName('  交流会  ', format, 100)).toBe('交流会のフォーム')
+  })
+
+  it('コミュニティ名が空のときはタイトルを作らない', () => {
+    expect(formatDefaultFormName('   ', format, 100)).toBe('')
+  })
+
+  it('フォーム名の上限を超えるときは切り詰める', () => {
+    const name = formatDefaultFormName('あ'.repeat(100), format, 100)
+    expect(name).toHaveLength(100)
+    expect(name.startsWith('あ')).toBe(true)
+  })
 })
 
 describe('changeFormFieldType', () => {

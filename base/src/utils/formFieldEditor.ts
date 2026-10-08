@@ -1,6 +1,22 @@
 import type { FormFieldInput } from '@shokujii/common/apis/form.js'
 import { isChoiceFieldType } from '@shokujii/common/schemas/formFields.js'
 
+export function formatDefaultFormName(
+  communityName: string,
+  format: (communityName: string) => string,
+  maxLength: number,
+): string {
+  const trimmed = communityName.trim()
+  if (trimmed === '') {
+    return ''
+  }
+  const name = format(trimmed)
+  if (name.length <= maxLength) {
+    return name
+  }
+  return name.slice(0, maxLength)
+}
+
 export function createChoiceOptions(labels: readonly string[]): { label: string; hidden_for_new: false }[] {
   return labels.map((label) => ({ label, hidden_for_new: false }))
 }

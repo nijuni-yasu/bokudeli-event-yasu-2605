@@ -1217,7 +1217,7 @@ export default {
       description_privacy_hint:
         '個人情報を取得する場合は、プライバシーポリシーへの同意を促し、そのリンクをこの説明に貼り付けてください。',
       fields: '設問',
-      default_name: 'イベント名のフォーム',
+      default_name: '{communityName}のフォーム',
       default_field_label: '質問',
       default_option_label: '選択肢 {number}',
       add_field: '設問を追加',

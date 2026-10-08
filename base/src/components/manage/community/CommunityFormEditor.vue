@@ -18,6 +18,7 @@ import {
   type FormField,
 } from '@shokujii/common/schemas/formFields.js'
 import type { ResolveManageCommunityFormsPathFn } from '@shokujii/base/types/profilePathResolvers.js'
+import { formatDefaultFormName } from '@shokujii/base/utils/formFieldEditor.js'
 
 const props = defineProps<{
   formId?: string
@@ -39,7 +40,26 @@ const createCommunityStore = useCreateAppCommunityStore()
 const communityStore = computed(() => createCommunityStore(communityAccount.value))
 const communityId = computed(() => communityStore.value.community?.community_id ?? '')
 
-const name = ref(props.formId == null ? $t('manage.forms.default_name') : '')
+const name = ref('')
+
+watch(
+  () => communityStore.value.community?.community_name ?? '',
+  (communityName) => {
+    if (props.formId != null || name.value !== '') {
+      return
+    }
+    const next = formatDefaultFormName(
+      communityName,
+      (value) => $t('manage.forms.default_name', { communityName: value }),
+      FORM_FIELD_LIMITS.maxName,
+    )
+    if (next === '') {
+      return
+    }
+    name.value = next
+  },
+  { immediate: true },
+)
 const description = ref('')
 const fields = ref<FormFieldInput[]>([])
 const saving = ref(false)
