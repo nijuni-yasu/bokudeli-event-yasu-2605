@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCommunityPath, getLogin } from '@/router/utils'
 import { getEventUrl } from '@shokujii/common/utils/urls.js'
@@ -44,6 +44,12 @@ import PublicAlbumGallery from '@shokujii/base/components/PublicAlbumGallery.vue
 import { extractImageSlidesFromHtml } from '@shokujii/base/utils/extractImagesFromHtml'
 import { useDisplay } from 'vuetify'
 import { shouldShowEventParticipantsSection } from '@shokujii/common/utils/eventParticipantsVisibility.js'
+import TagSetupPromptDialog from '@shokujii/base/components/TagSetupPromptDialog.vue'
+import TagSettingsDialog from '@shokujii/base/components/TagSettingsDialog.vue'
+import {
+  resolveParticipantTagsButtonClick,
+  shouldShowParticipantTagsButton,
+} from '@shokujii/base/utils/participantTagsButton.js'
 
 const router = useRouter()
 const display = useDisplay()
@@ -161,6 +167,47 @@ const shouldShowParticipantsSection = computed(() =>
 
 /** イベント詳細の参加者プレビューで個別タグを表示するか（デフォルト非表示・ページ再訪のたび OFF） */
 const showParticipantTags = ref(false)
+const showTagSetupPrompt = ref(false)
+const showTagSettings = ref(false)
+
+const isCurrentUserParticipant = computed(() => {
+  const uid = currentUserStore.firebaseUser?.uid
+  return uid != null && props.event.members.includes(uid)
+})
+
+const previewHasAnyTags = computed(() => members.value.some((member) => (member.user_tags ?? []).length > 0))
+
+const showParticipantTagsButton = computed(() =>
+  shouldShowParticipantTagsButton({
+    isShowMember: isShowMember.value,
+    isCurrentUserParticipant: isCurrentUserParticipant.value,
+    previewProfilesReady: eventStore.arePreviewMemberProfilesReady,
+    previewHasAnyTags: previewHasAnyTags.value,
+  }),
+)
+
+const onParticipantTagsButtonClick = () => {
+  const action = resolveParticipantTagsButtonClick({
+    tagsVisible: showParticipantTags.value,
+    isLoggedIn: currentUserStore.firebaseUser != null,
+    myTagsReady: currentUserStore.user != null,
+    myTagCount: currentUserStore.user?.user_tags?.length ?? 0,
+  })
+  if (action === 'hide') {
+    showParticipantTags.value = false
+    return
+  }
+  showParticipantTags.value = true
+  if (action === 'reveal-and-prompt') {
+    showTagSetupPrompt.value = true
+  }
+}
+
+const onConfirmTagSetupPrompt = async () => {
+  showTagSetupPrompt.value = false
+  await nextTick()
+  showTagSettings.value = true
+}
 
 const shareButtonSize = computed(() => (display.xs.value ? 'small' : 'large'))
 const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
@@ -412,7 +459,7 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
                   {{ $t('event_details.participants_profile') }}
                 </VBtn>
                 <VBtn
-                  v-if="isShowMember === true"
+                  v-if="showParticipantTagsButton"
                   :variant="showParticipantTags ? 'flat' : 'outlined'"
                   rounded="pill"
                   size="small"
@@ -423,7 +470,7 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
                       ? $t('event_details.hide_participant_tags')
                       : $t('event_details.show_participant_tags')
                   "
-                  @click="showParticipantTags = !showParticipantTags"
+                  @click="onParticipantTagsButtonClick"
                 >
                   {{
                     showParticipantTags
@@ -515,6 +562,8 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
     {{ $t('event_details.contact_community_after_login') }}
   </confirm-dialog>
   <calendar-add-dialog v-model="isOpenCalendarAddDialog" :event="event!" />
+  <TagSetupPromptDialog v-model="showTagSetupPrompt" @confirm="onConfirmTagSetupPrompt" />
+  <TagSettingsDialog v-model="showTagSettings" />
   <show-dialog v-model="isShowQrCode">
     <v-card class="justify-center text-center" elevation="0">
       <v-card-text>
