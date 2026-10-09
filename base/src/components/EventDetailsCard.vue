@@ -170,19 +170,9 @@ const showParticipantTags = ref(false)
 const showTagSetupPrompt = ref(false)
 const showTagSettings = ref(false)
 
-const isCurrentUserParticipant = computed(() => {
-  const uid = currentUserStore.firebaseUser?.uid
-  return uid != null && props.event.members.includes(uid)
-})
-
-const previewHasAnyTags = computed(() => members.value.some((member) => (member.user_tags ?? []).length > 0))
-
 const showParticipantTagsButton = computed(() =>
   shouldShowParticipantTagsButton({
     isShowMember: isShowMember.value,
-    isCurrentUserParticipant: isCurrentUserParticipant.value,
-    previewProfilesReady: eventStore.arePreviewMemberProfilesReady,
-    previewHasAnyTags: previewHasAnyTags.value,
   }),
 )
 

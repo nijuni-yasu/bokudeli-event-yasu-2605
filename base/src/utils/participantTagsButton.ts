@@ -1,18 +1,7 @@
 export type ParticipantTagsButtonClickAction = 'reveal-and-prompt' | 'reveal' | 'hide'
 
-export function shouldShowParticipantTagsButton(input: {
-  isShowMember: boolean
-  isCurrentUserParticipant: boolean
-  previewProfilesReady: boolean
-  previewHasAnyTags: boolean
-}): boolean {
-  if (!input.isShowMember) {
-    return false
-  }
-  if (input.isCurrentUserParticipant) {
-    return true
-  }
-  return input.previewProfilesReady && input.previewHasAnyTags
+export function shouldShowParticipantTagsButton(input: { isShowMember: boolean }): boolean {
+  return input.isShowMember
 }
 
 export function resolveParticipantTagsButtonClick(input: {
