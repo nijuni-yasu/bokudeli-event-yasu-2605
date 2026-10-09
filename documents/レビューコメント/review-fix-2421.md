@@ -9,6 +9,7 @@
 | [x] | RC-3 | 4230721425 | 🟡 修正提案 | ✅ 対応済み | 📌 スコープ内 | — | 🔧 微修正 | S | 世代が変わったあとの古い取得結果を弾くテストが無い<br>`event.test.ts` の再試行は同じ参加者IDの失敗だけを見ている<br>参加者の入れ替えと unsubscribe 後に古い名前が残っても検知できない<br>両経路で、完了した旧取得が `previewMembers` を上書きしないことを検証する |
 | [ ] | RC-4 | 4230721529 | 🟡 修正提案 | 未着手 | 📌 スコープ内 | — | 📐 リファクタ | M | 参加者が1人変わるたびに、取得済みの人を含む全員を読み直している<br>`event.ts` の `syncPreviewUsers` が参加者ID列の全体を再取得する<br>画面を開いたまま参加が増えると、読み取りが人数に比例して重なる<br>取得済み Map の再利用は表示欠落の修正ではなく、この PR では未着手 |
 | [x] | RC-5 | 4230718151 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 31人超の取得をチャンク順に待ってからまとめて表示している<br>`user.ts` の `fetchUsersByIds` が `getDocs` を直列に await している<br>数百人だと往復回数ぶん名前の表示が遅れる、という指摘<br>メニュー購読と競合させないため、チャンクは直列のままにする |
+| [x] | RC-6 | 5471020687 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再レビューの overview は承認推奨<br>未解決リンクは既存の `#discussion_r4230721529`<br>実体は RC-4 で、目次自体に新しい修正要求はない<br>競合テストの指摘は resolved として閉じられている |
 
 ---
 
@@ -389,5 +390,76 @@ Useful? React with 👍 / 👎.
 **想定工数**: —
 
 **判断理由**: チャンクを `Promise.all` にすると、#2391 でメニューとバナーの購読が枯渇したのと同じように、同時の Firestore 読み取りが増える。直列は参加者全員を出したうえで購読を張らないための選択である。結果の反映が全チャンク後になる点は、指摘の並列化でも `Promise.all` の完了を待つ限り同じである。
+
+---
+
+## 評価セッション（2026-10-09 22:58・review-comments-evaluate）
+
+- **評価日時**: 2026-10-09 22:58 JST
+- **評価者**: Cursor Agent（`/review-comments-evaluate` auto）
+- **ブランチ名**: `fix/2421`
+- **PR**: https://github.com/nijuniinc/bokudeli-event-new/pull/2424
+- **since**: 2026-10-09T13:51:25Z
+- **partial**: true（wake の値。Codex は `Didn't find any major issues` を返しており、limits / connect 文言は無い）
+- **Outdated 除外件数**: 0
+- **レビュー非該当スキップ件数**: 2（6082287862 レビュー依頼の定型文、6082340053 Codex の問題なし）
+- **重複除外**: GitHub id 6082408094 → 既存 RC-4、差分なし
+- **手順 4a 自動修正**: なし
+
+### RC 一覧（サマリ）
+
+| 対応 | RC | GitHub id | 評価 | ステータス | PRスコープ | ラベル | 種別 | 工数 | 要約 |
+|:----:|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| [x] | RC-6 | 5471020687 | 👌 修正不要 | — | — | — | 👀 確認のみ | — | 再レビューの overview は承認推奨<br>未解決リンクは既存の `#discussion_r4230721529`<br>実体は RC-4 で、目次自体に新しい修正要求はない<br>競合テストの指摘は resolved として閉じられている |
+
+---
+
+**識別子**: RC-6（GitHub id: 5471020687）
+
+**レビュワー**: Copilot
+
+**指摘箇所**: PR レビュー本文
+
+**該当コード（レビュー時点の diff）**:
+
+（インライン指摘なし）
+
+**レビュワーのコメント（原文）**:
+
+<!-- ccr-overview-v2 -->
+
+### 🟢 Approval recommended
+
+全員表示、一括取得、再試行および古い取得結果の排除が適切に実装・検証されています。
+
+<details open>
+<summary><strong>1 open finding</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [取得済み参加者を再利用し追加・退出IDのみ読み込む](#discussion_r4230721529)
+</details>
+
+<details>
+<summary><strong>1 resolved since last review</strong></summary>
+
+- <picture><source media="(prefers-color-scheme: dark)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-dark.svg"><source media="(prefers-color-scheme: light)" srcset="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.svg"><img src="https://github.githubassets.com/static/images/icons/copilot-code-review/medium-v2-light.png" alt="Medium severity" width="62" height="18" align="texttop"></picture> [参加者変更・解除後に古い取得結果を適用しない競合テストを追加](#discussion_r4230721425)
+</details>
+
+🧠 **Review effort:** Balanced
+
+**コメント要約**: 再レビューの overview は承認推奨。未解決リンクは既存の `#discussion_r4230721529`。実体は RC-4 で、目次自体に新しい修正要求はない。競合テストの指摘は resolved として閉じられている。
+
+**評価**: 👌 修正不要
+
+**ステータス**: —
+
+**PRスコープ**: —
+
+**ラベル**: —
+
+**変更種別**: 👀 確認のみ
+
+**想定工数**: —
+
+**判断理由**: open finding のリンク先は前回の RC-4 と同じインラインである。resolved は RC-3 で追加した競合テストを指す。overview は実装が妥当だと述べ、リンク先以外の修正は求めていない。RC-4 の評価と未着手は変えていない。
 
 ---
