@@ -153,8 +153,8 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
           class="pa-3"
         >
           <v-card height="100%" color="text-center" class="d-flex flex-column">
-            <v-row no-gutters class="flex-grow-1">
-              <v-col cols="6" sm="12" class="d-flex flex-shrink-0">
+            <div class="menu-card-grid">
+              <div class="menu-image-col">
                 <div class="menu-image-wrapper">
                   <div
                     v-if="isNoOrderParticipationMenu(menu.menu_id)"
@@ -171,9 +171,9 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     cover
                   />
                 </div>
-              </v-col>
+              </div>
 
-              <v-col cols="6" sm="12" class="pa-2 d-flex flex-column menu-content-col">
+              <div class="pa-2 d-flex flex-column flex-grow-1 menu-content-col">
                 <v-card-title class="justify-start text-h6 font-weight-bold text-wrap pa-1 flex-shrink-0">
                   {{ menu.menu_name }}
                 </v-card-title>
@@ -213,8 +213,8 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
                     </v-col>
                   </v-row>
                 </div>
-              </v-col>
-            </v-row>
+              </div>
+            </div>
           </v-card>
         </v-col>
       </template>
@@ -246,6 +246,8 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
   overflow: hidden;
   line-height: 1.4;
   max-height: 2.8em;
+  /* v-card-text の flex: 1 1 auto だと説明文が余白を取り、名前と価格の間が空く */
+  flex: 0 0 auto !important;
 }
 
 /* 画像ラッパー共通 */
@@ -263,9 +265,26 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
   background-color: rgb(var(--v-theme-grey-100));
 }
 
-/* グリッドレイアウト: 画像を正方形で揃える */
+/* グリッド: 画像は正方形のまま。余白で縦に伸ばすとメニュー名が画像から離れる */
+.menu-card-grid {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.menu-image-col {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+
 .menu-image-wrapper:not(.menu-image-wrapper-horizontal) {
   aspect-ratio: 1;
+  width: 100%;
+  height: auto;
+  align-self: flex-start;
 }
 
 /* 横長レイアウト: カードの高さを統一するための最小高さ */
@@ -309,6 +328,17 @@ const menusWithRemaining = computed((): MenuWithRemaining[] | undefined => {
 }
 
 @media (max-width: 600px) {
+  /* スマホは画像左・テキスト右 */
+  .menu-card-grid {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .menu-image-col {
+    width: 50%;
+    flex: 0 0 50%;
+  }
+
   .menu-button {
     font-size: 13px !important;
     height: 30px !important;
