@@ -22,7 +22,7 @@ import { db } from '@shokujii/base/firebase.js'
 import { EventMemberOrder } from '@shokujii/common/schemas/EventMemberOrder.js'
 import { EventMenu } from '@shokujii/common/schemas/EventMenu.js'
 import { User } from '@shokujii/common/schemas/User.js'
-import { getUserRef, useUserStore, type UserStore } from './user.js'
+import { fetchUsersByIds, useUserStore, type UserStore } from './user.js'
 import { Event as _Event } from '@shokujii/common/schemas/Event.js'
 import { getAuth } from 'firebase/auth'
 import {
@@ -39,7 +39,11 @@ import {
 } from '@shokujii/base/apis/order.js'
 import { updateEventMenus as _updateEventMenus } from '@shokujii/base/apis/eventMenu.js'
 import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
-import { createFirestoreListenRetry, type FirestoreListenRetry } from '@shokujii/base/utils/firestoreListenRetry.js'
+import {
+  createFirestoreListenRetry,
+  isRetryableFirestoreError,
+  type FirestoreListenRetry,
+} from '@shokujii/base/utils/firestoreListenRetry.js'
 import { ZodError } from 'zod'
 import { copyCommunityCoverToEvent as callCopyCommunityCoverToEvent } from '@shokujii/base/apis/copyCommunityCoverToEvent.js'
 import { preparePfEventDraft, type EventDraftPreparer } from '@shokujii/base/stores/eventDraft.js'
@@ -54,9 +58,6 @@ import { uploadImage, convertStoragePathToURL } from '@shokujii/base/utils/stora
 
 const TINYMCE_MAX_IMAGE_SIZE = 600
 
-/** イベント詳細で同時に users/{uid} を購読する人数。全員分張るとメニュー・バナー購読が失敗しやすい。 */
-export const EVENT_DETAIL_MEMBER_PREVIEW_LIMIT = 12
-
 /** メニューの onSnapshot がスナップショットもエラーも返さないとき、この時間で張り直す。 */
 const MENU_LISTEN_SILENCE_MS = 8000
 
@@ -65,32 +66,7 @@ export const latestOrderUpdatedAt = (orders: readonly { updated_at: number }[]):
   return orders.reduce((max, order) => Math.max(max, order.updated_at), 0)
 }
 
-/**
- * イベント詳細に出す参加者 id。
- * 上限以下はそのまま。注文未取得の間は配列の先頭。取得後は詳細カードと同じ順の先頭だけ。
- */
-export const selectPreviewMemberIds = (
-  memberIds: readonly string[],
-  orders: readonly { user_id: string; updated_at: number }[] | null,
-  limit: number = EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
-): string[] => {
-  if (memberIds.length <= limit) {
-    return [...memberIds]
-  }
-  if (orders == null) {
-    return memberIds.slice(0, limit)
-  }
-  const latestByUserId = new Map<string, number>()
-  for (const order of orders) {
-    const latest = latestByUserId.get(order.user_id)
-    if (latest == null || order.updated_at > latest) {
-      latestByUserId.set(order.user_id, order.updated_at)
-    }
-  }
-  return [...memberIds]
-    .sort((memberIdA, memberIdB) => (latestByUserId.get(memberIdA) ?? 0) - (latestByUserId.get(memberIdB) ?? 0))
-    .slice(0, limit)
-}
+const previewMemberKey = (memberIds: readonly string[]): string => memberIds.join('\0')
 
 class EventRefUpdatedEvent extends Event {
   constructor(
@@ -372,76 +348,83 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       return memberIds.flatMap((memberId) => memberWithOrders(memberId, getMemberUserStore(memberId).user))
     }
 
-    /** プレビュー専用。useUserStore は共有なので外すと他画面の購読も切れる */
-    const previewUserListeners = new Map<string, FirestoreListenRetry>()
+    /**
+     * イベント詳細の参加者プロフィール。
+     * users は id の一括取得にし、人数分の onSnapshot は張らない。
+     */
     const previewUsers = ref(new Map<string, User | null>())
+    let previewUsersGeneration = 0
+    let previewUsersSettledKey: string | null = null
+    let previewUsersInFlightKey: string | null = null
+    let previewUsersPendingKey: string | null = null
+    let previewUsersRetryTimer: ReturnType<typeof setTimeout> | null = null
+    let previewUsersFailureCount = 0
+    let reportedPreviewUsersError = false
 
-    const replacePreviewUsers = (mutate: (draft: Map<string, User | null>) => void): void => {
-      const next = new Map(previewUsers.value)
-      mutate(next)
-      previewUsers.value = next
-    }
-
-    const stopPreviewUserListener = (memberId: string): void => {
-      previewUserListeners.get(memberId)?.stop()
-      previewUserListeners.delete(memberId)
-      replacePreviewUsers((draft) => {
-        draft.delete(memberId)
-      })
-    }
-
-    const syncPreviewUserListeners = (memberIds: readonly string[]): void => {
-      const keep = new Set(memberIds)
-      for (const memberId of [...previewUserListeners.keys()]) {
-        if (!keep.has(memberId)) {
-          stopPreviewUserListener(memberId)
-        }
-      }
-      for (const memberId of memberIds) {
-        if (previewUserListeners.has(memberId)) {
-          continue
-        }
-        const holder: { current: FirestoreListenRetry | null } = { current: null }
-        let reportedPreviewUserError = false
-        const listen = createFirestoreListenRetry(
-          ({ onError }) =>
-            onSnapshot(
-              getUserRef(memberId),
-              (snapshot) => {
-                holder.current?.markHealthy()
-                reportedPreviewUserError = false
-                try {
-                  replacePreviewUsers((draft) => {
-                    draft.set(memberId, snapshot.data() ?? new User(memberId, {}))
-                  })
-                } catch (err) {
-                  console.error(err)
-                  reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
-                }
-              },
-              onError,
-            ),
-          {
-            onError: (err) => {
-              console.error('preview user snapshot error', err)
-              if (reportedPreviewUserError) {
-                return
-              }
-              reportedPreviewUserError = true
-              reportClientError(err, { documentPath: `users/${memberId}`, severity: 'warn' })
-            },
-          },
-        )
-        holder.current = listen
-        previewUserListeners.set(memberId, listen)
-        listen.ensure()
+    const clearPreviewUsersRetry = (): void => {
+      if (previewUsersRetryTimer != null) {
+        clearTimeout(previewUsersRetryTimer)
+        previewUsersRetryTimer = null
       }
     }
 
-    const stopPreviewUserListeners = (): void => {
-      for (const memberId of [...previewUserListeners.keys()]) {
-        stopPreviewUserListener(memberId)
+    const stopPreviewUserFetch = (): void => {
+      previewUsersGeneration += 1
+      previewUsersSettledKey = null
+      previewUsersInFlightKey = null
+      previewUsersPendingKey = null
+      previewUsersFailureCount = 0
+      reportedPreviewUsersError = false
+      clearPreviewUsersRetry()
+      previewUsers.value = new Map()
+    }
+
+    const syncPreviewUsers = (memberIds: readonly string[]): void => {
+      const key = previewMemberKey(memberIds)
+      if (key === previewUsersSettledKey || key === previewUsersInFlightKey || key === previewUsersPendingKey) {
+        return
       }
+      clearPreviewUsersRetry()
+      previewUsersPendingKey = null
+      const generation = ++previewUsersGeneration
+      previewUsersInFlightKey = key
+      void fetchUsersByIds(memberIds)
+        .then((users) => {
+          if (generation !== previewUsersGeneration) {
+            return
+          }
+          previewUsers.value = users
+          previewUsersSettledKey = key
+          previewUsersInFlightKey = null
+          previewUsersFailureCount = 0
+          reportedPreviewUsersError = false
+        })
+        .catch((err: unknown) => {
+          if (generation !== previewUsersGeneration) {
+            return
+          }
+          previewUsersInFlightKey = null
+          console.error('preview users fetch error', err)
+          if (!reportedPreviewUsersError) {
+            reportedPreviewUsersError = true
+            reportClientError(err, { componentInfo: 'eventPreviewMembers', severity: 'warn' })
+          }
+          if (!isRetryableFirestoreError(err)) {
+            previewUsersSettledKey = key
+            return
+          }
+          previewUsersFailureCount += 1
+          const delayMs = Math.min(previewUsersFailureCount, 5) * 1000
+          previewUsersPendingKey = key
+          previewUsersRetryTimer = setTimeout(() => {
+            previewUsersRetryTimer = null
+            if (generation !== previewUsersGeneration) {
+              return
+            }
+            previewUsersPendingKey = null
+            syncPreviewUsers(memberIds)
+          }, delayMs)
+        })
     }
 
     const members = computed<BokudeliEventMember[] | null>(() => {
@@ -451,19 +434,14 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       return buildMembers(_memberIds.value)
     })
 
-    /** イベント詳細の初期表示用。人数に比例して users 購読を張らない */
+    /** イベント詳細の参加者。人数で切らず、users は一括取得する */
     const previewMembers = computed<BokudeliEventMember[] | null>(() => {
       if (_memberIds.value == null) {
         return null
       }
-      // 並び替えに注文が要る。collection group は 1 購読のまま、user 文書は選んだ人数だけ張る。
-      if (_memberIds.value.length > EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
-        subscribeOrders()
-      }
-      const ids = selectPreviewMemberIds(_memberIds.value, _orders.value, EVENT_DETAIL_MEMBER_PREVIEW_LIMIT)
-      syncPreviewUserListeners(ids)
+      syncPreviewUsers(_memberIds.value)
       const users = previewUsers.value
-      return ids.map((memberId) => memberWithOrders(memberId, users.get(memberId) ?? null))
+      return _memberIds.value.map((memberId) => memberWithOrders(memberId, users.get(memberId) ?? null))
     })
 
     const coverImageUrl = computed<string | undefined>(() => {
@@ -841,7 +819,7 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       menusListenHolder.current?.stop()
       menusListenHolder.current = null
       reportedMenusError = false
-      stopPreviewUserListeners()
+      stopPreviewUserFetch()
     }
 
     /** 画面再入場時。Pinia store は残るが unsubscribe 後は listener を張り直す */

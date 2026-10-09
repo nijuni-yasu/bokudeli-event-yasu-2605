@@ -101,7 +101,6 @@ export default {
     event_details: '開催内容',
     participants: '参加者',
     participants_profile: '参加者一覧',
-    participants_preview_note: '参加者が多いため、{0}人まで表示しています。',
     show_participant_tags: 'タグ表示',
     hide_participant_tags: 'タグ非表示',
     open_group_chat: 'チャット',
