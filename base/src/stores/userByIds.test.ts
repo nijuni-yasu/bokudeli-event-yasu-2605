@@ -50,7 +50,8 @@ describe('fetchUsersByIds', () => {
     whereMock.mockClear()
     reportClientErrorMock.mockClear()
     getDocsMock.mockImplementation(async () => {
-      const ids = whereMock.mock.calls.at(-1)?.[2]
+      const calls = whereMock.mock.calls
+      const ids = calls[calls.length - 1]?.[2]
       if (!Array.isArray(ids)) {
         throw new Error('where ids missing')
       }
