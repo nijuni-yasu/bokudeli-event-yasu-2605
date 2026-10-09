@@ -1,6 +1,18 @@
 export type Sizes = 'large' | 'medium' | 'small'
 export type ThumbnailLinks = { [K in Sizes]: string }
 
+/**
+ * アバター表示 px からサムネイル種別を決める。
+ * thumbnailSize を渡したときは表示サイズよりそちらを優先する。
+ */
+export const resolveUserAvatarThumbnailSize = (displaySize: number | undefined, thumbnailSize?: Sizes): Sizes => {
+  if (thumbnailSize != null) return thumbnailSize
+  if (displaySize == null) return 'large'
+  if (displaySize <= 50) return 'small'
+  if (displaySize <= 100) return 'medium'
+  return 'large'
+}
+
 const SIZE_LIST: {
   name: Sizes
   value: number

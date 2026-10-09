@@ -3,7 +3,11 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { type VAvatar } from 'vuetify/lib/components/index.mjs'
 import { getDefaultAvatarUrl } from '@shokujii/base/utils/defaultAvatar.js'
 import { User } from '@shokujii/common/schemas/User.js'
-import { buildThumbnailsLinks, type Sizes } from '@shokujii/common/utils/buildThumbnailsLinks.js'
+import {
+  buildThumbnailsLinks,
+  resolveUserAvatarThumbnailSize,
+  type Sizes,
+} from '@shokujii/common/utils/buildThumbnailsLinks.js'
 import { FIREBASE_STORAGE_BASE_URL } from '@shokujii/base/firebase.js'
 import { useUserImageCacheStore } from '@shokujii/base/stores/userImageCache.js'
 
@@ -13,14 +17,8 @@ const RETRY_DELAY = 1000
 const props = defineProps<{
   user: User | string | null
   size?: number
+  thumbnailSize?: Sizes
 }>()
-
-const calcAvatarSize = (size: number | undefined): Sizes => {
-  if (size == null) return 'large'
-  if (size <= 50) return 'small'
-  if (size <= 100) return 'medium'
-  return 'large'
-}
 
 const avatarElement = ref<VAvatar>()
 const elementSize = ref<number | undefined>(undefined)
@@ -44,7 +42,7 @@ const avatar = computed(() => {
     FIREBASE_STORAGE_BASE_URL,
     cacheBuster,
   )
-  return thumbnails?.[calcAvatarSize(size.value)] ?? props.user.user_image_url
+  return thumbnails?.[resolveUserAvatarThumbnailSize(size.value, props.thumbnailSize)] ?? props.user.user_image_url
 })
 
 const useDefaultAvatar = ref(false)

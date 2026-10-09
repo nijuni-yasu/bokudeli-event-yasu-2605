@@ -81,7 +81,7 @@ const cardStyle = computed(() => ({
     <router-link :to="getUserPath(member.user_id)" class="event-member-card__main">
       <div class="event-member-card__identity">
         <div class="event-member-card__avatar-wrap">
-          <UserAvatar :user="member" :size="compact ? 56 : 96" />
+          <UserAvatar :user="member" :size="compact ? 56 : 96" thumbnail-size="large" />
         </div>
         <div class="event-member-card__name-block">
           <span class="event-member-card__name" :title="userName">{{ userName }}</span>
