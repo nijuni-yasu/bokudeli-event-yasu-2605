@@ -29,7 +29,7 @@ const props = withDefaults(
 const { t } = useI18n()
 const { xs } = useDisplay()
 const currentUserStore = useCurrentUserStore()
-const { toggleTag: onMemberTagClick } = useProfileTagToggle()
+const { toggleTag: onMemberTagClick, loadingTag } = useProfileTagToggle()
 
 const compact = computed(() => xs.value)
 const myTags = computed(() => new Set(currentUserStore.user?.user_tags ?? []))
@@ -81,7 +81,7 @@ const cardStyle = computed(() => ({
     <router-link :to="getUserPath(member.user_id)" class="event-member-card__main">
       <div class="event-member-card__identity">
         <div class="event-member-card__avatar-wrap">
-          <UserAvatar :user="member" :size="compact ? 56 : 96" />
+          <UserAvatar :user="member" :size="compact ? 56 : 96" thumbnail-size="large" />
         </div>
         <div class="event-member-card__name-block">
           <span class="event-member-card__name" :title="userName">{{ userName }}</span>
@@ -102,6 +102,7 @@ const cardStyle = computed(() => ({
             compact
             :highlighted="isTagHighlighted(tag)"
             :clickable="!isCurrentUser"
+            :loading="loadingTag === tag"
             @click="onMemberTagClick(tag)"
           />
         </span>

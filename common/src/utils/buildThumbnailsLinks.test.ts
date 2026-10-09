@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildThumbnailsLinks } from './buildThumbnailsLinks.js'
+import { buildThumbnailsLinks, resolveUserAvatarThumbnailSize } from './buildThumbnailsLinks.js'
 
 const FIREBASE_STORAGE_BASE_URL = 'https://firebasestorage.googleapis.com/v0/'
 
@@ -31,5 +31,20 @@ describe('buildThumbnailsLinks', () => {
   it('Facebook graph URL は null を返す', () => {
     const url = new URL('https://graph.facebook.com/123/picture')
     expect(buildThumbnailsLinks('uid1', url, FIREBASE_STORAGE_BASE_URL)).toBeNull()
+  })
+})
+
+describe('resolveUserAvatarThumbnailSize', () => {
+  it('表示 50px 以下は small、100px 以下は medium、それより大きいか未指定は large', () => {
+    expect(resolveUserAvatarThumbnailSize(50)).toBe('small')
+    expect(resolveUserAvatarThumbnailSize(56)).toBe('medium')
+    expect(resolveUserAvatarThumbnailSize(96)).toBe('medium')
+    expect(resolveUserAvatarThumbnailSize(101)).toBe('large')
+    expect(resolveUserAvatarThumbnailSize(undefined)).toBe('large')
+  })
+
+  it('thumbnailSize を指定したときは表示サイズより優先する', () => {
+    expect(resolveUserAvatarThumbnailSize(56, 'large')).toBe('large')
+    expect(resolveUserAvatarThumbnailSize(96, 'large')).toBe('large')
   })
 })

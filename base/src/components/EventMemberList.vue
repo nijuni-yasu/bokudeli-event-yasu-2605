@@ -27,7 +27,7 @@ withDefaults(
 )
 
 const currentUserStore = useCurrentUserStore()
-const { toggleTag: onMemberTagClick } = useProfileTagToggle()
+const { toggleTag: onMemberTagClick, loadingTag } = useProfileTagToggle()
 const myTags = computed(() => new Set(currentUserStore.user?.user_tags ?? []))
 
 const isTagHighlighted = (tag: string) => myTags.value.has(tag)
@@ -77,6 +77,7 @@ const hasMemberTagRow = (member: BokudeliEventMember) => (member.user_tags ?? []
                 compact
                 :highlighted="isTagHighlighted(t)"
                 :clickable="!isCurrentUser(member)"
+                :loading="loadingTag === t"
                 @click="onMemberTagClick(t)"
               />
               <TagAddChip v-if="isCurrentUser(member)" compact />

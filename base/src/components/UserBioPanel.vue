@@ -27,7 +27,7 @@ const props = withDefaults(
 const currentUserStore = useCurrentUserStore()
 
 const isEditable = computed(() => props.isEditable ?? false)
-const { toggleTag } = useProfileTagToggle()
+const { toggleTag, loadingTag } = useProfileTagToggle()
 
 const onTagClick = (tag: string) => {
   if (isEditable.value) return
@@ -96,6 +96,7 @@ const isHighlighted = (tag: string) => myTags.value.has(tag)
               :tag="t"
               :highlighted="isHighlighted(t)"
               :clickable="!isEditable"
+              :loading="loadingTag === t"
               @click="onTagClick(t)"
             />
             <TagAddChip v-if="isEditable" />

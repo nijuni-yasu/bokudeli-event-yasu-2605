@@ -851,6 +851,9 @@ export default {
     import_hint_gray: '… まだ持っていないタグ（追加）',
     import_hint_green: '… すでに持っているタグ（解除）',
     import_hint_ok: 'OK',
+    setup_prompt_title: 'タグ設定しよう！',
+    setup_prompt_body: '自分の興味や趣味をタグにしておくと、同じタグの参加者と話しやすくなります。',
+    setup_prompt_action: 'タグを設定する',
   },
   manage: {
     settings: {
