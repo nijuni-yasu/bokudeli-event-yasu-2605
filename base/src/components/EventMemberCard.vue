@@ -29,7 +29,7 @@ const props = withDefaults(
 const { t } = useI18n()
 const { xs } = useDisplay()
 const currentUserStore = useCurrentUserStore()
-const { toggleTag: onMemberTagClick } = useProfileTagToggle()
+const { toggleTag: onMemberTagClick, loadingTag } = useProfileTagToggle()
 
 const compact = computed(() => xs.value)
 const myTags = computed(() => new Set(currentUserStore.user?.user_tags ?? []))
@@ -102,6 +102,7 @@ const cardStyle = computed(() => ({
             compact
             :highlighted="isTagHighlighted(tag)"
             :clickable="!isCurrentUser"
+            :loading="loadingTag === tag"
             @click="onMemberTagClick(tag)"
           />
         </span>

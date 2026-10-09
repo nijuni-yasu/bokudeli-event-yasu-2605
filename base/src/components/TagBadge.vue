@@ -18,6 +18,8 @@ const props = withDefaults(
     /** おすすめタグ一覧で選択済み（✓ 表示） */
     selected?: boolean
     disabled?: boolean
+    /** 取り込み通信中。同じタグのチップすべてに出す */
+    loading?: boolean
   }>(),
   {
     highlighted: false,
@@ -28,6 +30,7 @@ const props = withDefaults(
     pickable: false,
     selected: false,
     disabled: false,
+    loading: false,
   },
 )
 
@@ -52,7 +55,7 @@ const chipColor = computed(() => {
 })
 
 const onClick = () => {
-  if (props.clickable && !props.disabled) {
+  if (props.clickable && !props.disabled && !props.loading) {
     emit('click', props.tag)
   }
 }
@@ -72,11 +75,12 @@ const onClose = () => {
     :closable="removable"
     :disabled="disabled"
     :prepend-icon="selected ? mdiCheck : undefined"
+    :aria-busy="loading || undefined"
     :class="[
       'tag-badge',
       isHighlighted ? 'tag-badge--highlighted' : pickable ? undefined : 'tag-badge--default',
       {
-        'cursor-pointer': clickable && !disabled,
+        'cursor-pointer': clickable && !disabled && !loading,
         'tag-badge--compact': compact,
         'tag-badge--emphasized': emphasized,
         'tag-badge--pickable': pickable,
@@ -86,6 +90,14 @@ const onClose = () => {
     @click="onClick"
     @click:close="onClose"
   >
+    <v-progress-circular
+      v-if="loading"
+      class="tag-badge__spinner"
+      color="primary"
+      indeterminate
+      :size="compact ? 10 : 12"
+      width="2"
+    />
     {{ tag }}
   </v-chip>
 </template>
@@ -108,6 +120,11 @@ const onClose = () => {
 .tag-badge--emphasized.v-chip {
   margin: 0 4px 8px 0;
   box-shadow: 0 1px 2px rgba(var(--v-theme-primary), 0.15);
+}
+
+.tag-badge__spinner {
+  margin-inline-end: 4px;
+  flex-shrink: 0;
 }
 
 .tag-badge--pickable.v-chip:not(.v-chip--disabled) {
