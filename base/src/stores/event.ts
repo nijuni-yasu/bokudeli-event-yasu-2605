@@ -434,16 +434,6 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       return buildMembers(_memberIds.value)
     })
 
-    /** 参加者プロフィールの一括取得が終わったか。未取得をタグなしと扱わないため */
-    const arePreviewMemberProfilesReady = computed(() => {
-      if (_memberIds.value == null) {
-        return false
-      }
-      const ids = _memberIds.value
-      const users = previewUsers.value
-      return previewUsersSettledKey === previewMemberKey(ids) && ids.every((id) => users.has(id))
-    })
-
     /** イベント詳細の参加者。人数で切らず、users は一括取得する */
     const previewMembers = computed<BokudeliEventMember[] | null>(() => {
       if (_memberIds.value == null) {
@@ -865,7 +855,6 @@ export const useEventStore = (target: string | BokudeliEvent, options: EventStor
       confirmedOrders,
       members,
       previewMembers,
-      arePreviewMemberProfilesReady,
       menus,
       getLoadedEvent,
       getLoadedMembers,

@@ -273,33 +273,6 @@ describe('useEventStore lazy members', () => {
     expect(getDocsMock).toHaveBeenCalled()
   })
 
-  it('参加者プロフィールが揃うまで arePreviewMemberProfilesReady は false', async () => {
-    let resolveFetch: ((users: Map<string, { user_name: string } | null>) => void) | undefined
-    fetchUsersByIdsMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveFetch = resolve
-        }),
-    )
-
-    const store = useEventStore('event-preview-ready')
-    await vi.waitFor(() => {
-      expect(store.event?.members).toEqual(['user-a', 'user-b'])
-    })
-    expect(store.previewMembers).toHaveLength(2)
-    expect(store.arePreviewMemberProfilesReady).toBe(false)
-
-    resolveFetch?.(
-      new Map([
-        ['user-a', { user_name: 'A' }],
-        ['user-b', { user_name: 'B' }],
-      ]),
-    )
-    await vi.waitFor(() => {
-      expect(store.arePreviewMemberProfilesReady).toBe(true)
-    })
-  })
-
   it('preview の user 取得が一時失敗したら取り直す', async () => {
     vi.useFakeTimers()
     fetchUsersByIdsMock
