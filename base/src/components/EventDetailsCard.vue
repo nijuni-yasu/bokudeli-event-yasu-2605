@@ -11,11 +11,7 @@ import CommunityContactDialog from '@shokujii/base/components/CommunityContactDi
 import CancelPolicyDialog from '@shokujii/base/components/CancelPolicyDialog.vue'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useAppEventStore } from '@shokujii/base/composable/useAppEventStore.js'
-import {
-  EVENT_DETAIL_MEMBER_PREVIEW_LIMIT,
-  latestOrderUpdatedAt,
-  type BokudeliEvent,
-} from '@shokujii/base/stores/event.js'
+import { latestOrderUpdatedAt, type BokudeliEvent } from '@shokujii/base/stores/event.js'
 import { type BokudeliCommunity } from '@shokujii/base/stores/community.js'
 import CalendarAddDialog from '@shokujii/base/components/CalendarAddDialog.vue'
 import { shareSnsButton, isMobileDevice } from '@shokujii/base/utils/shareSnsButton'
@@ -98,33 +94,12 @@ const twitterHashTagSearchUrl = computed(() => {
 // TODO コンポーネントを分割する
 const eventStore = useAppEventStore(props.event)
 
-/** メニュー購読より後に、人数が多いときの users 購読を始める。メニューが来ないうちは人数分の購読を足さない */
-const allowMemberListeners = ref(false)
-
 const participantCount = computed(() => props.event.members.length)
 
-watch(
-  [() => eventStore.menus, participantCount],
-  ([menus, count]) => {
-    // 少人数は従来どおりすぐ購読する。多人数はメニューが届いてからに限る
-    if (menus != null || count <= EVENT_DETAIL_MEMBER_PREVIEW_LIMIT) {
-      allowMemberListeners.value = true
-    }
-  },
-  { immediate: true },
-)
-
 const members = computed(() => {
-  if (!allowMemberListeners.value) {
-    return []
-  }
   const preview = eventStore.previewMembers ?? []
   return [...preview].sort((a, b) => latestOrderUpdatedAt(a.orders) - latestOrderUpdatedAt(b.orders))
 })
-
-const isMemberPreviewTruncated = computed(
-  () => participantCount.value > EVENT_DETAIL_MEMBER_PREVIEW_LIMIT && members.value.length > 0,
-)
 
 const isOpenContactDialogVisible = ref(false)
 const isOpenConfirmDialog = ref(false)
@@ -469,9 +444,6 @@ const shareButtonElevation = computed(() => (display.xs.value ? 0 : 2))
             :is-show-member="isShowMember"
             :member-tags-visible="showParticipantTags"
           />
-          <p v-if="isMemberPreviewTruncated" class="text-body-2 text-medium-emphasis px-5 mb-2">
-            {{ $t('event_details.participants_preview_note', [EVENT_DETAIL_MEMBER_PREVIEW_LIMIT]) }}
-          </p>
         </div>
         <v-card-text class="px-5" :class="{ 'mt-6': !shouldShowParticipantsSection }">
           <v-row align="center" no-gutters class="flex-nowrap">

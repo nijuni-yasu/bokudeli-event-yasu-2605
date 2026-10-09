@@ -1,16 +1,21 @@
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import {
+  collection,
   doc,
+  documentId,
   getDoc,
-  updateDoc,
+  getDocs,
   onSnapshot,
+  query,
+  setDoc,
+  updateDoc,
+  where,
   type Unsubscribe,
   type DocumentReference,
   FirestoreDataConverter,
   DocumentData,
   QueryDocumentSnapshot,
-  setDoc,
   SnapshotOptions,
 } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getMetadata } from 'firebase/storage'
@@ -18,6 +23,7 @@ import { User } from '@shokujii/common/schemas/User.js'
 import { getUserImageStoragePath } from '@shokujii/common/utils/storagePaths.js'
 import { db, storage } from '@shokujii/base/firebase.js'
 import { useUserImageCacheStore } from '@shokujii/base/stores/userImageCache.js'
+import { reportClientError } from '@shokujii/base/utils/reportClientError.js'
 
 /** Storage metadata.updated の比較。nullish のときは getMetadata 成功（存在確認）を優先する。 */
 const isStorageUpdatedAfter = (objectUpdated: string | undefined, referenceUpdated: string | undefined): boolean => {
@@ -48,6 +54,35 @@ export const getUserRef = (userId: string): DocumentReference<User> => {
 export const getUserById = async (userId: string): Promise<User | undefined> => {
   const snapshot = await getDoc(getUserRef(userId))
   return snapshot.exists() ? snapshot.data() : undefined
+}
+
+/** Firestore の `in` クエリ上限。これより多い id は分割して読む。 */
+export const USERS_BY_IDS_IN_LIMIT = 30
+
+/**
+ * users を id 指定でまとめて読む。
+ * イベント詳細で参加者全員を出すとき、人数分の onSnapshot を張らないために使う。
+ * 文書が無い id は null。
+ */
+export const fetchUsersByIds = async (userIds: readonly string[]): Promise<Map<string, User | null>> => {
+  const ids = [...new Set(userIds.filter((userId) => userId !== ''))]
+  const users = new Map<string, User | null>(ids.map((userId) => [userId, null]))
+  for (let offset = 0; offset < ids.length; offset += USERS_BY_IDS_IN_LIMIT) {
+    const chunk = ids.slice(offset, offset + USERS_BY_IDS_IN_LIMIT)
+    const snapshot = await getDocs(
+      query(collection(db, 'users'), where(documentId(), 'in', chunk)).withConverter(userConverter),
+    )
+    for (const userDoc of snapshot.docs) {
+      try {
+        users.set(userDoc.id, userDoc.data())
+      } catch (err) {
+        console.error(err)
+        reportClientError(err, { documentPath: userDoc.ref.path, severity: 'warn' })
+        users.set(userDoc.id, null)
+      }
+    }
+  }
+  return users
 }
 
 export type UserStore = ReturnType<typeof useUserStore>
