@@ -386,6 +386,14 @@ export const sendTestLetter = onCall(
       throw new HttpsError('unauthenticated', 'The function must be called while authenticated.')
     }
     const { communityId, letterId } = sendTestLetterRequestSchema.parse(request.data)
+    const community = await getCommunity(communityId)
+    if (community === undefined) {
+      throw new HttpsError('not-found', 'Community not found.')
+    }
+    const isManager = await community.hasRole(uid, 'manager')
+    if (!isManager) {
+      throw new HttpsError('permission-denied', 'Only community managers can send test letters.')
+    }
     const to = (await getUserPersonalInformation(uid))?.user_email
     if (to === undefined) {
       throw new HttpsError('not-found', 'The user is not valid.')
