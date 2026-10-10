@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { HttpsError } = vi.hoisted(() => {
+const {
+  HttpsError,
+  hasRoleMock,
+  sgMailSendMock,
+  getCommunityMock,
+  getLetterMock,
+  getUserPersonalInformationMock,
+  getCommunityUrlForCommunityMock,
+  getEventInCommunityMock,
+} = vi.hoisted(() => {
   class HttpsError extends Error {
     constructor(
       public code: string,
@@ -9,16 +18,17 @@ const { HttpsError } = vi.hoisted(() => {
       super(message)
     }
   }
-  return { HttpsError }
+  return {
+    HttpsError,
+    hasRoleMock: vi.fn(),
+    sgMailSendMock: vi.fn(),
+    getCommunityMock: vi.fn(),
+    getLetterMock: vi.fn(),
+    getUserPersonalInformationMock: vi.fn(),
+    getCommunityUrlForCommunityMock: vi.fn(),
+    getEventInCommunityMock: vi.fn(),
+  }
 })
-
-const hasRoleMock = vi.fn()
-const sgMailSendMock = vi.fn()
-const getCommunityMock = vi.fn()
-const getLetterMock = vi.fn()
-const getUserPersonalInformationMock = vi.fn()
-const getCommunityUrlForCommunityMock = vi.fn()
-const getEventInCommunityMock = vi.fn()
 
 vi.mock('firebase-functions/https', () => ({
   HttpsError,
