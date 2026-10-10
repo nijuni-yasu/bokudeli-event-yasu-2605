@@ -9,6 +9,7 @@ import { getUserPath } from '@/router/utils'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
 import { groupOrderedMenus } from '@shokujii/base/utils/groupEventMemberOrders.js'
+import { resolveDisplayedMemberTags } from '@shokujii/base/utils/displayedMemberTags.js'
 import { orderTagsWithHighlightFirst } from '@shokujii/base/utils/tagDisplayOrder.js'
 
 const { t: $t } = useI18n()
@@ -32,12 +33,20 @@ const myTags = computed(() => new Set(currentUserStore.user?.user_tags ?? []))
 
 const isTagHighlighted = (tag: string) => myTags.value.has(tag)
 
-const orderedUserTags = (member: BokudeliEventMember) =>
-  orderTagsWithHighlightFirst(member.user_tags ?? [], isTagHighlighted)
-
 const isCurrentUser = (member: BokudeliEventMember) => member.user_id === currentUserStore.firebaseUser?.uid
 
-const hasMemberTagRow = (member: BokudeliEventMember) => (member.user_tags ?? []).length > 0 || isCurrentUser(member)
+const displayedMemberTags = (member: BokudeliEventMember) =>
+  resolveDisplayedMemberTags({
+    memberUserId: member.user_id,
+    memberTags: member.user_tags,
+    currentUserId: currentUserStore.firebaseUser?.uid,
+    currentUserTags: currentUserStore.user?.user_tags,
+  })
+
+const orderedUserTags = (member: BokudeliEventMember) =>
+  orderTagsWithHighlightFirst(displayedMemberTags(member), isTagHighlighted)
+
+const hasMemberTagRow = (member: BokudeliEventMember) => displayedMemberTags(member).length > 0 || isCurrentUser(member)
 </script>
 <template>
   <section>

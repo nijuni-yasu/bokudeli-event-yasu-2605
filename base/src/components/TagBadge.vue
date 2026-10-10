@@ -41,18 +41,11 @@ const emit = defineEmits<{
 
 const isHighlighted = computed(() => props.highlighted || props.emphasized || props.selected)
 
-const chipVariant = computed(() => {
-  if (isHighlighted.value) return 'tonal'
-  if (props.pickable) return 'outlined'
-  return 'flat'
-})
+const chipVariant = computed(() => (isHighlighted.value ? 'tonal' : 'outlined'))
 
 const chipSize = computed(() => (props.emphasized ? 'small' : 'x-small'))
 
-const chipColor = computed(() => {
-  if (isHighlighted.value || props.pickable) return 'primary'
-  return undefined
-})
+const chipColor = 'primary'
 
 const onClick = () => {
   if (props.clickable && !props.disabled && !props.loading) {
@@ -78,8 +71,8 @@ const onClose = () => {
     :aria-busy="loading || undefined"
     :class="[
       'tag-badge',
-      isHighlighted ? 'tag-badge--highlighted' : pickable ? undefined : 'tag-badge--default',
       {
+        'tag-badge--highlighted': isHighlighted,
         'cursor-pointer': clickable && !disabled && !loading,
         'tag-badge--compact': compact,
         'tag-badge--emphasized': emphasized,
@@ -103,11 +96,6 @@ const onClose = () => {
 </template>
 
 <style lang="scss" scoped>
-.tag-badge--default.v-chip {
-  background-color: rgba(var(--v-theme-on-surface), 0.08);
-  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
-}
-
 .tag-badge--compact.v-chip {
   --v-chip-size: 0.6875rem;
   --v-chip-height: 20px;

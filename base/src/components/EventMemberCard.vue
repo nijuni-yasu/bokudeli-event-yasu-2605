@@ -11,6 +11,7 @@ import { getUserPath } from '@/router/utils'
 import { useCurrentUserStore } from '@shokujii/base/stores/currentUser.js'
 import { useProfileTagToggle } from '@shokujii/base/composable/useTagImportHint.js'
 import { resolveMemberDisplayName } from '@shokujii/base/utils/displayMemberName.js'
+import { resolveDisplayedMemberTags } from '@shokujii/base/utils/displayedMemberTags.js'
 import { orderTagsWithHighlightFirst } from '@shokujii/base/utils/tagDisplayOrder.js'
 import { mdiAlphaXCircle, mdiFacebook, mdiInstagram, mdiWeb } from '@mdi/js'
 
@@ -34,7 +35,17 @@ const { toggleTag: onMemberTagClick, loadingTag } = useProfileTagToggle()
 const compact = computed(() => xs.value)
 const myTags = computed(() => new Set(currentUserStore.user?.user_tags ?? []))
 const isTagHighlighted = (tag: string) => myTags.value.has(tag)
-const orderedUserTags = computed(() => orderTagsWithHighlightFirst(props.member.user_tags ?? [], isTagHighlighted))
+const orderedUserTags = computed(() =>
+  orderTagsWithHighlightFirst(
+    resolveDisplayedMemberTags({
+      memberUserId: props.member.user_id,
+      memberTags: props.member.user_tags,
+      currentUserId: currentUserStore.firebaseUser?.uid,
+      currentUserTags: currentUserStore.user?.user_tags,
+    }),
+    isTagHighlighted,
+  ),
+)
 const isCurrentUser = computed(() => props.member.user_id === currentUserStore.firebaseUser?.uid)
 const showMemberTags = computed(() => orderedUserTags.value.length > 0 || isCurrentUser.value)
 const userName = computed(() => resolveMemberDisplayName(props.member.user_name, t('event_members.guest')))
