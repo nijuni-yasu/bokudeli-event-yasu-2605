@@ -34,5 +34,8 @@
     "terms",
     "functions/default",
     "tests/firestore-rules"
-  ]
+  ],
+  "overrides": {
+    "proxy-addr": "2.0.8"
+  }
 }
